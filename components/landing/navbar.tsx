@@ -3,7 +3,8 @@
 import React, { useState } from "react";
 import { PixelBadge } from "@/components/retro/pixel-badge";
 import { PixelButton } from "@/components/retro/pixel-button";
-import { Menu, X, Terminal, ArrowUpRight } from "lucide-react";
+import { DotIcon } from "@/components/retro/dot-icon";
+import { Menu, X, ArrowUpRight } from "lucide-react";
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -26,7 +27,7 @@ export function Navbar() {
             className="flex items-center gap-2 group outline-none focus-visible:ring-2 focus-visible:ring-[#00F0FF]"
           >
             <div className="w-8 h-8 bg-[#1B0F36] border-2 border-[#9E00FF] flex items-center justify-center text-[#00F0FF] group-hover:border-[#00F0FF] transition-colors shadow-[2px_2px_0px_#000000]">
-              <Terminal className="w-4 h-4" />
+              <DotIcon name="powershell" size={16} className="text-[#00F0FF]" />
             </div>
             <span className="font-mono text-2xl font-bold tracking-wider text-white group-hover:text-[#00F0FF] transition-colors" style={{ fontFamily: "var(--font-pixelify)" }}>
               exeku<span className="text-[#00F0FF] animate-terminal-blink">_</span>

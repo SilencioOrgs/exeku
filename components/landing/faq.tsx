@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { PixelBadge } from "@/components/retro/pixel-badge";
+import { DotIcon } from "@/components/retro/dot-icon";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 export function FAQ() {
@@ -69,7 +70,8 @@ export function FAQ() {
                   aria-expanded={isOpen}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-[#00F0FF] font-mono text-xs font-bold shrink-0">
+                    <span className="text-[#00F0FF] font-mono text-xs font-bold shrink-0 flex items-center gap-1.5">
+                      <DotIcon name="chat" size={14} className="text-[#00F0FF]" />
                       [Q-0{idx + 1}]
                     </span>
                     <span className="text-base sm:text-lg font-bold text-white font-mono">
