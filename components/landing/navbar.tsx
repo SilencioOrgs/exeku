@@ -1,12 +1,16 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useProfile } from "@/hooks/use-profile";
 import { PixelBadge } from "@/components/retro/pixel-badge";
 import { PixelButton } from "@/components/retro/pixel-button";
 import { DotIcon } from "@/components/retro/dot-icon";
 import { Menu, X, ArrowUpRight } from "lucide-react";
 
 export function Navbar() {
+  const router = useRouter();
+  const { profile } = useProfile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
@@ -64,9 +68,9 @@ export function Navbar() {
             <PixelButton
               variant="cyan"
               size="sm"
-              href="#install"
+              onClick={() => router.push(profile ? "/app" : "/setup")}
             >
-              Get Started <ArrowUpRight className="w-3.5 h-3.5" />
+              {profile ? "Workspace ▶" : "Get Started"} <ArrowUpRight className="w-3.5 h-3.5" />
             </PixelButton>
           </div>
 
@@ -111,11 +115,13 @@ export function Navbar() {
             <PixelButton
               variant="cyan"
               size="md"
-              href="#install"
-              onClick={() => setMobileMenuOpen(false)}
+              onClick={() => {
+                setMobileMenuOpen(false);
+                router.push(profile ? "/app" : "/setup");
+              }}
               className="w-full"
             >
-              Get Started (Windows npm)
+              {profile ? "Open Workspace ▶" : "Get Started (Setup Profile)"}
             </PixelButton>
           </div>
         </div>
