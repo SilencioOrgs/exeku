@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { AppWelcome } from "@/components/app/app-welcome";
+import { CommandStation } from "@/components/app/command-station";
 
 export const metadata: Metadata = {
-  title: "Workspace — Exeku",
-  description: "Offline programming workspace and local profile hub.",
+  title: "Dashboard — Exeku",
+  description: "Offline programming workstation and local telemetry overview.",
 };
 
 export default function AppPage() {
-  return <AppWelcome />;
+  return <CommandStation />;
 }
