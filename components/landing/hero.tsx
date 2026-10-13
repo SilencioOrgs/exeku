@@ -1,4 +1,8 @@
+"use client";
+
 import React from "react";
+import { useRouter } from "next/navigation";
+import { useProfile } from "@/hooks/use-profile";
 import { PixelBadge } from "@/components/retro/pixel-badge";
 import { PixelButton } from "@/components/retro/pixel-button";
 import { DotIcon } from "@/components/retro/dot-icon";
@@ -6,6 +10,9 @@ import { PixelTerminal } from "./pixel-terminal";
 import { ArrowDown } from "lucide-react";
 
 export function Hero() {
+  const router = useRouter();
+  const { profile } = useProfile();
+
   return (
     <section id="hero" className="relative pt-12 pb-20 md:pt-20 md:pb-28 overflow-hidden">
       {/* Ambient retro glow backgrounds */}
@@ -43,10 +50,11 @@ export function Hero() {
             <PixelButton
               variant="cyan"
               size="lg"
-              href="#install"
+              onClick={() => router.push(profile ? "/app" : "/setup")}
               className="w-full sm:w-auto"
             >
-              <DotIcon name="windows" size={16} className="text-[#090514]" /> Run On Windows (npm)
+              <DotIcon name="windows" size={16} className="text-[#090514]" />{" "}
+              {profile ? "Launch Workspace ▶" : "Get Started (Setup Profile) ▶"}
             </PixelButton>
 
             <PixelButton
