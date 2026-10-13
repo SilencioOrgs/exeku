@@ -2,13 +2,15 @@
 
 import React, { useState } from "react";
 import { PixelBadge } from "@/components/retro/pixel-badge";
-import { Play, RotateCcw, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { DotIcon, type DotIconName } from "@/components/retro/dot-icon";
+import { RotateCcw, AlertTriangle } from "lucide-react";
 
 type LanguageKey = "python" | "cpp" | "java";
 
 interface SnippetData {
   name: string;
   filename: string;
+  iconName: DotIconName;
   code: string[];
   demoOutput: string[];
 }
@@ -17,6 +19,7 @@ const SNIPPETS: Record<LanguageKey, SnippetData> = {
   python: {
     name: "Python 3",
     filename: "reverse_bits.py",
+    iconName: "python",
     code: [
       "# Exeku Curriculum: Bitwise Operations",
       "def reverse_bits(n: int) -> int:",
@@ -39,6 +42,7 @@ const SNIPPETS: Record<LanguageKey, SnippetData> = {
   cpp: {
     name: "C++",
     filename: "fast_matrix.cpp",
+    iconName: "cplusplus",
     code: [
       "// Exeku Curriculum: Cache Locality & SIMD",
       "#include <vector>",
@@ -62,6 +66,7 @@ const SNIPPETS: Record<LanguageKey, SnippetData> = {
   java: {
     name: "Java",
     filename: "BinarySearchTree.java",
+    iconName: "java",
     code: [
       "// Exeku Curriculum: Self-Balancing Trees",
       "public class BinarySearchTree {",
@@ -143,10 +148,11 @@ export function PixelTerminal() {
         <span className="hidden md:inline text-[10px] uppercase opacity-75">Not a live compiler</span>
       </div>
 
-      {/* Language Switcher Tabs */}
+      {/* Language Switcher Tabs with Doticons */}
       <div className="flex items-center border-b-2 border-[#2E1A57] bg-[#0E071D] px-2 sm:px-4 overflow-x-auto">
         {(Object.keys(SNIPPETS) as LanguageKey[]).map((key) => {
           const isActive = activeLang === key;
+          const snippet = SNIPPETS[key];
           return (
             <button
               key={key}
@@ -161,9 +167,13 @@ export function PixelTerminal() {
                   : "border-transparent text-[#A79EC4] hover:text-white hover:bg-[#150B2C]"
               }`}
             >
-              <span>{isActive ? "▶" : "·"}</span>
-              <span>{SNIPPETS[key].name}</span>
-              <span className="text-[10px] text-[#6D628B]">({SNIPPETS[key].filename})</span>
+              <DotIcon
+                name={snippet.iconName}
+                size={14}
+                className={isActive ? "text-[#00F0FF]" : "text-[#A79EC4]"}
+              />
+              <span>{snippet.name}</span>
+              <span className="text-[10px] text-[#6D628B]">({snippet.filename})</span>
             </button>
           );
         })}
@@ -212,7 +222,7 @@ export function PixelTerminal() {
               disabled={isRunning}
               className="px-4 py-2 bg-[#00F0FF] hover:bg-[#38BDF8] text-[#090514] font-mono font-bold text-xs uppercase flex items-center gap-1.5 transition-all shadow-[2px_2px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer disabled:opacity-50"
             >
-              <Play className="w-3.5 h-3.5 fill-current" />
+              <DotIcon name="circlePlay" size={14} className="text-[#090514]" />
               {isRunning ? "Simulating..." : "Run Demo ▶"}
             </button>
 
@@ -230,7 +240,7 @@ export function PixelTerminal() {
           </div>
 
           <div className="text-[11px] font-mono text-[#A79EC4] flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#00FF9D]" />
+            <DotIcon name="windows" size={13} className="text-[#00FF9D]" />
             <span>Target Architecture: Windows x64</span>
           </div>
         </div>
@@ -253,7 +263,9 @@ export function PixelTerminal() {
                       : "text-[#C084FC]"
                   }`}
                 >
-                  {outLine.includes("✓") && <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 shrink-0 text-[#00FF9D]" />}
+                  {outLine.includes("✓") && (
+                    <DotIcon name="circleCheck" size={14} className="text-[#00FF9D] mt-0.5 shrink-0" />
+                  )}
                   <span>{outLine}</span>
                 </div>
               ))}

@@ -1,8 +1,9 @@
 import React from "react";
 import { PixelBadge } from "@/components/retro/pixel-badge";
 import { PixelButton } from "@/components/retro/pixel-button";
+import { DotIcon } from "@/components/retro/dot-icon";
 import { PixelTerminal } from "./pixel-terminal";
-import { Shield, Cpu, HardDriveDownload, ArrowDown } from "lucide-react";
+import { ArrowDown } from "lucide-react";
 
 export function Hero() {
   return (
@@ -45,7 +46,7 @@ export function Hero() {
               href="#install"
               className="w-full sm:w-auto"
             >
-              <HardDriveDownload className="w-4 h-4" /> Run On Windows (npm)
+              <DotIcon name="windows" size={16} className="text-[#090514]" /> Run On Windows (npm)
             </PixelButton>
 
             <PixelButton
@@ -61,15 +62,15 @@ export function Hero() {
           {/* Core Trust Badges */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-8 mt-10 pt-8 border-t border-[#2E1A57]/60 w-full max-w-2xl font-mono text-xs text-[#A79EC4]">
             <div className="flex items-center justify-center gap-2">
-              <Shield className="w-4 h-4 text-[#00FF9D]" />
+              <DotIcon name="shield" size={16} className="text-[#00FF9D]" />
               <span>100% Offline Autonomy</span>
             </div>
             <div className="flex items-center justify-center gap-2">
-              <Cpu className="w-4 h-4 text-[#00F0FF]" />
+              <DotIcon name="cog" size={16} className="text-[#00F0FF]" />
               <span>Bare Metal Focus</span>
             </div>
             <div className="col-span-2 sm:col-span-1 flex items-center justify-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#FF007A]" />
+              <DotIcon name="windows" size={16} className="text-[#FF007A]" />
               <span>Windows 10/11 Target</span>
             </div>
           </div>

@@ -1,6 +1,6 @@
 import React from "react";
 import { PixelBadge } from "@/components/retro/pixel-badge";
-import { Terminal, GitBranch, ArrowUp } from "lucide-react";
+import { DotIcon } from "@/components/retro/dot-icon";
 
 export function Footer() {
   const navLinks = [
@@ -19,7 +19,7 @@ export function Footer() {
           <div className="md:col-span-2 space-y-4">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 bg-[#1B0F36] border border-[#9E00FF] flex items-center justify-center text-[#00F0FF]">
-                <Terminal className="w-3.5 h-3.5" />
+                <DotIcon name="powershell" size={16} />
               </div>
               <span
                 className="text-2xl font-bold text-white tracking-wider"
@@ -75,7 +75,7 @@ export function Footer() {
                   rel="noopener noreferrer"
                   className="hover:text-[#00F0FF] transition-colors flex items-center gap-1.5"
                 >
-                  <GitBranch className="w-3.5 h-3.5 text-[#00F0FF]" />
+                  <DotIcon name="github" size={14} className="text-[#00F0FF]" />
                   SilencioOrgs/exeku
                 </a>
               </li>
@@ -86,7 +86,7 @@ export function Footer() {
               href="#hero"
               className="inline-flex items-center gap-1 text-[#00F0FF] hover:underline"
             >
-              <ArrowUp className="w-3.5 h-3.5" /> Back to top
+              <DotIcon name="arrowUp" size={14} className="text-[#00F0FF]" /> Back to top
             </a>
           </div>
         </div>
