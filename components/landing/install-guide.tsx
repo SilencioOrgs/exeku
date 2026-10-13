@@ -53,17 +53,17 @@ export function InstallGuide() {
         {/* Section Header */}
         <div className="max-w-3xl mb-14">
           <div className="mb-3">
-            <PixelBadge variant="cyan">WINDOWS SETUP</PixelBadge>
+            <PixelBadge variant="cyan">DEVELOPER SETUP</PixelBadge>
           </div>
           <h2
             className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-6 uppercase tracking-tight"
             style={{ fontFamily: "var(--font-pixelify)" }}
           >
-            How To Run On Windows.
+            Run The Developer Preview.
           </h2>
           <p className="text-base sm:text-lg text-[#A79EC4] font-sans leading-relaxed">
-            Exeku is currently distributed as a developer preview from source. Run the
-            platform locally using Node.js and npm on your Windows workstation.
+            Exeku is currently in local developer preview. Clone and launch the Next.js platform locally,
+            or optionally run the Piston sandbox runner for live containerized execution.
           </p>
         </div>
 

@@ -23,8 +23,8 @@ export function Hero() {
         <div className="flex flex-col items-center text-center max-w-4xl mx-auto mb-12 sm:mb-16">
           {/* Section Kicker */}
           <div className="mb-6 flex flex-wrap items-center justify-center gap-2">
-            <PixelBadge variant="pink">WINDOWS DEV ENVIRONMENT</PixelBadge>
-            <PixelBadge variant="cyan">ZERO CLOUD TELEMETRY</PixelBadge>
+            <PixelBadge variant="pink">LOCAL DEVELOPER PREVIEW</PixelBadge>
+            <PixelBadge variant="cyan">ONLINE JUDGE ARCHITECTURE</PixelBadge>
           </div>
 
           {/* Headline */}
@@ -40,9 +40,8 @@ export function Hero() {
 
           {/* Subtitle */}
           <p className="text-lg sm:text-xl text-[#A79EC4] max-w-2xl font-sans leading-relaxed mb-8">
-            The offline-first programming education platform built for Windows. Learn
-            Python 3, Java, C++, and C in an environment where your curriculum, editor,
-            and learning records live completely on your computer.
+            An online programming practice, assessment, and competition platform inspired by CodeChum.
+            Solve challenges, run code in isolated sandboxes, and receive instant judging verdicts across Python 3, Java, C++, and C.
           </p>
 
           {/* Call to action buttons */}
@@ -71,15 +70,15 @@ export function Hero() {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-8 mt-10 pt-8 border-t border-[#2E1A57]/60 w-full max-w-2xl font-mono text-xs text-[#A79EC4]">
             <div className="flex items-center justify-center gap-2">
               <DotIcon name="shield" size={16} className="text-[#00FF9D]" />
-              <span>100% Offline Autonomy</span>
+              <span>Container Sandboxing</span>
             </div>
             <div className="flex items-center justify-center gap-2">
               <DotIcon name="cog" size={16} className="text-[#00F0FF]" />
-              <span>Bare Metal Focus</span>
+              <span>Automatic Judging</span>
             </div>
             <div className="col-span-2 sm:col-span-1 flex items-center justify-center gap-2">
-              <DotIcon name="windows" size={16} className="text-[#FF007A]" />
-              <span>Windows 10/11 Target</span>
+              <DotIcon name="powershell" size={16} className="text-[#FF007A]" />
+              <span>4 Core Languages</span>
             </div>
           </div>
         </div>
