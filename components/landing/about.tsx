@@ -13,31 +13,31 @@ export function About() {
     description: string;
   }> = [
     {
-      iconName: "cloud",
+      iconName: "shield",
       iconColor: "text-[#FF007A]",
-      title: "Zero Cloud Lock-In",
-      tag: "TOTAL AUTONOMY",
+      title: "Isolated Sandboxing",
+      tag: "SECURE RUNTIME",
       badgeVariant: "pink",
       description:
-        "Modern coding tools often demand continuous high-speed internet, remote virtual machines, and cloud accounts. Exeku breaks this dependency: your editor, curriculum, and records stay entirely on your local drive with zero remote telemetry.",
+        "Untrusted code is executed inside ephemeral, resource-constrained sandbox containers. Memory limits, CPU quotas, and air-gapped process isolation protect the host system from runaway loops and unsafe operations.",
+    },
+    {
+      iconName: "circlePlay",
+      iconColor: "text-[#00F0FF]",
+      title: "Automated Assessment",
+      tag: "CODECHUM MODEL",
+      badgeVariant: "cyan",
+      description:
+        "Deterministic test suite verification with instant grading. Visible test cases provide actionable debugging feedback, while hidden test cases ensure algorithmic rigor and prevent hardcoded answers.",
     },
     {
       iconName: "windows",
-      iconColor: "text-[#00F0FF]",
-      title: "Built for Lab Realities",
-      tag: "CLASSROOM RESILIENT",
-      badgeVariant: "cyan",
-      description:
-        "Educational computer labs frequently face restrictive school firewalls, erratic Wi-Fi, or strict air-gapped policies. Exeku runs reliably on local Windows workstations without requiring external proxy bypasses or cloud authorization.",
-    },
-    {
-      iconName: "cog",
       iconColor: "text-[#00FF9D]",
-      title: "Bare-Metal Intimacy",
-      tag: "REAL COMPUTING",
+      title: "Local Developer Preview",
+      tag: "ZERO LOCK-IN",
       badgeVariant: "mint",
       description:
-        "Instead of abstracting execution into remote serverless black boxes, Exeku is designed around the reality of your local machine. Students learn how native compilers, operating systems, and memory actually function.",
+        "During local developer preview, your profile, settings, and workspace operate directly in your browser and local developer environment without forced cloud logins, third-party trackers, or vendor lock-in.",
     },
   ];
 
@@ -53,13 +53,12 @@ export function About() {
             className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-6 uppercase tracking-tight"
             style={{ fontFamily: "var(--font-pixelify)" }}
           >
-            The Machine Is The Lab.
+            Code. Practice. Compete.
           </h2>
           <p className="text-base sm:text-lg text-[#A79EC4] font-sans leading-relaxed">
-            Exeku is an offline-first programming education platform designed to make
-            computer science education resilient, accessible, and distraction-free. By
-            anchoring the learning process to the student&apos;s own machine, we eliminate the
-            fragility of cloud IDEs.
+            Exeku is an online programming practice and assessment platform inspired by CodeChum,
+            currently in local developer preview. We combine instant automated judging, multi-language sandboxes,
+            and competitive programming workflows with a distinct retro developer aesthetic.
           </p>
         </div>
 
@@ -98,14 +97,14 @@ export function About() {
             <DotIcon name="shield" size={24} className="text-[#00F0FF] shrink-0" />
             <div>
               <h4 className="text-white font-mono font-bold text-sm uppercase">
-                Privacy By Architecture, Not Policy
+                Local Developer Preview Architecture
               </h4>
               <p className="text-xs sm:text-sm text-[#A79EC4] font-sans">
-                No telemetry servers. No cookies. No third-party trackers. Your learning activity stays on your Windows machine.
+                Zero external cloud dependencies or telemetry tracking during local development. Run the full platform locally with modular sandbox adapters.
               </p>
             </div>
           </div>
-          <PixelBadge variant="mint">100% PRIVATE</PixelBadge>
+          <PixelBadge variant="mint">DEV PREVIEW</PixelBadge>
         </div>
       </div>
     </section>

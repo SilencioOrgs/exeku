@@ -39,9 +39,9 @@ export function Navbar() {
           </a>
 
           <div className="hidden sm:flex items-center ml-2">
-            <PixelBadge variant="mint">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#00FF9D] animate-pulse mr-1" />
-              OFFLINE READY
+            <PixelBadge variant="cyan">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#00F0FF] animate-pulse mr-1" />
+              ONLINE PREVIEW
             </PixelBadge>
           </div>
         </div>
@@ -90,11 +90,11 @@ export function Navbar() {
       {mobileMenuOpen && (
         <div className="md:hidden bg-[#120A24] border-b-2 border-[#2E1A57] px-4 pt-3 pb-6 flex flex-col gap-4">
           <div className="flex items-center justify-between pb-2 border-b border-[#2E1A57]">
-            <PixelBadge variant="mint">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#00FF9D] animate-pulse mr-1" />
-              OFFLINE READY
+            <PixelBadge variant="cyan">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#00F0FF] animate-pulse mr-1" />
+              ONLINE PREVIEW
             </PixelBadge>
-            <span className="text-xs font-mono text-[#A79EC4]">WINDOWS DEV PREVIEW</span>
+            <span className="text-xs font-mono text-[#A79EC4]">LOCAL DEV PREVIEW</span>
           </div>
 
           <nav className="flex flex-col gap-3">

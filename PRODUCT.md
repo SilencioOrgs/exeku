@@ -4,69 +4,69 @@
 
 ## Platform
 
-web
+web (Online-First Platform — Currently in Local Developer Preview)
 
 ## Users
 
-- **Primary:** Classroom students and teachers in school computer lab settings with restricted, intermittent, or zero internet connectivity.
-- **Secondary:** Self-directed learners and programming novices learning core programming fundamentals (Python, Java, C++, C) on personal machines without relying on internet access or cloud subscriptions.
-- **Core Job:** Learn, practice, and teach structured programming through hands-on exercises, immediate local code execution, automated grading, and offline curriculum progression without cloud dependencies or privacy concerns.
+- **Primary:** Programming students and learners practicing algorithmic challenges, completing structured lab exercises, and participating in timed programming contests (inspired by CodeChum).
+- **Secondary:** Instructors, educators, and contest administrators organizing classroom problem sets, automated assessments, and student performance tracking.
+- **Core Job:** Solve programming problems in Python 3, Java, C++, and C with immediate code execution feedback, deterministic automated judging verdicts, test case visibility, and progress analytics.
 
 ## Product Purpose
 
-Exeku is an offline-first programming education platform built to make software engineering education resilient, accessible, and self-contained on the student's own computer.
+Exeku is an online-first programming education, practice, and competition platform designed to provide fast, reliable, and accessible coding education with deterministic automatic grading.
 
 - **Tagline:** "Your Code. Your Machine."
-- **Why it exists:** Modern coding education heavily relies on cloud IDEs (Replit, Codecademy, LeetCode) requiring continuous broadband, remote compute, user tracking, and cloud accounts. In environments with poor connectivity, firewall restrictions, or limited hardware, this creates insurmountable learning barriers.
-- **Definition of Success:** A student seated at an offline computer in a school lab can launch Exeku, write code in Python, Java, C++, or C, execute it locally, receive instant test results and grading, and progress through lessons with zero network packets leaving their machine.
+- **Why it exists:** Modern coding education often divides between fragmented local developer setups that are difficult for beginners to configure, and heavy enterprise platforms with rigid workflows. Exeku bridges this with a responsive, browser-native programming practice platform featuring a rich Monaco editor, sandboxed multi-language execution, automated test evaluation, and timed contest capabilities.
+- **Current Development Stage:** **Local Development / Developer Preview**. All execution, judging, and profile components are tested and developed in local development before any future production cloud deployment.
+- **Definition of Success:** A student selects a programming problem, writes clean code in Python 3, Java, C++, or C, runs against sample inputs, submits to an automated sandbox judge, and receives a deterministic verdict (Accepted, Wrong Answer, etc.) within seconds.
 
 ## Positioning
 
-Unlike cloud-dependent coding platforms and web IDEs, Exeku runs, compiles, and evaluates code entirely on the user's local machine. It combines the polish of a modern interactive learning environment with the reliability and independence of a local developer setup—no cloud authentication, no remote servers, no telemetry, and no subscription lock-in.
+Exeku provides a high-craft developer aesthetic paired with robust automated code assessment. Inspired by CodeChum, it focuses on core foundational languages (Python 3, Java, C++, C) and supports both individual self-paced problem solving and institutional classroom contests.
 
 ## Operating Context
 
-- **Environments:** School computer labs (Windows workstations), home laptops with limited or no internet access, air-gapped or restricted institutional environments.
-- **Workflows:** Browsing lesson curricula, writing code in an integrated Monaco editor, executing against predefined unit tests/problem test suites, reviewing compiler output and automated grades, and tracking local progress.
-- **Tools & Systems:** Local Next.js application shell, Monaco Editor, local compilers/interpreters (Python 3, Java, C++, C), local file/state persistence.
+- **Current Stage:** Local development workspace (`localhost:3000`), local sandbox evaluation via containerized Piston engine (`http://localhost:2000`) or mock adapter.
+- **Future Production Stage:** Online-hosted web application with isolated execution microservices, server-authoritative submission queue, and contest infrastructure.
+- **Workflows:**
+  - Browsing problem catalogs with difficulty and language filters.
+  - Solving problems inside an integrated Monaco code editor.
+  - Running code against custom or sample standard input.
+  - Submitting solutions for multi-test automated judging with hidden test case protection.
+  - Inspecting execution telemetry (exit code, runtime duration, memory, compiler logs, test diffs).
+  - Tracking progress and draft buffers in local profile storage (with planned server-authoritative contest identities in future phases).
 
 ## Capabilities and Constraints
 
 - **Confirmed Capabilities:**
   - Interactive code editor powered by Monaco Editor (`monaco-editor`, `@monaco-editor/react`).
-  - Structured curriculum navigation and problem sets.
-  - Local test runner and automated grading engine (planned roadmap).
-  - Offline AI learning assistant and local profile system (planned roadmap).
+  - Multi-language support: Python 3, Java, C++, C.
+  - Bounded concurrency execution queue designed for ~30 participant classroom contests.
+  - Automatic judging engine with deterministic verdict calculation (AC, WA, CE, RE, TLE, MLE, IE).
+  - Server-authoritative test case evaluation with hidden test input/output redaction.
+  - Local profile and code draft persistence via IndexedDB (safe hydration without cloud lock-in during developer preview).
+  - Retro pixel-art visual design system with Doticons integration.
 - **Technical Constraints:**
-  - **Offline-First:** All fonts, icons, styling, and static assets must be bundled locally. No external runtime CDN dependencies.
-  - **No Cloud Dependencies:** No cloud authentication, third-party auth providers, or remote telemetry backends.
-  - **Application Shell:** Responsive desktop-first local web application (Next.js 16 App Router) designed for local execution and future packaged standalone Windows distribution.
-  - **Planned Languages:** Python 3, Java, C++, C.
-- **Explicitly Undecided / Future:** Local engine execution sandboxing model, exact local user profile persistence schema, offline local LLM runtime parameters.
+  - **No Unsafe Execution:** Student code is strictly untrusted. Code execution must run inside an isolated sandbox (Piston/`isolate` container) with enforced CPU limits, memory limits, wall-clock timeouts, restricted filesystem access, and disabled outbound networking. Arbitrary unsandboxed host process execution is strictly prohibited.
+  - **Local Development Boundaries:** No public cloud infrastructure (Vercel, Render, Oracle Cloud) or cloud databases are provisioned during this stage. Everything runs and verifies locally.
+  - **Data Truth Guarantee:** Only display verified, real execution outputs and stored records. Never fabricate test passes or execution statistics.
+  - **Modular Boundaries:** Frontend and execution engine are completely decoupled via standard JSON REST contracts (`POST /api/execute`, `POST /api/judge`).
+- **Team Ownership Boundaries:**
+  - **Primary Developer Owns:** Monaco workspace, code execution service, automatic judging engine, programming problems engine, contest infrastructure, deployment architecture, and Appearance Studio (Phase 2C).
+  - **Teammate Owns:** Lessons, tutorials, curriculum explanations, and educational content modules.
 
 ## Brand Commitments
 
 - **Name:** Exeku
 - **Tagline:** "Your Code. Your Machine."
 - **Aesthetic Direction:** Retro pixel-art developer aesthetic paired with modern functional clarity and accessibility.
-- **Visual Identity Foundation:** Dark violet and neon-purple foundation accented with restrained pink and cyan highlights. High-contrast typography, pixel-inspired decorative elements and borders, clean interactive states. Avoids excessive bloom/glow, gratuitous animations, or generic corporate SaaS design.
-- **Voice:** Direct, empowering, focused, and developer-centric.
-
-## Evidence on Hand
-
-- **Codebase Scaffold:** Next.js 16 App Router with Turbopack, React 19, TypeScript, Tailwind CSS v4, shadcn/ui with Base UI primitives (`base-nova` preset), and Monaco Editor packages installed.
-- **Specification Authority:** `AGENTS.md` containing architectural rules, technology stack definitions, git workflows, and offline-first standards.
-- **Absence Constraints:** No committed lesson database, problem banks, or local execution binaries currently exist in repository; future work must not assume or fabricate pre-existing curricula.
+- **Visual Identity Foundation:** Dark violet and neon-purple foundation accented with restrained pink and cyan highlights. High-contrast typography, pixel-inspired decorative elements and borders, clean interactive states.
+- **Planned Appearance System (Phase 2C):** Future multi-theme engine supporting Pixel Arcade, Minimal SaaS, and Studio/CRM styles with configurable typography, font scaling, and high-contrast modes.
 
 ## Product Principles
 
-1. **Zero-Cloud Autonomy:** Every core workflow—curriculum access, code editing, compilation, test grading, and progress tracking—must function fully severed from the internet.
-2. **The Machine Is the Lab:** Treat the user's computer as a first-class execution environment. Respect local resources, privacy, and user files with no remote surveillance or cloud lock-in.
-3. **Immediate Local Feedback:** Code execution and automated grading must happen instantly on-device so students stay in productive learning flow without waiting on network latency.
-4. **Accessible Craft:** Combine nostalgic retro developer personality with rigorous readability, keyboard navigation, and ergonomic layout hierarchy.
-
-## Accessibility & Inclusion
-
-- Desktop-centric keyboard accessibility and full navigation support.
-- High functional clarity and contrast ratios for diverse display hardware in educational labs.
-- Resilient layouts adapting across standard desktop and laptop resolutions without horizontal overflow or cramped editor panes.
+1. **Deterministic Assessment:** Test cases and judging verdicts must be repeatable, transparent, and rigorous. Trailing whitespace and line endings are normalized consistently without obscuring meaningful output differences.
+2. **Security First:** Untrusted student submissions must never execute directly on the application host. Isolation is an absolute requirement.
+3. **Ergonomic Workspace:** Developers learn by coding. The editor, controls, standard input buffers, and output logs must remain distraction-free, responsive, and keyboard-accessible.
+4. **Honest System Telemetry:** Clearly distinguish between sandbox execution output, compiler errors, runtime exceptions, and sandbox connectivity states.

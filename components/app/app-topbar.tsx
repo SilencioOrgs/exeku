@@ -79,9 +79,9 @@ export function AppTopbar({ profile, onToggleMobileMenu }: AppTopbarProps) {
       {/* Right: Machine Telemetry & External Jump */}
       <div className="flex items-center gap-2 sm:gap-3">
         <div className="hidden sm:flex items-center gap-2">
-          <PixelBadge variant="mint" bracketed={false} className="text-[10px] py-0 px-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#00FF9D] animate-pulse inline-block mr-1" />
-            OFFLINE READY
+          <PixelBadge variant="cyan" bracketed={false} className="text-[10px] py-0 px-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#00F0FF] animate-pulse inline-block mr-1" />
+            ONLINE PREVIEW
           </PixelBadge>
 
           <PixelBadge variant="cyan" bracketed className="text-[10px] py-0 px-1 font-mono">

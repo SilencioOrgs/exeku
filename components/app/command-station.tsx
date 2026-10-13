@@ -239,11 +239,11 @@ export function CommandStation() {
         <PixelCard variant="default" className="p-4 sm:p-5 border-2 border-[#2E1A57] space-y-3">
           <div className="flex items-center justify-between">
             <span className="font-mono text-[10px] text-[#A79EC4] uppercase tracking-wider">
-              [02 // LOCAL ENGINE]
+              [02 // EXECUTION ENGINE]
             </span>
-            <span className="flex items-center gap-1.5 font-mono text-[10px] text-[#00FF9D]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#00FF9D] animate-pulse" />
-              OFFLINE READY
+            <span className="flex items-center gap-1.5 font-mono text-[10px] text-[#00F0FF]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#00F0FF] animate-pulse" />
+              JUDGE PREVIEW
             </span>
           </div>
           <div className="space-y-1.5 text-xs font-mono">
@@ -252,17 +252,17 @@ export function CommandStation() {
               <span className="text-[#00FF9D] font-bold">IndexedDB v2</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-[#7A6E9B]">Execution Engine:</span>
-              <span className="text-[#00F0FF]">STANDBY (Phase 2B)</span>
+              <span className="text-[#7A6E9B]">Execution Sandbox:</span>
+              <span className="text-[#00FF9D]">PISTON ADAPTER READY</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-[#7A6E9B]">Offline Assistant:</span>
-              <span className="text-[#A79EC4]">STANDBY (Phase 4)</span>
+              <span className="text-[#7A6E9B]">Automatic Judge:</span>
+              <span className="text-[#00F0FF]">ACTIVE (4 Languages)</span>
             </div>
           </div>
           <div className="pt-2 border-t border-[#2E1A57]/60 flex items-center justify-between text-[11px] font-mono text-[#7A6E9B]">
             <span>Runtime Security:</span>
-            <span className="text-white">AIR-GAPPED</span>
+            <span className="text-white">CONTAINER ISOLATED</span>
           </div>
         </PixelCard>
 
@@ -348,7 +348,7 @@ export function CommandStation() {
         <div className="pt-3 border-t border-[#2E1A57] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-[#090514]/40 p-3">
           <div className="flex items-center gap-2 text-xs font-mono text-[#A79EC4]">
             <DotIcon name="box" size={16} color="#00F0FF" />
-            <span>Standalone offline problem packs (.exeku bundles) activate in Phase 2C.</span>
+            <span>Multi-language practice problem catalog active. Sandboxed execution enabled.</span>
           </div>
           <Link href="/app/challenges">
             <PixelButton variant="ghost" size="sm">
