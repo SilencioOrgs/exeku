@@ -13,6 +13,7 @@ import { StyleText } from "@/components/appearance/style-text";
 import { ArrowUpRight, Pencil, Terminal } from "lucide-react";
 import { useAppearance } from "@/hooks/use-appearance";
 import { ModernOverview } from "./modern-overview";
+import { CodingActivity } from "./coding-activity";
 import { draftRepository } from "@/lib/storage/draft-repository";
 import {
   getFilenameForLanguage,
@@ -307,6 +308,8 @@ export function CommandStation() {
           </div>
         </PixelCard>
       </div>
+
+      <CodingActivity profileId={profile.id} />
 
       {/* Track Blueprint Preview */}
       <section className="dashboard-recent modern-surface">
