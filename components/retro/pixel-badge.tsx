@@ -14,18 +14,24 @@ export function PixelBadge({
   ...props
 }: PixelBadgeProps) {
   const variantStyles = {
-    default: "bg-[#1B0F36] text-[#F5F3FF] border-[#2E1A57]",
-    cyan: "bg-[#091E2A] text-[#00F0FF] border-[#00F0FF]/40 shadow-[0_0_8px_rgba(0,240,255,0.15)]",
-    pink: "bg-[#290B1E] text-[#FF007A] border-[#FF007A]/40 shadow-[0_0_8px_rgba(255,0,122,0.15)]",
-    mint: "bg-[#092418] text-[#00FF9D] border-[#00FF9D]/40 shadow-[0_0_8px_rgba(0,255,157,0.15)]",
-    purple: "bg-[#1B0F36] text-[#C084FC] border-[#9E00FF]/50 shadow-[0_0_8px_rgba(158,0,255,0.15)]",
-    muted: "bg-[#120A24] text-[#A79EC4] border-[#2E1A57]",
+    default:
+      "bg-[var(--color-elevated)] text-[var(--color-text-main)] border-[var(--color-border)]",
+    cyan:
+      "bg-[var(--color-accent)]/15 text-[var(--color-accent)] border-[var(--color-accent)]/50",
+    pink:
+      "bg-[var(--color-pink)]/15 text-[var(--color-pink)] border-[var(--color-pink)]/50",
+    mint:
+      "bg-[var(--color-mint)]/15 text-[var(--color-mint)] border-[var(--color-mint)]/50",
+    purple:
+      "bg-[var(--color-primary)]/15 text-[var(--color-primary)] border-[var(--color-primary)]/50",
+    muted:
+      "bg-[var(--color-surface)] text-[var(--color-text-muted)] border-[var(--color-border)]",
   };
 
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-mono tracking-wide border uppercase select-none",
+        "inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-mono tracking-wide border uppercase select-none [border-radius:var(--radius-btn)]",
         variantStyles[variant],
         className
       )}
