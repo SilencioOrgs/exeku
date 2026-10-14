@@ -20,6 +20,7 @@ import {
 import { draftRepository } from "@/lib/storage/draft-repository";
 import { recordCodingDay } from "@/lib/storage/coding-activity";
 import { FileTabs } from "./workspace/file-tabs";
+import { Group, Panel, Separator, useGroupRef } from "react-resizable-panels";
 import type { WorkspaceFile } from "@/types/draft";
 import {
   ALL_SUPPORTED_LANGUAGES,
@@ -89,7 +90,46 @@ export function WorkspaceView() {
   // Layout & Tabs
   const [mobileActivePane, setMobileActivePane] = useState<MobileActivePane>("code");
   // Keeps Monaco mounted while letting students expand or restore the editor.
-  const [editorExpanded, setEditorExpanded] = useState(false);
+  const [layout, setLayout] = useState<"split" | "wide" | "focus">("split");
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [problemSlideOpen, setProblemSlideOpen] = useState(false);
+  const resizeGroupRef = useGroupRef();
+  const [splitSizes, setSplitSizes] = useState({ problem: 28, editor: 48, results: 24 });
+  const nextLayout = () => setLayout((current) => current === "split" ? "wide" : current === "wide" ? "focus" : "split");
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      try {
+        const stored = localStorage.getItem("exeku.workspace.layout");
+        if (stored === "split" || stored === "wide" || stored === "focus") setLayout(stored);
+        const widths = JSON.parse(localStorage.getItem("exeku.workspace.panes") || "null");
+        if (widths && typeof widths.problem === "number" && typeof widths.editor === "number" && typeof widths.results === "number"
+            && widths.problem >= 20 && widths.editor >= 35 && widths.results >= 18
+            && Math.abs(widths.problem + widths.editor + widths.results - 100) < 1) {
+          setSplitSizes(widths);
+        }
+      } catch { /* local preference storage may be unavailable */ }
+    });
+  }, []);
+
+  useEffect(() => {
+    try { localStorage.setItem("exeku.workspace.layout", layout); } catch { /* local-only preference */ }
+    const widths = layout === "split" ? splitSizes :
+      layout === "wide" ? { problem: 4, editor: 72, results: 24 } :
+      { problem: 0, editor: drawerOpen ? 65 : 100, results: drawerOpen ? 35 : 0 };
+    const frame = requestAnimationFrame(() => resizeGroupRef.current?.setLayout(widths));
+    return () => cancelAnimationFrame(frame);
+  }, [layout, drawerOpen, splitSizes, resizeGroupRef]);
+
+  useEffect(() => {
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      if (problemSlideOpen) { setProblemSlideOpen(false); return; }
+      if (layout === "focus") setLayout("split");
+    };
+    window.addEventListener("keydown", onEscape);
+    return () => window.removeEventListener("keydown", onEscape);
+  }, [layout, problemSlideOpen]);
   const [activeResultsTab, setActiveResultsTab] = useState<ResultsTab>("console");
 
   // Execution & Judging state
@@ -353,6 +393,7 @@ export function WorkspaceView() {
   // 9. Run Code against Sandbox
   const handleRunCode = async () => {
     setIsRunning(true);
+    setDrawerOpen(true);
     setActiveResultsTab("console");
     setMobileActivePane("results");
 
@@ -395,6 +436,7 @@ export function WorkspaceView() {
   const handleConfirmSubmission = async () => {
     if (!problem) return;
     setIsSubmitConfirmOpen(false);
+    setDrawerOpen(true);
     setIsEvaluatingModalOpen(true);
     setActiveResultsTab("results");
     setMobileActivePane("results");
@@ -744,13 +786,20 @@ export function WorkspaceView() {
             </PixelButton>
             <PixelButton
               size="icon" variant="ghost" className="hidden xl:inline-flex"
-              aria-label={editorExpanded ? "Restore panels" : "Expand editor"}
+              aria-label={`Cycle editor layout (currently ${layout})`}
               aria-controls="workspace-panes"
-              onClick={() => setEditorExpanded((value) => !value)}
-              title={editorExpanded ? "Restore panels" : "Expand editor"}
+              onClick={nextLayout}
+              title={`Layout: ${layout}. Click to cycle split, wide and focus`}
             >
-              <DotIcon name={editorExpanded ? "list" : "box"} size={14} aria-hidden="true" />
+              <DotIcon name={layout === "focus" ? "list" : "box"} size={14} aria-hidden="true" />
             </PixelButton>
+            {layout === "focus" && (
+              <button
+                type="button" className="hidden h-8 shrink-0 items-center gap-1 border border-[var(--color-border)] px-2 text-xs xl:inline-flex"
+                onClick={() => setProblemSlideOpen(true)}
+                aria-label="Open problem statement"
+              ><DotIcon name="list" size={14} aria-hidden="true" /> Problem</button>
+            )}
             <span className="hidden h-5 shrink-0 border-l border-[var(--color-border)] sm:inline" aria-hidden="true" />
             <PixelButton size="xs" variant="cyan" aria-label="Run code" title="Run code (Ctrl/Cmd+Enter)"
               disabled={isRunning || isSubmitting} onClick={() => void handleRunCode()} className="shrink-0">
