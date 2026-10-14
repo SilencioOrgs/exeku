@@ -35,7 +35,7 @@ import {
   getSimulatedAcceptedResult,
   getSimulatedWrongAnswerResult,
 } from "@/lib/demo/demo-simulation";
-import { PROBLEM_CATALOG } from "@/lib/problems/catalog";
+import type { ProblemSummary } from "@/types/problem";
 import type { PreferredLanguage } from "@/types/profile";
 import type { VisibleProblem } from "@/types/problem";
 import type { ExecutionResult, SandboxHealth } from "@/types/execution";
@@ -75,6 +75,7 @@ export function WorkspaceView() {
 
   // Problem metadata
   const [problem, setProblem] = useState<VisibleProblem | null>(null);
+  const [problemIds, setProblemIds] = useState<string[]>([]);
 
   // Layout & Tabs
   const [mobileActivePane, setMobileActivePane] = useState<MobileActivePane>("code");
@@ -166,6 +167,17 @@ export function WorkspaceView() {
       isCurrent = false;
     };
   }, [problemIdParam]);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/problems")
+      .then((response) => { if (!response.ok) throw new Error("Catalog unavailable"); return response.json(); })
+      .then((data: { problems?: ProblemSummary[] }) => {
+        if (active) setProblemIds((data.problems ?? []).map((entry) => entry.id));
+      })
+      .catch(() => { if (active) setProblemIds([]); });
+    return () => { active = false; };
+  }, []);
 
   // 3. Timed Challenge initialization if requested via URL
   useEffect(() => {
@@ -463,12 +475,12 @@ export function WorkspaceView() {
   // 13. Next Problem Resolution
   const nextProblemId = useMemo(() => {
     if (!problem) return null;
-    const currentIndex = PROBLEM_CATALOG.findIndex((p) => p.id === problem.id);
-    if (currentIndex >= 0 && currentIndex < PROBLEM_CATALOG.length - 1) {
-      return PROBLEM_CATALOG[currentIndex + 1].id;
+    const currentIndex = problemIds.indexOf(problem.id);
+    if (currentIndex >= 0 && currentIndex < problemIds.length - 1) {
+      return problemIds[currentIndex + 1];
     }
-    return PROBLEM_CATALOG[0]?.id !== problem.id ? PROBLEM_CATALOG[0]?.id : null;
-  }, [problem]);
+    return problemIds[0] !== problem.id ? (problemIds[0] ?? null) : null;
+  }, [problem, problemIds]);
 
   const filename = getFilenameForLanguage(activeLang);
   const monacoLang = getMonacoLanguage(activeLang);
