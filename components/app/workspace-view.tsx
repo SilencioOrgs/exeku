@@ -19,6 +19,8 @@ import {
 } from "./workspace/submission-modals";
 import { draftRepository } from "@/lib/storage/draft-repository";
 import { recordCodingDay } from "@/lib/storage/coding-activity";
+import { FileTabs } from "./workspace/file-tabs";
+import type { WorkspaceFile } from "@/types/draft";
 import {
   ALL_SUPPORTED_LANGUAGES,
   LANGUAGE_DISPLAY_NAMES,
@@ -67,7 +69,14 @@ export function WorkspaceView() {
   const [userSelectedLang, setUserSelectedLang] = useState<PreferredLanguage | null>(null);
   const activeLang = userSelectedLang ?? profile?.preferredLanguage ?? "python";
 
-  const [code, setCode] = useState<string>("");
+  const [files, setFiles] = useState<WorkspaceFile[]>([{ name: "main.py", content: getStarterCode("python") }]);
+  const filesRef = useRef(files);
+  const mainFilename = getFilenameForLanguage(activeLang);
+  const [activeFile, setActiveFile] = useState(mainFilename);
+  const [resetAllFiles, setResetAllFiles] = useState(false);
+  const code = files.find((file) => file.name === activeFile)?.content ?? "";
+  const mainCode = files.find((file) => file.name === mainFilename)?.content ?? "";
+  const updateFiles = (next: WorkspaceFile[]) => { filesRef.current = next; setFiles(next); };
   const [customStdin, setCustomStdin] = useState<string>("");
   const [saveStatus, setSaveStatus] = useState<"SAVED" | "SAVING..." | "MODIFIED">("SAVED");
   const [isResetOpen, setIsResetOpen] = useState<boolean>(false);
@@ -186,82 +195,88 @@ export function WorkspaceView() {
     }
   }, [challengeParam, problem, challenge]);
 
-  // 4. Load Buffer (draft from storage, or starter code)
+  // 4. Load the profile's existing single-file or multi-file draft.
   useEffect(() => {
     if (!profile) return;
-    let isCurrent = true;
-
-    async function loadBuffer() {
-      if (!profile) return;
-      try {
-        const draft = await draftRepository.getDraft(profile.id, activeLang);
-        if (isCurrent) {
-          if (draft && draft.code.trim().length > 0) {
-            setCode(draft.code);
-          } else if (problem && problem.starterCodes[activeLang]) {
-            setCode(problem.starterCodes[activeLang]);
-          } else {
-            setCode(getStarterCode(activeLang));
-          }
-          setSaveStatus("SAVED");
-        }
-      } catch {
-        if (isCurrent) {
-          if (problem && problem.starterCodes[activeLang]) {
-            setCode(problem.starterCodes[activeLang]);
-          } else {
-            setCode(getStarterCode(activeLang));
-          }
-          setSaveStatus("SAVED");
-        }
-      }
-    }
-
-    loadBuffer();
-    return () => {
-      isCurrent = false;
-    };
+    let current = true;
+    const starter = problem?.starterCodes[activeLang] || getStarterCode(activeLang);
+    const primaryName = getFilenameForLanguage(activeLang);
+    draftRepository.getDraft(profile.id, activeLang)
+      .then((draft) => {
+        if (!current) return;
+        const loaded = draft?.files?.length
+          ? draft.files
+          : [{ name: primaryName, content: draft?.code?.trim() ? draft.code : starter }];
+        const primary = loaded.find((file) => file.name === primaryName);
+        const normalized = [
+          { name: primaryName, content: primary?.content ?? starter },
+          ...loaded.filter((file) => file.name !== primaryName),
+        ];
+        updateFiles(normalized);
+        setActiveFile(primaryName);
+        setSaveStatus("SAVED");
+      })
+      .catch(() => {
+        if (!current) return;
+        updateFiles([{ name: primaryName, content: starter }]);
+        setActiveFile(primaryName);
+        setSaveStatus("SAVED");
+      });
+    return () => { current = false; };
   }, [profile, activeLang, problem]);
 
-  // 5. Code Change Handler with Debounce & Demo Dirty Check
-  const handleCodeChange = useCallback(
-    (newCode: string) => {
-      setCode(newCode);
-      setSaveStatus("MODIFIED");
-
-      // Demo mode dirty detection
-      if (isDemoMode) {
-        if (isCodeMatchingDemoSolved(newCode)) {
-          setDemoState("solved");
-          setDemoNote(null);
-        } else if (isCodeMatchingDemoIncorrect(newCode)) {
-          setDemoState("incorrect");
-          setDemoNote(null);
-        } else {
-          setDemoState("modified");
-          setDemoNote("Custom code not evaluated (execute in sandbox or load demo preset)");
-        }
+  const persistFiles = useCallback((next: WorkspaceFile[]) => {
+    filesRef.current = next;
+    setFiles(next);
+    setSaveStatus("MODIFIED");
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(async () => {
+      if (!profile) return;
+      setSaveStatus("SAVING...");
+      try {
+        await draftRepository.saveDraft(profile.id, activeLang, next[0]?.content ?? "", next);
+        recordCodingDay(profile.id);
+        setSaveStatus("SAVED");
+      } catch {
+        setSaveStatus("MODIFIED");
       }
+    }, 600);
+  }, [profile, activeLang]);
 
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
+  const handleCodeChange = useCallback((newCode: string) => {
+    const next = filesRef.current.map((file) =>
+      file.name === activeFile ? { ...file, content: newCode } : file
+    );
+    persistFiles(next);
+
+    if (isDemoMode) {
+      if (activeFile === mainFilename && isCodeMatchingDemoSolved(newCode)) {
+        setDemoState("solved"); setDemoNote(null);
+      } else if (activeFile === mainFilename && isCodeMatchingDemoIncorrect(newCode)) {
+        setDemoState("incorrect"); setDemoNote(null);
+      } else {
+        setDemoState("modified");
+        setDemoNote("Custom code not evaluated (execute in sandbox or load demo preset)");
       }
+    }
+  }, [activeFile, mainFilename, isDemoMode, persistFiles]);
 
-      saveTimeoutRef.current = setTimeout(async () => {
-        if (!profile) return;
-        setSaveStatus("SAVING...");
-        try {
-          await draftRepository.saveDraft(profile.id, activeLang, newCode);
-          // A successful edited draft marks one activity day; no fake contributions.
-          recordCodingDay(profile.id);
-          setSaveStatus("SAVED");
-        } catch {
-          setSaveStatus("MODIFIED");
-        }
-      }, 600);
-    },
-    [profile, activeLang, isDemoMode]
-  );
+  const updateSingleFile = (name: string, content: string) => {
+    persistFiles(filesRef.current.map((file) => file.name === name ? { ...file, content } : file));
+  };
+
+  const onFileAdd = (name: string) => {
+    persistFiles([...filesRef.current, { name, content: "" }]);
+    setActiveFile(name);
+  };
+  const onFileRename = (previous: string, name: string) => {
+    persistFiles(filesRef.current.map((file) => file.name === previous ? { ...file, name } : file));
+    setActiveFile(name);
+  };
+  const onFileClose = (name: string) => {
+    persistFiles(filesRef.current.filter((file) => file.name !== name));
+    if (activeFile === name) setActiveFile(mainFilename);
+  };
 
   useEffect(() => {
     return () => {
@@ -281,7 +296,7 @@ export function WorkspaceView() {
 
     if (profile && saveStatus !== "SAVED") {
       try {
-        await draftRepository.saveDraft(profile.id, activeLang, code);
+        await draftRepository.saveDraft(profile.id, activeLang, filesRef.current[0]?.content ?? "", filesRef.current);
       } catch {
         // continue
       }
@@ -290,31 +305,33 @@ export function WorkspaceView() {
     setUserSelectedLang(newLang);
   };
 
-  // 7. Reset Buffer
+  // 7. Reset only the current tab unless the user selects Reset all.
   const handleConfirmReset = async () => {
     if (!profile) return;
+    const starter = problem?.starterCodes[activeLang] || getStarterCode(activeLang);
+    const next = resetAllFiles
+      ? [{ name: mainFilename, content: starter }]
+      : filesRef.current.map((file) =>
+          file.name === activeFile
+            ? { ...file, content: file.name === mainFilename ? starter : "" }
+            : file
+        );
     try {
-      let resetCode = "";
-      if (problem && problem.starterCodes[activeLang]) {
-        resetCode = problem.starterCodes[activeLang];
-        await draftRepository.saveDraft(profile.id, activeLang, resetCode);
-      } else {
-        const reset = await draftRepository.resetDraft(profile.id, activeLang);
-        resetCode = reset.code;
-      }
-      setCode(resetCode);
+      await draftRepository.saveDraft(profile.id, activeLang, next[0]?.content ?? "", next);
+      updateFiles(next);
+      if (resetAllFiles) setActiveFile(mainFilename);
       setSaveStatus("SAVED");
       setIsResetOpen(false);
-      setDemoState("idle");
-      setDemoNote(null);
+      setResetAllFiles(false);
+      setDemoState("idle"); setDemoNote(null);
     } catch {
-      setIsResetOpen(false);
+      setSaveStatus("MODIFIED");
     }
   };
 
   // 8. Download File
   const handleDownloadFile = () => {
-    const filename = getFilenameForLanguage(activeLang);
+    const filename = activeFile;
     const blob = new Blob([code], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -338,7 +355,8 @@ export function WorkspaceView() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           language: activeLang,
-          sourceCode: code,
+          sourceCode: mainCode,
+          files,
           stdin: customStdin,
           timeLimitMs: problem?.timeLimitMs ?? 3000,
         }),
@@ -383,7 +401,8 @@ export function WorkspaceView() {
         body: JSON.stringify({
           problemId: problem.id,
           language: activeLang,
-          sourceCode: code,
+          sourceCode: mainCode,
+          files,
         }),
       });
 
@@ -421,7 +440,8 @@ export function WorkspaceView() {
   // 12. Demo Controls Handlers
   const handleLoadDemoSolved = () => {
     setUserSelectedLang("python");
-    setCode(DEMO_SOLVED_PYTHON);
+    setActiveFile("main.py");
+    updateSingleFile("main.py", DEMO_SOLVED_PYTHON);
     setDemoState("solved");
     setDemoNote(null);
     setSaveStatus("SAVED");
@@ -429,7 +449,8 @@ export function WorkspaceView() {
 
   const handleLoadDemoIncorrect = () => {
     setUserSelectedLang("python");
-    setCode(DEMO_INCORRECT_PYTHON);
+    setActiveFile("main.py");
+    updateSingleFile("main.py", DEMO_INCORRECT_PYTHON);
     setDemoState("incorrect");
     setDemoNote(null);
     setSaveStatus("SAVED");
@@ -437,9 +458,9 @@ export function WorkspaceView() {
 
   const handleResetDemo = () => {
     if (problem && problem.starterCodes["python"]) {
-      setCode(problem.starterCodes["python"]);
+      updateSingleFile("main.py", problem.starterCodes["python"]);
     } else {
-      setCode(getStarterCode("python"));
+      updateSingleFile("main.py", getStarterCode("python"));
     }
     setDemoState("idle");
     setDemoNote(null);
@@ -482,7 +503,7 @@ export function WorkspaceView() {
     return problemIds[0] !== problem.id ? (problemIds[0] ?? null) : null;
   }, [problem, problemIds]);
 
-  const filename = getFilenameForLanguage(activeLang);
+  const filename = activeFile;
   const monacoLang = getMonacoLanguage(activeLang);
 
   return (
