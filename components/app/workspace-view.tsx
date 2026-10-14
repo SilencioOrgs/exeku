@@ -534,7 +534,7 @@ export function WorkspaceView() {
       </PixelCard>
 
       {/* Editor & Multi-Tab Docked Pane */}
-      <div className="flex-1 flex flex-col min-h-0 border-2 border-[#2E1A57] bg-[#090514] relative">
+      <div className="flex-1 flex flex-col min-h-0 border-2 border-[var(--color-border)] bg-[var(--color-canvas)] [border-radius:var(--radius-card)] overflow-hidden relative">
         {/* Monaco Editor Pane */}
         <div className="flex-1 min-h-0 relative">
           <MonacoEditorPane
@@ -545,9 +545,9 @@ export function WorkspaceView() {
         </div>
 
         {/* Docked Execution & Output Split Pane */}
-        <div className="border-t-2 border-[#2E1A57] bg-[#0A0518] shrink-0">
+        <div className="border-t-2 border-[var(--color-border)] bg-[var(--color-surface)] shrink-0">
           {/* Dock Header Tabs */}
-          <div className="px-3 py-1.5 bg-[#120A24] border-b border-[#2E1A57] flex items-center justify-between text-xs font-mono">
+          <div className="px-3 py-1.5 bg-[var(--color-elevated)] border-b border-[var(--color-border)] flex items-center justify-between text-xs font-mono">
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -615,7 +615,7 @@ export function WorkspaceView() {
 
           {/* Dock Body Content */}
           {bottomOpen && (
-            <div className="p-3 font-mono text-xs bg-[#06030D] h-44 overflow-y-auto select-text">
+            <div className="p-3 font-mono text-xs bg-[var(--color-canvas)] h-44 overflow-y-auto select-text">
               {/* TAB 1: Console Execution Output */}
               {activeTab === "console" && (
                 <div className="space-y-2">
