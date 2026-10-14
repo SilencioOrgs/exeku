@@ -23,7 +23,7 @@ export function DemoControls({
   demoState,
 }: DemoControlsProps) {
   return (
-    <div className="demo-controls-bar px-3 py-2 bg-[var(--color-surface)] border-2 border-[var(--color-accent)] text-xs font-mono flex flex-wrap items-center justify-between gap-2 shrink-0">
+    <div className="demo-controls-bar px-2 py-1 bg-[var(--color-surface)] border-2 border-[var(--color-accent)] text-[0.6875rem] font-mono flex flex-wrap items-center justify-between gap-2 shrink-0">
       <div className="flex items-center gap-2 flex-wrap">
         <PixelBadge variant="purple" bracketed className="text-[0.625rem] py-0 px-1 font-mono">
           DEV DEMO MODE
