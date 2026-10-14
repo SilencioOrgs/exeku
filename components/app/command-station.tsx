@@ -11,6 +11,8 @@ import { DotIcon, type DotIconName } from "@/components/retro/dot-icon";
 import { ProfileEditDialog } from "./profile-edit-dialog";
 import { StyleText } from "@/components/appearance/style-text";
 import { ArrowUpRight, Pencil, Terminal } from "lucide-react";
+import { useAppearance } from "@/hooks/use-appearance";
+import { ModernOverview } from "./modern-overview";
 import { draftRepository } from "@/lib/storage/draft-repository";
 import {
   getFilenameForLanguage,
@@ -82,6 +84,7 @@ const TRACK_MODULES = [
 
 export function CommandStation() {
   const { profile, updateProfile } = useProfile();
+  const { preferences } = useAppearance();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [activeDraft, setActiveDraft] = useState<WorkspaceDraft | null>(null);
   const [totalDrafts, setTotalDrafts] = useState<number>(0);
@@ -121,6 +124,10 @@ export function CommandStation() {
         </span>
       </div>
     );
+  }
+
+  if (preferences.uiStyle !== "pixel-arcade") {
+    return <ModernOverview profile={profile} activeDraft={activeDraft} totalDrafts={totalDrafts} onSaveProfile={(updates) => updateProfile(profile.id, updates)} />;
   }
 
   const langInfo = LANGUAGE_META[profile.preferredLanguage] ?? LANGUAGE_META.python;
