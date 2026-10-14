@@ -1109,3 +1109,14 @@ input::placeholder, textarea::placeholder { color: var(--color-text-muted); opac
 .coding-activity-legend i.is-active { background:var(--color-primary); border-color:var(--color-primary); }
 [data-ui-style="pixel-arcade"] .coding-activity { border-width:2px; }
 @media(prefers-reduced-motion:reduce) { .coding-activity-cell { transition:none; } }
+
+/* Profile: theme-native identity and truthful coding activity. */
+.profile-view { color:var(--color-text-main); }
+.profile-panel { background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--radius-card); min-width:0; }
+.profile-action { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; min-height:40px; padding:.6rem .95rem; font-size:.875rem; font-weight:550; text-decoration:none; color:var(--color-text-main); background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--radius-btn); transition:background-color 130ms ease, border-color 130ms ease; }
+.profile-action:hover { background:var(--color-elevated); border-color:var(--color-text-muted); }
+.profile-action:focus-visible { outline:2px solid var(--color-ring); outline-offset:2px; }
+[data-ui-style="pixel-arcade"] .profile-panel, [data-ui-style="pixel-arcade"] .profile-action { border-width:2px; }
+[data-ui-style="pixel-arcade"] .profile-view h1 { font-family:var(--font-pixelify),var(--font-ui); }
+[data-ui-style="studio-crm"] .profile-panel { border-radius:5px; }
+@media(prefers-reduced-motion:reduce) { .profile-action { transition:none; } }
