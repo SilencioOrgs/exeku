@@ -1,5 +1,7 @@
 import type { PreferredLanguage } from "./profile";
 
+export interface WorkspaceFile { name: string; content: string }
+
 export interface WorkspaceDraft {
   id: string; // Composite key: `${profileId}_${language}`
   profileId: string;
@@ -7,6 +9,6 @@ export interface WorkspaceDraft {
   filename: string;
   code: string;
   /** Main source remains in code for compatibility with existing drafts. */
-  files?: { name: string; content: string }[];
+  files?: WorkspaceFile[];
   updatedAt: string;
 }
