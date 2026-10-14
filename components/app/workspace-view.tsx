@@ -1,15 +1,27 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { useProfile } from "@/hooks/use-profile";
+import { useChallengeSession } from "@/hooks/use-challenge-session";
 import { PixelCard } from "@/components/retro/pixel-card";
 import { PixelButton } from "@/components/retro/pixel-button";
-import { PixelBadge } from "@/components/retro/pixel-badge";
-import { DotIcon, type DotIconName } from "@/components/retro/dot-icon";
+import { DotIcon } from "@/components/retro/dot-icon";
 import { MonacoEditorPane } from "./monaco-editor-pane";
+import { ProblemPane } from "./workspace/problem-pane";
+import { ResultsPane, type ResultsTab } from "./workspace/results-pane";
+import { DemoControls } from "./workspace/demo-controls";
+import {
+  SubmitConfirmModal,
+  SubmissionEvaluatingModal,
+  SubmissionResultModal,
+  TimeExpiredModal,
+} from "./workspace/submission-modals";
 import { draftRepository } from "@/lib/storage/draft-repository";
+import { recordCodingDay } from "@/lib/storage/coding-activity";
+import { FileTabs } from "./workspace/file-tabs";
+import { Group, Panel, Separator, useGroupRef } from "react-resizable-panels";
+import type { WorkspaceFile } from "@/types/draft";
 import {
   ALL_SUPPORTED_LANGUAGES,
   LANGUAGE_DISPLAY_NAMES,
@@ -17,53 +29,136 @@ import {
   getMonacoLanguage,
   getStarterCode,
 } from "@/lib/workspace-defaults";
+import {
+  DEMO_PROBLEM_ID,
+  DEMO_SOLVED_PYTHON,
+  DEMO_INCORRECT_PYTHON,
+  isCodeMatchingDemoSolved,
+  isCodeMatchingDemoIncorrect,
+  getSimulatedAcceptedResult,
+  getSimulatedWrongAnswerResult,
+} from "@/lib/demo/demo-simulation";
+import type { ProblemSummary } from "@/types/problem";
 import type { PreferredLanguage } from "@/types/profile";
 import type { VisibleProblem } from "@/types/problem";
 import type { ExecutionResult, SandboxHealth } from "@/types/execution";
 import type { JudgingResult } from "@/lib/judge/judging-service";
 
-const LANGUAGE_ICONS: Record<PreferredLanguage, DotIconName> = {
-  python: "python",
-  java: "java",
-  cpp: "cplusplus",
-  c: "file",
-};
-
-type ActiveBottomTab = "console" | "stdin" | "results";
+type MobileActivePane = "problem" | "code" | "results";
 
 export function WorkspaceView() {
   const { profile } = useProfile();
   const searchParams = useSearchParams();
   const problemIdParam = searchParams.get("problem");
+  const demoParam = searchParams.get("demo");
+  const challengeParam = searchParams.get("challenge");
 
+  const challenge = useChallengeSession();
+
+  // Active Language & Code
   const [userSelectedLang, setUserSelectedLang] = useState<PreferredLanguage | null>(null);
   const activeLang = userSelectedLang ?? profile?.preferredLanguage ?? "python";
 
-  const [code, setCode] = useState<string>("");
+  const [files, setFiles] = useState<WorkspaceFile[]>([{ name: "main.py", content: getStarterCode("python") }]);
+  const filesRef = useRef(files);
+  const mainFilename = getFilenameForLanguage(activeLang);
+  const [activeFile, setActiveFile] = useState(mainFilename);
+  const [resetAllFiles, setResetAllFiles] = useState(false);
+  const code = files.find((file) => file.name === activeFile)?.content ?? "";
+  const mainCode = files.find((file) => file.name === mainFilename)?.content ?? "";
+  const updateFiles = useCallback((next: WorkspaceFile[]) => { filesRef.current = next; setFiles(next); }, []);
   const [customStdin, setCustomStdin] = useState<string>("");
   const [saveStatus, setSaveStatus] = useState<"SAVED" | "SAVING..." | "MODIFIED">("SAVED");
   const [isResetOpen, setIsResetOpen] = useState<boolean>(false);
+  const [isForfeitModalOpen, setIsForfeitModalOpen] = useState<boolean>(false);
 
-  // Problem statement state
+  // Problem metadata
   const [problem, setProblem] = useState<VisibleProblem | null>(null);
-  const [isProblemDrawerOpen, setIsProblemDrawerOpen] = useState<boolean>(true);
+  const [problemIds, setProblemIds] = useState<string[]>([]);
 
-  // Bottom dock state
-  const [bottomOpen, setBottomOpen] = useState<boolean>(true);
-  const [activeTab, setActiveTab] = useState<ActiveBottomTab>("console");
+  // Layout & Tabs
+  const [mobileActivePane, setMobileActivePane] = useState<MobileActivePane>("code");
+  // Keeps Monaco mounted while letting students expand or restore the editor.
+  const [layout, setLayout] = useState<"split" | "wide" | "focus">(problemIdParam ? "split" : "wide");
+  const [layoutReady, setLayoutReady] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [problemSlideOpen, setProblemSlideOpen] = useState(false);
+  const resizeGroupRef = useGroupRef();
+  const [splitSizes, setSplitSizes] = useState({ problem: 28, editor: 48, results: 24 });
+  const nextLayout = () => setLayout((current) => current === "split" ? "wide" : current === "wide" ? "focus" : "split");
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      try {
+        const stored = localStorage.getItem("exeku.workspace.layout");
+        if (stored === "split" || stored === "wide" || stored === "focus") setLayout(stored);
+        const widths = JSON.parse(localStorage.getItem("exeku.workspace.panes") || "null");
+        if (widths && typeof widths.problem === "number" && typeof widths.editor === "number" && typeof widths.results === "number"
+            && widths.problem >= 20 && widths.editor >= 35 && widths.results >= 18
+            && Math.abs(widths.problem + widths.editor + widths.results - 100) < 1) {
+          setSplitSizes(widths);
+        }
+      } catch { /* local preference storage may be unavailable */ }
+      setLayoutReady(true);
+    });
+  }, []);
+
+  useEffect(() => {
+    // Do not overwrite an existing saved layout with the initial split default.
+    if (!layoutReady) return;
+    try { localStorage.setItem("exeku.workspace.layout", layout); } catch { /* local-only preference */ }
+    const widths = layout === "split" ? splitSizes :
+      layout === "wide" ? { problem: 4, editor: 72, results: 24 } :
+      { problem: 0, editor: drawerOpen ? 65 : 100, results: drawerOpen ? 35 : 0 };
+    const frame = requestAnimationFrame(() => resizeGroupRef.current?.setLayout(widths));
+    return () => cancelAnimationFrame(frame);
+  }, [layout, drawerOpen, splitSizes, resizeGroupRef, layoutReady]);
+
+  useEffect(() => {
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      if (problemSlideOpen) { setProblemSlideOpen(false); return; }
+      if (layout === "focus") setLayout("split");
+    };
+    window.addEventListener("keydown", onEscape);
+    return () => window.removeEventListener("keydown", onEscape);
+  }, [layout, problemSlideOpen]);
+  const [activeResultsTab, setActiveResultsTab] = useState<ResultsTab>("console");
 
   // Execution & Judging state
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [executionResult, setExecutionResult] = useState<ExecutionResult | null>(null);
   const [judgingResult, setJudgingResult] = useState<JudgingResult | null>(null);
+  const [isResultDemo, setIsResultDemo] = useState<boolean>(false);
 
-  // Sandbox health
+  // Modals state
+  const [isSubmitConfirmOpen, setIsSubmitConfirmOpen] = useState<boolean>(false);
+  const [isEvaluatingModalOpen, setIsEvaluatingModalOpen] = useState<boolean>(false);
+  const [isResultModalOpen, setIsResultModalOpen] = useState<boolean>(false);
+  const [isExpiredModalDismissed, setIsExpiredModalDismissed] = useState<boolean>(false);
+
+  // Sandbox Health
   const [sandboxHealth, setSandboxHealth] = useState<SandboxHealth | null>(null);
+  const [offlineDismissed, setOfflineDismissed] = useState(false);
+
+  // Demo Mode state
+  const [userDemoToggle, setUserDemoToggle] = useState<boolean | null>(null);
+  const isDemoMode =
+    userDemoToggle ??
+    Boolean(demoParam === "true" || demoParam === "1" || problemIdParam === DEMO_PROBLEM_ID);
+  const [demoState, setDemoState] = useState<"idle" | "solved" | "incorrect" | "modified">("idle");
+  const [demoNote, setDemoNote] = useState<string | null>(null);
 
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 1. Check sandbox health on mount
+  useEffect(() => {
+    queueMicrotask(() => {
+      try { setOfflineDismissed(sessionStorage.getItem("exeku.workspace.sandbox-dismissed") === "1"); } catch { /* restricted */ }
+    });
+  }, []);
+
+  // 1. Sandbox Health Check
   useEffect(() => {
     let isCurrent = true;
     async function checkHealth() {
@@ -91,7 +186,7 @@ export function WorkspaceView() {
     };
   }, []);
 
-  // 2. Fetch problem metadata if ?problem=[id] is present
+  // 2. Problem Fetching
   useEffect(() => {
     let isCurrent = true;
 
@@ -109,14 +204,10 @@ export function WorkspaceView() {
             setProblem(data);
           }
         } else {
-          if (isCurrent) {
-            setProblem(null);
-          }
+          if (isCurrent) setProblem(null);
         }
       } catch {
-        if (isCurrent) {
-          setProblem(null);
-        }
+        if (isCurrent) setProblem(null);
       }
     }
 
@@ -126,66 +217,106 @@ export function WorkspaceView() {
     };
   }, [problemIdParam]);
 
-  // 3. Load buffer: draft from IndexedDB, or problem starter code, or general starter code
+  useEffect(() => {
+    let active = true;
+    fetch("/api/problems")
+      .then((response) => { if (!response.ok) throw new Error("Catalog unavailable"); return response.json(); })
+      .then((data: { problems?: ProblemSummary[] }) => {
+        if (active) setProblemIds((data.problems ?? []).map((entry) => entry.id));
+      })
+      .catch(() => { if (active) setProblemIds([]); });
+    return () => { active = false; };
+  }, []);
+
+  // 3. Timed Challenge initialization if requested via URL
+  useEffect(() => {
+    if (challengeParam === "true" && problem && challenge.status !== "active") {
+      challenge.startChallenge(problem.id, problem.title);
+    }
+  }, [challengeParam, problem, challenge]);
+
+  // 4. Load the profile's existing single-file or multi-file draft.
   useEffect(() => {
     if (!profile) return;
-    let isCurrent = true;
+    let current = true;
+    const starter = problem?.starterCodes[activeLang] || getStarterCode(activeLang);
+    const primaryName = getFilenameForLanguage(activeLang);
+    draftRepository.getDraft(profile.id, activeLang, problemIdParam)
+      .then((draft) => {
+        if (!current) return;
+        const loaded = draft?.files?.length
+          ? draft.files
+          : [{ name: primaryName, content: draft?.code?.trim() ? draft.code : starter }];
+        const primary = loaded.find((file) => file.name === primaryName);
+        const normalized = [
+          { name: primaryName, content: primary?.content ?? starter },
+          ...loaded.filter((file) => file.name !== primaryName),
+        ];
+        updateFiles(normalized);
+        setActiveFile(primaryName);
+        setSaveStatus("SAVED");
+      })
+      .catch(() => {
+        if (!current) return;
+        updateFiles([{ name: primaryName, content: starter }]);
+        setActiveFile(primaryName);
+        setSaveStatus("SAVED");
+      });
+    return () => { current = false; };
+  }, [profile, activeLang, problem, problemIdParam, updateFiles]);
 
-    async function loadBuffer() {
+  const persistFiles = useCallback((next: WorkspaceFile[]) => {
+    filesRef.current = next;
+    setFiles(next);
+    setSaveStatus("MODIFIED");
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(async () => {
       if (!profile) return;
+      setSaveStatus("SAVING...");
       try {
-        const draft = await draftRepository.getDraft(profile.id, activeLang);
-        if (isCurrent) {
-          if (draft && draft.code.trim().length > 0) {
-            setCode(draft.code);
-          } else if (problem && problem.starterCodes[activeLang]) {
-            setCode(problem.starterCodes[activeLang]);
-          } else {
-            setCode(getStarterCode(activeLang));
-          }
-          setSaveStatus("SAVED");
-        }
+        await draftRepository.saveDraft(profile.id, activeLang, next[0]?.content ?? "", next, problemIdParam);
+        recordCodingDay(profile.id);
+        setSaveStatus("SAVED");
       } catch {
-        if (isCurrent) {
-          if (problem && problem.starterCodes[activeLang]) {
-            setCode(problem.starterCodes[activeLang]);
-          } else {
-            setCode(getStarterCode(activeLang));
-          }
-          setSaveStatus("SAVED");
-        }
+        setSaveStatus("MODIFIED");
+      }
+    }, 600);
+  }, [profile, activeLang, problemIdParam]);
+
+  const handleCodeChange = useCallback((newCode: string) => {
+    const next = filesRef.current.map((file) =>
+      file.name === activeFile ? { ...file, content: newCode } : file
+    );
+    persistFiles(next);
+
+    if (isDemoMode) {
+      if (activeFile === mainFilename && isCodeMatchingDemoSolved(newCode)) {
+        setDemoState("solved"); setDemoNote(null);
+      } else if (activeFile === mainFilename && isCodeMatchingDemoIncorrect(newCode)) {
+        setDemoState("incorrect"); setDemoNote(null);
+      } else {
+        setDemoState("modified");
+        setDemoNote("Custom code not evaluated (execute in sandbox or load demo preset)");
       }
     }
+  }, [activeFile, mainFilename, isDemoMode, persistFiles]);
 
-    loadBuffer();
-    return () => {
-      isCurrent = false;
-    };
-  }, [profile, activeLang, problem]);
+  const updateSingleFile = (name: string, content: string) => {
+    persistFiles(filesRef.current.map((file) => file.name === name ? { ...file, content } : file));
+  };
 
-  // 4. Autosave code changes with debounce
-  const handleCodeChange = useCallback(
-    (newCode: string) => {
-      setCode(newCode);
-      setSaveStatus("MODIFIED");
-
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-
-      saveTimeoutRef.current = setTimeout(async () => {
-        if (!profile) return;
-        setSaveStatus("SAVING...");
-        try {
-          await draftRepository.saveDraft(profile.id, activeLang, newCode);
-          setSaveStatus("SAVED");
-        } catch {
-          setSaveStatus("MODIFIED");
-        }
-      }, 600);
-    },
-    [profile, activeLang]
-  );
+  const onFileAdd = (name: string) => {
+    persistFiles([...filesRef.current, { name, content: "" }]);
+    setActiveFile(name);
+  };
+  const onFileRename = (previous: string, name: string) => {
+    persistFiles(filesRef.current.map((file) => file.name === previous ? { ...file, name } : file));
+    setActiveFile(name);
+  };
+  const onFileClose = (name: string) => {
+    persistFiles(filesRef.current.filter((file) => file.name !== name));
+    if (activeFile === name) setActiveFile(mainFilename);
+  };
 
   useEffect(() => {
     return () => {
@@ -195,7 +326,7 @@ export function WorkspaceView() {
     };
   }, []);
 
-  // 5. Language switch
+  // 6. Language Switch
   const handleSwitchLanguage = async (newLang: PreferredLanguage) => {
     if (newLang === activeLang) return;
 
@@ -205,38 +336,42 @@ export function WorkspaceView() {
 
     if (profile && saveStatus !== "SAVED") {
       try {
-        await draftRepository.saveDraft(profile.id, activeLang, code);
+        await draftRepository.saveDraft(profile.id, activeLang, filesRef.current[0]?.content ?? "", filesRef.current, problemIdParam);
       } catch {
-        // Continue
+        // continue
       }
     }
 
     setUserSelectedLang(newLang);
   };
 
-  // 6. Reset buffer
+  // 7. Reset only the current tab unless the user selects Reset all.
   const handleConfirmReset = async () => {
     if (!profile) return;
+    const starter = problem?.starterCodes[activeLang] || getStarterCode(activeLang);
+    const next = resetAllFiles
+      ? [{ name: mainFilename, content: starter }]
+      : filesRef.current.map((file) =>
+          file.name === activeFile
+            ? { ...file, content: file.name === mainFilename ? starter : "" }
+            : file
+        );
     try {
-      let resetCode = "";
-      if (problem && problem.starterCodes[activeLang]) {
-        resetCode = problem.starterCodes[activeLang];
-        await draftRepository.saveDraft(profile.id, activeLang, resetCode);
-      } else {
-        const reset = await draftRepository.resetDraft(profile.id, activeLang);
-        resetCode = reset.code;
-      }
-      setCode(resetCode);
+      await draftRepository.saveDraft(profile.id, activeLang, next[0]?.content ?? "", next, problemIdParam);
+      updateFiles(next);
+      if (resetAllFiles) setActiveFile(mainFilename);
       setSaveStatus("SAVED");
       setIsResetOpen(false);
+      setResetAllFiles(false);
+      setDemoState("idle"); setDemoNote(null);
     } catch {
-      setIsResetOpen(false);
+      setSaveStatus("MODIFIED");
     }
   };
 
-  // 7. Download file
+  // 8. Download File
   const handleDownloadFile = () => {
-    const filename = getFilenameForLanguage(activeLang);
+    const filename = activeFile;
     const blob = new Blob([code], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -248,18 +383,21 @@ export function WorkspaceView() {
     URL.revokeObjectURL(url);
   };
 
-  // 8. Run Code
+  // 9. Run Code against Sandbox
   const handleRunCode = async () => {
     setIsRunning(true);
-    setBottomOpen(true);
-    setActiveTab("console");
+    setDrawerOpen(true);
+    setActiveResultsTab("console");
+    setMobileActivePane("results");
+
     try {
       const res = await fetch("/api/execute", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           language: activeLang,
-          sourceCode: code,
+          sourceCode: mainCode,
+          files,
           stdin: customStdin,
           timeLimitMs: problem?.timeLimitMs ?? 3000,
         }),
@@ -281,12 +419,22 @@ export function WorkspaceView() {
     }
   };
 
-  // 9. Submit Solution
-  const handleJudgeSubmission = async () => {
+  // 10. Open Submission Confirmation
+  const handleOpenSubmitModal = () => {
     if (!problem) return;
+    setIsSubmitConfirmOpen(true);
+  };
+
+  // 11. Execute Genuine Submission Judging
+  const handleConfirmSubmission = async () => {
+    if (!problem) return;
+    setIsSubmitConfirmOpen(false);
+    setDrawerOpen(true);
+    setIsEvaluatingModalOpen(true);
+    setActiveResultsTab("results");
+    setMobileActivePane("results");
     setIsSubmitting(true);
-    setBottomOpen(true);
-    setActiveTab("results");
+    setIsResultDemo(false);
 
     try {
       const res = await fetch("/api/judge", {
@@ -295,15 +443,21 @@ export function WorkspaceView() {
         body: JSON.stringify({
           problemId: problem.id,
           language: activeLang,
-          sourceCode: code,
+          sourceCode: mainCode,
+          files,
         }),
       });
 
       const data = (await res.json()) as JudgingResult;
       setJudgingResult(data);
+      if (challenge.isTimedActive) {
+        challenge.recordSubmissionAttempt(data.overallVerdict);
+      }
+      setIsEvaluatingModalOpen(false);
+      setIsResultModalOpen(true);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      setJudgingResult({
+      const fallbackResult: JudgingResult = {
         problemId: problem.id,
         language: activeLang,
         overallVerdict: "INTERNAL_JUDGE_ERROR",
@@ -313,543 +467,521 @@ export function WorkspaceView() {
         maxDurationMs: 0,
         testResults: [],
         error: `Submission failed: ${msg}`,
-      });
+      };
+      setJudgingResult(fallbackResult);
+      if (challenge.isTimedActive) {
+        challenge.recordSubmissionAttempt("INTERNAL_JUDGE_ERROR");
+      }
+      setIsEvaluatingModalOpen(false);
+      setIsResultModalOpen(true);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const filename = getFilenameForLanguage(activeLang);
+  // 12. Demo Controls Handlers
+  const handleLoadDemoSolved = () => {
+    setUserSelectedLang("python");
+    setActiveFile("main.py");
+    updateSingleFile("main.py", DEMO_SOLVED_PYTHON);
+    setDemoState("solved");
+    setDemoNote(null);
+    setSaveStatus("SAVED");
+  };
+
+  const handleLoadDemoIncorrect = () => {
+    setUserSelectedLang("python");
+    setActiveFile("main.py");
+    updateSingleFile("main.py", DEMO_INCORRECT_PYTHON);
+    setDemoState("incorrect");
+    setDemoNote(null);
+    setSaveStatus("SAVED");
+  };
+
+  const handleResetDemo = () => {
+    if (problem && problem.starterCodes["python"]) {
+      updateSingleFile("main.py", problem.starterCodes["python"]);
+    } else {
+      updateSingleFile("main.py", getStarterCode("python"));
+    }
+    setDemoState("idle");
+    setDemoNote(null);
+    setJudgingResult(null);
+    setExecutionResult(null);
+    setSaveStatus("SAVED");
+  };
+
+  const handlePreviewAccepted = () => {
+    const simResult = getSimulatedAcceptedResult();
+    setJudgingResult(simResult);
+    setIsResultDemo(true);
+    setActiveResultsTab("results");
+    setMobileActivePane("results");
+    setIsResultModalOpen(true);
+    if (challenge.isTimedActive) {
+      challenge.recordSubmissionAttempt("ACCEPTED");
+    }
+  };
+
+  const handlePreviewWrongAnswer = () => {
+    const simResult = getSimulatedWrongAnswerResult();
+    setJudgingResult(simResult);
+    setIsResultDemo(true);
+    setActiveResultsTab("results");
+    setMobileActivePane("results");
+    setIsResultModalOpen(true);
+    if (challenge.isTimedActive) {
+      challenge.recordSubmissionAttempt("WRONG_ANSWER");
+    }
+  };
+
+  useEffect(() => {
+    const shortcut = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.key !== "Enter") return;
+      // Monaco handles the same shortcuts internally. Do not dispatch twice.
+      if (event.target instanceof Element && event.target.closest(".monaco-editor")) return;
+      event.preventDefault();
+      if (isRunning || isSubmitting) return;
+      if (event.shiftKey) {
+        if (problem) handleOpenSubmitModal();
+      } else {
+        void handleRunCode();
+      }
+    };
+    window.addEventListener("keydown", shortcut);
+    return () => window.removeEventListener("keydown", shortcut);
+  });
+
+  // 13. Next Problem Resolution
+  const nextProblemId = useMemo(() => {
+    if (!problem) return null;
+    const currentIndex = problemIds.indexOf(problem.id);
+    if (currentIndex >= 0 && currentIndex < problemIds.length - 1) {
+      return problemIds[currentIndex + 1];
+    }
+    return problemIds[0] !== problem.id ? (problemIds[0] ?? null) : null;
+  }, [problem, problemIds]);
+
+  const filename = activeFile;
   const monacoLang = getMonacoLanguage(activeLang);
 
   return (
-    <div className="space-y-4 flex flex-col h-[calc(100vh-140px)] min-h-[640px]">
-      {/* Sandbox Offline Warning Banner */}
-      {sandboxHealth && !sandboxHealth.isAvailable && (
-        <div className="px-4 py-2.5 bg-[#1B0F36] border-2 border-[#FF007A] text-xs font-mono text-[#D4C3DC] flex flex-col sm:flex-row sm:items-center justify-between gap-2 shrink-0">
-          <div className="flex items-center gap-2 text-[#FF007A]">
-            <span className="font-bold font-pixel text-sm">!</span>
-            <span>
-              SANDBOX ENGINE OFFLINE: Local Piston container on port 2000 is not reachable.
+    <div className="workspace-view flex min-h-[420px] h-[calc(100dvh-90px)] flex-col gap-2 overflow-hidden">
+      {/* Slim dismissible offline notice; no execution fallbacks. */}
+      {sandboxHealth && !sandboxHealth.isAvailable && !offlineDismissed && (
+        <div className="flex h-8 min-w-0 shrink-0 items-center gap-2 overflow-hidden border border-[var(--color-pink)] bg-[var(--color-elevated)] px-2 text-[11px] text-[var(--color-text-main)]">
+          <DotIcon name="circleBlock" size={13} className="shrink-0 text-[var(--color-pink)]" aria-hidden="true" />
+          <span className="min-w-0 flex-1 truncate">Sandbox offline: Piston not running on :2000</span>
+          <button
+            type="button" title="Copy command to start Piston" aria-label="Copy docker command"
+            onClick={() => void navigator.clipboard?.writeText("docker run -d -p 2000:2000 ghcr.io/engineerman/piston/piston")}
+            className="h-7 shrink-0 px-1 text-[var(--color-accent)] hover:underline"
+          ><DotIcon name="file" size={14} aria-hidden="true" /></button>
+          <button type="button" className="h-7 shrink-0 whitespace-nowrap text-[var(--color-accent)] hover:underline" onClick={() => setUserDemoToggle(true)}>Enable Demo Mode</button>
+          <button type="button" title="Dismiss for this session" aria-label="Dismiss sandbox notice" className="h-7 w-6 shrink-0 text-base" onClick={() => {
+            setOfflineDismissed(true);
+            try { sessionStorage.setItem("exeku.workspace.sandbox-dismissed", "1"); } catch { /* restricted */ }
+          }}><DotIcon name="close" size={14} aria-hidden="true" /></button>
+        </div>
+      )}
+
+      {/* Timed Challenge Active Banner */}
+      {challenge.isTimedActive && (
+        <div
+          className={`px-2 py-1 border flex flex-nowrap items-center justify-between gap-2 shrink-0 overflow-x-auto text-[0.6875rem] transition-colors ${
+            challenge.isWarningTime
+              ? "bg-[var(--color-pink)]/15 border-[var(--color-pink)] animate-pulse"
+              : "bg-[var(--color-canvas)] border-[var(--color-accent)]"
+          }`}
+        >
+          <div className="flex shrink-0 items-center gap-3">
+            <div className="flex items-center gap-1.5 font-heading text-[0.6875rem] text-[var(--color-accent)]">
+              <DotIcon name="alarm"
+                size={16}
+                className={challenge.isWarningTime ? "text-[var(--color-pink)] animate-bounce" : "text-[var(--color-accent)]"}
+              />
+              <span>TIMED CHALLENGE ACTIVE:</span>
+            </div>
+            <span
+              className={`font-mono text-[0.6875rem] font-bold tracking-wider px-2 py-0 border ${
+                challenge.isWarningTime
+                  ? "border-[var(--color-pink)] text-[var(--color-pink)] bg-[var(--color-pink)]/20"
+                  : "border-[var(--color-mint)] text-[var(--color-mint)] bg-[var(--color-mint)]/10"
+              }`}
+            >
+              {challenge.formattedTime}
+            </span>
+            <span className="text-xs font-mono text-[var(--color-text-muted)] hidden md:inline">
+              Submissions: {challenge.session?.submissionCount ?? 0}
             </span>
           </div>
-          <span className="text-[11px] text-[#A79EC4] bg-[#090514] px-2 py-1 border border-[#2E1A57]">
-            docker run -d -p 2000:2000 ghcr.io/engineerman/piston/piston
-          </span>
-        </div>
-      )}
 
-      {/* Problem Context Banner (When solving a problem) */}
-      {problem && (
-        <PixelCard
-          variant="elevated"
-          className="p-3.5 border-2 border-[#3D2275] bg-[#120A24] shrink-0 space-y-2"
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div className="flex items-center gap-3 flex-wrap">
-              <span className="font-mono text-xs text-[#00F0FF] uppercase tracking-wider">
-                [PROBLEM]
-              </span>
-              <h2 className="font-pixel text-lg text-white">{problem.title}_</h2>
-              <PixelBadge
-                variant={
-                  problem.difficulty === "beginner"
-                    ? "mint"
-                    : problem.difficulty === "intermediate"
-                    ? "cyan"
-                    : "pink"
-                }
-                bracketed
-              >
-                {problem.difficulty.toUpperCase()}
-              </PixelBadge>
-              <span className="text-xs font-mono text-[#A79EC4]">
-                Limit: {problem.timeLimitMs}ms
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setIsProblemDrawerOpen(!isProblemDrawerOpen)}
-                className="text-xs font-mono text-[#00F0FF] hover:underline cursor-pointer flex items-center gap-1"
-              >
-                <span>{isProblemDrawerOpen ? "HIDE STATEMENT" : "VIEW STATEMENT"}</span>
-                <span>{isProblemDrawerOpen ? "▲" : "▼"}</span>
-              </button>
-              <Link href="/app/challenges">
-                <PixelButton variant="ghost" size="sm" className="text-xs">
-                  CHANGE PROBLEM &rarr;
-                </PixelButton>
-              </Link>
-            </div>
-          </div>
-
-          {/* Collapsible Problem Statement Details */}
-          {isProblemDrawerOpen && (
-            <div className="pt-2 border-t border-[#2E1A57] text-xs text-[#A79EC4] space-y-2 max-h-48 overflow-y-auto pr-2">
-              <p className="leading-relaxed">{problem.description}</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1 font-mono text-[11px]">
-                <div className="p-2 bg-[#090514] border border-[#2E1A57]">
-                  <strong className="text-white block mb-0.5">Input Specification:</strong>
-                  <span>{problem.inputSpec}</span>
-                </div>
-                <div className="p-2 bg-[#090514] border border-[#2E1A57]">
-                  <strong className="text-white block mb-0.5">Output Specification:</strong>
-                  <span>{problem.outputSpec}</span>
-                </div>
-              </div>
-              {problem.sampleTestCases.length > 0 && (
-                <div className="pt-1">
-                  <span className="text-white font-mono text-[11px] block mb-1">
-                    Sample Test Cases:
-                  </span>
-                  <div className="flex flex-wrap gap-2">
-                    {problem.sampleTestCases.map((sample, idx) => (
-                      <div
-                        key={idx}
-                        className="p-2 bg-[#090514] border border-[#2E1A57] font-mono text-[10px] space-y-1"
-                      >
-                        <div>
-                          <span className="text-[#7A6E9B]">Input: </span>
-                          <span className="text-white">{sample.input || "(empty)"}</span>
-                        </div>
-                        <div>
-                          <span className="text-[#7A6E9B]">Expected: </span>
-                          <span className="text-[#00FF9D]">{sample.output.trim()}</span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setCustomStdin(sample.input);
-                            setActiveTab("stdin");
-                            setBottomOpen(true);
-                          }}
-                          className="text-[#00F0FF] hover:underline cursor-pointer block mt-1"
-                        >
-                          Use in Custom Stdin &rarr;
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </PixelCard>
-      )}
-
-      {/* Top Workspace Toolbar */}
-      <PixelCard
-        variant="default"
-        className="p-3 border-2 border-[#2E1A57] bg-[#120A24] flex flex-wrap items-center justify-between gap-3 shrink-0"
-      >
-        {/* Left: Active File Tab & Language Selector */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-[#090514] border-2 border-[#00F0FF] text-white shadow-[2px_2px_0px_#000000]">
-            <DotIcon name={LANGUAGE_ICONS[activeLang]} size={16} color="#00F0FF" />
-            <span className="font-pixel text-sm">{filename}</span>
-            <span
-              className={`w-2 h-2 rounded-full ml-1 ${
-                saveStatus === "SAVED"
-                  ? "bg-[#00FF9D]"
-                  : saveStatus === "SAVING..."
-                  ? "bg-[#00F0FF] animate-pulse"
-                  : "bg-[#FF007A]"
-              }`}
-              title={`Buffer Status: ${saveStatus}`}
-            />
-          </div>
-
-          {/* Language Switcher Buttons */}
-          <div className="flex items-center gap-1 bg-[#090514] p-1 border border-[#2E1A57]">
-            {ALL_SUPPORTED_LANGUAGES.map((lang) => {
-              const isCurrent = activeLang === lang;
-              return (
-                <button
-                  key={lang}
-                  type="button"
-                  onClick={() => handleSwitchLanguage(lang)}
-                  className={`px-2.5 py-1 text-xs font-mono transition-colors cursor-pointer ${
-                    isCurrent
-                      ? "bg-[#1B0F36] text-[#00F0FF] font-bold border border-[#00F0FF]"
-                      : "text-[#7A6E9B] hover:text-[#A79EC4] border border-transparent"
-                  }`}
-                >
-                  {LANGUAGE_DISPLAY_NAMES[lang]}
-                </button>
-              );
-            })}
-          </div>
-
-          <span className="font-mono text-[11px] text-[#7A6E9B] hidden sm:inline">
-            [{saveStatus}]
-          </span>
-        </div>
-
-        {/* Right: Actions */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <PixelButton
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsResetOpen(true)}
-            className="text-xs"
-          >
-            RESET BUFFER ↺
-          </PixelButton>
-
-          <PixelButton
-            variant="ghost"
-            size="sm"
-            onClick={handleDownloadFile}
-            className="text-xs"
-          >
-            DOWNLOAD ↓
-          </PixelButton>
-
-          {/* RUN CODE Button */}
-          <PixelButton
-            variant="cyan"
-            size="sm"
-            onClick={handleRunCode}
-            disabled={isRunning}
-            className="text-xs font-pixel"
-          >
-            {isRunning ? "RUNNING..." : "RUN CODE ▶"}
-          </PixelButton>
-
-          {/* SUBMIT SOLUTION Button */}
-          {problem && (
+          <div className="flex shrink-0 items-center gap-2">
             <PixelButton
-              variant="primary"
-              size="sm"
-              onClick={handleJudgeSubmission}
-              disabled={isSubmitting}
-              className="text-xs font-pixel"
+              variant={challenge.hasSubmittedAtLeastOnce ? "primary" : "ghost"}
+              size="xs"
+              onClick={() => {
+                const finished = challenge.finishChallenge();
+                if (finished) {
+                  alert("Challenge completed! Congratulations on finishing.");
+                }
+              }}
+              disabled={!challenge.hasSubmittedAtLeastOnce}
+              className="text-[0.6875rem] py-0"
+              title={
+                challenge.hasSubmittedAtLeastOnce
+                  ? "Finish and submit challenge"
+                  : "Submit solution at least once to enable finishing challenge"
+              }
             >
-              {isSubmitting ? "JUDGING..." : "SUBMIT SOLUTION ✔"}
+              FINISH CHALLENGE <DotIcon name="circleCheck" size={14} aria-hidden="true" />
             </PixelButton>
-          )}
-        </div>
-      </PixelCard>
 
-      {/* Editor & Multi-Tab Docked Pane */}
-      <div className="flex-1 flex flex-col min-h-0 border-2 border-[#2E1A57] bg-[#090514] relative">
-        {/* Monaco Editor Pane */}
-        <div className="flex-1 min-h-0 relative">
-          <MonacoEditorPane
-            language={monacoLang}
-            value={code}
-            onChange={handleCodeChange}
-          />
-        </div>
-
-        {/* Docked Execution & Output Split Pane */}
-        <div className="border-t-2 border-[#2E1A57] bg-[#0A0518] shrink-0">
-          {/* Dock Header Tabs */}
-          <div className="px-3 py-1.5 bg-[#120A24] border-b border-[#2E1A57] flex items-center justify-between text-xs font-mono">
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setBottomOpen(!bottomOpen)}
-                className="text-[#00F0FF] hover:text-white font-bold cursor-pointer pr-1"
-              >
-                {bottomOpen ? "▼" : "▲"}
-              </button>
-
-              {/* Tab 1: Console */}
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab("console");
-                  setBottomOpen(true);
-                }}
-                className={`px-2.5 py-1 text-xs font-pixel cursor-pointer border ${
-                  activeTab === "console"
-                    ? "bg-[#090514] border-[#00F0FF] text-[#00F0FF]"
-                    : "border-transparent text-[#7A6E9B] hover:text-white"
-                }`}
-              >
-                EXECUTION OUTPUT
-              </button>
-
-              {/* Tab 2: Custom Stdin */}
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab("stdin");
-                  setBottomOpen(true);
-                }}
-                className={`px-2.5 py-1 text-xs font-pixel cursor-pointer border ${
-                  activeTab === "stdin"
-                    ? "bg-[#090514] border-[#00F0FF] text-[#00F0FF]"
-                    : "border-transparent text-[#7A6E9B] hover:text-white"
-                }`}
-              >
-                CUSTOM STDIN {customStdin.length > 0 && `(${customStdin.length}B)`}
-              </button>
-
-              {/* Tab 3: Test Results */}
-              {problem && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab("results");
-                    setBottomOpen(true);
-                  }}
-                  className={`px-2.5 py-1 text-xs font-pixel cursor-pointer border ${
-                    activeTab === "results"
-                      ? "bg-[#090514] border-[#00FF9D] text-[#00FF9D]"
-                      : "border-transparent text-[#7A6E9B] hover:text-white"
-                  }`}
-                >
-                  TEST RESULTS {judgingResult && `[${judgingResult.overallVerdict}]`}
-                </button>
-              )}
-            </div>
-
-            <div className="flex items-center gap-3 text-[11px] text-[#7A6E9B]">
-              <span>{code.length} bytes</span>
-            </div>
+            <PixelButton
+              variant="pink"
+              size="xs"
+              onClick={() => setIsForfeitModalOpen(true)}
+              className="text-xs"
+            >
+              FORFEIT / EXIT <DotIcon name="close" size={14} aria-hidden="true" />
+            </PixelButton>
           </div>
-
-          {/* Dock Body Content */}
-          {bottomOpen && (
-            <div className="p-3 font-mono text-xs bg-[#06030D] h-44 overflow-y-auto select-text">
-              {/* TAB 1: Console Execution Output */}
-              {activeTab === "console" && (
-                <div className="space-y-2">
-                  {!executionResult && !isRunning && (
-                    <div className="text-[#7A6E9B] space-y-1">
-                      <p>&gt; Ready. Click &quot;RUN CODE ▶&quot; to execute your program against standard input.</p>
-                      <p className="text-[11px]">
-                        &gt; Target: {filename} &bull; Compiler: {LANGUAGE_DISPLAY_NAMES[activeLang]}
-                      </p>
-                    </div>
-                  )}
-
-                  {isRunning && (
-                    <div className="text-[#00F0FF] animate-pulse">
-                      &gt; Dispatching code to sandbox execution runner...
-                    </div>
-                  )}
-
-                  {executionResult && (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-3 flex-wrap border-b border-[#2E1A57] pb-1.5 text-[11px]">
-                        <span
-                          className={`font-pixel text-xs px-1.5 py-0.5 border ${
-                            executionResult.status === "SUCCESS"
-                              ? "border-[#00FF9D] text-[#00FF9D] bg-[#00FF9D]/10"
-                              : "border-[#FF007A] text-[#FF007A] bg-[#FF007A]/10"
-                          }`}
-                        >
-                          STATUS: {executionResult.status}
-                        </span>
-                        <span className="text-[#A79EC4]">
-                          Exit code: {executionResult.exitCode ?? "N/A"}
-                        </span>
-                        <span className="text-[#A79EC4]">
-                          Time: {executionResult.durationMs}ms
-                        </span>
-                      </div>
-
-                      {executionResult.compilerOutput && (
-                        <div className="space-y-1">
-                          <span className="text-[#FF007A] font-bold">[COMPILER OUTPUT]</span>
-                          <pre className="text-[#FF007A] whitespace-pre-wrap bg-[#120A24] p-2 border border-[#FF007A]/40">
-                            {executionResult.compilerOutput}
-                          </pre>
-                        </div>
-                      )}
-
-                      {executionResult.stdout && (
-                        <div className="space-y-1">
-                          <span className="text-[#00FF9D] font-bold">[STANDARD OUTPUT]</span>
-                          <pre className="text-white whitespace-pre-wrap bg-[#090514] p-2 border border-[#2E1A57]">
-                            {executionResult.stdout}
-                          </pre>
-                        </div>
-                      )}
-
-                      {executionResult.stderr && (
-                        <div className="space-y-1">
-                          <span className="text-[#FF007A] font-bold">[STANDARD ERROR]</span>
-                          <pre className="text-[#FF007A] whitespace-pre-wrap bg-[#120A24] p-2 border border-[#2E1A57]">
-                            {executionResult.stderr}
-                          </pre>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* TAB 2: Custom Stdin */}
-              {activeTab === "stdin" && (
-                <div className="space-y-1.5 h-full flex flex-col">
-                  <div className="flex items-center justify-between text-[11px] text-[#7A6E9B]">
-                    <span>Standard Input fed into RUN CODE:</span>
-                    <button
-                      type="button"
-                      onClick={() => setCustomStdin("")}
-                      className="hover:text-white underline cursor-pointer"
-                    >
-                      Clear Stdin
-                    </button>
-                  </div>
-                  <textarea
-                    value={customStdin}
-                    onChange={(e) => setCustomStdin(e.target.value)}
-                    placeholder="Type sample input here (e.g. 10 20)..."
-                    className="flex-1 w-full bg-[#090514] border border-[#2E1A57] p-2 text-white font-mono text-xs resize-none focus:outline-none focus:border-[#00F0FF]"
-                  />
-                </div>
-              )}
-
-              {/* TAB 3: Test Results */}
-              {activeTab === "results" && (
-                <div className="space-y-3">
-                  {!judgingResult && !isSubmitting && (
-                    <div className="text-[#7A6E9B]">
-                      &gt; Click &quot;SUBMIT SOLUTION ✔&quot; to evaluate your code against the problem test suite.
-                    </div>
-                  )}
-
-                  {isSubmitting && (
-                    <div className="text-[#00FF9D] animate-pulse">
-                      &gt; Evaluating test cases against sandbox judge...
-                    </div>
-                  )}
-
-                  {judgingResult && (
-                    <div className="space-y-3">
-                      {/* Overall Verdict Banner */}
-                      <div className="flex items-center justify-between border-b border-[#2E1A57] pb-2 flex-wrap gap-2">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`font-pixel text-base px-2 py-0.5 border ${
-                              judgingResult.overallVerdict === "ACCEPTED"
-                                ? "border-[#00FF9D] text-[#00FF9D] bg-[#00FF9D]/15"
-                                : "border-[#FF007A] text-[#FF007A] bg-[#FF007A]/15"
-                            }`}
-                          >
-                            VERDICT: {judgingResult.overallVerdict}
-                          </span>
-                          <span className="text-[#A79EC4] text-xs">
-                            Score: {judgingResult.passedTests} / {judgingResult.totalTests} ({judgingResult.scorePercentage}%)
-                          </span>
-                        </div>
-                        <span className="text-[11px] text-[#7A6E9B]">
-                          Max Time: {judgingResult.maxDurationMs}ms
-                        </span>
-                      </div>
-
-                      {judgingResult.compilerOutput && (
-                        <div className="space-y-1">
-                          <span className="text-[#FF007A] font-bold">[COMPILATION ERROR]</span>
-                          <pre className="text-[#FF007A] whitespace-pre-wrap bg-[#120A24] p-2 border border-[#FF007A]/40 text-xs">
-                            {judgingResult.compilerOutput}
-                          </pre>
-                        </div>
-                      )}
-
-                      {/* Test Cases Breakdown */}
-                      <div className="space-y-2">
-                        {judgingResult.testResults.map((tc, idx) => (
-                          <div
-                            key={tc.testCaseId || idx}
-                            className={`p-2.5 border text-xs space-y-1 ${
-                              tc.passed
-                                ? "border-[#00FF9D]/40 bg-[#00FF9D]/5"
-                                : "border-[#FF007A]/40 bg-[#FF007A]/5"
-                            }`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <span className={tc.passed ? "text-[#00FF9D]" : "text-[#FF007A]"}>
-                                  {tc.passed ? "✔" : "✖"}
-                                </span>
-                                <span className="text-white font-bold">
-                                  Test Case #{idx + 1}
-                                </span>
-                                {tc.isHidden && (
-                                  <span className="text-[10px] px-1 bg-[#1B0F36] text-[#A79EC4] border border-[#2E1A57]">
-                                    HIDDEN
-                                  </span>
-                                )}
-                              </div>
-                              <span
-                                className={`text-[11px] font-bold ${
-                                  tc.passed ? "text-[#00FF9D]" : "text-[#FF007A]"
-                                }`}
-                              >
-                                {tc.verdict} ({tc.durationMs}ms)
-                              </span>
-                            </div>
-
-                            {!tc.isHidden && (
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-2 pt-1 text-[11px] font-mono text-[#A79EC4]">
-                                <div>
-                                  <span className="text-[#7A6E9B] block">Input:</span>
-                                  <code className="text-white">{tc.input || "(empty)"}</code>
-                                </div>
-                                <div>
-                                  <span className="text-[#7A6E9B] block">Expected:</span>
-                                  <code className="text-[#00FF9D]">{tc.expectedOutput?.trim()}</code>
-                                </div>
-                                <div>
-                                  <span className="text-[#7A6E9B] block">Actual Output:</span>
-                                  <code className={tc.passed ? "text-white" : "text-[#FF007A]"}>
-                                    {tc.actualOutput?.trim() || "(no output)"}
-                                  </code>
-                                </div>
-                              </div>
-                            )}
-
-                            {tc.isHidden && (
-                              <p className="text-[10px] text-[#7A6E9B] pt-0.5">
-                                Inputs and expected results for hidden evaluation cases are redacted to prevent test vector extraction.
-                              </p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
         </div>
+      )}
+
+      {/* Demo Controls Bar */}
+      {isDemoMode && (
+        <DemoControls
+          onLoadSolved={handleLoadDemoSolved}
+          onLoadIncorrect={handleLoadDemoIncorrect}
+          onResetDemo={handleResetDemo}
+          onPreviewAccepted={handlePreviewAccepted}
+          onPreviewWrongAnswer={handlePreviewWrongAnswer}
+          demoState={demoState}
+        />
+      )}
+
+      {/* Responsive Mobile / Tablet View Switcher (Hidden on Desktop >= 1280px) */}
+      <div className="xl:hidden flex items-center justify-between p-1.5 bg-[var(--color-surface)] border-2 border-[var(--color-border)] shrink-0 gap-1">
+        <button
+          type="button"
+          onClick={() => setMobileActivePane("problem")}
+          className={`flex-1 py-1.5 px-2 text-xs font-heading flex items-center justify-center gap-1.5 border transition-colors cursor-pointer ${
+            mobileActivePane === "problem"
+              ? "bg-[var(--color-canvas)] border-[var(--color-accent)] text-[var(--color-accent)] [box-shadow:var(--shadow-btn)]"
+              : "border-transparent text-[var(--color-text-dim)] hover:text-[var(--color-text-main)]"
+          }`}
+        >
+          <DotIcon name="list" size={13} aria-hidden="true" />
+          <span>PROBLEM</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setMobileActivePane("code")}
+          className={`flex-1 py-1.5 px-2 text-xs font-heading flex items-center justify-center gap-1.5 border transition-colors cursor-pointer ${
+            mobileActivePane === "code"
+              ? "bg-[var(--color-canvas)] border-[var(--color-accent)] text-[var(--color-accent)] [box-shadow:var(--shadow-btn)]"
+              : "border-transparent text-[var(--color-text-dim)] hover:text-[var(--color-text-main)]"
+          }`}
+        >
+          <DotIcon name="file" size={13} aria-hidden="true" />
+          <span>CODE</span>
+          <span
+            className={`w-1.5 h-1.5 rounded-full ${
+              saveStatus === "SAVED" ? "bg-[var(--color-mint)]" : "bg-[var(--color-pink)]"
+            }`}
+          />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setMobileActivePane("results")}
+          className={`flex-1 py-1.5 px-2 text-xs font-heading flex items-center justify-center gap-1.5 border transition-colors cursor-pointer ${
+            mobileActivePane === "results"
+              ? "bg-[var(--color-canvas)] border-[var(--color-accent)] text-[var(--color-accent)] [box-shadow:var(--shadow-btn)]"
+              : "border-transparent text-[var(--color-text-dim)] hover:text-[var(--color-text-main)]"
+          }`}
+        >
+          <DotIcon name="powershell" size={13} adaptive aria-hidden="true" />
+          <span>RESULTS</span>
+          {judgingResult && (
+            <span
+              className={`text-[0.5625rem] font-mono px-1 py-0.2 border ${
+                judgingResult.overallVerdict === "ACCEPTED"
+                  ? "border-[var(--color-mint)] text-[var(--color-mint)]"
+                  : "border-[var(--color-pink)] text-[var(--color-pink)]"
+              }`}
+            >
+              {judgingResult.overallVerdict === "ACCEPTED" ? "AC" : "WA"}
+            </span>
+          )}
+        </button>
       </div>
 
-      {/* Reset Buffer Confirmation Modal */}
+      {/* Main Three-Pane Problem Lab Workspace */}
+      <div
+        id="workspace-panes"
+        className="workspace-panes flex-1 min-h-0 min-w-0"
+        data-layout={layout}
+        data-mobile-pane={mobileActivePane}
+      >
+        <Group
+          id="exeku-workspace-resizable"
+          groupRef={resizeGroupRef}
+          orientation={layout === "focus" ? "vertical" : "horizontal"}
+          defaultLayout={{ problem: 28, editor: 48, results: 24 }}
+          onLayoutChanged={(sizes, meta) => {
+            if (layout !== "split" || !meta.isUserInteraction) return;
+            if (sizes.problem >= 20 && sizes.editor >= 35 && sizes.results >= 18) {
+              const next = { problem: sizes.problem, editor: sizes.editor, results: sizes.results };
+              setSplitSizes(next);
+              try { localStorage.setItem("exeku.workspace.panes", JSON.stringify(next)); } catch { /* storage restricted */ }
+            }
+          }}
+          className="workspace-resizable-group h-full min-h-0 min-w-0"
+        >
+        {/* LEFT PANE: Problem Statement */}
+        <Panel id="problem" defaultSize="28%" minSize={layout === "split" ? "20%" : "0%"} collapsible={layout !== "split"} collapsedSize="0%">
+        <div
+          className={`h-full min-h-0 ${
+            mobileActivePane === "problem" ? "flex flex-col flex-1" : "hidden"
+          } ${layout === "focus" ? "xl:hidden" : "xl:flex xl:flex-col"
+          }`}
+        >
+          {layout === "wide" ? (
+            <button
+              type="button"
+              className="hidden xl:flex h-full w-10 items-center justify-center border border-[var(--color-border)] bg-[var(--color-surface)] text-xs text-[var(--color-text-muted)]"
+              aria-label="Expand problem pane"
+              onClick={() => setLayout("split")}
+            ><span className="[writing-mode:vertical-rl]">PROBLEM ›</span></button>
+          ) :           <ProblemPane
+            problem={problem}
+            onUseCustomStdin={(sampleInput) => {
+              setCustomStdin(sampleInput);
+              setActiveResultsTab("stdin");
+              setMobileActivePane("results");
+            }}
+          />}
+
+        </div>
+
+        </Panel>
+        <Separator className="workspace-resize-handle" />
+
+        {/* CENTER PANE: Code Editor & Actions Toolbar */}
+        <Panel id="editor" defaultSize="48%" minSize={layout === "focus" ? "30%" : "35%"}>
+        <div
+          className={`h-full min-h-0 flex flex-col gap-1 ${
+            mobileActivePane === "code" ? "flex flex-col flex-1" : "hidden xl:flex xl:flex-col"
+          }`}
+        >
+          {/* Compact editor toolbar, one line at desktop widths. */}
+          <div className="workspace-toolbar relative z-10 flex h-10 shrink-0 items-center gap-1.5 overflow-visible border border-[var(--color-border)] bg-[var(--color-surface)] px-1.5 data-[density=compact]:h-9">
+            <FileTabs
+              language={activeLang}
+              files={files}
+              mainName={mainFilename}
+              activeName={activeFile}
+              saveStatus={saveStatus}
+              onSelect={setActiveFile}
+              onAdd={onFileAdd}
+              onRename={onFileRename}
+              onClose={onFileClose}
+            />
+            <select
+              aria-label="Programming language"
+              value={activeLang}
+              onChange={(e) => void handleSwitchLanguage(e.target.value as PreferredLanguage)}
+              className="h-8 w-[76px] shrink-0 border border-[var(--color-border)] bg-[var(--color-canvas)] px-1 text-[11px] text-[var(--color-text-main)] sm:w-[100px]"
+            >
+              {ALL_SUPPORTED_LANGUAGES.map((lang) => <option key={lang} value={lang}>{LANGUAGE_DISPLAY_NAMES[lang]}</option>)}
+            </select>
+            <button
+              type="button"
+              aria-pressed={isDemoMode}
+              onClick={() => setUserDemoToggle(!isDemoMode)}
+              title="Toggle frontend-only demo"
+              className={`h-6 shrink-0 rounded-[var(--radius-btn)] border px-1.5 text-[10px] ${isDemoMode ? "border-[var(--color-accent)] text-[var(--color-accent)]" : "border-[var(--color-border)]"}`}
+            >DEMO</button>
+            <span className="hidden h-5 shrink-0 border-l border-[var(--color-border)] sm:inline" aria-hidden="true" />
+            <PixelButton size="icon" variant="ghost" onClick={() => setIsResetOpen(true)} aria-label="Reset active file" title="Reset active file">
+              <DotIcon name="arrowLeft" size={14} aria-hidden="true" />
+            </PixelButton>
+            <PixelButton size="icon" variant="ghost" onClick={handleDownloadFile} aria-label="Download active file" title="Download active file">
+              <DotIcon name="arrowDown" size={14} aria-hidden="true" />
+            </PixelButton>
+            <PixelButton
+              size="icon" variant="ghost" className="hidden xl:inline-flex"
+              aria-label={`Cycle editor layout (currently ${layout})`}
+              aria-controls="workspace-panes"
+              onClick={nextLayout}
+              title={`Layout: ${layout}. Click to cycle split, wide and focus`}
+            >
+              {layout === "focus" ? <DotIcon name="windows" size={14} aria-hidden="true" /> : <DotIcon name="windows" size={14} aria-hidden="true" />}
+            </PixelButton>
+            {layout === "focus" && (
+              <button
+                type="button"
+                className="hidden h-8 shrink-0 items-center gap-1 border border-[var(--color-border)] px-2 text-xs xl:inline-flex"
+                onClick={() => setDrawerOpen((current) => !current)}
+                aria-expanded={drawerOpen}
+                title={drawerOpen ? "Collapse output drawer" : "Open output drawer"}
+                aria-label={drawerOpen ? "Collapse output drawer" : "Open output drawer"}
+              >
+                <DotIcon name="powershell" size={14} aria-hidden="true" />
+                Output
+              </button>
+            )}
+            {layout === "focus" && (
+              <button
+                type="button" className="hidden h-8 shrink-0 items-center gap-1 border border-[var(--color-border)] px-2 text-xs xl:inline-flex"
+                onClick={() => setProblemSlideOpen(true)}
+                aria-label="Open problem statement"
+              ><DotIcon name="file" size={14} aria-hidden="true" /> Problem</button>
+            )}
+            <span className="hidden h-5 shrink-0 border-l border-[var(--color-border)] sm:inline" aria-hidden="true" />
+            <PixelButton size="xs" variant="cyan" aria-label="Run code" title="Run code (Ctrl/Cmd+Enter)"
+              disabled={isRunning || isSubmitting} onClick={() => void handleRunCode()} className="shrink-0">
+              <DotIcon name="circlePlay" size={14} aria-hidden="true" /><span className="hidden sm:inline">{isRunning ? "RUNNING" : "RUN"}</span>
+            </PixelButton>
+            <PixelButton size="xs" variant="primary" aria-label="Submit solution" title="Submit solution (Ctrl/Cmd+Shift+Enter)"
+              disabled={!problem || isRunning || isSubmitting} onClick={handleOpenSubmitModal} className="shrink-0">
+              <DotIcon name="circleCheck" size={14} aria-hidden="true" /><span className="hidden sm:inline">{isSubmitting ? "JUDGING" : "SUBMIT"}</span>
+            </PixelButton>
+          </div>
+
+          {/* Monaco Editor Frame */}
+          <div className="flex-1 min-h-0 border-2 border-[var(--color-border)] bg-[var(--color-canvas)] [border-radius:var(--radius-card)] overflow-hidden relative">
+            <MonacoEditorPane
+              language={monacoLang}
+              value={code}
+              path={`/${profile?.id ?? "guest"}/${problem?.id ?? "free"}/${activeLang}/${activeFile}`}
+              onChange={handleCodeChange}
+              onRun={() => { if (!isRunning && !isSubmitting) void handleRunCode(); }}
+              onSubmit={() => { if (problem && !isRunning && !isSubmitting) handleOpenSubmitModal(); }}
+            />
+          </div>
+        </div>
+
+        </Panel>
+        <Separator className="workspace-resize-handle" />
+
+        {/* RIGHT PANE: Execution Console, Stdin, Test Results */}
+        <Panel id="results" defaultSize="24%" minSize={layout === "focus" ? "0%" : "18%"} collapsible={layout === "focus"} collapsedSize="0%">
+        <div
+          className={`h-full min-h-0 ${
+            mobileActivePane === "results" ? "flex flex-col flex-1" : "hidden"
+          } ${layout === "focus" && !drawerOpen ? "xl:hidden" : "xl:flex xl:flex-col"
+          }`}
+        >
+          <ResultsPane
+            activeTab={activeResultsTab}
+            onTabChange={setActiveResultsTab}
+            isRunning={isRunning}
+            isSubmitting={isSubmitting}
+            executionResult={executionResult}
+            judgingResult={judgingResult}
+            customStdin={customStdin}
+            onCustomStdinChange={setCustomStdin}
+            activeLanguage={activeLang}
+            filename={filename}
+            isDemoMode={isDemoMode}
+            demoNote={demoNote}
+          />
+        </div>
+        </Panel>
+        </Group>
+      </div>
+      {layout === "focus" && problemSlideOpen && (
+        <div className="fixed inset-0 z-40 flex bg-black/60" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget) setProblemSlideOpen(false);
+        }}>
+          <section role="dialog" aria-modal="true" aria-label="Problem statement" className="flex h-full w-full max-w-md flex-col bg-[var(--color-surface)] p-3">
+            <button type="button" className="mb-2 self-end text-sm underline" onClick={() => setProblemSlideOpen(false)}>Close problem</button>
+            <ProblemPane problem={problem} onUseCustomStdin={(sample) => {
+              setCustomStdin(sample); setActiveResultsTab("stdin"); setDrawerOpen(true); setProblemSlideOpen(false);
+            }} />
+          </section>
+        </div>
+      )}
+
+      {/* MODAL 1: Submit Confirmation Dialog */}
+      {problem && (
+        <SubmitConfirmModal
+          isOpen={isSubmitConfirmOpen}
+          onClose={() => setIsSubmitConfirmOpen(false)}
+          onConfirm={handleConfirmSubmission}
+          problem={problem}
+          language={activeLang}
+          isTimedActive={challenge.isTimedActive}
+          formattedRemainingTime={challenge.formattedTime}
+        />
+      )}
+
+      {/* MODAL 2: Submission In-Progress Evaluating Dialog */}
+      {problem && (
+        <SubmissionEvaluatingModal
+          isOpen={isEvaluatingModalOpen}
+          problem={problem}
+          language={activeLang}
+        />
+      )}
+
+      {/* MODAL 3: Submission Result Verdict Dialog */}
+      {problem && (
+        <SubmissionResultModal
+          isOpen={isResultModalOpen}
+          onClose={() => setIsResultModalOpen(false)}
+          result={judgingResult}
+          problem={problem}
+          isDemo={isResultDemo}
+          onViewDetails={() => {
+            setActiveResultsTab("results");
+            setMobileActivePane("results");
+          }}
+          nextProblemId={nextProblemId}
+        />
+      )}
+
+      {/* MODAL 4: Timed Challenge Expired Dialog */}
+      <TimeExpiredModal
+        isOpen={challenge.status === "expired" && !isExpiredModalDismissed}
+        onClose={() => setIsExpiredModalDismissed(true)}
+        submissionCount={challenge.session?.submissionCount ?? 0}
+        lastVerdict={challenge.session?.lastVerdict}
+      />
+
+      {/* MODAL 5: Reset Buffer Confirmation Modal */}
       {isResetOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs">
           <PixelCard
             variant="elevated"
-            className="w-full max-w-md border-2 border-[#FF007A] p-6 bg-[#120A24] shadow-[8px_8px_0px_#000000] space-y-4"
+            className="w-full max-w-md border-2 border-[var(--color-pink)] p-6 bg-[var(--color-surface)] [box-shadow:var(--shadow-btn)] space-y-4"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 border-2 border-[#FF007A] bg-[#090514] flex items-center justify-center text-[#FF007A] font-pixel text-xl font-bold">
+              <div className="w-10 h-10 border-2 border-[var(--color-pink)] bg-[var(--color-canvas)] flex items-center justify-center text-[var(--color-pink)] font-heading text-xl font-bold">
                 !
               </div>
               <div>
-                <h3 className="font-pixel text-lg text-white">
+                <h3 className="font-heading text-lg text-[var(--color-text-main)]">
                   RESET WORKSPACE BUFFER?_
                 </h3>
-                <span className="font-mono text-xs text-[#A79EC4]">
+                <span className="font-mono text-xs text-[var(--color-text-muted)]">
                   Target: {filename}
                 </span>
               </div>
             </div>
 
-            <p className="text-xs text-[#A79EC4] leading-relaxed">
-              This will reset your current buffer for <strong>{filename}</strong> back to the starter
-              code. Any unsaved modifications in this buffer will be permanently lost.
+            <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
+              Reset <strong>{filename}</strong> to starter code, or empty an extra file. Other files stay intact unless you choose Reset all.
             </p>
 
+            <label className="flex items-center gap-2 text-xs text-[var(--color-text-main)]">
+              <input type="checkbox" checked={resetAllFiles} onChange={(e) => setResetAllFiles(e.target.checked)} />
+              Reset all files and remove companion files
+            </label>
             <div className="flex items-center justify-end gap-3 pt-2">
               <PixelButton
                 variant="ghost"
@@ -864,6 +996,54 @@ export function WorkspaceView() {
                 onClick={handleConfirmReset}
               >
                 CONFIRM RESET ↺
+              </PixelButton>
+            </div>
+          </PixelCard>
+        </div>
+      )}
+
+      {/* MODAL 6: Forfeit Challenge Confirmation Modal */}
+      {isForfeitModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs">
+          <PixelCard
+            variant="elevated"
+            className="w-full max-w-md border-2 border-[var(--color-pink)] p-6 bg-[var(--color-surface)] [box-shadow:var(--shadow-btn)] space-y-4"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 border-2 border-[var(--color-pink)] bg-[var(--color-canvas)] flex items-center justify-center text-[var(--color-pink)] font-heading text-xl font-bold">
+                !
+              </div>
+              <div>
+                <h3 className="font-heading text-lg text-[var(--color-text-main)]">
+                  FORFEIT TIMED CHALLENGE?_
+                </h3>
+                <span className="font-mono text-xs text-[var(--color-pink)]">
+                  Time Remaining: {challenge.formattedTime}
+                </span>
+              </div>
+            </div>
+
+            <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
+              Are you sure you want to forfeit this challenge session? Your timed countdown will end immediately and this session will be marked as forfeited. Your code in the buffer will remain intact.
+            </p>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <PixelButton
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsForfeitModalOpen(false)}
+              >
+                RESUME CHALLENGE
+              </PixelButton>
+              <PixelButton
+                variant="pink"
+                size="sm"
+                onClick={() => {
+                  challenge.forfeitChallenge();
+                  setIsForfeitModalOpen(false);
+                }}
+              >
+                CONFIRM FORFEIT <DotIcon name="close" size={14} aria-hidden="true" />
               </PixelButton>
             </div>
           </PixelCard>

@@ -9,6 +9,11 @@ import { PixelButton } from "@/components/retro/pixel-button";
 import { PixelBadge } from "@/components/retro/pixel-badge";
 import { DotIcon, type DotIconName } from "@/components/retro/dot-icon";
 import { ProfileEditDialog } from "./profile-edit-dialog";
+import { StyleText } from "@/components/appearance/style-text";
+
+import { useAppearance } from "@/hooks/use-appearance";
+import { ModernOverview } from "./modern-overview";
+import { CodingActivity } from "./coding-activity";
 import { draftRepository } from "@/lib/storage/draft-repository";
 import {
   getFilenameForLanguage,
@@ -29,25 +34,25 @@ const LANGUAGE_META: Record<PreferredLanguage, LanguageMeta> = {
     label: "Python 3",
     icon: "python",
     compiler: "CPython 3.12+ (local runtime)",
-    accent: "#00F0FF",
+    accent: "var(--color-accent)",
   },
   java: {
     label: "Java",
     icon: "java",
     compiler: "OpenJDK 21+ (local runtime)",
-    accent: "#FF007A",
+    accent: "var(--color-pink)",
   },
   cpp: {
     label: "C++",
     icon: "cplusplus",
     compiler: "MSVC / GCC (local runtime)",
-    accent: "#9E00FF",
+    accent: "var(--color-primary-text)",
   },
   c: {
     label: "C",
     icon: "file",
     compiler: "MSVC / Clang (local runtime)",
-    accent: "#00FF9D",
+    accent: "var(--color-mint)",
   },
 };
 
@@ -80,6 +85,7 @@ const TRACK_MODULES = [
 
 export function CommandStation() {
   const { profile, updateProfile } = useProfile();
+  const { preferences } = useAppearance();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [activeDraft, setActiveDraft] = useState<WorkspaceDraft | null>(null);
   const [totalDrafts, setTotalDrafts] = useState<number>(0);
@@ -113,12 +119,16 @@ export function CommandStation() {
   if (!profile) {
     return (
       <div className="flex flex-col items-center justify-center p-12 text-center">
-        <div className="w-10 h-10 border-4 border-[#00F0FF] border-t-transparent animate-spin mb-4" />
-        <span className="font-mono text-xs text-[#00F0FF] uppercase tracking-widest animate-pulse">
+        <div className="w-10 h-10 border-4 border-[var(--color-accent)] border-t-transparent animate-spin mb-4" />
+        <span className="font-mono text-xs text-[var(--color-accent)] uppercase tracking-widest animate-pulse">
           READING LOCAL TELEMETRY...
         </span>
       </div>
     );
+  }
+
+  if (preferences.uiStyle !== "pixel-arcade") {
+    return <ModernOverview profile={profile} activeDraft={activeDraft} totalDrafts={totalDrafts} onSaveProfile={(updates) => updateProfile(profile.id, updates)} />;
   }
 
   const langInfo = LANGUAGE_META[profile.preferredLanguage] ?? LANGUAGE_META.python;
@@ -144,14 +154,14 @@ export function CommandStation() {
       : "03";
 
   return (
-    <div className="space-y-6">
+    <div className="dashboard appearance-stack space-y-6">
       {/* Coder Spotlight Header */}
       <PixelCard
         variant="elevated"
-        className="p-5 sm:p-6 border-2 border-[#3D2275] bg-[#120A24] relative overflow-hidden"
+        className="dashboard-profile p-5 sm:p-6 border-2 border-[var(--color-border)] bg-[var(--color-surface)] relative overflow-hidden"
       >
         <div
-          className="absolute -right-16 -top-16 w-64 h-64 rounded-full pointer-events-none opacity-20 blur-3xl"
+          className="arcade-decoration absolute -right-16 -top-16 w-64 h-64 rounded-full pointer-events-none opacity-20 blur-3xl"
           style={{ background: langInfo.accent }}
         />
 
@@ -160,23 +170,21 @@ export function CommandStation() {
             <PixelAvatar
               avatarId={profile.avatarId}
               size={56}
-              className="border-2 border-[#00F0FF] shadow-[2px_2px_0px_#000000] shrink-0"
+              className="border-2 border-[var(--color-accent)] [box-shadow:var(--shadow-btn)] shrink-0"
             />
             <div className="space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-pixel text-xl sm:text-2xl text-white tracking-wide">
-                  WELCOME, {profile.displayName.toUpperCase()}_
-                </span>
+                <h1 className="dashboard-heading font-heading text-xl sm:text-2xl text-[var(--color-text-main)] tracking-wide"><StyleText arcade={<>WELCOME, {profile.displayName.toUpperCase()}_</>} clarity={<>Welcome back, {profile.displayName}</>} command="Workspace overview" /></h1>
                 <PixelBadge variant={levelBadgeVariant} bracketed>
                   LVL {levelNum}: {profile.experienceLevel.toUpperCase()}
                 </PixelBadge>
               </div>
               {profile.bio ? (
-                <p className="text-sm text-[#A79EC4] max-w-xl line-clamp-2">
+                <p className="text-sm text-[var(--color-text-muted)] max-w-xl line-clamp-2">
                   &ldquo;{profile.bio}&rdquo;
                 </p>
               ) : (
-                <p className="text-xs text-[#7A6E9B] font-mono">
+                <p className="text-xs text-[var(--color-text-dim)] font-mono">
                   No local bio set &bull; Local ID: {profile.id.slice(0, 8)} &bull; Member since {memberSince}
                 </p>
               )}
@@ -186,7 +194,7 @@ export function CommandStation() {
           <div className="flex items-center gap-2.5 w-full md:w-auto">
             <Link href="/app/workspace" className="flex-1 md:flex-initial">
               <PixelButton variant="primary" size="md" className="w-full">
-                LAUNCH WORKSPACE ▶
+                Open workspace <DotIcon name="arrowUp" size={16} />
               </PixelButton>
             </Link>
             <PixelButton
@@ -195,19 +203,19 @@ export function CommandStation() {
               onClick={() => setIsEditOpen(true)}
               className="whitespace-nowrap"
             >
-              EDIT PROFILE ✎
+              Edit profile <DotIcon name="pencil" size={15} />
             </PixelButton>
           </div>
         </div>
       </PixelCard>
 
       {/* Loadout Telemetry Matrix */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="dashboard-summary grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Card 1: Target Language */}
-        <PixelCard variant="default" className="p-4 sm:p-5 border-2 border-[#2E1A57] space-y-3">
+        <PixelCard variant="default" className="p-4 sm:p-5 border-2 border-[var(--color-border)] space-y-3">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-[10px] text-[#A79EC4] uppercase tracking-wider">
-              [01 // TARGET LANGUAGE]
+            <span className="font-mono text-[0.625rem] text-[var(--color-text-muted)] uppercase tracking-wider">
+              <StyleText arcade="[01 // TARGET LANGUAGE]" clarity="Preferred language" command="Language & runtime" />
             </span>
             <PixelBadge variant="purple" bracketed>
               PRIMARY
@@ -215,62 +223,62 @@ export function CommandStation() {
           </div>
           <div className="flex items-center gap-3">
             <div
-              className="w-10 h-10 border border-[#2E1A57] bg-[#090514] flex items-center justify-center shrink-0"
+              className="w-10 h-10 border border-[var(--color-border)] bg-[var(--color-canvas)] flex items-center justify-center shrink-0"
               style={{ borderColor: langInfo.accent }}
             >
               <DotIcon name={langInfo.icon} size={22} color={langInfo.accent} />
             </div>
             <div>
-              <div className="font-pixel text-lg text-white">
+              <div className="font-heading text-lg text-[var(--color-text-main)]">
                 {LANGUAGE_DISPLAY_NAMES[profile.preferredLanguage]}
               </div>
-              <div className="font-mono text-[11px] text-[#7A6E9B]">
+              <div className="font-mono text-[0.6875rem] text-[var(--color-text-dim)]">
                 {langInfo.compiler}
               </div>
             </div>
           </div>
-          <div className="pt-2 border-t border-[#2E1A57]/60 flex items-center justify-between text-xs font-mono text-[#A79EC4]">
+          <div className="pt-2 border-t border-[var(--color-border)]/60 flex items-center justify-between text-xs font-mono text-[var(--color-text-muted)]">
             <span>Level Track:</span>
-            <span className="text-[#00F0FF] uppercase">{profile.experienceLevel}</span>
+            <span className="text-[var(--color-accent)] uppercase">{profile.experienceLevel}</span>
           </div>
         </PixelCard>
 
         {/* Card 2: Local Engine Status */}
-        <PixelCard variant="default" className="p-4 sm:p-5 border-2 border-[#2E1A57] space-y-3">
+        <PixelCard variant="default" className="p-4 sm:p-5 border-2 border-[var(--color-border)] space-y-3">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-[10px] text-[#A79EC4] uppercase tracking-wider">
-              [02 // EXECUTION ENGINE]
+            <span className="font-mono text-[0.625rem] text-[var(--color-text-muted)] uppercase tracking-wider">
+              <StyleText arcade="[02 // EXECUTION ENGINE]" clarity="Execution services" command="Service configuration" />
             </span>
-            <span className="flex items-center gap-1.5 font-mono text-[10px] text-[#00F0FF]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#00F0FF] animate-pulse" />
+            <span className="flex items-center gap-1.5 font-mono text-[0.625rem] text-[var(--color-accent)]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-pulse" />
               JUDGE PREVIEW
             </span>
           </div>
           <div className="space-y-1.5 text-xs font-mono">
             <div className="flex items-center justify-between">
-              <span className="text-[#7A6E9B]">Storage Locality:</span>
-              <span className="text-[#00FF9D] font-bold">IndexedDB v2</span>
+              <span className="text-[var(--color-text-dim)]">Storage Locality:</span>
+              <span className="text-[var(--color-mint)] font-bold">IndexedDB v2</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-[#7A6E9B]">Execution Sandbox:</span>
-              <span className="text-[#00FF9D]">PISTON ADAPTER READY</span>
+              <span className="text-[var(--color-text-dim)]">Execution Sandbox:</span>
+              <span className="text-[var(--color-text-main)]">Piston adapter · unverified</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-[#7A6E9B]">Automatic Judge:</span>
-              <span className="text-[#00F0FF]">ACTIVE (4 Languages)</span>
+              <span className="text-[var(--color-text-dim)]">Automatic Judge:</span>
+              <span className="text-[var(--color-accent)]">4 supported languages</span>
             </div>
           </div>
-          <div className="pt-2 border-t border-[#2E1A57]/60 flex items-center justify-between text-[11px] font-mono text-[#7A6E9B]">
+          <div className="pt-2 border-t border-[var(--color-border)]/60 flex items-center justify-between text-[0.6875rem] font-mono text-[var(--color-text-dim)]">
             <span>Runtime Security:</span>
-            <span className="text-white">CONTAINER ISOLATED</span>
+            <span className="text-[var(--color-text-main)]">Sandbox required</span>
           </div>
         </PixelCard>
 
         {/* Card 3: Workspace Scratchpad Buffer */}
-        <PixelCard variant="default" className="p-4 sm:p-5 border-2 border-[#2E1A57] space-y-3">
+        <PixelCard variant="default" className="p-4 sm:p-5 border-2 border-[var(--color-border)] space-y-3">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-[10px] text-[#A79EC4] uppercase tracking-wider">
-              [03 // BUFFER CACHE]
+            <span className="font-mono text-[0.625rem] text-[var(--color-text-muted)] uppercase tracking-wider">
+              <StyleText arcade="[03 // BUFFER CACHE]" clarity="Your scratchpad" command="Active buffer" />
             </span>
             <PixelBadge variant="cyan" bracketed>
               {totalDrafts > 0 ? `${totalDrafts} DRAFT${totalDrafts > 1 ? "S" : ""}` : "READY"}
@@ -278,37 +286,45 @@ export function CommandStation() {
           </div>
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="font-pixel text-base text-white">{filename}</span>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 bg-[#1B0F36] border border-[#2E1A57] text-[#00F0FF]">
+              <span className="font-heading text-base text-[var(--color-text-main)]">{filename}</span>
+              <span className="text-[0.625rem] font-mono px-1.5 py-0.5 bg-[var(--color-elevated)] border border-[var(--color-border)] text-[var(--color-accent)]">
                 ACTIVE
               </span>
             </div>
-            <p className="font-mono text-[11px] text-[#7A6E9B]">
+            <p className="font-mono text-[0.6875rem] text-[var(--color-text-dim)]">
               {activeDraft
                 ? `Last modified: ${new Date(activeDraft.updatedAt).toLocaleTimeString()}`
                 : "Starter template staged in local buffer"}
             </p>
           </div>
-          <div className="pt-2 border-t border-[#2E1A57]/60 flex items-center justify-between">
+          <div className="pt-2 border-t border-[var(--color-border)]/60 flex items-center justify-between">
             <Link
               href="/app/workspace"
-              className="text-xs font-mono text-[#00F0FF] hover:underline flex items-center gap-1 group"
+              className="text-xs font-mono text-[var(--color-accent)] hover:underline flex items-center gap-1 group"
             >
-              <span>OPEN SCRATCHPAD</span>
-              <span className="group-hover:translate-x-0.5 transition-transform">&rarr;</span>
+              <span>Open scratchpad</span>
+              <span className="group-hover:translate-x-0.5 transition-transform"><DotIcon name="arrowRight" size={14} aria-hidden="true" /></span>
             </Link>
           </div>
         </PixelCard>
       </div>
 
+      <CodingActivity profileId={profile.id} />
+
       {/* Track Blueprint Preview */}
-      <PixelCard variant="elevated" className="p-5 sm:p-6 border-2 border-[#2E1A57] space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#2E1A57] pb-3">
+      <section className="dashboard-recent modern-surface">
+        <div className="flex items-center gap-2"><DotIcon name="powershell" size={18} /><h2>Continue coding</h2></div>
+        <p>{activeDraft ? `${filename} · Last saved ${new Date(activeDraft.updatedAt).toLocaleString()}` : "Your scratchpad is ready when you are."}</p>
+        <pre><code>{activeDraft?.code ? activeDraft.code.split("\n").slice(0, 5).join("\n") : "// No saved code in this language yet."}</code></pre>
+        <Link href="/app/workspace">Open {filename} <DotIcon name="arrowUp" size={14} /></Link>
+      </section>
+      <PixelCard variant="elevated" className="dashboard-track p-5 sm:p-6 border-2 border-[var(--color-border)] space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--color-border)] pb-3">
           <div>
-            <h2 className="font-pixel text-lg text-white tracking-wide">
-              {LANGUAGE_DISPLAY_NAMES[profile.preferredLanguage].toUpperCase()} CURRICULUM BLUEPRINT_
+            <h2 className="font-heading text-lg text-[var(--color-text-main)] tracking-wide">
+              <StyleText arcade={<>{LANGUAGE_DISPLAY_NAMES[profile.preferredLanguage].toUpperCase()} CURRICULUM BLUEPRINT_</>} clarity="Explore your learning track" command="Track reference" />
             </h2>
-            <p className="text-xs text-[#A79EC4] mt-0.5">
+            <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
               Verified roadmap for upcoming offline problem packages. No fabricated progression or false streaks.
             </p>
           </div>
@@ -321,33 +337,33 @@ export function CommandStation() {
           {TRACK_MODULES.map((mod) => (
             <div
               key={mod.code}
-              className="p-3.5 bg-[#090514] border border-[#2E1A57] hover:border-[#9E00FF]/60 transition-colors space-y-2 group"
+              className="p-3.5 bg-[var(--color-canvas)] border border-[var(--color-border)] hover:border-[var(--color-primary)]/60 transition-colors space-y-2 group"
             >
               <div className="flex items-center justify-between">
-                <span className="font-pixel text-xs text-[#00F0FF]">
+                <span className="font-heading text-xs text-[var(--color-accent)]">
                   MODULE {mod.code}
                 </span>
-                <span className="font-mono text-[10px] text-[#7A6E9B]">
+                <span className="font-mono text-[0.625rem] text-[var(--color-text-dim)]">
                   [STANDBY]
                 </span>
               </div>
-              <h3 className="font-pixel text-sm text-white group-hover:text-[#00F0FF] transition-colors">
+              <h3 className="font-heading text-sm text-[var(--color-text-main)] group-hover:text-[var(--color-accent)] transition-colors">
                 {mod.title}
               </h3>
-              <p className="text-[11px] text-[#A79EC4] leading-relaxed">
+              <p className="text-[0.6875rem] text-[var(--color-text-muted)] leading-relaxed">
                 {mod.desc}
               </p>
-              <div className="pt-2 border-t border-[#2E1A57]/40 flex items-center justify-between text-[10px] font-mono text-[#7A6E9B]">
+              <div className="pt-2 border-t border-[var(--color-border)]/40 flex items-center justify-between text-[0.625rem] font-mono text-[var(--color-text-dim)]">
                 <span>Scope:</span>
-                <span className="text-[#00FF9D]">{mod.topics}</span>
+                <span className="text-[var(--color-mint)]">{mod.topics}</span>
               </div>
             </div>
           ))}
         </div>
 
-        <div className="pt-3 border-t border-[#2E1A57] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-[#090514]/40 p-3">
-          <div className="flex items-center gap-2 text-xs font-mono text-[#A79EC4]">
-            <DotIcon name="box" size={16} color="#00F0FF" />
+        <div className="pt-3 border-t border-[var(--color-border)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-[var(--color-canvas)]/40 p-3">
+          <div className="flex items-center gap-2 text-xs font-mono text-[var(--color-text-muted)]">
+            <DotIcon name="box" size={16} color="var(--color-accent)" />
             <span>Multi-language practice problem catalog active. Sandboxed execution enabled.</span>
           </div>
           <Link href="/app/challenges">

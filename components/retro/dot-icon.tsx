@@ -8,6 +8,8 @@ import {
 
 export interface DotIconProps extends React.SVGAttributes<SVGSVGElement> {
   name: DotIconName;
+  /** Kept for backwards compatibility. Every Exeku style now renders real Doticons. */
+  adaptive?: boolean;
   grid?: 16 | 32;
   size?: number;
   "aria-label"?: string;
@@ -15,6 +17,7 @@ export interface DotIconProps extends React.SVGAttributes<SVGSVGElement> {
 
 export function DotIcon({
   name,
+  adaptive = false,
   grid,
   size = 16,
   className,
@@ -22,10 +25,8 @@ export function DotIcon({
   "aria-label": ariaLabel,
   ...props
 }: DotIconProps) {
-  // Select 16x16 or 32x32 dot grid variant
   const resolvedGrid = grid ?? (size > 20 ? 32 : 16);
   const path = resolvedGrid === 32 ? DOT_ICONS_32[name] : DOT_ICONS_16[name];
-
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -33,14 +34,11 @@ export function DotIcon({
       width={size}
       height={size}
       fill="currentColor"
-      aria-hidden={ariaLabel ? undefined : "true"}
+      aria-hidden={ariaLabel ? undefined : true}
       aria-label={ariaLabel}
       role={ariaLabel ? "img" : "presentation"}
-      className={cn("inline-block shrink-0 select-none", className)}
-      style={{
-        imageRendering: "pixelated",
-        ...style,
-      }}
+      className={cn("inline-block shrink-0 select-none", adaptive && "doticon-adaptive", className)}
+      style={{ imageRendering: "pixelated", ...style }}
       {...props}
     >
       <path d={path} />

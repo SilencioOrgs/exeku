@@ -171,3 +171,39 @@ export async function idbClear(storeName: string): Promise<void> {
     }
   });
 }
+
+/**
+ * Updates one record atomically and confirms the transaction committed.
+ */
+export async function idbUpdate<T extends { id: string }>(
+  storeName: string,
+  key: string,
+  update: (existing: T | null) => T
+): Promise<T> {
+  if (!isIndexedDBAvailable()) {
+    const store = getMemoryStore(storeName);
+    const value = update((store.get(key) as T) ?? null);
+    store.set(key, value);
+    return value;
+  }
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, "readwrite");
+    const store = tx.objectStore(storeName);
+    let value: T;
+    let failure: unknown;
+    tx.oncomplete = () => resolve(value);
+    tx.onabort = () => reject(failure ?? tx.error ?? new Error("Storage transaction aborted"));
+    tx.onerror = () => reject(tx.error ?? new Error("Storage transaction failed"));
+    const request = store.get(key);
+    request.onsuccess = () => {
+      try {
+        value = update(request.result ?? null);
+        store.put(value);
+      } catch (error) {
+        failure = error;
+        tx.abort();
+      }
+    };
+  });
+}

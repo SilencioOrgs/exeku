@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { AppShell } from "@/components/app/app-shell";
+import { ChallengeProvider } from "@/hooks/use-challenge-session";
+import { ChallengeExitGuardModal } from "@/components/app/challenge-exit-guard-modal";
 
 export const metadata: Metadata = {
   title: "Workspace — Exeku",
@@ -11,5 +13,10 @@ export default function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <AppShell>{children}</AppShell>;
+  return (
+    <ChallengeProvider>
+      <AppShell>{children}</AppShell>
+      <ChallengeExitGuardModal />
+    </ChallengeProvider>
+  );
 }

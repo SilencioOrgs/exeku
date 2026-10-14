@@ -4,6 +4,7 @@ import {
   SUPPORTED_EXECUTION_LANGUAGES,
 } from "@/types/execution";
 
+export const MAX_FILES = 6;
 export const MAX_SOURCE_LENGTH = 64 * 1024; // 64KB
 export const MAX_STDIN_LENGTH = 64 * 1024; // 64KB
 export const MIN_TIME_LIMIT_MS = 500;
@@ -45,6 +46,43 @@ export function validateExecutionRequest(input: unknown): ValidationResult {
     };
   }
 
+  // Validate all companion files before any untrusted code reaches the sandbox.
+  let files: { name: string; content: string }[] | undefined;
+  if (raw.files !== undefined) {
+    if (!Array.isArray(raw.files) || raw.files.length === 0 || raw.files.length > MAX_FILES) {
+      return { valid: false, error: `Files must contain between 1 and ${MAX_FILES} entries.` };
+    }
+    const mainName = { python: "main.py", java: "Main.java", cpp: "main.cpp", c: "main.c" }[language];
+    const allowed = {
+      python: [".py"],
+      java: [".java"],
+      cpp: [".cpp", ".hpp", ".h"],
+      c: [".c", ".h"],
+    }[language];
+    const seen = new Set<string>();
+    files = [];
+    for (const item of raw.files) {
+      if (!item || typeof item !== "object") return { valid: false, error: "Invalid source file." };
+      const entry = item as Record<string, unknown>;
+      if (typeof entry.name !== "string" || entry.name.length > 24 || !/^[A-Za-z0-9_.-]+$/.test(entry.name)) {
+        return { valid: false, error: "Invalid file name (letters, digits, ., _, -; up to 24 characters)." };
+      }
+      if (typeof entry.content !== "string") return { valid: false, error: "File content must be text." };
+      const key = entry.name.toLowerCase();
+      if (seen.has(key)) return { valid: false, error: "Duplicate file name." };
+      if (!allowed.some((ext) => key.endsWith(ext))) return { valid: false, error: "File extension is not supported for this language." };
+      seen.add(key);
+      files.push({ name: entry.name, content: entry.content });
+    }
+    if (files[0]?.name !== mainName || files[0].content !== raw.sourceCode) {
+      return { valid: false, error: `First file must be ${mainName} and must match sourceCode.` };
+    }
+    const bytes = files.reduce((total, file) => total + new TextEncoder().encode(file.content).byteLength, 0);
+    if (bytes > MAX_SOURCE_LENGTH) {
+      return { valid: false, error: "Total file contents exceed the 64 KB limit." };
+    }
+  }
+
   let stdin: string | undefined = undefined;
   if (raw.stdin !== undefined && raw.stdin !== null) {
     if (typeof raw.stdin !== "string") {
@@ -77,6 +115,7 @@ export function validateExecutionRequest(input: unknown): ValidationResult {
     request: {
       language,
       sourceCode: raw.sourceCode,
+      files,
       stdin,
       timeLimitMs,
       memoryLimitKb,

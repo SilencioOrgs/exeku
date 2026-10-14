@@ -69,10 +69,10 @@ export function OnboardingWizard() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#090514] flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen bg-[var(--color-canvas)] flex flex-col items-center justify-center p-4">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-[#00F0FF] border-t-transparent animate-spin" />
-          <span className="font-mono text-xs text-[#00F0FF] uppercase tracking-widest animate-pulse">
+          <div className="w-12 h-12 border-4 border-[var(--color-accent)] border-t-transparent animate-spin" />
+          <span className="font-mono text-xs text-[var(--color-accent)] uppercase tracking-widest animate-pulse">
             INITIALIZING SECURE LOCAL STORAGE...
           </span>
         </div>
@@ -81,13 +81,13 @@ export function OnboardingWizard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#090514] text-white flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden">
+    <div className="min-h-screen bg-[var(--color-canvas)] text-[var(--color-text-main)] flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden">
       {/* Background Pixel Grid Texture */}
       <div
         className="absolute inset-0 pointer-events-none opacity-20"
         style={{
           backgroundImage:
-            "linear-gradient(to right, #2E1A57 1px, transparent 1px), linear-gradient(to bottom, #2E1A57 1px, transparent 1px)",
+            "linear-gradient(to right, var(--color-border) 1px, transparent 1px), linear-gradient(to bottom, var(--color-border) 1px, transparent 1px)",
           backgroundSize: "32px 32px",
         }}
       />
@@ -97,13 +97,13 @@ export function OnboardingWizard() {
         <div className="flex items-center justify-between">
           <Link
             href="/"
-            className="flex items-center gap-2.5 text-white hover:text-[#00F0FF] transition-colors group"
+            className="flex items-center gap-2.5 text-[var(--color-text-main)] hover:text-[var(--color-accent)] transition-colors group"
           >
-            <div className="w-8 h-8 bg-[#9E00FF] border border-[#00F0FF] flex items-center justify-center font-pixel text-base font-bold shadow-[2px_2px_0px_#000000]">
+            <div className="w-8 h-8 bg-[var(--color-primary)] text-[var(--color-primary-foreground)] border border-[var(--color-accent)] flex items-center justify-center font-heading text-base font-bold [box-shadow:var(--shadow-btn)]">
               E
             </div>
-            <span className="font-pixel text-xl tracking-wider text-white group-hover:text-[#00F0FF]">
-              EXE<span className="text-[#00F0FF]">KU</span>
+            <span className="font-heading text-xl tracking-wider text-[var(--color-text-main)] group-hover:text-[var(--color-accent)]">
+              EXE<span className="text-[var(--color-accent)]">KU</span>
             </span>
           </Link>
 
@@ -114,15 +114,15 @@ export function OnboardingWizard() {
 
         {/* Existing Profile Warning Banner */}
         {profile && (
-          <div className="p-4 bg-[#1B0F36] border-2 border-[#9E00FF] shadow-[4px_4px_0px_#000000] space-y-3">
+          <div className="p-4 bg-[var(--color-elevated)] border-2 border-[var(--color-primary)] [box-shadow:var(--shadow-btn)] space-y-3">
             <div className="flex items-center gap-2">
-              <DotIcon name="stars" size={18} className="text-[#00F0FF]" />
-              <span className="font-mono text-xs font-bold text-white uppercase tracking-wider">
+              <DotIcon name="stars" size={18} className="text-[var(--color-accent)]" />
+              <span className="font-mono text-xs font-bold text-[var(--color-text-main)] uppercase tracking-wider">
                 EXISTING LOCAL PROFILE DETECTED
               </span>
             </div>
-            <p className="text-xs font-mono text-[#A79EC4]">
-              A profile for <strong className="text-white">{profile.displayName}</strong> already exists on this machine. You can jump directly to the workspace or re-configure this profile.
+            <p className="text-xs font-mono text-[var(--color-text-muted)]">
+              A profile for <strong className="text-[var(--color-text-main)]">{profile.displayName}</strong> already exists on this machine. You can jump directly to the workspace or re-configure this profile.
             </p>
             <div className="flex flex-wrap items-center gap-3 pt-1">
               <PixelButton
@@ -130,7 +130,7 @@ export function OnboardingWizard() {
                 size="sm"
                 onClick={() => router.push("/app")}
               >
-                CONTINUE TO APP ▶
+                CONTINUE TO APP <DotIcon name="circlePlay" size={14} aria-hidden="true" />
               </PixelButton>
               <PixelButton
                 variant="ghost"
@@ -150,45 +150,45 @@ export function OnboardingWizard() {
         )}
 
         {/* Wizard Main Card */}
-        <PixelCard variant="elevated" className="border-2 border-[#3D2275]">
+        <PixelCard variant="elevated" className="border-2 border-[var(--color-border)]">
           {/* Step Breadcrumbs Progress */}
-          <div className="flex items-center justify-between border-b-2 border-[#2E1A57] pb-4 mb-6 text-xs font-mono select-none">
+          <div className="flex items-center justify-between border-b-2 border-[var(--color-border)] pb-4 mb-6 text-xs font-mono select-none">
             <div className="flex items-center gap-1 sm:gap-2">
               <span
                 className={cn(
                   "px-2 py-1 border transition-colors",
                   step === 1
-                    ? "bg-[#00F0FF] text-[#090514] font-bold border-white"
-                    : "bg-[#090514] text-[#7B6E94] border-[#2E1A57]"
+                    ? "bg-[var(--color-accent)] text-[var(--color-accent-foreground)] font-bold border-white"
+                    : "bg-[var(--color-canvas)] text-[var(--color-text-muted)] border-[var(--color-border)]"
                 )}
               >
                 01 IDENTITY
               </span>
-              <span className="text-[#4E3970]">▶</span>
+              <span className="text-[var(--color-text-dim)]"><DotIcon name="circlePlay" size={14} aria-hidden="true" /></span>
               <span
                 className={cn(
                   "px-2 py-1 border transition-colors",
                   step === 2
-                    ? "bg-[#FF007A] text-white font-bold border-white"
-                    : "bg-[#090514] text-[#7B6E94] border-[#2E1A57]"
+                    ? "bg-[var(--color-pink)] text-[var(--color-danger-foreground)] font-bold border-[var(--color-pink)]"
+                    : "bg-[var(--color-canvas)] text-[var(--color-text-muted)] border-[var(--color-border)]"
                 )}
               >
                 02 AVATAR
               </span>
-              <span className="text-[#4E3970]">▶</span>
+              <span className="text-[var(--color-text-dim)]"><DotIcon name="circlePlay" size={14} aria-hidden="true" /></span>
               <span
                 className={cn(
                   "px-2 py-1 border transition-colors",
                   step === 3
-                    ? "bg-[#00FF9D] text-[#090514] font-bold border-white"
-                    : "bg-[#090514] text-[#7B6E94] border-[#2E1A57]"
+                    ? "bg-[var(--color-mint)] text-[var(--color-accent-foreground)] font-bold border-white"
+                    : "bg-[var(--color-canvas)] text-[var(--color-text-muted)] border-[var(--color-border)]"
                 )}
               >
                 03 LOADOUT
               </span>
             </div>
 
-            <span className="text-[#7B6E94] hidden sm:inline">
+            <span className="text-[var(--color-text-muted)] hidden sm:inline">
               STEP {step}/3
             </span>
           </div>
@@ -197,7 +197,7 @@ export function OnboardingWizard() {
           {submitError && (
             <div
               role="alert"
-              className="p-3 mb-6 bg-[#290B1E] border-2 border-[#FF007A] text-[#FF007A] font-mono text-xs flex items-center gap-2"
+              className="p-3 mb-6 bg-[var(--color-elevated)] border-2 border-[var(--color-pink)] text-[var(--color-pink)] font-mono text-xs flex items-center gap-2"
             >
               <span className="font-bold">[ERROR]</span>
               <span>{submitError}</span>
@@ -236,7 +236,7 @@ export function OnboardingWizard() {
           )}
 
           {/* Wizard Navigation Footer */}
-          <div className="flex items-center justify-between pt-6 mt-8 border-t-2 border-[#2E1A57]">
+          <div className="flex items-center justify-between pt-6 mt-8 border-t-2 border-[var(--color-border)]">
             {step > 1 ? (
               <PixelButton
                 variant="secondary"
@@ -244,7 +244,7 @@ export function OnboardingWizard() {
                 onClick={() => setStep((s) => (s - 1) as 1 | 2)}
                 disabled={isSubmitting}
               >
-                ◀ BACK
+                <DotIcon name="arrowLeft" size={14} aria-hidden="true" /> BACK
               </PixelButton>
             ) : (
               <div />
@@ -256,7 +256,7 @@ export function OnboardingWizard() {
                 size="md"
                 onClick={step === 1 ? handleNextFromIdentity : () => setStep(3)}
               >
-                NEXT STEP ▶
+                NEXT STEP <DotIcon name="circlePlay" size={14} aria-hidden="true" />
               </PixelButton>
             ) : (
               <PixelButton
@@ -264,9 +264,9 @@ export function OnboardingWizard() {
                 size="md"
                 onClick={handleFinalSubmit}
                 disabled={isSubmitting}
-                className="bg-[#00FF9D] text-[#090514] border-[#FFFFFF] hover:bg-[#00E58D] font-bold"
+                className="bg-[var(--color-mint)] text-[var(--color-accent-foreground)] border-[var(--color-border)] hover:bg-[var(--color-mint)] font-bold"
               >
-                {isSubmitting ? "STORING PROFILE..." : "CREATE PROFILE ▶"}
+                {isSubmitting ? "STORING PROFILE..." : "CREATE PROFILE"}
               </PixelButton>
             )}
           </div>
