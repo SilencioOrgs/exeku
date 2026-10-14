@@ -23,8 +23,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "overview", label: "Overview", href: "/app", iconName: "powershell", index: "01" },
   { id: "challenges", label: "Challenges", href: "/app/challenges", iconName: "list", index: "02" },
   { id: "workspace", label: "Workspace", href: "/app/workspace", iconName: "vscode", index: "03" },
-  { id: "progress", label: "Progress", href: "/app/progress", iconName: "stars", index: "04" },
-  { id: "settings", label: "Settings", href: "/app/settings", iconName: "cog", index: "05" },
+  { id: "settings", label: "Settings", href: "/app/settings", iconName: "cog", index: "04" },
 ];
 
 export interface AppSidebarProps {
