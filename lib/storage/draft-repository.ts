@@ -36,7 +36,9 @@ export class DraftRepository {
   ): Promise<WorkspaceDraft | null> {
     try {
       const id = makeDraftId(profileId, lang);
-      return await idbGet<WorkspaceDraft>(DRAFT_STORE, id);
+      const draft = await idbGet<WorkspaceDraft>(DRAFT_STORE, id);
+      if (!draft) return null;
+      return { ...draft, files: draft.files?.length ? draft.files : [{ name: getFilenameForLanguage(lang), content: draft.code }] };
     } catch (err) {
       throw new DraftRepositoryError("Failed to retrieve workspace draft", err);
     }
@@ -48,7 +50,8 @@ export class DraftRepository {
   async saveDraft(
     profileId: string,
     lang: PreferredLanguage,
-    code: string
+    code: string,
+    files?: { name: string; content: string }[]
   ): Promise<WorkspaceDraft> {
     const id = makeDraftId(profileId, lang);
     const draft: WorkspaceDraft = {
@@ -57,6 +60,7 @@ export class DraftRepository {
       language: lang,
       filename: getFilenameForLanguage(lang),
       code,
+      files: files?.length ? files.map((file) => ({ ...file })) : [{ name: getFilenameForLanguage(lang), content: code }],
       updatedAt: new Date().toISOString(),
     };
 
