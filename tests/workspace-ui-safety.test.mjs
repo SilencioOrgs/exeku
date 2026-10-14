@@ -21,8 +21,9 @@ test("client routes do not bundle private problem catalog or hidden tests", () =
 
 test("workspace offers editor focus mode without remounting Monaco", () => {
   const source = fs.readFileSync(path.join(root, "components/app/workspace-view.tsx"), "utf8");
-  assert.match(source, /aria-label=\{editorExpanded \? "Restore problem and results panels" : "Expand code editor"\}/);
-  assert.match(source, /data-editor-expanded=\{editorExpanded\}/);
+  assert.match(source, /data-layout=\{layout\}/);
+  assert.match(source, /<Group[\s\S]*?<Panel id="editor"/);
+  assert.match(source, /Cycle editor layout/);
   assert.match(source, /<MonacoEditorPane/);
   assert.match(source, /recordCodingDay\(profile\.id\)/);
 });
