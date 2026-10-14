@@ -84,6 +84,7 @@ export function WorkspaceView() {
   const [mobileActivePane, setMobileActivePane] = useState<MobileActivePane>("code");
   // Keeps Monaco mounted while letting students expand or restore the editor.
   const [layout, setLayout] = useState<"split" | "wide" | "focus">("split");
+  const [layoutReady, setLayoutReady] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [problemSlideOpen, setProblemSlideOpen] = useState(false);
   const resizeGroupRef = useGroupRef();
@@ -102,17 +103,20 @@ export function WorkspaceView() {
           setSplitSizes(widths);
         }
       } catch { /* local preference storage may be unavailable */ }
+      setLayoutReady(true);
     });
   }, []);
 
   useEffect(() => {
+    // Do not overwrite an existing saved layout with the initial split default.
+    if (!layoutReady) return;
     try { localStorage.setItem("exeku.workspace.layout", layout); } catch { /* local-only preference */ }
     const widths = layout === "split" ? splitSizes :
       layout === "wide" ? { problem: 4, editor: 72, results: 24 } :
       { problem: 0, editor: drawerOpen ? 65 : 100, results: drawerOpen ? 35 : 0 };
     const frame = requestAnimationFrame(() => resizeGroupRef.current?.setLayout(widths));
     return () => cancelAnimationFrame(frame);
-  }, [layout, drawerOpen, splitSizes, resizeGroupRef]);
+  }, [layout, drawerOpen, splitSizes, resizeGroupRef, layoutReady]);
 
   useEffect(() => {
     const onEscape = (event: KeyboardEvent) => {
