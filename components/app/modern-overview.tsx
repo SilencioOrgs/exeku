@@ -6,6 +6,7 @@ import { ArrowRight, Code2, FileCode2, ShieldAlert } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ProfileEditDialog } from "./profile-edit-dialog";
+import { CodingActivity } from "./coding-activity";
 import { getProblemSummaries } from "@/lib/problems/catalog";
 import { getFilenameForLanguage } from "@/lib/workspace-defaults";
 import type { LocalProfile, ProfileInput } from "@/types/profile";
@@ -77,6 +78,7 @@ export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfil
           ))}
         </div>
       </section>
+      <CodingActivity profileId={profile.id} />
       <footer className="modern-footnote flex flex-wrap items-center justify-between gap-3">
         <p><ShieldAlert aria-hidden="true" className="size-4 shrink-0" /> Run and Submit require a connected sandbox. Exeku is in local developer preview.</p>
         <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>Edit profile</Button>
