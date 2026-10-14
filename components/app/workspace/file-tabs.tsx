@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type KeyboardEvent } from "react";
 import { DotIcon } from "@/components/retro/dot-icon";
 import type { PreferredLanguage } from "@/types/profile";
 import type { WorkspaceFile } from "@/types/draft";
@@ -64,7 +64,7 @@ export function FileTabs({ language, files, activeName, mainName, saveStatus, on
     if (file.content.trim() && !window.confirm(`Close ${file.name}? Its content will be removed from this workspace.`)) return;
     onClose(file.name);
   };
-  const moveTab = (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+  const moveTab = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
     if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
     event.preventDefault();
     const next = (index + (event.key === "ArrowRight" ? 1 : -1) + files.length) % files.length;
