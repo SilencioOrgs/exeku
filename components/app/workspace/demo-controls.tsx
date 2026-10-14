@@ -23,8 +23,8 @@ export function DemoControls({
   demoState,
 }: DemoControlsProps) {
   return (
-    <div className="demo-controls-bar px-2 py-1 bg-[var(--color-surface)] border-2 border-[var(--color-accent)] text-[0.6875rem] font-mono flex flex-wrap items-center justify-between gap-2 shrink-0">
-      <div className="flex items-center gap-2 flex-wrap">
+    <div className="demo-controls-bar px-2 py-1 bg-[var(--color-surface)] border-2 border-[var(--color-accent)] text-[0.6875rem] font-mono flex flex-nowrap items-center justify-between gap-2 shrink-0 overflow-x-auto">
+      <div className="flex shrink-0 items-center gap-2 whitespace-nowrap">
         <PixelBadge variant="purple" bracketed className="text-[0.625rem] py-0 px-1 font-mono">
           DEV DEMO MODE
         </PixelBadge>
@@ -38,7 +38,7 @@ export function DemoControls({
         )}
       </div>
 
-      <div className="flex items-center gap-1.5 flex-wrap">
+      <div className="flex shrink-0 items-center gap-1.5 whitespace-nowrap">
         <button
           type="button"
           onClick={onLoadSolved}
