@@ -23,7 +23,8 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "overview", label: "Overview", href: "/app", iconName: "powershell", index: "01" },
   { id: "challenges", label: "Challenges", href: "/app/challenges", iconName: "list", index: "02" },
   { id: "workspace", label: "Workspace", href: "/app/workspace", iconName: "vscode", index: "03" },
-  { id: "settings", label: "Settings", href: "/app/settings", iconName: "cog", index: "04" },
+  { id: "profile", label: "Profile", href: "/app/profile", iconName: "file", index: "04" },
+  { id: "settings", label: "Settings", href: "/app/settings", iconName: "cog", index: "05" },
 ];
 
 export interface AppSidebarProps {
@@ -226,7 +227,7 @@ export function AppSidebar({
           )}
         >
           <span className="text-[var(--color-accent)] font-bold">
-            {collapsed ? "▶" : "◀"}
+            <DotIcon name="arrowRight" size={14} aria-hidden="true" className={collapsed ? "" : "rotate-180"} />
           </span>
           {!collapsed && (
             <span className="text-[0.625rem] uppercase tracking-wider">
