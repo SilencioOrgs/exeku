@@ -97,7 +97,7 @@ export const VALID_PALETTES_BY_STYLE: Record<UIStyle, readonly ColorPalette[]> =
 
 export const DEFAULT_PALETTES: Record<UIStyle, ColorPalette> = {
   "pixel-arcade": "neon-violet",
-  "minimal-saas": "sapphire",
+  "minimal-saas": "monochrome",
   "studio-crm": "emerald-console",
 } as const;
 
