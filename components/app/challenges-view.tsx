@@ -43,7 +43,8 @@ export function ChallengesView() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [inspectProblemId, setInspectProblemId] = useState<string | null>(null);
   const [problems, setProblems] = useState<ProblemSummary[]>([]);
-  const [activeProblemDetail, setActiveProblemDetail] = useState<VisibleProblem | null>(null);
+  const [loadedProblem, setLoadedProblem] = useState<{ id: string; detail: VisibleProblem } | null>(null);
+  const activeProblemDetail = loadedProblem?.id === inspectProblemId ? loadedProblem.detail : null;
 
   const handleStartTimedChallenge = (problemId: string, problemTitle: string) => {
     challenge.startChallenge(problemId, problemTitle);
@@ -71,15 +72,14 @@ export function ChallengesView() {
 
   useEffect(() => {
     let active = true;
-    setActiveProblemDetail(null);
     if (inspectProblemId) {
       fetch(`/api/problems/${encodeURIComponent(inspectProblemId)}`)
         .then((response) => {
           if (!response.ok) throw new Error("Unable to load problem");
           return response.json();
         })
-        .then((data: VisibleProblem) => { if (active) setActiveProblemDetail(data); })
-        .catch(() => { if (active) setActiveProblemDetail(null); });
+        .then((data: VisibleProblem) => { if (active) setLoadedProblem({ id: inspectProblemId!, detail: data }); })
+        .catch(() => { if (active) setLoadedProblem(null); });
     }
     return () => { active = false; };
   }, [inspectProblemId]);
