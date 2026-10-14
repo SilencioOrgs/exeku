@@ -49,12 +49,12 @@ export function ProfileResetDialog({
         if (e.key === "Escape" && !isDeleting) onClose();
       }}
     >
-      <div className="w-full max-w-md bg-[#180816] border-2 border-[#FF007A] shadow-[6px_6px_0px_#000000,0_0_24px_rgba(255,0,122,0.3)] p-6 space-y-5 text-white">
+      <div className="w-full max-w-md bg-[var(--color-surface)] border-2 border-[var(--color-pink)] [box-shadow:var(--shadow-card)] [border-radius:var(--radius-card)] p-6 space-y-5 text-foreground">
         {/* Header */}
-        <div className="flex items-center justify-between border-b-2 border-[#3D0F2E] pb-3">
+        <div className="flex items-center justify-between border-b-2 border-[var(--color-border)] pb-3">
           <div className="flex items-center gap-2">
             <PixelBadge variant="pink">DANGER</PixelBadge>
-            <h3 id="reset-dialog-title" className="font-pixel text-lg sm:text-xl text-[#FF007A]">
+            <h3 id="reset-dialog-title" className="font-heading text-lg sm:text-xl text-[var(--color-pink)]">
               RESET LOCAL PROFILE_
             </h3>
           </div>
@@ -62,32 +62,32 @@ export function ProfileResetDialog({
             onClick={onClose}
             disabled={isDeleting}
             aria-label="Close dialog"
-            className="text-[#A79EC4] hover:text-[#FF007A] font-mono text-sm px-2 py-1 transition-colors"
+            className="text-[var(--color-text-muted)] hover:text-[var(--color-pink)] font-mono text-sm px-2 py-1 transition-colors"
           >
             ✕
           </button>
         </div>
 
         {error && (
-          <div role="alert" className="p-2.5 bg-[#290B1E] border border-[#FF007A] text-[#FF007A] font-mono text-xs">
+          <div role="alert" className="p-2.5 bg-[var(--color-elevated)] border border-[var(--color-pink)] text-[var(--color-pink)] font-mono text-xs">
             [ERROR] {error}
           </div>
         )}
 
         {/* Warning text */}
-        <div className="space-y-3 text-xs font-mono text-[#D4C3DC]">
+        <div className="space-y-3 text-xs font-mono text-[var(--color-text-muted)]">
           <p>
             You are about to permanently delete the local profile for{" "}
-            <strong className="text-white underline">{profileName}</strong> from this browser&apos;s IndexedDB.
+            <strong className="text-foreground underline">{profileName}</strong> from this browser&apos;s IndexedDB.
           </p>
-          <div className="p-3 bg-[#24081E] border border-[#FF007A]/50 text-[#FFA1D4] space-y-1">
+          <div className="p-3 bg-[var(--color-elevated)] border border-[var(--color-pink)]/50 text-[var(--color-pink)] space-y-1">
             <span className="font-bold block">[!] PERMANENT CONSEQUENCE</span>
             <p className="text-[11px] leading-relaxed">
               This action cannot be undone. All local progress, preferences, and identity records on this device will be erased. Unrelated browser databases will not be touched.
             </p>
           </div>
           <p>
-            To confirm deletion, type <strong className="text-[#FF007A]">RESET</strong> below:
+            To confirm deletion, type <strong className="text-[var(--color-pink)]">RESET</strong> below:
           </p>
         </div>
 
@@ -100,12 +100,12 @@ export function ProfileResetDialog({
             placeholder="Type RESET to confirm"
             autoFocus
             disabled={isDeleting}
-            className="w-full px-3 py-2 bg-[#090514] border-2 border-[#FF007A]/60 focus:border-[#FF007A] text-white font-mono text-sm outline-none transition-colors uppercase tracking-wider"
+            className="w-full px-3 py-2 bg-[var(--color-canvas)] border-2 border-[var(--color-pink)]/60 focus:border-[var(--color-pink)] text-foreground font-mono text-sm outline-none transition-colors uppercase tracking-wider"
           />
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-3 pt-3 border-t-2 border-[#3D0F2E]">
+        <div className="flex items-center justify-end gap-3 pt-3 border-t-2 border-[var(--color-border)]">
           <PixelButton
             variant="ghost"
             size="sm"

@@ -16,8 +16,8 @@ export function Hero() {
   return (
     <section id="hero" className="relative pt-12 pb-20 md:pt-20 md:pb-28 overflow-hidden">
       {/* Ambient retro glow backgrounds */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-[#9E00FF]/15 blur-[120px] pointer-events-none rounded-full" />
-      <div className="absolute top-1/3 left-1/4 w-[300px] h-[200px] bg-[#00F0FF]/10 blur-[100px] pointer-events-none rounded-full" />
+      <div className="arcade-decoration absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-[var(--color-primary)]/15 blur-[120px] pointer-events-none rounded-full" />
+      <div className="arcade-decoration absolute top-1/3 left-1/4 w-[300px] h-[200px] bg-[var(--color-accent)]/10 blur-[100px] pointer-events-none rounded-full" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="flex flex-col items-center text-center max-w-4xl mx-auto mb-12 sm:mb-16">
@@ -29,17 +29,17 @@ export function Hero() {
 
           {/* Headline */}
           <h1
-            className="text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-white mb-6 uppercase leading-[1.1]"
-            style={{ fontFamily: "var(--font-pixelify)" }}
+            className="text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-[var(--color-text-main)] mb-6 uppercase leading-[1.1]"
+            style={{ fontFamily: "var(--font-heading-active)" }}
           >
             YOUR CODE. <br className="hidden sm:inline" />
-            <span className="text-[#00F0FF]">
+            <span className="text-[var(--color-accent)]">
               YOUR MACHINE.
             </span>
           </h1>
 
           {/* Subtitle */}
-          <p className="text-lg sm:text-xl text-[#A79EC4] max-w-2xl font-sans leading-relaxed mb-8">
+          <p className="text-lg sm:text-xl text-[var(--color-text-muted)] max-w-2xl font-sans leading-relaxed mb-8">
             An online programming practice, assessment, and competition platform inspired by CodeChum.
             Solve challenges, run code in isolated sandboxes, and receive instant judging verdicts across Python 3, Java, C++, and C.
           </p>
@@ -52,7 +52,7 @@ export function Hero() {
               onClick={() => router.push(profile ? "/app" : "/setup")}
               className="w-full sm:w-auto"
             >
-              <DotIcon name="windows" size={16} className="text-[#090514]" />{" "}
+              <DotIcon name="windows" size={16} className="text-[var(--color-accent-foreground)]" />{" "}
               {profile ? "Launch Workspace ▶" : "Get Started (Setup Profile) ▶"}
             </PixelButton>
 
@@ -62,22 +62,22 @@ export function Hero() {
               href="#about"
               className="w-full sm:w-auto"
             >
-              About Exeku <ArrowDown className="w-4 h-4 text-[#00F0FF]" />
+              About Exeku <ArrowDown className="w-4 h-4 text-[var(--color-accent)]" />
             </PixelButton>
           </div>
 
           {/* Core Trust Badges */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-8 mt-10 pt-8 border-t border-[#2E1A57]/60 w-full max-w-2xl font-mono text-xs text-[#A79EC4]">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-8 mt-10 pt-8 border-t border-[var(--color-border)]/60 w-full max-w-2xl font-mono text-xs text-[var(--color-text-muted)]">
             <div className="flex items-center justify-center gap-2">
-              <DotIcon name="shield" size={16} className="text-[#00FF9D]" />
+              <DotIcon name="shield" size={16} className="text-[var(--color-mint)]" />
               <span>Container Sandboxing</span>
             </div>
             <div className="flex items-center justify-center gap-2">
-              <DotIcon name="cog" size={16} className="text-[#00F0FF]" />
+              <DotIcon name="cog" size={16} className="text-[var(--color-accent)]" />
               <span>Automatic Judging</span>
             </div>
             <div className="col-span-2 sm:col-span-1 flex items-center justify-center gap-2">
-              <DotIcon name="powershell" size={16} className="text-[#FF007A]" />
+              <DotIcon name="powershell" size={16} className="text-[var(--color-pink)]" />
               <span>4 Core Languages</span>
             </div>
           </div>
@@ -85,9 +85,9 @@ export function Hero() {
 
         {/* Centerpiece Pixel Terminal */}
         <div className="max-w-5xl mx-auto">
-          <div className="mb-2 flex items-center justify-between text-xs font-mono text-[#A79EC4] px-1">
+          <div className="mb-2 flex items-center justify-between text-xs font-mono text-[var(--color-text-muted)] px-1">
             <span>[CENTERPIECE: INTERACTIVE PREVIEW]</span>
-            <span className="text-[#00F0FF]">LOCAL_CONSOLE</span>
+            <span className="text-[var(--color-accent)]">LOCAL_CONSOLE</span>
           </div>
           <PixelTerminal />
         </div>

@@ -10,7 +10,6 @@ export type ContrastMode = "standard" | "high";
 
 export type UIFontFamily =
   | "geist-sans"
-  | "inter"
   | "pixelify-sans"
   | "system-sans";
 
@@ -20,6 +19,10 @@ export type EditorFontFamily =
   | "monospace";
 
 export type LineHeightOption = "compact" | "normal" | "comfortable";
+
+export type Density = "compact" | "comfortable" | "spacious";
+export type EditorTheme = "auto" | "dark" | "light" | "high-contrast";
+export type ReducedMotion = boolean | "system";
 
 export interface AppearancePreferences {
   uiStyle: UIStyle;
@@ -32,7 +35,10 @@ export interface AppearancePreferences {
   editorFontSize: number; // 12 - 20 (px)
   editorLineHeight: number; // 18 - 32 (px)
   brightness: number; // 80 - 120 (%)
-  reducedMotion: boolean;
+  reducedMotion: ReducedMotion;
+  density: Density;
+  editorTheme: EditorTheme;
+  editorLigatures: boolean;
 }
 
 export const VALID_UI_STYLES: readonly UIStyle[] = [
@@ -54,7 +60,6 @@ export const VALID_CONTRAST_MODES: readonly ContrastMode[] = [
 
 export const VALID_UI_FONTS: readonly UIFontFamily[] = [
   "geist-sans",
-  "inter",
   "pixelify-sans",
   "system-sans",
 ] as const;
@@ -82,76 +87,81 @@ export const DEFAULT_APPEARANCE_PREFERENCES: AppearancePreferences = {
   editorFontSize: 14,
   editorLineHeight: 22,
   brightness: 100,
-  reducedMotion: false,
+  reducedMotion: "system",
+  density: "comfortable",
+  editorTheme: "auto",
+  editorLigatures: false,
 };
 
 function clamp(value: number, min: number, max: number, defaultValue: number): number {
-  if (typeof value !== "number" || isNaN(value)) return defaultValue;
+  if (typeof value !== "number" || !Number.isFinite(value)) return defaultValue;
   return Math.min(Math.max(value, min), max);
 }
 
 export function normalizeAppearancePreferences(
-  input?: Partial<AppearancePreferences> | null
+  input?: unknown
 ): AppearancePreferences {
   if (!input || typeof input !== "object") {
     return { ...DEFAULT_APPEARANCE_PREFERENCES };
   }
 
-  const uiStyle: UIStyle = VALID_UI_STYLES.includes(input.uiStyle as UIStyle)
-    ? (input.uiStyle as UIStyle)
+  const values = input as Record<string, unknown>;
+
+  const uiStyle: UIStyle = VALID_UI_STYLES.includes(values.uiStyle as UIStyle)
+    ? (values.uiStyle as UIStyle)
     : DEFAULT_APPEARANCE_PREFERENCES.uiStyle;
 
-  const colorMode: ColorMode = VALID_COLOR_MODES.includes(input.colorMode as ColorMode)
-    ? (input.colorMode as ColorMode)
+  const colorMode: ColorMode = VALID_COLOR_MODES.includes(values.colorMode as ColorMode)
+    ? (values.colorMode as ColorMode)
     : DEFAULT_APPEARANCE_PREFERENCES.colorMode;
 
-  const contrastMode: ContrastMode = VALID_CONTRAST_MODES.includes(input.contrastMode as ContrastMode)
-    ? (input.contrastMode as ContrastMode)
+  const contrastMode: ContrastMode = VALID_CONTRAST_MODES.includes(values.contrastMode as ContrastMode)
+    ? (values.contrastMode as ContrastMode)
     : DEFAULT_APPEARANCE_PREFERENCES.contrastMode;
 
-  const uiFontFamily: UIFontFamily = VALID_UI_FONTS.includes(input.uiFontFamily as UIFontFamily)
-    ? (input.uiFontFamily as UIFontFamily)
+  const uiFontFamily: UIFontFamily = values.uiFontFamily === "inter" ? "system-sans" : VALID_UI_FONTS.includes(values.uiFontFamily as UIFontFamily)
+    ? (values.uiFontFamily as UIFontFamily)
     : DEFAULT_APPEARANCE_PREFERENCES.uiFontFamily;
 
-  const lineHeight: LineHeightOption = VALID_LINE_HEIGHTS.includes(input.lineHeight as LineHeightOption)
-    ? (input.lineHeight as LineHeightOption)
+  const lineHeight: LineHeightOption = VALID_LINE_HEIGHTS.includes(values.lineHeight as LineHeightOption)
+    ? (values.lineHeight as LineHeightOption)
     : DEFAULT_APPEARANCE_PREFERENCES.lineHeight;
 
-  const editorFontFamily: EditorFontFamily = VALID_EDITOR_FONTS.includes(input.editorFontFamily as EditorFontFamily)
-    ? (input.editorFontFamily as EditorFontFamily)
+  const editorFontFamily: EditorFontFamily = VALID_EDITOR_FONTS.includes(values.editorFontFamily as EditorFontFamily)
+    ? (values.editorFontFamily as EditorFontFamily)
     : DEFAULT_APPEARANCE_PREFERENCES.editorFontFamily;
 
   const uiFontScale = clamp(
-    Number(input.uiFontScale),
+    values.uiFontScale as number,
     80,
     150,
     DEFAULT_APPEARANCE_PREFERENCES.uiFontScale
   );
 
   const brightness = clamp(
-    Number(input.brightness),
+    values.brightness as number,
     80,
     120,
     DEFAULT_APPEARANCE_PREFERENCES.brightness
   );
 
   const editorFontSize = clamp(
-    Number(input.editorFontSize),
+    values.editorFontSize as number,
     12,
     20,
     DEFAULT_APPEARANCE_PREFERENCES.editorFontSize
   );
 
   const editorLineHeight = clamp(
-    Number(input.editorLineHeight),
+    values.editorLineHeight as number,
     18,
     32,
     DEFAULT_APPEARANCE_PREFERENCES.editorLineHeight
   );
 
   const reducedMotion =
-    typeof input.reducedMotion === "boolean"
-      ? input.reducedMotion
+    typeof values.reducedMotion === "boolean" || values.reducedMotion === "system"
+      ? values.reducedMotion
       : DEFAULT_APPEARANCE_PREFERENCES.reducedMotion;
 
   return {
@@ -166,5 +176,8 @@ export function normalizeAppearancePreferences(
     editorLineHeight,
     brightness,
     reducedMotion,
+    density: (["compact", "comfortable", "spacious"] as unknown[]).includes(values.density) ? values.density as Density : "comfortable",
+    editorTheme: (["auto", "dark", "light", "high-contrast"] as unknown[]).includes(values.editorTheme) ? values.editorTheme as EditorTheme : "auto",
+    editorLigatures: typeof values.editorLigatures === "boolean" ? values.editorLigatures : false,
   };
 }

@@ -36,7 +36,7 @@ export function FAQ() {
   };
 
   return (
-    <section id="faq" className="py-20 md:py-28 bg-[#0B0617] border-t-2 border-b-2 border-[#2E1A57] relative">
+    <section id="faq" className="py-20 md:py-28 bg-[var(--color-canvas)] border-t-2 border-b-2 border-[var(--color-border)] relative">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-14">
@@ -44,12 +44,12 @@ export function FAQ() {
             <PixelBadge variant="purple">KNOWLEDGE BASE</PixelBadge>
           </div>
           <h2
-            className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4 uppercase tracking-tight"
-            style={{ fontFamily: "var(--font-pixelify)" }}
+            className="text-3xl sm:text-4xl md:text-5xl font-bold text-[var(--color-text-main)] mb-4 uppercase tracking-tight"
+            style={{ fontFamily: "var(--font-heading-active)" }}
           >
             Frequently Asked Questions.
           </h2>
-          <p className="text-base sm:text-lg text-[#A79EC4] font-sans">
+          <p className="text-base sm:text-lg text-[var(--color-text-muted)] font-sans">
             Clear, honest answers about our offline architecture, roadmap, and requirements.
           </p>
         </div>
@@ -61,30 +61,30 @@ export function FAQ() {
             return (
               <div
                 key={idx}
-                className="border-2 border-[#2E1A57] bg-[#120A24] transition-colors"
+                className="border-2 border-[var(--color-border)] bg-[var(--color-surface)] transition-colors"
               >
                 <button
                   type="button"
                   onClick={() => toggle(idx)}
-                  className="w-full p-4 sm:p-5 flex items-center justify-between text-left gap-4 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[#00F0FF]"
+                  className="w-full p-4 sm:p-5 flex items-center justify-between text-left gap-4 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
                   aria-expanded={isOpen}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-[#00F0FF] font-mono text-xs font-bold shrink-0 flex items-center gap-1.5">
-                      <DotIcon name="chat" size={14} className="text-[#00F0FF]" />
+                    <span className="text-[var(--color-accent)] font-mono text-xs font-bold shrink-0 flex items-center gap-1.5">
+                      <DotIcon name="chat" size={14} className="text-[var(--color-accent)]" />
                       [Q-0{idx + 1}]
                     </span>
-                    <span className="text-base sm:text-lg font-bold text-white font-mono">
+                    <span className="text-base sm:text-lg font-bold text-[var(--color-text-main)] font-mono">
                       {faq.q}
                     </span>
                   </div>
-                  <div className="p-1 bg-[#1B0F36] border border-[#2E1A57] text-[#00F0FF] shrink-0">
+                  <div className="p-1 bg-[var(--color-elevated)] border border-[var(--color-border)] text-[var(--color-accent)] shrink-0">
                     {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                   </div>
                 </button>
 
                 {isOpen && (
-                  <div className="px-4 pb-5 sm:px-5 sm:pb-6 pt-1 text-sm sm:text-base text-[#A79EC4] font-sans border-t border-[#1B0F36] leading-relaxed">
+                  <div className="px-4 pb-5 sm:px-5 sm:pb-6 pt-1 text-sm sm:text-base text-[var(--color-text-muted)] font-sans border-t border-[var(--color-elevated)] leading-relaxed">
                     {faq.a}
                   </div>
                 )}

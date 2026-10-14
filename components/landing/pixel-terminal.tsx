@@ -113,43 +113,43 @@ export function PixelTerminal() {
   };
 
   return (
-    <div className="relative w-full rounded-none border-2 border-[#9E00FF] bg-[#120A24] pixel-box-purple overflow-hidden">
+    <div className="relative w-full rounded-none border-2 border-[var(--color-primary)] bg-[var(--color-surface)] pixel-box-purple overflow-hidden">
       {/* Decorative corner tabs */}
-      <div className="absolute top-0 left-0 w-3 h-3 bg-[#00F0FF] z-20" />
-      <div className="absolute top-0 right-0 w-3 h-3 bg-[#00F0FF] z-20" />
-      <div className="absolute bottom-0 left-0 w-3 h-3 bg-[#FF007A] z-20" />
-      <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#FF007A] z-20" />
+      <div className="pixel-corner-mark absolute top-0 left-0 w-3 h-3 bg-[var(--color-accent)] z-20" />
+      <div className="pixel-corner-mark absolute top-0 right-0 w-3 h-3 bg-[var(--color-accent)] z-20" />
+      <div className="pixel-corner-mark absolute bottom-0 left-0 w-3 h-3 bg-[var(--color-pink)] z-20" />
+      <div className="pixel-corner-mark absolute bottom-0 right-0 w-3 h-3 bg-[var(--color-pink)] z-20" />
 
       {/* Terminal Title Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 px-3 sm:px-4 py-2.5 bg-[#1B0F36] border-b-2 border-[#2E1A57] font-mono text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-3 sm:px-4 py-2.5 bg-[var(--color-elevated)] border-b-2 border-[var(--color-border)] font-mono text-xs">
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 bg-[#FF007A] inline-block border border-black/60" />
-            <span className="w-2.5 h-2.5 bg-[#00F0FF] inline-block border border-black/60" />
-            <span className="w-2.5 h-2.5 bg-[#00FF9D] inline-block border border-black/60" />
+            <span className="w-2.5 h-2.5 bg-[var(--color-pink)] inline-block border border-black/60" />
+            <span className="w-2.5 h-2.5 bg-[var(--color-accent)] inline-block border border-black/60" />
+            <span className="w-2.5 h-2.5 bg-[var(--color-mint)] inline-block border border-black/60" />
           </div>
-          <span className="text-white font-bold ml-1 tracking-wider">
-            exeku-terminal<span className="text-[#00F0FF]">_mock</span>
+          <span className="text-[var(--color-text-main)] font-bold ml-1 tracking-wider">
+            exeku-terminal<span className="text-[var(--color-accent)]">_mock</span>
           </span>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-[#A79EC4] hidden sm:inline">[HOST: 127.0.0.1]</span>
+          <span className="text-[var(--color-text-muted)] hidden sm:inline">[HOST: 127.0.0.1]</span>
           <PixelBadge variant="cyan">DEV PREVIEW</PixelBadge>
         </div>
       </div>
 
       {/* Disclaimer Banner: Strictly labeled as demo */}
-      <div className="px-3 sm:px-4 py-1.5 bg-[#200B1A] border-b border-[#FF007A]/40 flex items-center justify-between gap-2 text-[11px] font-mono text-[#FF85C0]">
+      <div className="px-3 sm:px-4 py-1.5 bg-[var(--color-elevated)] border-b border-[var(--color-pink)]/40 flex items-center justify-between gap-2 text-[0.6875rem] font-mono text-[var(--color-pink)]">
         <div className="flex items-center gap-1.5">
-          <AlertTriangle className="w-3.5 h-3.5 text-[#FF007A] shrink-0" />
+          <AlertTriangle className="w-3.5 h-3.5 text-[var(--color-pink)] shrink-0" />
           <span>DEMO SIMULATION ONLY — Local execution engine is in active development on the roadmap.</span>
         </div>
-        <span className="hidden md:inline text-[10px] uppercase opacity-75">Not a live compiler</span>
+        <span className="hidden md:inline text-[0.625rem] uppercase opacity-75">Not a live compiler</span>
       </div>
 
       {/* Language Switcher Tabs with Doticons */}
-      <div className="flex items-center border-b-2 border-[#2E1A57] bg-[#0E071D] px-2 sm:px-4 overflow-x-auto">
+      <div className="flex items-center border-b-2 border-[var(--color-border)] bg-[var(--color-canvas)] px-2 sm:px-4 overflow-x-auto">
         {(Object.keys(SNIPPETS) as LanguageKey[]).map((key) => {
           const isActive = activeLang === key;
           const snippet = SNIPPETS[key];
@@ -161,68 +161,68 @@ export function PixelTerminal() {
                 setActiveLang(key);
                 setHasRun(false);
               }}
-              className={`px-3 sm:px-4 py-2 text-xs font-mono font-medium tracking-wider flex items-center gap-2 border-b-2 transition-colors cursor-pointer outline-none focus-visible:ring-1 focus-visible:ring-[#00F0FF] ${
+              className={`px-3 sm:px-4 py-2 text-xs font-mono font-medium tracking-wider flex items-center gap-2 border-b-2 transition-colors cursor-pointer outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-accent)] ${
                 isActive
-                  ? "border-[#00F0FF] text-[#00F0FF] bg-[#1B0F36]"
-                  : "border-transparent text-[#A79EC4] hover:text-white hover:bg-[#150B2C]"
+                  ? "border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-elevated)]"
+                  : "border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-elevated)]"
               }`}
             >
               <DotIcon
                 name={snippet.iconName}
                 size={14}
-                className={isActive ? "text-[#00F0FF]" : "text-[#A79EC4]"}
+                className={isActive ? "text-[var(--color-accent)]" : "text-[var(--color-text-muted)]"}
               />
               <span>{snippet.name}</span>
-              <span className="text-[10px] text-[#6D628B]">({snippet.filename})</span>
+              <span className="text-[0.625rem] text-[var(--color-text-dim)]">({snippet.filename})</span>
             </button>
           );
         })}
       </div>
 
       {/* Code Editor Body Viewport */}
-      <div className="relative p-3 sm:p-5 bg-[#090514] font-mono text-xs sm:text-sm overflow-x-auto min-h-[220px]">
+      <div className="relative p-3 sm:p-5 bg-[var(--color-canvas)] font-mono text-xs sm:text-sm overflow-x-auto min-h-[220px]">
         {/* Subtle Scanlines Overlay */}
         <div className="absolute inset-0 scanlines pointer-events-none opacity-40" />
 
         <div className="relative z-10 flex">
           {/* Line Numbers */}
-          <div className="select-none text-[#4A3D6B] pr-4 text-right border-r border-[#2E1A57]/60 font-mono text-xs sm:text-sm leading-6">
+          <div className="select-none text-[var(--color-text-dim)] pr-4 text-right border-r border-[var(--color-border)]/60 font-mono text-xs sm:text-sm leading-6">
             {current.code.map((_, i) => (
               <div key={i}>{String(i + 1).padStart(2, "0")}</div>
             ))}
           </div>
 
           {/* Code Lines */}
-          <div className="pl-4 font-mono text-xs sm:text-sm leading-6 text-[#E4DBFF] flex-1">
+          <div className="pl-4 font-mono text-xs sm:text-sm leading-6 text-[var(--color-text-main)] flex-1">
             {current.code.map((line, i) => (
               <div key={i} className="whitespace-pre">
                 {line.startsWith("#") || line.startsWith("//") ? (
-                  <span className="text-[#6D628B] italic">{line}</span>
+                  <span className="text-[var(--color-text-dim)] italic">{line}</span>
                 ) : line.includes("def ") || line.includes("void ") || line.includes("public class ") ? (
-                  <span className="text-[#00F0FF] font-semibold">{line}</span>
+                  <span className="text-[var(--color-accent)] font-semibold">{line}</span>
                 ) : line.includes("return") || line.includes("for ") || line.includes("while ") ? (
-                  <span className="text-[#FF007A]">{line}</span>
+                  <span className="text-[var(--color-pink)]">{line}</span>
                 ) : (
                   <span>{line}</span>
                 )}
               </div>
             ))}
-            <div className="text-[#00F0FF] inline-block animate-terminal-blink">█</div>
+            <div className="text-[var(--color-accent)] inline-block animate-terminal-blink">█</div>
           </div>
         </div>
       </div>
 
       {/* Action Strip & Simulated Terminal Output */}
-      <div className="p-3 sm:p-4 bg-[#140C27] border-t-2 border-[#2E1A57]">
+      <div className="p-3 sm:p-4 bg-[var(--color-surface)] border-t-2 border-[var(--color-border)]">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={handleRunDemo}
               disabled={isRunning}
-              className="px-4 py-2 bg-[#00F0FF] hover:bg-[#38BDF8] text-[#090514] font-mono font-bold text-xs uppercase flex items-center gap-1.5 transition-all shadow-[2px_2px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer disabled:opacity-50"
+              className="px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-accent-foreground)] font-mono font-bold text-xs uppercase flex items-center gap-1.5 transition-all [box-shadow:var(--shadow-btn)] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer disabled:opacity-50"
             >
-              <DotIcon name="circlePlay" size={14} className="text-[#090514]" />
+              <DotIcon name="circlePlay" size={14} className="text-[var(--color-accent-foreground)]" />
               {isRunning ? "Simulating..." : "Run Demo ▶"}
             </button>
 
@@ -230,7 +230,7 @@ export function PixelTerminal() {
               <button
                 type="button"
                 onClick={handleReset}
-                className="px-3 py-2 bg-[#1B0F36] hover:bg-[#2E1A57] text-[#A79EC4] hover:text-white font-mono text-xs uppercase flex items-center gap-1 border border-[#2E1A57] cursor-pointer"
+                className="px-3 py-2 bg-[var(--color-elevated)] hover:bg-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] font-mono text-xs uppercase flex items-center gap-1 border border-[var(--color-border)] cursor-pointer"
                 title="Reset simulation"
               >
                 <RotateCcw className="w-3 h-3" />
@@ -239,16 +239,16 @@ export function PixelTerminal() {
             )}
           </div>
 
-          <div className="text-[11px] font-mono text-[#A79EC4] flex items-center gap-2">
-            <DotIcon name="windows" size={13} className="text-[#00FF9D]" />
+          <div className="text-[0.6875rem] font-mono text-[var(--color-text-muted)] flex items-center gap-2">
+            <DotIcon name="windows" size={13} className="text-[var(--color-mint)]" />
             <span>Target Architecture: Windows x64</span>
           </div>
         </div>
 
         {/* Output Console Box */}
-        <div className="p-2.5 sm:p-3 bg-[#0B0617] border border-[#2E1A57] font-mono text-xs text-[#A79EC4] min-h-[72px]">
+        <div className="p-2.5 sm:p-3 bg-[var(--color-canvas)] border border-[var(--color-border)] font-mono text-xs text-[var(--color-text-muted)] min-h-[72px]">
           {isRunning ? (
-            <div className="text-[#00F0FF] animate-pulse flex items-center gap-2">
+            <div className="text-[var(--color-accent)] animate-pulse flex items-center gap-2">
               <span className="animate-spin">◐</span>
               <span>Running local verification simulation for {current.name}...</span>
             </div>
@@ -259,19 +259,19 @@ export function PixelTerminal() {
                   key={idx}
                   className={`flex items-start gap-1.5 ${
                     outLine.includes("PASS") || outLine.includes("Complete")
-                      ? "text-[#00FF9D]"
-                      : "text-[#C084FC]"
+                      ? "text-[var(--color-mint)]"
+                      : "text-[var(--color-primary-text)]"
                   }`}
                 >
                   {outLine.includes("✓") && (
-                    <DotIcon name="circleCheck" size={14} className="text-[#00FF9D] mt-0.5 shrink-0" />
+                    <DotIcon name="circleCheck" size={14} className="text-[var(--color-mint)] mt-0.5 shrink-0" />
                   )}
                   <span>{outLine}</span>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-[#6D628B] italic">
+            <div className="text-[var(--color-text-dim)] italic">
               Click &quot;Run Demo ▶&quot; to simulate how local tests will run on your machine once the execution engine is released.
             </div>
           )}

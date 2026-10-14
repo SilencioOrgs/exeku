@@ -29,7 +29,7 @@ export function PixelCard({
   return (
     <div
       className={cn(
-        "relative p-6 transition-colors duration-150",
+        "appearance-card relative p-[var(--panel-padding)] transition-colors duration-150",
         variantStyles[variant],
         className
       )}

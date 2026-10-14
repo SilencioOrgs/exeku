@@ -1,3 +1,5 @@
+import { appearanceRepository } from "./appearance-repository";
+import { normalizeAppearancePreferences, type AppearancePreferences } from "@/types/appearance";
 import type { LocalProfile, ProfileInput } from "@/types/profile";
 import { validateDisplayName } from "@/lib/profile-validation";
 import {
@@ -5,6 +7,7 @@ import {
   idbGet,
   idbGetAll,
   idbPut,
+  idbUpdate,
   idbDelete,
   idbClear,
 } from "./db";
@@ -74,6 +77,7 @@ export class ProfileRepository {
       avatarId: input.avatarId,
       experienceLevel: input.experienceLevel,
       preferredLanguage: input.preferredLanguage,
+      appearancePreferences: appearanceRepository.getPreferences(),
       createdAt: now,
       updatedAt: now,
     };
@@ -124,13 +128,27 @@ export class ProfileRepository {
     };
 
     try {
-      await idbPut<LocalProfile>(PROFILE_STORE, updatedProfile);
-      return updatedProfile;
+      return await idbUpdate<LocalProfile>(PROFILE_STORE, id, (current) => {
+        if (!current) throw new Error("Profile was not found");
+        return { ...updatedProfile, appearancePreferences: current.appearancePreferences };
+      });
     } catch (err) {
       throw new ProfileRepositoryError(
         `Failed to update profile '${id}' in local storage`,
         err
       );
+    }
+  }
+
+  async saveAppearancePreferences(id: string, preferences: AppearancePreferences): Promise<void> {
+    try {
+      await idbUpdate<LocalProfile>(PROFILE_STORE, id, (existing) => {
+        if (!existing) throw new Error("Profile was not found");
+        // Appearance must not alter profile identity, timestamps, or unrelated fields.
+        return { ...existing, appearancePreferences: normalizeAppearancePreferences(preferences) };
+      });
+    } catch (error) {
+      throw new ProfileRepositoryError("Failed to save profile appearance", error);
     }
   }
 

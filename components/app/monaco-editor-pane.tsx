@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import type { OnMount } from "@monaco-editor/react";
 import type * as MonacoType from "monaco-editor";
 import { useAppearance } from "@/hooks/use-appearance";
-import type { EditorFontFamily } from "@/types/appearance";
+import { resolveEditorAppearance } from "@/lib/editor-appearance";
 
 export interface MonacoEditorPaneProps {
   language: string;
@@ -48,41 +48,23 @@ const DynamicEditor = dynamic(() => import("@monaco-editor/react"), {
   loading: () => <EditorLoadingSkeleton />,
 });
 
-const FONT_MAP: Record<EditorFontFamily, string> = {
-  "geist-mono": "var(--font-geist-mono), monospace",
-  consolas: "Consolas, 'Liberation Mono', Menlo, Courier, monospace",
-  monospace: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-};
-
 export function MonacoEditorPane({
   language,
   value,
   onChange,
   readOnly = false,
 }: MonacoEditorPaneProps) {
-  const { preferences, effectiveColorMode } = useAppearance();
+  const { preferences, effectiveColorMode, effectiveReducedMotion } = useAppearance();
   const editorRef = useRef<MonacoType.editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<typeof MonacoType | null>(null);
 
-  // Compute active Monaco theme name
-  const activeMonacoTheme = React.useMemo(() => {
-    if (preferences.contrastMode === "high") {
-      return effectiveColorMode === "dark" ? "exeku-hc-dark" : "exeku-hc-light";
-    }
-
-    if (preferences.uiStyle === "minimal-saas") {
-      return effectiveColorMode === "dark" ? "exeku-minimal-dark" : "exeku-minimal-light";
-    }
-
-    if (preferences.uiStyle === "studio-crm") {
-      return effectiveColorMode === "dark" ? "exeku-studio-dark" : "exeku-studio-light";
-    }
-
-    // Default: Pixel Arcade
-    return effectiveColorMode === "dark" ? "exeku-pixel-dark" : "exeku-pixel-light";
-  }, [preferences.contrastMode, preferences.uiStyle, effectiveColorMode]);
-
-  const activeFontFamily = FONT_MAP[preferences.editorFontFamily] || FONT_MAP["geist-mono"];
+  // Compute active Monaco theme name and independent editor typography.
+  const appearance = React.useMemo(() => resolveEditorAppearance(preferences, effectiveColorMode, effectiveReducedMotion), [preferences, effectiveColorMode, effectiveReducedMotion]);
+  const activeMonacoTheme = appearance.theme;
+  const editorOptions = React.useMemo(() => ({
+    ...appearance.options,
+    fontFamily: appearance.options.fontFamily.replace("var(--font-geist-mono)", typeof document === "undefined" ? "monospace" : getComputedStyle(document.documentElement).getPropertyValue("--font-geist-mono").trim()),
+  }), [appearance]);
 
   // Define themes once on mount
   const handleEditorDidMount: OnMount = (editor, monaco) => {
@@ -243,7 +225,7 @@ export function MonacoEditorPane({
         { token: "comment", foreground: "00FF00", fontStyle: "italic" },
         { token: "keyword", foreground: "FFFF00", fontStyle: "bold" },
         { token: "string", foreground: "00FFFF" },
-        { token: "number", foreground: "FF00FF" },
+        { token: "number", foreground: "FF80FF" },
         { token: "type", foreground: "FFFF00" },
         { token: "function", foreground: "00FFFF" },
       ],
@@ -264,7 +246,7 @@ export function MonacoEditorPane({
       inherit: true,
       rules: [
         { token: "", foreground: "000000", background: "FFFFFF" },
-        { token: "comment", foreground: "006600", fontStyle: "italic" },
+        { token: "comment", foreground: "005500", fontStyle: "italic" },
         { token: "keyword", foreground: "0000FF", fontStyle: "bold" },
         { token: "string", foreground: "990000" },
         { token: "number", foreground: "660099" },
@@ -283,24 +265,16 @@ export function MonacoEditorPane({
     });
 
     monaco.editor.setTheme(activeMonacoTheme);
+    editor.updateOptions(editorOptions);
   };
 
   // Live update options without remounting or resetting editor buffer
   useEffect(() => {
     if (monacoRef.current && editorRef.current) {
       monacoRef.current.editor.setTheme(activeMonacoTheme);
-      editorRef.current.updateOptions({
-        fontFamily: activeFontFamily,
-        fontSize: preferences.editorFontSize,
-        lineHeight: preferences.editorLineHeight,
-      });
+      editorRef.current.updateOptions(editorOptions);
     }
-  }, [
-    activeMonacoTheme,
-    activeFontFamily,
-    preferences.editorFontSize,
-    preferences.editorLineHeight,
-  ]);
+  }, [activeMonacoTheme, editorOptions]);
 
   return (
     <div className="w-full h-full min-h-[380px] bg-[var(--color-canvas)] overflow-hidden">
@@ -312,14 +286,12 @@ export function MonacoEditorPane({
         onChange={(val) => onChange(val ?? "")}
         onMount={handleEditorDidMount}
         options={{
-          fontFamily: activeFontFamily,
-          fontSize: preferences.editorFontSize,
-          lineHeight: preferences.editorLineHeight,
+          ...editorOptions,
+          fontLigatures: preferences.editorLigatures,
           minimap: { enabled: false },
           scrollBeyondLastLine: false,
           wordWrap: "on",
           automaticLayout: true,
-          cursorBlinking: "smooth",
           renderLineHighlight: "all",
           tabSize: 4,
           insertSpaces: true,

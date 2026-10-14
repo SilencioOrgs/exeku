@@ -17,7 +17,7 @@ test("DEFAULT_APPEARANCE_PREFERENCES - has expected default values", () => {
   assert.equal(DEFAULT_APPEARANCE_PREFERENCES.editorFontSize, 14);
   assert.equal(DEFAULT_APPEARANCE_PREFERENCES.editorLineHeight, 22);
   assert.equal(DEFAULT_APPEARANCE_PREFERENCES.brightness, 100);
-  assert.equal(DEFAULT_APPEARANCE_PREFERENCES.reducedMotion, false);
+  assert.equal(DEFAULT_APPEARANCE_PREFERENCES.reducedMotion, "system");
 });
 
 test("normalizeAppearancePreferences - validates and clamps preferences", () => {
@@ -57,7 +57,7 @@ test("normalizeAppearancePreferences - accepts valid styles and options", () => 
   assert.equal(custom.uiStyle, "minimal-saas");
   assert.equal(custom.colorMode, "light");
   assert.equal(custom.contrastMode, "high");
-  assert.equal(custom.uiFontFamily, "inter");
+  assert.equal(custom.uiFontFamily, "system-sans");
   assert.equal(custom.uiFontScale, 110);
   assert.equal(custom.lineHeight, "compact");
   assert.equal(custom.editorFontFamily, "consolas");
@@ -95,4 +95,25 @@ test("AppearanceRepository - resolveEffectiveColorMode resolves system preferenc
   assert.equal(repo.resolveEffectiveColorMode("light", true), "light");
   assert.equal(repo.resolveEffectiveColorMode("system", true), "dark");
   assert.equal(repo.resolveEffectiveColorMode("system", false), "light");
+});
+
+test("failed writes keep latest session preferences and report failure", () => {
+ const repo = new AppearanceRepository({storage:{getItem:()=>JSON.stringify({uiStyle:"pixel-arcade"}),setItem:()=>{throw Error("denied")},removeItem:()=>{throw Error("denied")}}});
+ repo.savePreferences({uiStyle:"minimal-saas"});
+ assert.equal(repo.getPreferences().uiStyle,"minimal-saas");
+ assert.equal(repo.persistenceStatus,"error");
+ repo.savePreferences({colorMode:"light"});
+ assert.equal(repo.getPreferences().uiStyle,"minimal-saas");
+ repo.resetPreferences();
+ assert.deepEqual(repo.getPreferences(),DEFAULT_APPEARANCE_PREFERENCES);
+});
+test("new controls validate legacy and invalid settings",()=>{
+ const prefs=normalizeAppearancePreferences({density:"spacious",editorTheme:"high-contrast",editorLigatures:true,reducedMotion:"system",uiFontFamily:"inter",uiFontScale:null,brightness:Infinity});
+ assert.equal(prefs.density,"spacious"); assert.equal(prefs.editorTheme,"high-contrast"); assert.equal(prefs.editorLigatures,true);
+ assert.equal(prefs.uiFontFamily,"system-sans"); assert.equal(prefs.uiFontScale,100); assert.equal(prefs.brightness,100);
+ assert.equal(normalizeAppearancePreferences({density:"invalid",editorTheme:"invalid",editorLigatures:"yes"}).density,"comfortable");
+});
+test("denied localStorage getter never crashes construction",()=>{
+ const old=globalThis.window; globalThis.window={get localStorage(){throw Error("denied")}};
+ try {const repo=new AppearanceRepository(); repo.savePreferences({uiStyle:"studio-crm"}); assert.equal(repo.getPreferences().uiStyle,"studio-crm");assert.equal(repo.persistenceStatus,"session");} finally {if(old===undefined)delete globalThis.window;else globalThis.window=old;}
 });

@@ -326,14 +326,14 @@ export function WorkspaceView() {
     <div className="space-y-4 flex flex-col h-[calc(100vh-140px)] min-h-[640px]">
       {/* Sandbox Offline Warning Banner */}
       {sandboxHealth && !sandboxHealth.isAvailable && (
-        <div className="px-4 py-2.5 bg-[#1B0F36] border-2 border-[#FF007A] text-xs font-mono text-[#D4C3DC] flex flex-col sm:flex-row sm:items-center justify-between gap-2 shrink-0">
-          <div className="flex items-center gap-2 text-[#FF007A]">
-            <span className="font-bold font-pixel text-sm">!</span>
+        <div className="px-4 py-2.5 bg-[var(--color-elevated)] border-2 border-[var(--color-pink)] text-xs font-mono text-[var(--color-text-main)] flex flex-col sm:flex-row sm:items-center justify-between gap-2 shrink-0">
+          <div className="flex items-center gap-2 text-[var(--color-pink)]">
+            <span className="font-bold font-heading text-sm">!</span>
             <span>
               SANDBOX ENGINE OFFLINE: Local Piston container on port 2000 is not reachable.
             </span>
           </div>
-          <span className="text-[11px] text-[#A79EC4] bg-[#090514] px-2 py-1 border border-[#2E1A57]">
+          <span className="text-[0.6875rem] text-[var(--color-text-muted)] bg-[var(--color-canvas)] px-2 py-1 border border-[var(--color-border)]">
             docker run -d -p 2000:2000 ghcr.io/engineerman/piston/piston
           </span>
         </div>
@@ -343,14 +343,14 @@ export function WorkspaceView() {
       {problem && (
         <PixelCard
           variant="elevated"
-          className="p-3.5 border-2 border-[#3D2275] bg-[#120A24] shrink-0 space-y-2"
+          className="appearance-panel p-3.5 border-2 border-[var(--color-border)] bg-[var(--color-surface)] shrink-0 space-y-2"
         >
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div className="flex items-center gap-3 flex-wrap">
-              <span className="font-mono text-xs text-[#00F0FF] uppercase tracking-wider">
+              <span className="font-mono text-xs text-[var(--color-accent)] uppercase tracking-wider">
                 [PROBLEM]
               </span>
-              <h2 className="font-pixel text-lg text-white">{problem.title}_</h2>
+              <h2 className="font-heading text-lg text-[var(--color-text-main)]">{problem.title}_</h2>
               <PixelBadge
                 variant={
                   problem.difficulty === "beginner"
@@ -363,7 +363,7 @@ export function WorkspaceView() {
               >
                 {problem.difficulty.toUpperCase()}
               </PixelBadge>
-              <span className="text-xs font-mono text-[#A79EC4]">
+              <span className="text-xs font-mono text-[var(--color-text-muted)]">
                 Limit: {problem.timeLimitMs}ms
               </span>
             </div>
@@ -372,7 +372,7 @@ export function WorkspaceView() {
               <button
                 type="button"
                 onClick={() => setIsProblemDrawerOpen(!isProblemDrawerOpen)}
-                className="text-xs font-mono text-[#00F0FF] hover:underline cursor-pointer flex items-center gap-1"
+                className="text-xs font-mono text-[var(--color-accent)] hover:underline cursor-pointer flex items-center gap-1"
               >
                 <span>{isProblemDrawerOpen ? "HIDE STATEMENT" : "VIEW STATEMENT"}</span>
                 <span>{isProblemDrawerOpen ? "▲" : "▼"}</span>
@@ -387,36 +387,36 @@ export function WorkspaceView() {
 
           {/* Collapsible Problem Statement Details */}
           {isProblemDrawerOpen && (
-            <div className="pt-2 border-t border-[#2E1A57] text-xs text-[#A79EC4] space-y-2 max-h-48 overflow-y-auto pr-2">
+            <div className="pt-2 border-t border-[var(--color-border)] text-xs text-[var(--color-text-muted)] space-y-2 max-h-48 overflow-y-auto pr-2">
               <p className="leading-relaxed">{problem.description}</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1 font-mono text-[11px]">
-                <div className="p-2 bg-[#090514] border border-[#2E1A57]">
-                  <strong className="text-white block mb-0.5">Input Specification:</strong>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1 font-mono text-[0.6875rem]">
+                <div className="p-2 bg-[var(--color-canvas)] border border-[var(--color-border)]">
+                  <strong className="text-[var(--color-text-main)] block mb-0.5">Input Specification:</strong>
                   <span>{problem.inputSpec}</span>
                 </div>
-                <div className="p-2 bg-[#090514] border border-[#2E1A57]">
-                  <strong className="text-white block mb-0.5">Output Specification:</strong>
+                <div className="p-2 bg-[var(--color-canvas)] border border-[var(--color-border)]">
+                  <strong className="text-[var(--color-text-main)] block mb-0.5">Output Specification:</strong>
                   <span>{problem.outputSpec}</span>
                 </div>
               </div>
               {problem.sampleTestCases.length > 0 && (
                 <div className="pt-1">
-                  <span className="text-white font-mono text-[11px] block mb-1">
+                  <span className="text-[var(--color-text-main)] font-mono text-[0.6875rem] block mb-1">
                     Sample Test Cases:
                   </span>
                   <div className="flex flex-wrap gap-2">
                     {problem.sampleTestCases.map((sample, idx) => (
                       <div
                         key={idx}
-                        className="p-2 bg-[#090514] border border-[#2E1A57] font-mono text-[10px] space-y-1"
+                        className="p-2 bg-[var(--color-canvas)] border border-[var(--color-border)] font-mono text-[0.625rem] space-y-1"
                       >
                         <div>
-                          <span className="text-[#7A6E9B]">Input: </span>
-                          <span className="text-white">{sample.input || "(empty)"}</span>
+                          <span className="text-[var(--color-text-dim)]">Input: </span>
+                          <span className="text-[var(--color-text-main)]">{sample.input || "(empty)"}</span>
                         </div>
                         <div>
-                          <span className="text-[#7A6E9B]">Expected: </span>
-                          <span className="text-[#00FF9D]">{sample.output.trim()}</span>
+                          <span className="text-[var(--color-text-dim)]">Expected: </span>
+                          <span className="text-[var(--color-mint)]">{sample.output.trim()}</span>
                         </div>
                         <button
                           type="button"
@@ -425,7 +425,7 @@ export function WorkspaceView() {
                             setActiveTab("stdin");
                             setBottomOpen(true);
                           }}
-                          className="text-[#00F0FF] hover:underline cursor-pointer block mt-1"
+                          className="text-[var(--color-accent)] hover:underline cursor-pointer block mt-1"
                         >
                           Use in Custom Stdin &rarr;
                         </button>
@@ -442,27 +442,27 @@ export function WorkspaceView() {
       {/* Top Workspace Toolbar */}
       <PixelCard
         variant="default"
-        className="p-3 border-2 border-[#2E1A57] bg-[#120A24] flex flex-wrap items-center justify-between gap-3 shrink-0"
+        className="appearance-panel p-3 border-2 border-[var(--color-border)] bg-[var(--color-surface)] flex flex-wrap items-center justify-between gap-3 shrink-0"
       >
         {/* Left: Active File Tab & Language Selector */}
         <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-[#090514] border-2 border-[#00F0FF] text-white shadow-[2px_2px_0px_#000000]">
-            <DotIcon name={LANGUAGE_ICONS[activeLang]} size={16} color="#00F0FF" />
-            <span className="font-pixel text-sm">{filename}</span>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-[var(--color-canvas)] border-2 border-[var(--color-accent)] text-[var(--color-text-main)] [box-shadow:var(--shadow-btn)]">
+            <DotIcon name={LANGUAGE_ICONS[activeLang]} size={16} color="var(--color-accent)" />
+            <span className="font-heading text-sm">{filename}</span>
             <span
               className={`w-2 h-2 rounded-full ml-1 ${
                 saveStatus === "SAVED"
-                  ? "bg-[#00FF9D]"
+                  ? "bg-[var(--color-mint)]"
                   : saveStatus === "SAVING..."
-                  ? "bg-[#00F0FF] animate-pulse"
-                  : "bg-[#FF007A]"
+                  ? "bg-[var(--color-accent)] animate-pulse"
+                  : "bg-[var(--color-pink)]"
               }`}
               title={`Buffer Status: ${saveStatus}`}
             />
           </div>
 
           {/* Language Switcher Buttons */}
-          <div className="flex items-center gap-1 bg-[#090514] p-1 border border-[#2E1A57]">
+          <div className="flex items-center gap-1 bg-[var(--color-canvas)] p-1 border border-[var(--color-border)]">
             {ALL_SUPPORTED_LANGUAGES.map((lang) => {
               const isCurrent = activeLang === lang;
               return (
@@ -472,8 +472,8 @@ export function WorkspaceView() {
                   onClick={() => handleSwitchLanguage(lang)}
                   className={`px-2.5 py-1 text-xs font-mono transition-colors cursor-pointer ${
                     isCurrent
-                      ? "bg-[#1B0F36] text-[#00F0FF] font-bold border border-[#00F0FF]"
-                      : "text-[#7A6E9B] hover:text-[#A79EC4] border border-transparent"
+                      ? "bg-[var(--color-elevated)] text-[var(--color-accent)] font-bold border border-[var(--color-accent)]"
+                      : "text-[var(--color-text-dim)] hover:text-[var(--color-text-muted)] border border-transparent"
                   }`}
                 >
                   {LANGUAGE_DISPLAY_NAMES[lang]}
@@ -482,7 +482,7 @@ export function WorkspaceView() {
             })}
           </div>
 
-          <span className="font-mono text-[11px] text-[#7A6E9B] hidden sm:inline">
+          <span className="font-mono text-[0.6875rem] text-[var(--color-text-dim)] hidden sm:inline">
             [{saveStatus}]
           </span>
         </div>
@@ -513,7 +513,7 @@ export function WorkspaceView() {
             size="sm"
             onClick={handleRunCode}
             disabled={isRunning}
-            className="text-xs font-pixel"
+            className="text-xs font-heading"
           >
             {isRunning ? "RUNNING..." : "RUN CODE ▶"}
           </PixelButton>
@@ -525,7 +525,7 @@ export function WorkspaceView() {
               size="sm"
               onClick={handleJudgeSubmission}
               disabled={isSubmitting}
-              className="text-xs font-pixel"
+              className="text-xs font-heading"
             >
               {isSubmitting ? "JUDGING..." : "SUBMIT SOLUTION ✔"}
             </PixelButton>
@@ -552,7 +552,7 @@ export function WorkspaceView() {
               <button
                 type="button"
                 onClick={() => setBottomOpen(!bottomOpen)}
-                className="text-[#00F0FF] hover:text-white font-bold cursor-pointer pr-1"
+                className="text-[var(--color-accent)] hover:text-[var(--color-text-main)] font-bold cursor-pointer pr-1"
               >
                 {bottomOpen ? "▼" : "▲"}
               </button>
@@ -564,10 +564,10 @@ export function WorkspaceView() {
                   setActiveTab("console");
                   setBottomOpen(true);
                 }}
-                className={`px-2.5 py-1 text-xs font-pixel cursor-pointer border ${
+                className={`px-2.5 py-1 text-xs font-heading cursor-pointer border ${
                   activeTab === "console"
-                    ? "bg-[#090514] border-[#00F0FF] text-[#00F0FF]"
-                    : "border-transparent text-[#7A6E9B] hover:text-white"
+                    ? "bg-[var(--color-canvas)] border-[var(--color-accent)] text-[var(--color-accent)]"
+                    : "border-transparent text-[var(--color-text-dim)] hover:text-[var(--color-text-main)]"
                 }`}
               >
                 EXECUTION OUTPUT
@@ -580,10 +580,10 @@ export function WorkspaceView() {
                   setActiveTab("stdin");
                   setBottomOpen(true);
                 }}
-                className={`px-2.5 py-1 text-xs font-pixel cursor-pointer border ${
+                className={`px-2.5 py-1 text-xs font-heading cursor-pointer border ${
                   activeTab === "stdin"
-                    ? "bg-[#090514] border-[#00F0FF] text-[#00F0FF]"
-                    : "border-transparent text-[#7A6E9B] hover:text-white"
+                    ? "bg-[var(--color-canvas)] border-[var(--color-accent)] text-[var(--color-accent)]"
+                    : "border-transparent text-[var(--color-text-dim)] hover:text-[var(--color-text-main)]"
                 }`}
               >
                 CUSTOM STDIN {customStdin.length > 0 && `(${customStdin.length}B)`}
@@ -597,10 +597,10 @@ export function WorkspaceView() {
                     setActiveTab("results");
                     setBottomOpen(true);
                   }}
-                  className={`px-2.5 py-1 text-xs font-pixel cursor-pointer border ${
+                  className={`px-2.5 py-1 text-xs font-heading cursor-pointer border ${
                     activeTab === "results"
-                      ? "bg-[#090514] border-[#00FF9D] text-[#00FF9D]"
-                      : "border-transparent text-[#7A6E9B] hover:text-white"
+                      ? "bg-[var(--color-canvas)] border-[var(--color-mint)] text-[var(--color-mint)]"
+                      : "border-transparent text-[var(--color-text-dim)] hover:text-[var(--color-text-main)]"
                   }`}
                 >
                   TEST RESULTS {judgingResult && `[${judgingResult.overallVerdict}]`}
@@ -608,7 +608,7 @@ export function WorkspaceView() {
               )}
             </div>
 
-            <div className="flex items-center gap-3 text-[11px] text-[#7A6E9B]">
+            <div className="flex items-center gap-3 text-[0.6875rem] text-[var(--color-text-dim)]">
               <span>{code.length} bytes</span>
             </div>
           </div>
@@ -620,44 +620,44 @@ export function WorkspaceView() {
               {activeTab === "console" && (
                 <div className="space-y-2">
                   {!executionResult && !isRunning && (
-                    <div className="text-[#7A6E9B] space-y-1">
+                    <div className="text-[var(--color-text-dim)] space-y-1">
                       <p>&gt; Ready. Click &quot;RUN CODE ▶&quot; to execute your program against standard input.</p>
-                      <p className="text-[11px]">
+                      <p className="text-[0.6875rem]">
                         &gt; Target: {filename} &bull; Compiler: {LANGUAGE_DISPLAY_NAMES[activeLang]}
                       </p>
                     </div>
                   )}
 
                   {isRunning && (
-                    <div className="text-[#00F0FF] animate-pulse">
+                    <div className="text-[var(--color-accent)] animate-pulse">
                       &gt; Dispatching code to sandbox execution runner...
                     </div>
                   )}
 
                   {executionResult && (
                     <div className="space-y-2">
-                      <div className="flex items-center gap-3 flex-wrap border-b border-[#2E1A57] pb-1.5 text-[11px]">
+                      <div className="flex items-center gap-3 flex-wrap border-b border-[var(--color-border)] pb-1.5 text-[0.6875rem]">
                         <span
-                          className={`font-pixel text-xs px-1.5 py-0.5 border ${
+                          className={`font-heading text-xs px-1.5 py-0.5 border ${
                             executionResult.status === "SUCCESS"
-                              ? "border-[#00FF9D] text-[#00FF9D] bg-[#00FF9D]/10"
-                              : "border-[#FF007A] text-[#FF007A] bg-[#FF007A]/10"
+                              ? "border-[var(--color-mint)] text-[var(--color-mint)] bg-[var(--color-mint)]/10"
+                              : "border-[var(--color-pink)] text-[var(--color-pink)] bg-[var(--color-pink)]/10"
                           }`}
                         >
                           STATUS: {executionResult.status}
                         </span>
-                        <span className="text-[#A79EC4]">
+                        <span className="text-[var(--color-text-muted)]">
                           Exit code: {executionResult.exitCode ?? "N/A"}
                         </span>
-                        <span className="text-[#A79EC4]">
+                        <span className="text-[var(--color-text-muted)]">
                           Time: {executionResult.durationMs}ms
                         </span>
                       </div>
 
                       {executionResult.compilerOutput && (
                         <div className="space-y-1">
-                          <span className="text-[#FF007A] font-bold">[COMPILER OUTPUT]</span>
-                          <pre className="text-[#FF007A] whitespace-pre-wrap bg-[#120A24] p-2 border border-[#FF007A]/40">
+                          <span className="text-[var(--color-pink)] font-bold">[COMPILER OUTPUT]</span>
+                          <pre className="text-[var(--color-pink)] whitespace-pre-wrap bg-[var(--color-surface)] p-2 border border-[var(--color-pink)]/40">
                             {executionResult.compilerOutput}
                           </pre>
                         </div>
@@ -665,8 +665,8 @@ export function WorkspaceView() {
 
                       {executionResult.stdout && (
                         <div className="space-y-1">
-                          <span className="text-[#00FF9D] font-bold">[STANDARD OUTPUT]</span>
-                          <pre className="text-white whitespace-pre-wrap bg-[#090514] p-2 border border-[#2E1A57]">
+                          <span className="text-[var(--color-mint)] font-bold">[STANDARD OUTPUT]</span>
+                          <pre className="text-[var(--color-text-main)] whitespace-pre-wrap bg-[var(--color-canvas)] p-2 border border-[var(--color-border)]">
                             {executionResult.stdout}
                           </pre>
                         </div>
@@ -674,8 +674,8 @@ export function WorkspaceView() {
 
                       {executionResult.stderr && (
                         <div className="space-y-1">
-                          <span className="text-[#FF007A] font-bold">[STANDARD ERROR]</span>
-                          <pre className="text-[#FF007A] whitespace-pre-wrap bg-[#120A24] p-2 border border-[#2E1A57]">
+                          <span className="text-[var(--color-pink)] font-bold">[STANDARD ERROR]</span>
+                          <pre className="text-[var(--color-pink)] whitespace-pre-wrap bg-[var(--color-surface)] p-2 border border-[var(--color-border)]">
                             {executionResult.stderr}
                           </pre>
                         </div>
@@ -688,12 +688,12 @@ export function WorkspaceView() {
               {/* TAB 2: Custom Stdin */}
               {activeTab === "stdin" && (
                 <div className="space-y-1.5 h-full flex flex-col">
-                  <div className="flex items-center justify-between text-[11px] text-[#7A6E9B]">
+                  <div className="flex items-center justify-between text-[0.6875rem] text-[var(--color-text-dim)]">
                     <span>Standard Input fed into RUN CODE:</span>
                     <button
                       type="button"
                       onClick={() => setCustomStdin("")}
-                      className="hover:text-white underline cursor-pointer"
+                      className="hover:text-[var(--color-text-main)] underline cursor-pointer"
                     >
                       Clear Stdin
                     </button>
@@ -702,7 +702,7 @@ export function WorkspaceView() {
                     value={customStdin}
                     onChange={(e) => setCustomStdin(e.target.value)}
                     placeholder="Type sample input here (e.g. 10 20)..."
-                    className="flex-1 w-full bg-[#090514] border border-[#2E1A57] p-2 text-white font-mono text-xs resize-none focus:outline-none focus:border-[#00F0FF]"
+                    className="flex-1 w-full bg-[var(--color-canvas)] border border-[var(--color-border)] p-2 text-[var(--color-text-main)] font-mono text-xs resize-none focus:outline-none focus:border-[var(--color-accent)]"
                   />
                 </div>
               )}
@@ -711,13 +711,13 @@ export function WorkspaceView() {
               {activeTab === "results" && (
                 <div className="space-y-3">
                   {!judgingResult && !isSubmitting && (
-                    <div className="text-[#7A6E9B]">
+                    <div className="text-[var(--color-text-dim)]">
                       &gt; Click &quot;SUBMIT SOLUTION ✔&quot; to evaluate your code against the problem test suite.
                     </div>
                   )}
 
                   {isSubmitting && (
-                    <div className="text-[#00FF9D] animate-pulse">
+                    <div className="text-[var(--color-mint)] animate-pulse">
                       &gt; Evaluating test cases against sandbox judge...
                     </div>
                   )}
@@ -725,30 +725,30 @@ export function WorkspaceView() {
                   {judgingResult && (
                     <div className="space-y-3">
                       {/* Overall Verdict Banner */}
-                      <div className="flex items-center justify-between border-b border-[#2E1A57] pb-2 flex-wrap gap-2">
+                      <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-2 flex-wrap gap-2">
                         <div className="flex items-center gap-2">
                           <span
-                            className={`font-pixel text-base px-2 py-0.5 border ${
+                            className={`font-heading text-base px-2 py-0.5 border ${
                               judgingResult.overallVerdict === "ACCEPTED"
-                                ? "border-[#00FF9D] text-[#00FF9D] bg-[#00FF9D]/15"
-                                : "border-[#FF007A] text-[#FF007A] bg-[#FF007A]/15"
+                                ? "border-[var(--color-mint)] text-[var(--color-mint)] bg-[var(--color-mint)]/15"
+                                : "border-[var(--color-pink)] text-[var(--color-pink)] bg-[var(--color-pink)]/15"
                             }`}
                           >
                             VERDICT: {judgingResult.overallVerdict}
                           </span>
-                          <span className="text-[#A79EC4] text-xs">
+                          <span className="text-[var(--color-text-muted)] text-xs">
                             Score: {judgingResult.passedTests} / {judgingResult.totalTests} ({judgingResult.scorePercentage}%)
                           </span>
                         </div>
-                        <span className="text-[11px] text-[#7A6E9B]">
+                        <span className="text-[0.6875rem] text-[var(--color-text-dim)]">
                           Max Time: {judgingResult.maxDurationMs}ms
                         </span>
                       </div>
 
                       {judgingResult.compilerOutput && (
                         <div className="space-y-1">
-                          <span className="text-[#FF007A] font-bold">[COMPILATION ERROR]</span>
-                          <pre className="text-[#FF007A] whitespace-pre-wrap bg-[#120A24] p-2 border border-[#FF007A]/40 text-xs">
+                          <span className="text-[var(--color-pink)] font-bold">[COMPILATION ERROR]</span>
+                          <pre className="text-[var(--color-pink)] whitespace-pre-wrap bg-[var(--color-surface)] p-2 border border-[var(--color-pink)]/40 text-xs">
                             {judgingResult.compilerOutput}
                           </pre>
                         </div>
@@ -761,27 +761,27 @@ export function WorkspaceView() {
                             key={tc.testCaseId || idx}
                             className={`p-2.5 border text-xs space-y-1 ${
                               tc.passed
-                                ? "border-[#00FF9D]/40 bg-[#00FF9D]/5"
-                                : "border-[#FF007A]/40 bg-[#FF007A]/5"
+                                ? "border-[var(--color-mint)]/40 bg-[var(--color-mint)]/5"
+                                : "border-[var(--color-pink)]/40 bg-[var(--color-pink)]/5"
                             }`}
                           >
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                <span className={tc.passed ? "text-[#00FF9D]" : "text-[#FF007A]"}>
+                                <span className={tc.passed ? "text-[var(--color-mint)]" : "text-[var(--color-pink)]"}>
                                   {tc.passed ? "✔" : "✖"}
                                 </span>
-                                <span className="text-white font-bold">
+                                <span className="text-[var(--color-text-main)] font-bold">
                                   Test Case #{idx + 1}
                                 </span>
                                 {tc.isHidden && (
-                                  <span className="text-[10px] px-1 bg-[#1B0F36] text-[#A79EC4] border border-[#2E1A57]">
+                                  <span className="text-[0.625rem] px-1 bg-[var(--color-elevated)] text-[var(--color-text-muted)] border border-[var(--color-border)]">
                                     HIDDEN
                                   </span>
                                 )}
                               </div>
                               <span
-                                className={`text-[11px] font-bold ${
-                                  tc.passed ? "text-[#00FF9D]" : "text-[#FF007A]"
+                                className={`text-[0.6875rem] font-bold ${
+                                  tc.passed ? "text-[var(--color-mint)]" : "text-[var(--color-pink)]"
                                 }`}
                               >
                                 {tc.verdict} ({tc.durationMs}ms)
@@ -789,18 +789,18 @@ export function WorkspaceView() {
                             </div>
 
                             {!tc.isHidden && (
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-2 pt-1 text-[11px] font-mono text-[#A79EC4]">
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-2 pt-1 text-[0.6875rem] font-mono text-[var(--color-text-muted)]">
                                 <div>
-                                  <span className="text-[#7A6E9B] block">Input:</span>
-                                  <code className="text-white">{tc.input || "(empty)"}</code>
+                                  <span className="text-[var(--color-text-dim)] block">Input:</span>
+                                  <code className="text-[var(--color-text-main)]">{tc.input || "(empty)"}</code>
                                 </div>
                                 <div>
-                                  <span className="text-[#7A6E9B] block">Expected:</span>
-                                  <code className="text-[#00FF9D]">{tc.expectedOutput?.trim()}</code>
+                                  <span className="text-[var(--color-text-dim)] block">Expected:</span>
+                                  <code className="text-[var(--color-mint)]">{tc.expectedOutput?.trim()}</code>
                                 </div>
                                 <div>
-                                  <span className="text-[#7A6E9B] block">Actual Output:</span>
-                                  <code className={tc.passed ? "text-white" : "text-[#FF007A]"}>
+                                  <span className="text-[var(--color-text-dim)] block">Actual Output:</span>
+                                  <code className={tc.passed ? "text-[var(--color-text-main)]" : "text-[var(--color-pink)]"}>
                                     {tc.actualOutput?.trim() || "(no output)"}
                                   </code>
                                 </div>
@@ -808,7 +808,7 @@ export function WorkspaceView() {
                             )}
 
                             {tc.isHidden && (
-                              <p className="text-[10px] text-[#7A6E9B] pt-0.5">
+                              <p className="text-[0.625rem] text-[var(--color-text-dim)] pt-0.5">
                                 Inputs and expected results for hidden evaluation cases are redacted to prevent test vector extraction.
                               </p>
                             )}
@@ -829,23 +829,23 @@ export function WorkspaceView() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs">
           <PixelCard
             variant="elevated"
-            className="w-full max-w-md border-2 border-[#FF007A] p-6 bg-[#120A24] shadow-[8px_8px_0px_#000000] space-y-4"
+            className="w-full max-w-md border-2 border-[var(--color-pink)] p-6 bg-[var(--color-surface)] [box-shadow:var(--shadow-btn)] space-y-4"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 border-2 border-[#FF007A] bg-[#090514] flex items-center justify-center text-[#FF007A] font-pixel text-xl font-bold">
+              <div className="w-10 h-10 border-2 border-[var(--color-pink)] bg-[var(--color-canvas)] flex items-center justify-center text-[var(--color-pink)] font-heading text-xl font-bold">
                 !
               </div>
               <div>
-                <h3 className="font-pixel text-lg text-white">
+                <h3 className="font-heading text-lg text-[var(--color-text-main)]">
                   RESET WORKSPACE BUFFER?_
                 </h3>
-                <span className="font-mono text-xs text-[#A79EC4]">
+                <span className="font-mono text-xs text-[var(--color-text-muted)]">
                   Target: {filename}
                 </span>
               </div>
             </div>
 
-            <p className="text-xs text-[#A79EC4] leading-relaxed">
+            <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
               This will reset your current buffer for <strong>{filename}</strong> back to the starter
               code. Any unsaved modifications in this buffer will be permanently lost.
             </p>

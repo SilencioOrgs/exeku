@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Pixelify_Sans } from "next/font/google";
 import "./globals.css";
+import { appearanceBootstrap } from "@/lib/appearance-bootstrap";
 import { AppearanceProvider } from "@/hooks/use-appearance";
 
 const geistSans = Geist({
@@ -27,45 +28,6 @@ export const metadata: Metadata = {
   },
 };
 
-const antiFlashScript = `
-(function() {
-  try {
-    var raw = localStorage.getItem('exeku_appearance_settings');
-    var p = raw ? JSON.parse(raw) : null;
-    var style = (p && p.uiStyle) || 'pixel-arcade';
-    var mode = (p && p.colorMode) || 'dark';
-    var contrast = (p && p.contrastMode) || 'standard';
-    var uiFont = (p && p.uiFontFamily) || 'geist-sans';
-    var editorFont = (p && p.editorFontFamily) || 'geist-mono';
-    var lineHeight = (p && p.lineHeight) || 'normal';
-    var reducedMotion = (p && p.reducedMotion) ? 'true' : 'false';
-    var fontScale = (p && p.uiFontScale) || 100;
-    var brightness = (p && p.brightness) || 100;
-
-    var isDark = mode === 'dark' || (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    var effectiveMode = isDark ? 'dark' : 'light';
-
-    var doc = document.documentElement;
-    doc.dataset.uiStyle = style;
-    doc.dataset.colorMode = effectiveMode;
-    doc.dataset.contrast = contrast;
-    doc.dataset.uiFont = uiFont;
-    doc.dataset.editorFont = editorFont;
-    doc.dataset.lineHeight = lineHeight;
-    doc.dataset.reducedMotion = reducedMotion;
-
-    if (isDark) {
-      doc.classList.add('dark');
-    } else {
-      doc.classList.remove('dark');
-    }
-
-    doc.style.setProperty('--ui-font-scale', fontScale + '%');
-    doc.style.setProperty('--app-brightness', brightness + '%');
-  } catch(e) {}
-})();
-`;
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -80,10 +42,10 @@ export default function RootLayout({
       <head>
         <script
           id="exeku-theme-anti-flash"
-          dangerouslySetInnerHTML={{ __html: antiFlashScript }}
+          dangerouslySetInnerHTML={{ __html: appearanceBootstrap }}
         />
       </head>
-      <body className="min-h-full flex flex-col bg-background text-foreground selection:bg-[var(--color-primary)] selection:text-white">
+      <body className="min-h-full flex flex-col bg-background text-foreground selection:bg-[var(--color-primary)] selection:text-[var(--color-primary-foreground)]">
         <AppearanceProvider>{children}</AppearanceProvider>
       </body>
     </html>

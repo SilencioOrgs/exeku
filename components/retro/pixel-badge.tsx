@@ -23,7 +23,7 @@ export function PixelBadge({
     mint:
       "bg-[var(--color-mint)]/15 text-[var(--color-mint)] border-[var(--color-mint)]/50",
     purple:
-      "bg-[var(--color-primary)]/15 text-[var(--color-primary)] border-[var(--color-primary)]/50",
+      "bg-[var(--color-primary)]/15 text-[var(--color-primary-text)] border-[var(--color-primary)]/50",
     muted:
       "bg-[var(--color-surface)] text-[var(--color-text-muted)] border-[var(--color-border)]",
   };
@@ -31,7 +31,7 @@ export function PixelBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-mono tracking-wide border uppercase select-none [border-radius:var(--radius-btn)]",
+        "appearance-badge inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-mono tracking-wide border uppercase select-none [border-radius:var(--radius-btn)]",
         variantStyles[variant],
         className
       )}

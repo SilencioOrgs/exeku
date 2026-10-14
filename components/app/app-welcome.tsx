@@ -14,10 +14,10 @@ import { ProfileEditDialog } from "./profile-edit-dialog";
 import { ProfileResetDialog } from "./profile-reset-dialog";
 
 const LANGUAGE_LABELS: Record<string, { label: string; icon: DotIconName; accent: string }> = {
-  python: { label: "Python 3", icon: "python", accent: "#00F0FF" },
-  java: { label: "Java", icon: "java", accent: "#FF007A" },
-  cpp: { label: "C++", icon: "cplusplus", accent: "#9E00FF" },
-  c: { label: "C", icon: "file", accent: "#00FF9D" },
+  python: { label: "Python 3", icon: "python", accent: "var(--color-accent)" },
+  java: { label: "Java", icon: "java", accent: "var(--color-pink)" },
+  cpp: { label: "C++", icon: "cplusplus", accent: "var(--color-primary-text)" },
+  c: { label: "C", icon: "file", accent: "var(--color-mint)" },
 };
 
 export function AppWelcome() {
@@ -35,10 +35,10 @@ export function AppWelcome() {
 
   if (isLoading || !profile) {
     return (
-      <div className="min-h-screen bg-[#090514] flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen bg-[var(--color-canvas)] flex flex-col items-center justify-center p-4">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-[#00F0FF] border-t-transparent animate-spin" />
-          <span className="font-mono text-xs text-[#00F0FF] uppercase tracking-widest animate-pulse">
+          <div className="w-12 h-12 border-4 border-[var(--color-accent)] border-t-transparent animate-spin" />
+          <span className="font-mono text-xs text-[var(--color-accent)] uppercase tracking-widest animate-pulse">
             LOADING LOCAL PROFILE...
           </span>
         </div>
@@ -55,29 +55,29 @@ export function AppWelcome() {
   });
 
   return (
-    <div className="min-h-screen bg-[#090514] text-white flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden">
+    <div className="min-h-screen bg-[var(--color-canvas)] text-[var(--color-text-main)] flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden">
       {/* Background Pixel Grid */}
       <div
-        className="absolute inset-0 pointer-events-none opacity-20"
+        className="arcade-decoration absolute inset-0 pointer-events-none opacity-20"
         style={{
           backgroundImage:
-            "linear-gradient(to right, #2E1A57 1px, transparent 1px), linear-gradient(to bottom, #2E1A57 1px, transparent 1px)",
+            "linear-gradient(to right, var(--color-border) 1px, transparent 1px), linear-gradient(to bottom, var(--color-border) 1px, transparent 1px)",
           backgroundSize: "32px 32px",
         }}
       />
 
       <div className="w-full max-w-3xl relative z-10 space-y-6">
         {/* Top App Bar */}
-        <header className="flex items-center justify-between border-b-2 border-[#2E1A57] pb-4">
+        <header className="flex items-center justify-between border-b-2 border-[var(--color-border)] pb-4">
           <Link
             href="/"
-            className="flex items-center gap-2.5 text-white hover:text-[#00F0FF] transition-colors group"
+            className="flex items-center gap-2.5 text-[var(--color-text-main)] hover:text-[var(--color-accent)] transition-colors group"
           >
-            <div className="w-8 h-8 bg-[#9E00FF] border border-[#00F0FF] flex items-center justify-center font-pixel text-base font-bold shadow-[2px_2px_0px_#000000]">
+            <div className="w-8 h-8 bg-[var(--color-primary)] text-[var(--color-primary-foreground)] border border-[var(--color-accent)] flex items-center justify-center font-heading text-base font-bold [box-shadow:var(--shadow-btn)]">
               E
             </div>
-            <span className="font-pixel text-xl tracking-wider text-white group-hover:text-[#00F0FF]">
-              EXE<span className="text-[#00F0FF]">KU</span>
+            <span className="font-heading text-xl tracking-wider text-[var(--color-text-main)] group-hover:text-[var(--color-accent)]">
+              EXE<span className="text-[var(--color-accent)]">KU</span>
             </span>
           </Link>
 
@@ -94,17 +94,17 @@ export function AppWelcome() {
         </header>
 
         {/* Profile Welcome Hero Card */}
-        <PixelCard variant="elevated" className="border-2 border-[#3D2275] p-6 sm:p-8">
+        <PixelCard variant="elevated" className="border-2 border-[var(--color-border)] p-6 sm:p-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
             <PixelAvatar
               avatarId={profile.avatarId}
               size={72}
-              className="border-2 shadow-[4px_4px_0px_#000000]"
+              className="border-2 [box-shadow:var(--shadow-btn)]"
             />
 
             <div className="flex-1 space-y-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="font-pixel text-2xl sm:text-3xl text-white tracking-wide">
+                <span className="font-heading text-2xl sm:text-3xl text-[var(--color-text-main)] tracking-wide">
                   WELCOME, {profile.displayName.toUpperCase()}_
                 </span>
                 <PixelBadge variant="cyan" bracketed={false} className="text-xs">
@@ -113,11 +113,11 @@ export function AppWelcome() {
               </div>
 
               {profile.bio ? (
-                <p className="text-sm font-mono text-[#D4C3DC] pt-1">
+                <p className="text-sm font-mono text-[var(--color-text-main)] pt-1">
                   &ldquo;{profile.bio}&rdquo;
                 </p>
               ) : (
-                <p className="text-xs font-mono text-[#7B6E94] pt-1">
+                <p className="text-xs font-mono text-[var(--color-text-muted)] pt-1">
                   Local profile initialized on this machine.
                 </p>
               )}
@@ -137,7 +137,7 @@ export function AppWelcome() {
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsResetOpen(true)}
-                className="flex-1 sm:flex-none text-[#FF007A] hover:border-[#FF007A]"
+                className="flex-1 sm:flex-none text-[var(--color-pink)] hover:border-[var(--color-pink)]"
               >
                 RESET ✖
               </PixelButton>
@@ -145,12 +145,12 @@ export function AppWelcome() {
           </div>
 
           {/* Profile Metadata Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 mt-6 border-t-2 border-[#2E1A57] text-xs font-mono">
-            <div className="p-3 bg-[#090514] border border-[#2E1A57]">
-              <span className="text-[#6B5A8A] block uppercase text-[10px]">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 mt-6 border-t-2 border-[var(--color-border)] text-xs font-mono">
+            <div className="p-3 bg-[var(--color-canvas)] border border-[var(--color-border)]">
+              <span className="text-[var(--color-text-dim)] block uppercase text-[0.625rem]">
                 PRIMARY TARGET
               </span>
-              <div className="flex items-center gap-1.5 mt-1 font-bold text-white">
+              <div className="flex items-center gap-1.5 mt-1 font-bold text-[var(--color-text-main)]">
                 <DotIcon
                   name={langMeta.icon}
                   size={16}
@@ -160,29 +160,29 @@ export function AppWelcome() {
               </div>
             </div>
 
-            <div className="p-3 bg-[#090514] border border-[#2E1A57]">
-              <span className="text-[#6B5A8A] block uppercase text-[10px]">
+            <div className="p-3 bg-[var(--color-canvas)] border border-[var(--color-border)]">
+              <span className="text-[var(--color-text-dim)] block uppercase text-[0.625rem]">
                 SKILL BRACKET
               </span>
-              <span className="font-bold text-[#00FF9D] mt-1 block uppercase">
+              <span className="font-bold text-[var(--color-mint)] mt-1 block uppercase">
                 {profile.experienceLevel}
               </span>
             </div>
 
-            <div className="p-3 bg-[#090514] border border-[#2E1A57]">
-              <span className="text-[#6B5A8A] block uppercase text-[10px]">
+            <div className="p-3 bg-[var(--color-canvas)] border border-[var(--color-border)]">
+              <span className="text-[var(--color-text-dim)] block uppercase text-[0.625rem]">
                 STORAGE LOCALITY
               </span>
-              <span className="font-bold text-[#C084FC] mt-1 block truncate">
+              <span className="font-bold text-[var(--color-primary-text)] mt-1 block truncate">
                 IndexedDB (exeku_local_v1)
               </span>
             </div>
 
-            <div className="p-3 bg-[#090514] border border-[#2E1A57]">
-              <span className="text-[#6B5A8A] block uppercase text-[10px]">
+            <div className="p-3 bg-[var(--color-canvas)] border border-[var(--color-border)]">
+              <span className="text-[var(--color-text-dim)] block uppercase text-[0.625rem]">
                 INITIALIZED ON
               </span>
-              <span className="font-bold text-[#F5F3FF] mt-1 block">
+              <span className="font-bold text-[var(--color-text-main)] mt-1 block">
                 {createdDate}
               </span>
             </div>
@@ -190,55 +190,55 @@ export function AppWelcome() {
         </PixelCard>
 
         {/* Temporary Roadmap Card */}
-        <PixelCard variant="default" className="border-2 border-[#2E1A57] p-6 space-y-4">
-          <div className="flex items-center justify-between border-b border-[#2E1A57] pb-3">
+        <PixelCard variant="default" className="border-2 border-[var(--color-border)] p-6 space-y-4">
+          <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-3">
             <div className="flex items-center gap-2">
-              <DotIcon name="stars" size={18} className="text-[#00F0FF]" />
-              <h3 className="font-pixel text-base sm:text-lg text-white">
+              <DotIcon name="stars" size={18} className="text-[var(--color-accent)]" />
+              <h3 className="font-heading text-base sm:text-lg text-[var(--color-text-main)]">
                 NEXT STAGES: COMING SOON_
               </h3>
             </div>
             <PixelBadge variant="purple">ROADMAP</PixelBadge>
           </div>
 
-          <p className="text-xs sm:text-sm font-mono text-[#A79EC4] leading-relaxed">
+          <p className="text-xs sm:text-sm font-mono text-[var(--color-text-muted)] leading-relaxed">
             Your local profile and loadout preferences are securely stored on your machine.
             The Monaco coding workspace, offline compilation sandbox, and automated grading engine will be implemented in subsequent phases.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-            <div className="p-3 bg-[#0E071D] border border-[#2E1A57] space-y-1">
-              <span className="text-[10px] font-mono text-[#00F0FF] font-bold block">
+            <div className="p-3 bg-[var(--color-canvas)] border border-[var(--color-border)] space-y-1">
+              <span className="text-[0.625rem] font-mono text-[var(--color-accent)] font-bold block">
                 STAGE 2
               </span>
-              <span className="font-mono text-xs font-bold text-white block">
+              <span className="font-mono text-xs font-bold text-[var(--color-text-main)] block">
                 LOCAL EXECUTION
               </span>
-              <p className="text-[11px] text-[#7B6E94] font-mono">
+              <p className="text-[0.6875rem] text-[var(--color-text-muted)] font-mono">
                 Isolated runner for Python 3, Java, C++, and C on Windows.
               </p>
             </div>
 
-            <div className="p-3 bg-[#0E071D] border border-[#2E1A57] space-y-1">
-              <span className="text-[10px] font-mono text-[#FF007A] font-bold block">
+            <div className="p-3 bg-[var(--color-canvas)] border border-[var(--color-border)] space-y-1">
+              <span className="text-[0.625rem] font-mono text-[var(--color-pink)] font-bold block">
                 STAGE 3
               </span>
-              <span className="font-mono text-xs font-bold text-white block">
+              <span className="font-mono text-xs font-bold text-[var(--color-text-main)] block">
                 AUTOMATIC GRADING
               </span>
-              <p className="text-[11px] text-[#7B6E94] font-mono">
+              <p className="text-[0.6875rem] text-[var(--color-text-muted)] font-mono">
                 Offline unit testing, test-case verifier, and progress tracking.
               </p>
             </div>
 
-            <div className="p-3 bg-[#0E071D] border border-[#2E1A57] space-y-1">
-              <span className="text-[10px] font-mono text-[#00FF9D] font-bold block">
+            <div className="p-3 bg-[var(--color-canvas)] border border-[var(--color-border)] space-y-1">
+              <span className="text-[0.625rem] font-mono text-[var(--color-mint)] font-bold block">
                 STAGE 4
               </span>
-              <span className="font-mono text-xs font-bold text-white block">
+              <span className="font-mono text-xs font-bold text-[var(--color-text-main)] block">
                 OFFLINE AI MENTOR
               </span>
-              <p className="text-[11px] text-[#7B6E94] font-mono">
+              <p className="text-[0.6875rem] text-[var(--color-text-muted)] font-mono">
                 Local on-device reasoning and hint assistant without cloud API calls.
               </p>
             </div>

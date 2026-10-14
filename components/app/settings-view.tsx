@@ -1,5 +1,6 @@
 "use client";
 
+import { AppearanceStudio } from "./appearance-studio";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useProfile } from "@/hooks/use-profile";
@@ -53,8 +54,8 @@ export function SettingsView() {
   if (!profile) {
     return (
       <div className="flex flex-col items-center justify-center p-12 text-center">
-        <div className="w-10 h-10 border-4 border-[#00F0FF] border-t-transparent animate-spin mb-4" />
-        <span className="font-mono text-xs text-[#00F0FF] uppercase tracking-widest animate-pulse">
+        <div className="w-10 h-10 border-4 border-[var(--color-accent)] border-t-transparent animate-spin mb-4" />
+        <span className="font-mono text-xs text-[var(--color-accent)] uppercase tracking-widest animate-pulse">
           READING SETTINGS CONFIGURATION...
         </span>
       </div>
@@ -84,12 +85,12 @@ export function SettingsView() {
   return (
     <div className="space-y-6">
       {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-[#2E1A57] pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-[var(--color-border)] pb-4">
         <div>
-          <h1 className="font-pixel text-2xl text-white tracking-wide">
-            PROFILE &amp; STORAGE SETTINGS_
+          <h1 className="font-heading text-2xl text-foreground tracking-wide">
+            Settings
           </h1>
-          <p className="text-xs text-[#A79EC4] mt-0.5">
+          <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
             Manage local coder identity, inspect IndexedDB health, or reset device state.
           </p>
         </div>
@@ -100,21 +101,23 @@ export function SettingsView() {
         </div>
       </div>
 
+      <AppearanceStudio />
+
       {/* Profile Identity Card */}
       <PixelCard
         variant="elevated"
-        className="p-5 sm:p-6 border-2 border-[#3D2275] bg-[#120A24] space-y-4"
+        className="p-5 sm:p-6 border-2 border-[var(--color-border)] bg-[var(--color-surface)] space-y-4"
       >
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-start sm:items-center gap-4">
             <PixelAvatar
               avatarId={profile.avatarId}
               size={56}
-              className="border-2 border-[#00F0FF] shadow-[2px_2px_0px_#000000] shrink-0"
+              className="border-2 border-[var(--color-accent)] shadow-[2px_2px_0px_#000000] shrink-0"
             />
             <div className="space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-pixel text-xl text-white">
+                <span className="font-heading text-xl text-foreground">
                   {profile.displayName.toUpperCase()}_
                 </span>
                 <PixelBadge variant={levelBadgeVariant} bracketed>
@@ -122,11 +125,11 @@ export function SettingsView() {
                 </PixelBadge>
               </div>
               {profile.bio ? (
-                <p className="text-xs text-[#A79EC4] max-w-lg">
+                <p className="text-xs text-[var(--color-text-muted)] max-w-lg">
                   &ldquo;{profile.bio}&rdquo;
                 </p>
               ) : (
-                <p className="text-xs text-[#7A6E9B] font-mono">
+                <p className="text-xs text-[var(--color-text-dim)] font-mono">
                   No local bio set &bull; Initialized {createdDate}
                 </p>
               )}
@@ -144,29 +147,29 @@ export function SettingsView() {
         </div>
 
         {/* Profile Properties Details */}
-        <div className="pt-3 border-t border-[#2E1A57] grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono text-xs">
-          <div className="p-2.5 bg-[#090514] border border-[#2E1A57] space-y-1">
-            <span className="text-[#7A6E9B] text-[10px] uppercase">Preferred Track</span>
-            <div className="flex items-center gap-2 text-white">
+        <div className="pt-3 border-t border-[var(--color-border)] grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono text-xs">
+          <div className="p-2.5 bg-[var(--color-canvas)] border border-[var(--color-border)] space-y-1">
+            <span className="text-[var(--color-text-dim)] text-[10px] uppercase">Preferred Track</span>
+            <div className="flex items-center gap-2 text-foreground">
               <DotIcon
                 name={LANGUAGE_ICONS[profile.preferredLanguage]}
                 size={14}
-                color="#00F0FF"
+                color="var(--color-accent)"
               />
               <span>{LANGUAGE_DISPLAY_NAMES[profile.preferredLanguage]}</span>
             </div>
           </div>
 
-          <div className="p-2.5 bg-[#090514] border border-[#2E1A57] space-y-1">
-            <span className="text-[#7A6E9B] text-[10px] uppercase">Experience Level</span>
-            <div className="text-[#00FF9D] uppercase">
+          <div className="p-2.5 bg-[var(--color-canvas)] border border-[var(--color-border)] space-y-1">
+            <span className="text-[var(--color-text-dim)] text-[10px] uppercase">Experience Level</span>
+            <div className="text-[var(--color-mint)] uppercase">
               {profile.experienceLevel}
             </div>
           </div>
 
-          <div className="p-2.5 bg-[#090514] border border-[#2E1A57] space-y-1">
-            <span className="text-[#7A6E9B] text-[10px] uppercase">Profile UUID</span>
-            <div className="text-[#A79EC4] truncate" title={profile.id}>
+          <div className="p-2.5 bg-[var(--color-canvas)] border border-[var(--color-border)] space-y-1">
+            <span className="text-[var(--color-text-dim)] text-[10px] uppercase">Profile UUID</span>
+            <div className="text-[var(--color-text-muted)] truncate" title={profile.id}>
               {profile.id}
             </div>
           </div>
@@ -174,69 +177,69 @@ export function SettingsView() {
       </PixelCard>
 
       {/* Storage Health & Locality Panel */}
-      <PixelCard variant="default" className="p-5 sm:p-6 border-2 border-[#2E1A57] space-y-4">
-        <div className="flex items-center justify-between border-b border-[#2E1A57] pb-3">
+      <PixelCard variant="default" className="p-5 sm:p-6 border-2 border-[var(--color-border)] space-y-4">
+        <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-3">
           <div>
-            <h2 className="font-pixel text-base text-white">
+            <h2 className="font-heading text-base text-foreground">
               INDEXEDDB STORAGE TELEMETRY_
             </h2>
-            <p className="text-xs text-[#7A6E9B]">
+            <p className="text-xs text-[var(--color-text-dim)]">
               Real inspection of client storage schemas and data isolation.
             </p>
           </div>
-          <span className="flex items-center gap-1.5 font-mono text-[10px] text-[#00FF9D]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#00FF9D] animate-pulse" />
+          <span className="flex items-center gap-1.5 font-mono text-[10px] text-[var(--color-mint)]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-mint)] animate-pulse" />
             100% LOCAL
           </span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 font-mono text-xs">
-          <div className="p-3 bg-[#090514] border border-[#2E1A57] space-y-1">
-            <span className="text-[#7A6E9B] text-[10px] uppercase">Database Target</span>
-            <div className="text-white font-bold">exeku_local_v1</div>
-            <span className="text-[#00FF9D] text-[10px]">Version 2 (Active)</span>
+          <div className="p-3 bg-[var(--color-canvas)] border border-[var(--color-border)] space-y-1">
+            <span className="text-[var(--color-text-dim)] text-[10px] uppercase">Database Target</span>
+            <div className="text-foreground font-bold">exeku_local_v1</div>
+            <span className="text-[var(--color-mint)] text-[10px]">Version 2 (Active)</span>
           </div>
 
-          <div className="p-3 bg-[#090514] border border-[#2E1A57] space-y-1">
-            <span className="text-[#7A6E9B] text-[10px] uppercase">Profile Store</span>
-            <div className="text-white font-bold">profiles</div>
-            <span className="text-[#A79EC4] text-[10px]">1 record mounted</span>
+          <div className="p-3 bg-[var(--color-canvas)] border border-[var(--color-border)] space-y-1">
+            <span className="text-[var(--color-text-dim)] text-[10px] uppercase">Profile Store</span>
+            <div className="text-foreground font-bold">profiles</div>
+            <span className="text-[var(--color-text-muted)] text-[10px]">1 record mounted</span>
           </div>
 
-          <div className="p-3 bg-[#090514] border border-[#2E1A57] space-y-1">
-            <span className="text-[#7A6E9B] text-[10px] uppercase">Drafts Store</span>
-            <div className="text-white font-bold">drafts</div>
-            <span className="text-[#00F0FF] text-[10px]">
+          <div className="p-3 bg-[var(--color-canvas)] border border-[var(--color-border)] space-y-1">
+            <span className="text-[var(--color-text-dim)] text-[10px] uppercase">Drafts Store</span>
+            <div className="text-foreground font-bold">drafts</div>
+            <span className="text-[var(--color-accent)] text-[10px]">
               {draftsCount} language buffer{draftsCount === 1 ? "" : "s"}
             </span>
           </div>
 
-          <div className="p-3 bg-[#090514] border border-[#2E1A57] space-y-1">
-            <span className="text-[#7A6E9B] text-[10px] uppercase">Telemetry Transmitted</span>
-            <div className="text-[#00FF9D] font-bold">0 BYTES</div>
-            <span className="text-[#7A6E9B] text-[10px]">Air-gapped safe</span>
+          <div className="p-3 bg-[var(--color-canvas)] border border-[var(--color-border)] space-y-1">
+            <span className="text-[var(--color-text-dim)] text-[10px] uppercase">Telemetry Transmitted</span>
+            <div className="text-[var(--color-mint)] font-bold">0 BYTES</div>
+            <span className="text-[var(--color-text-dim)] text-[10px]">Stored on this device</span>
           </div>
         </div>
 
         {/* Privacy Assurance Notice */}
-        <div className="p-3.5 bg-[#090514]/60 border border-[#2E1A57] text-xs text-[#A79EC4] leading-relaxed">
-          <strong>Privacy Assurance:</strong> Exeku is strictly offline-first. Your profile, settings,
-          and code buffers are stored exclusively in your browser&apos;s IndexedDB partition on this
-          hardware. No remote servers, analytical tracking, or third-party cookies are used.
+        <div className="p-3.5 bg-[var(--color-canvas)]/60 border border-[var(--color-border)] text-xs text-[var(--color-text-muted)] leading-relaxed">
+          <strong>Privacy Assurance:</strong> Exeku is an online-first platform in local developer preview. Your profile, appearance settings,
+          and code drafts are stored locally in your browser. Running and submitting code sends the source
+          to the configured isolated sandbox through the application server.
         </div>
       </PixelCard>
 
       {/* Danger Zone: Machine Reset */}
       <PixelCard
         variant="elevated"
-        className="p-5 sm:p-6 border-2 border-[#FF007A]/60 bg-[#120A24] space-y-4"
+        className="p-5 sm:p-6 border-2 border-[var(--color-pink)]/60 bg-[var(--color-surface)] space-y-4"
       >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#FF007A]/40 pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--color-pink)]/40 pb-3">
           <div>
-            <h2 className="font-pixel text-base text-[#FF007A]">
+            <h2 className="font-heading text-base text-[var(--color-pink)]">
               DANGER ZONE: MACHINE RESET_
             </h2>
-            <p className="text-xs text-[#A79EC4]">
+            <p className="text-xs text-[var(--color-text-muted)]">
               Permanently wipe profile records and workspace buffers from this computer.
             </p>
           </div>
@@ -246,7 +249,7 @@ export function SettingsView() {
         </div>
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <p className="text-xs text-[#A79EC4] max-w-xl leading-relaxed">
+          <p className="text-xs text-[var(--color-text-muted)] max-w-xl leading-relaxed">
             Resetting your profile will permanently erase your local identity, experience settings,
             and all saved code scratchpads from IndexedDB. You will be redirected back to the
             onboarding terminal.

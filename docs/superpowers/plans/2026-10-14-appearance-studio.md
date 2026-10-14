@@ -285,3 +285,115 @@
   - Create pull request via `gh pr create`.
   - Squash merge pull request via `gh pr merge`.
   - Synchronize local `main`.
+
+## Continuation rulings — 2026-10-14
+
+- Tasks 1–4 already have commits; audit and extend them rather than repeat implementation.
+- Complete Tasks 5–6 while correcting persistence, hydration, density, motion, brightness, and editor options.
+- Guest preferences use existing localStorage; profile overrides extend existing IndexedDB profile records. No schema migration.
+- Add system motion, density, independent editor syntax selection, ligatures, and accurate save status.
+- Inter is not bundled; expose Geist Sans, Pixelify Sans, and System Sans only.
+- Retain the scoped root hydration suppression for attributes deliberately changed before hydration. Child markup must hydrate from identical defaults.
+- Existing staged configuration deletions remain untouched. No remote operations without explicit approval.
+- Task 7 remote-delivery steps are superseded by the developer approval gate.
+
+## Local verification report — 2026-10-14
+
+### Implementation and architecture
+
+Appearance Studio is implemented in `/app/settings`; the landing navigation exposes a shared style and color-mode selector. Landing, setup, overview, challenges, workspace, progress, settings, dialogs, and notifications use the centralized provider and semantic tokens. Pixel Arcade retains pixel geometry, display type, and decorations; Minimal SaaS uses clean type, rounded geometry, subdued borders, and Lucide navigation; Studio uses monospace headings, industrial colors, structured panels, and restrained decorations. Density remains an independent user preference. No dashboards or providers were duplicated, and no dependencies were added.
+
+Guest preferences persist in localStorage. Explicit IndexedDB profile preferences take precedence; new profiles inherit guest settings and legacy profiles inherit until customized. The first-paint snapshot is a cache, not canonical storage. Profile appearance updates preserve identity, timestamps, and draft records without a database version change. Early edits merge onto loaded preferences; profile reads retry after transient failure; writes serialize and report failures honestly.
+
+Monaco independently resolves syntax theme, font, font size, line height, ligatures, and reduced cursor motion. Runtime harness tests verify theme/option updates against the same editor reference without replacing its buffer or invoking the code-change callback. Real Monaco cursor and undo history still require browser verification.
+
+### Verification evidence
+
+- `npx.cmd tsx --test tests/*.test.mjs`: **85 passed, 0 failed**.
+- `npm.cmd run lint`: **passed, no warnings**.
+- `npx.cmd tsc --noEmit`: **passed**.
+- `npm.cmd run build`: **passed**, all application and API routes compiled.
+- Production bootstrap scripts extracted from built landing, setup, settings, and workspace HTML: **4 passed** with stored Studio/System preferences.
+- `git diff --check`: **passed**.
+- Impeccable mechanical detector across changed UI surfaces: **no findings**. This is static evidence, not visual verification.
+- Theme tests measure text on canvas, surface, and elevated backgrounds across all six style/mode combinations, standard brightness endpoints, and high contrast. High-contrast Monaco tokens meet 7:1 against normal and active-line backgrounds. These checks do not establish whole-application WCAG compliance.
+- Profile/draft preservation tests cover inheritance, legacy records, reset, unrelated fields, storage failure, hydration edits, serial writes, and System media changes. Real browser IndexedDB concurrency is not verified.
+- Independent read-only review found hydration overwrites, missing profile-read recovery, editor font leakage into interface text, and avatar-step contrast. All were fixed. Focus-managed Sheet navigation, scalable topbar height, scoped preview surfaces, reduced root scrolling, high-contrast editor tokens, and solid high-contrast panel borders were also corrected.
+- Execution, judging, problem catalogs, draft repository, and API contracts have no appearance-phase changes. Real Python, Java, C++, and C sandbox execution remains unverified.
+
+### Decisions and limitations
+
+- Continued on the existing feature branch to preserve its four prior implementation commits and uncommitted work; no worktree or replacement plan was created.
+- Kept root-only hydration suppression because the bootstrap deliberately changes root attributes before hydration; React child markup still starts with identical defaults.
+- Offered locally available Geist Sans, System Sans, Pixelify Sans, Geist Mono, Consolas, and system monospace; Inter is not bundled.
+- High contrast fixes brightness to 100% while retaining the stored brightness choice.
+- Fixed small review findings because reduced motion, contrast, and solid borders are explicit Phase 2C accessibility requirements. No deferred review findings remain.
+- Browser inventory returned no connected browsers; screenshots, actual focus restoration, interactive persistence, touch input, and responsive layout verification were unavailable to this session. Requests present in a shared development-server log are not evidence of browser testing by this agent.
+- The local server started for verification was stopped. Development logs included Next.js agent-feedback instant-navigation validation warnings for profile-gated app routes; production compilation passed. No instant-navigation configuration was changed for this phase.
+
+### Manual browser verification still required
+
+1. Check landing, setup, all app routes, dialogs, and navigation at 375px, 768px, 1024px, 1366×768, and 1440px. Repeat at 150% text, Compact/Spacious density, and alternative fonts; inspect wrapping and horizontal overflow.
+2. Switch all styles and Light/Dark/System modes, reload, navigate, and change OS scheme/motion preferences. Verify guest inheritance, profile overrides, reset isolation, and save-error feedback.
+3. Type code and custom stdin, select a problem, move the cursor, and create undo history. Repeatedly change appearance/editor settings; verify all state remains, no run/submit request fires, and all four languages still switch normally.
+4. Use keyboard-only navigation, open/close appearance dialogs and mobile navigation with Escape, and check focus restoration, visible focus, screen-reader labels, and touch targets.
+
+### Git delivery state
+
+At completion verification, branch was `feat/appearance-studio`; local `main` and the existing `origin/main` tracking ref matched at `2e8fa3c`. No new commits or remote operations had been made. The developer subsequently approved committing Phase 2C, pushing this branch, and creating a pull request against `main`. Merge and deployment are not authorized. Pre-existing staged deletions of `.codex/hooks.json` and `.gemini/settings.json` are excluded from the appearance commit. `AGENTS.md` also contains Next.js-generated development guidance.
+
+### Changed file manifest
+
+- `AGENTS.md`
+- `app/globals.css`
+- `app/layout.tsx`
+- `components/app/appearance-studio.tsx`
+- `components/app/app-shell.tsx`
+- `components/app/app-sidebar.tsx`
+- `components/app/app-topbar.tsx`
+- `components/app/app-welcome.tsx`
+- `components/app/challenges-view.tsx`
+- `components/app/command-station.tsx`
+- `components/app/monaco-editor-pane.tsx`
+- `components/app/profile-edit-dialog.tsx`
+- `components/app/profile-reset-dialog.tsx`
+- `components/app/progress-view.tsx`
+- `components/app/settings-view.tsx`
+- `components/app/workspace-view.tsx`
+- `components/appearance/style-selector.tsx`
+- `components/landing/about.tsx`
+- `components/landing/appearance-modal.tsx`
+- `components/landing/faq.tsx`
+- `components/landing/features-roadmap.tsx`
+- `components/landing/footer.tsx`
+- `components/landing/hero.tsx`
+- `components/landing/install-guide.tsx`
+- `components/landing/languages.tsx`
+- `components/landing/navbar.tsx`
+- `components/landing/pixel-terminal.tsx`
+- `components/retro/dot-icon.tsx`
+- `components/retro/pixel-badge.tsx`
+- `components/retro/pixel-button.tsx`
+- `components/retro/pixel-card.tsx`
+- `components/setup/onboarding-wizard.tsx`
+- `components/setup/step-avatar.tsx`
+- `components/setup/step-identity.tsx`
+- `components/setup/step-loadout.tsx`
+- `components/ui/sonner.tsx`
+- `docs/superpowers/plans/2026-10-14-appearance-studio.md`
+- `hooks/use-appearance.tsx`
+- `lib/appearance-bootstrap.ts`
+- `lib/editor-appearance.ts`
+- `lib/storage/appearance-repository.ts`
+- `lib/storage/db.ts`
+- `lib/storage/profile-repository.ts`
+- `tests/appearance-bootstrap.test.mjs`
+- `tests/appearance-contrast.test.mjs`
+- `tests/appearance-navigation.test.mjs`
+- `tests/appearance-profile.test.mjs`
+- `tests/appearance-provider.test.mjs`
+- `tests/appearance-runtime.test.mjs`
+- `tests/appearance-storage.test.mjs`
+- `tests/editor-appearance.test.mjs`
+- `types/appearance.ts`
+- `types/profile.ts`

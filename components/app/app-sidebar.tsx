@@ -46,7 +46,7 @@ export function AppSidebar({
     <aside
       aria-label="Application sidebar"
       className={cn(
-        "bg-[#120A24] border-r-2 border-[#2E1A57] flex flex-col justify-between transition-all duration-200 select-none z-30 shrink-0",
+        "bg-[var(--color-surface)] border-r-2 border-[var(--color-border)] flex flex-col justify-between transition-all duration-200 select-none z-30 shrink-0",
         collapsed ? "w-16" : "w-60",
         className
       )}
@@ -55,7 +55,7 @@ export function AppSidebar({
       <div>
         <div
           className={cn(
-            "p-3.5 border-b-2 border-[#2E1A57] flex items-center transition-all",
+            "p-3.5 border-b-2 border-[var(--color-border)] flex items-center transition-all",
             collapsed ? "justify-center" : "gap-3"
           )}
         >
@@ -63,26 +63,26 @@ export function AppSidebar({
             <PixelAvatar
               avatarId={profile.avatarId}
               size={collapsed ? 36 : 42}
-              className="border-2 shadow-[2px_2px_0px_#000000] shrink-0"
+              className="border-2 [box-shadow:var(--shadow-btn)] shrink-0"
             />
           ) : (
-            <div className="w-9 h-9 bg-[#1B0F36] border border-[#2E1A57] animate-pulse" />
+            <div className="w-9 h-9 bg-[var(--color-elevated)] border border-[var(--color-border)] animate-pulse" />
           )}
 
           {!collapsed && profile && (
             <div className="min-w-0 flex-1">
-              <span className="block font-mono text-sm font-bold text-white truncate tracking-wide">
+              <span className="block font-mono text-sm font-bold text-[var(--color-text-main)] truncate tracking-wide">
                 {profile.displayName}
               </span>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <PixelBadge
                   variant="cyan"
                   bracketed={false}
-                  className="text-[9px] py-0 px-1 font-mono uppercase"
+                  className="text-[0.5625rem] py-0 px-1 font-mono uppercase"
                 >
                   {profile.preferredLanguage}
                 </PixelBadge>
-                <span className="text-[10px] font-mono text-[#8E80A8] uppercase truncate">
+                <span className="text-[0.625rem] font-mono text-[var(--color-text-muted)] uppercase truncate">
                   {profile.experienceLevel}
                 </span>
               </div>
@@ -105,20 +105,20 @@ export function AppSidebar({
                 onClick={onNavigate}
                 title={collapsed ? `${item.index} ${item.label}` : undefined}
                 className={cn(
-                  "group relative flex items-center gap-3 px-3 py-2.5 font-mono text-xs transition-colors outline-none",
-                  "focus-visible:ring-2 focus-visible:ring-[#00F0FF] focus-visible:ring-offset-1 focus-visible:ring-offset-[#120A24]",
+                  "appearance-nav-item min-h-11 group relative flex items-center gap-3 px-3 py-2.5 font-mono text-xs transition-colors outline-none",
+                  "focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--color-surface)]",
                   isActive
-                    ? "bg-[#1B0F36] text-[#00F0FF] font-bold border-l-2 border-[#00F0FF] shadow-[inset_3px_0_0_#00F0FF]"
-                    : "text-[#A79EC4] hover:text-white hover:bg-[#180D30] border-l-2 border-transparent"
+                    ? "bg-[var(--color-elevated)] text-[var(--color-accent)] font-bold border-l-2 border-[var(--color-accent)] shadow-[inset_3px_0_0_var(--color-accent)]"
+                    : "text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-elevated)] border-l-2 border-transparent"
                 )}
               >
                 <div
                   className={cn(
                     "shrink-0 transition-colors",
-                    isActive ? "text-[#00F0FF]" : "text-[#7B6E94] group-hover:text-white"
+                    isActive ? "text-[var(--color-accent)]" : "text-[var(--color-text-muted)] group-hover:text-[var(--color-text-main)]"
                   )}
                 >
-                  <DotIcon name={item.iconName} size={18} />
+                  <DotIcon adaptive name={item.iconName} size={18} />
                 </div>
 
                 {!collapsed && (
@@ -126,8 +126,8 @@ export function AppSidebar({
                     <span className="truncate">{item.label}</span>
                     <span
                       className={cn(
-                        "text-[10px] opacity-40 group-hover:opacity-100 transition-opacity",
-                        isActive && "text-[#00F0FF] opacity-80"
+                        "text-[0.625rem] opacity-40 group-hover:opacity-100 transition-opacity",
+                        isActive && "text-[var(--color-accent)] opacity-80"
                       )}
                     >
                       {item.index}
@@ -141,25 +141,25 @@ export function AppSidebar({
       </div>
 
       {/* Bottom Section: Storage Telemetry & Collapse Control */}
-      <div className="p-2 border-t-2 border-[#2E1A57] space-y-2">
+      <div className="p-2 border-t-2 border-[var(--color-border)] space-y-2">
         {/* Storage Locality Telemetry */}
         <div
           className={cn(
-            "p-2 bg-[#090514] border border-[#2E1A57] text-[10px] font-mono flex items-center",
+            "p-2 bg-[var(--color-canvas)] border border-[var(--color-border)] text-[0.625rem] font-mono flex items-center",
             collapsed ? "justify-center" : "justify-between"
           )}
           title="Storage: IndexedDB (exeku_local_v1) Online"
         >
           <div className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#00FF9D] shadow-[0_0_6px_#00FF9D]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-mint)] shadow-[0_0_6px_var(--color-mint)]" />
             {!collapsed && (
-              <span className="text-[#00FF9D] font-bold uppercase tracking-wider">
+              <span className="text-[var(--color-mint)] font-bold uppercase tracking-wider">
                 IDB ONLINE
               </span>
             )}
           </div>
           {!collapsed && (
-            <span className="text-[#6B5A8A]">v2</span>
+            <span className="text-[var(--color-text-dim)]">v2</span>
           )}
         </div>
 
@@ -169,16 +169,16 @@ export function AppSidebar({
           onClick={onToggleCollapse}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           className={cn(
-            "w-full py-2 px-2 text-xs font-mono text-[#8E80A8] hover:text-white hover:bg-[#1B0F36] border border-transparent hover:border-[#2E1A57] flex items-center transition-colors outline-none",
-            "focus-visible:ring-1 focus-visible:ring-[#00F0FF]",
+            "w-full py-2 px-2 text-xs font-mono text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-elevated)] border border-transparent hover:border-[var(--color-border)] flex items-center transition-colors outline-none",
+            "focus-visible:ring-1 focus-visible:ring-[var(--color-accent)]",
             collapsed ? "justify-center" : "justify-between"
           )}
         >
-          <span className="text-[#00F0FF] font-bold">
+          <span className="text-[var(--color-accent)] font-bold">
             {collapsed ? "▶" : "◀"}
           </span>
           {!collapsed && (
-            <span className="text-[10px] uppercase tracking-wider">
+            <span className="text-[0.625rem] uppercase tracking-wider">
               COLLAPSE
             </span>
           )}

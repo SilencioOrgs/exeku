@@ -48,7 +48,7 @@ export function InstallGuide() {
   };
 
   return (
-    <section id="install" className="py-20 md:py-28 bg-[#090514] relative">
+    <section id="install" className="py-20 md:py-28 bg-[var(--color-canvas)] relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="max-w-3xl mb-14">
@@ -56,28 +56,28 @@ export function InstallGuide() {
             <PixelBadge variant="cyan">DEVELOPER SETUP</PixelBadge>
           </div>
           <h2
-            className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-6 uppercase tracking-tight"
-            style={{ fontFamily: "var(--font-pixelify)" }}
+            className="text-3xl sm:text-4xl md:text-5xl font-bold text-[var(--color-text-main)] mb-6 uppercase tracking-tight"
+            style={{ fontFamily: "var(--font-heading-active)" }}
           >
             Run The Developer Preview.
           </h2>
-          <p className="text-base sm:text-lg text-[#A79EC4] font-sans leading-relaxed">
+          <p className="text-base sm:text-lg text-[var(--color-text-muted)] font-sans leading-relaxed">
             Exeku is currently in local developer preview. Clone and launch the Next.js platform locally,
             or optionally run the Piston sandbox runner for live containerized execution.
           </p>
         </div>
 
         {/* Repository Access Notice */}
-        <div className="mb-10 p-5 bg-[#1B0F36] border-2 border-[#9E00FF]/50 pixel-box flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="mb-10 p-5 bg-[var(--color-elevated)] border-2 border-[var(--color-primary)]/50 pixel-box flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-start gap-3">
-            <DotIcon name="lock-close" size={20} className="text-[#00F0FF] mt-0.5 shrink-0" />
+            <DotIcon name="lock-close" size={20} className="text-[var(--color-accent)] mt-0.5 shrink-0" />
             <div>
-              <h3 className="text-white font-mono font-bold text-sm uppercase">
+              <h3 className="text-[var(--color-text-main)] font-mono font-bold text-sm uppercase">
                 Private Repository Access Required
               </h3>
-              <p className="text-xs sm:text-sm text-[#A79EC4] font-sans">
+              <p className="text-xs sm:text-sm text-[var(--color-text-muted)] font-sans">
                 Source code is hosted privately at{" "}
-                <code className="text-[#00F0FF] bg-[#090514] px-1.5 py-0.5 font-mono">
+                <code className="text-[var(--color-accent)] bg-[var(--color-canvas)] px-1.5 py-0.5 font-mono">
                   github.com/SilencioOrgs/exeku
                 </code>
                 . Ensure your GitHub account has been granted collaborator access before cloning.
@@ -93,43 +93,43 @@ export function InstallGuide() {
             <PixelCard
               key={s.step}
               variant="default"
-              className="bg-[#120A24] border-2 border-[#2E1A57] flex flex-col justify-between"
+              className="bg-[var(--color-surface)] border-2 border-[var(--color-border)] flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <span
-                    className="text-3xl font-bold text-[#00F0FF]"
-                    style={{ fontFamily: "var(--font-pixelify)" }}
+                    className="text-3xl font-bold text-[var(--color-accent)]"
+                    style={{ fontFamily: "var(--font-heading-active)" }}
                   >
                     STEP {s.step}
                   </span>
-                  <DotIcon name={s.icon} size={18} className="text-[#A79EC4]" />
+                  <DotIcon name={s.icon} size={18} className="text-[var(--color-text-muted)]" />
                 </div>
 
-                <h4 className="text-lg font-bold text-white font-mono mb-2">
+                <h4 className="text-lg font-bold text-[var(--color-text-main)] font-mono mb-2">
                   {s.title}
                 </h4>
 
-                <p className="text-xs text-[#A79EC4] mb-4 min-h-[36px]">
+                <p className="text-xs text-[var(--color-text-muted)] mb-4 min-h-[36px]">
                   {s.notes}
                 </p>
               </div>
 
               {/* Command Box with Copy Button */}
-              <div className="mt-2 bg-[#090514] border border-[#2E1A57] p-3 flex flex-col justify-between gap-2">
-                <code className="text-xs font-mono text-[#00FF9D] whitespace-pre break-all">
+              <div className="mt-2 bg-[var(--color-canvas)] border border-[var(--color-border)] p-3 flex flex-col justify-between gap-2">
+                <code className="text-xs font-mono text-[var(--color-mint)] whitespace-pre break-all">
                   {s.command}
                 </code>
 
                 <button
                   type="button"
                   onClick={() => handleCopy(s.command, idx)}
-                  className="self-end mt-1 px-2.5 py-1 text-xs font-mono bg-[#1B0F36] hover:bg-[#2E1A57] text-[#00F0FF] border border-[#00F0FF]/30 flex items-center gap-1.5 transition-colors cursor-pointer outline-none focus-visible:ring-1 focus-visible:ring-[#00F0FF]"
+                  className="self-end mt-1 px-2.5 py-1 text-xs font-mono bg-[var(--color-elevated)] hover:bg-[var(--color-border)] text-[var(--color-accent)] border border-[var(--color-accent)]/30 flex items-center gap-1.5 transition-colors cursor-pointer outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-accent)]"
                 >
                   {copiedIndex === idx ? (
                     <>
-                      <Check className="w-3 h-3 text-[#00FF9D]" />
-                      <span className="text-[#00FF9D]">COPIED!</span>
+                      <Check className="w-3 h-3 text-[var(--color-mint)]" />
+                      <span className="text-[var(--color-mint)]">COPIED!</span>
                     </>
                   ) : (
                     <>
@@ -144,11 +144,11 @@ export function InstallGuide() {
         </div>
 
         {/* PowerShell Troubleshooting Tip */}
-        <div className="mt-8 p-4 bg-[#140C27] border border-[#2E1A57] flex items-start gap-3 text-xs font-mono text-[#A79EC4]">
-          <DotIcon name="powershell" size={16} className="text-[#FF007A] shrink-0 mt-0.5" />
+        <div className="mt-8 p-4 bg-[var(--color-surface)] border border-[var(--color-border)] flex items-start gap-3 text-xs font-mono text-[var(--color-text-muted)]">
+          <DotIcon name="powershell" size={16} className="text-[var(--color-pink)] shrink-0 mt-0.5" />
           <div>
-            <strong className="text-white">Windows PowerShell Execution Policy Note:</strong> If you receive a script execution policy restriction error when running npm commands, invoke PowerShell as Administrator or run:{" "}
-            <code className="text-[#00F0FF] bg-[#090514] px-1 py-0.5">
+            <strong className="text-[var(--color-text-main)]">Windows PowerShell Execution Policy Note:</strong> If you receive a script execution policy restriction error when running npm commands, invoke PowerShell as Administrator or run:{" "}
+            <code className="text-[var(--color-accent)] bg-[var(--color-canvas)] px-1 py-0.5">
               Set-ExecutionPolicy -Scope Process RemoteSigned
             </code>
           </div>
