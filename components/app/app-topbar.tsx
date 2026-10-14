@@ -76,7 +76,7 @@ export function AppTopbar({ profile, onToggleMobileMenu }: AppTopbarProps) {
             </span>
           </Link>
 
-          <span className="text-[var(--color-text-dim)]">▶</span>
+          <span className="text-[var(--color-text-dim)]"><DotIcon name="circlePlay" size={14} aria-hidden="true" /></span>
 
           <span className="text-[var(--color-accent)] font-bold tracking-wider">
             {currentView}
@@ -92,7 +92,7 @@ export function AppTopbar({ profile, onToggleMobileMenu }: AppTopbarProps) {
             bracketed
             className="font-mono text-xs py-1 px-2.5 animate-pulse"
           >
-            ⏱ CHALLENGE: {formattedTime}
+            <DotIcon name="alarm" size={14} aria-hidden="true" /> CHALLENGE: {formattedTime}
           </PixelBadge>
         )}
 

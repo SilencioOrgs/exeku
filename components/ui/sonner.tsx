@@ -1,8 +1,9 @@
 "use client"
 
+import { DotIcon } from "@/components/retro/dot-icon";
+
 import { useAppearance } from "@/hooks/use-appearance"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
-import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon } from "lucide-react"
 
 const Toaster = ({ ...props }: ToasterProps) => {
   const { effectiveColorMode } = useAppearance()
@@ -13,19 +14,19 @@ const Toaster = ({ ...props }: ToasterProps) => {
       className="toaster group"
       icons={{
         success: (
-          <CircleCheckIcon className="size-4" />
+          <DotIcon name="circleCheck" className="size-4" />
         ),
         info: (
-          <InfoIcon className="size-4" />
+          <DotIcon name="chat" className="size-4" />
         ),
         warning: (
-          <TriangleAlertIcon className="size-4" />
+          <DotIcon name="circleBlock" className="size-4" />
         ),
         error: (
-          <OctagonXIcon className="size-4" />
+          <DotIcon name="circleClose" className="size-4" />
         ),
         loading: (
-          <Loader2Icon className="size-4 animate-spin" />
+          <DotIcon name="circleDots" className="size-4 animate-spin" />
         ),
       }}
       style={

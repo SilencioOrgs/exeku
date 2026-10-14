@@ -131,7 +131,7 @@ export function AppWelcome() {
                 onClick={() => setIsEditOpen(true)}
                 className="flex-1 sm:flex-none"
               >
-                EDIT PROFILE ✎
+                EDIT PROFILE <DotIcon name="pencil" size={14} aria-hidden="true" />
               </PixelButton>
               <PixelButton
                 variant="ghost"
@@ -139,7 +139,7 @@ export function AppWelcome() {
                 onClick={() => setIsResetOpen(true)}
                 className="flex-1 sm:flex-none text-[var(--color-pink)] hover:border-[var(--color-pink)]"
               >
-                RESET ✖
+                RESET <DotIcon name="close" size={14} aria-hidden="true" />
               </PixelButton>
             </div>
           </div>

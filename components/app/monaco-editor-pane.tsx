@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useLayoutEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import type { OnMount } from "@monaco-editor/react";
 import type * as MonacoType from "monaco-editor";
@@ -63,6 +63,16 @@ export function MonacoEditorPane({
   const { preferences, effectiveColorMode, effectiveReducedMotion } = useAppearance();
   const editorRef = useRef<MonacoType.editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<typeof MonacoType | null>(null);
+  const viewStateRef = useRef<{ uri: string | undefined; state: MonacoType.editor.ICodeEditorViewState | null } | null>(null);
+  const [editorGeneration, setEditorGeneration] = useState(0);
+  useLayoutEffect(() => () => {
+    // Activity disposes Monaco on hide; recreate only its wrapper on return, retaining models and view state.
+    const editor = editorRef.current;
+    if (editor) viewStateRef.current = { uri: editor.getModel()?.uri.toString(), state: editor.saveViewState() };
+    editorRef.current = null;
+    monacoRef.current = null;
+    setEditorGeneration(current => current + 1);
+  }, []);
   const runRef = useRef(onRun);
   const submitRef = useRef(onSubmit);
   useEffect(() => { runRef.current = onRun; submitRef.current = onSubmit; }, [onRun, onSubmit]);
@@ -278,6 +288,8 @@ export function MonacoEditorPane({
     // Monaco has its own keyboard handling; document shortcuts alone do not reliably reach it.
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => runRef.current?.());
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.Enter, () => submitRef.current?.());
+    const savedView = viewStateRef.current;
+    if (savedView && savedView.uri === editor.getModel()?.uri.toString()) editor.restoreViewState(savedView.state);
   };
 
   // Live update options without remounting or resetting editor buffer
@@ -291,6 +303,7 @@ export function MonacoEditorPane({
   return (
     <div className="w-full h-full min-h-[380px] bg-[var(--color-canvas)] overflow-hidden">
       <DynamicEditor
+        key={editorGeneration}
         path={path}
         saveViewState
         keepCurrentModel

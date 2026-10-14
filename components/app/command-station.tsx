@@ -10,7 +10,7 @@ import { PixelBadge } from "@/components/retro/pixel-badge";
 import { DotIcon, type DotIconName } from "@/components/retro/dot-icon";
 import { ProfileEditDialog } from "./profile-edit-dialog";
 import { StyleText } from "@/components/appearance/style-text";
-import { ArrowUpRight, Pencil, Terminal } from "lucide-react";
+
 import { useAppearance } from "@/hooks/use-appearance";
 import { ModernOverview } from "./modern-overview";
 import { CodingActivity } from "./coding-activity";
@@ -194,7 +194,7 @@ export function CommandStation() {
           <div className="flex items-center gap-2.5 w-full md:w-auto">
             <Link href="/app/workspace" className="flex-1 md:flex-initial">
               <PixelButton variant="primary" size="md" className="w-full">
-                Open workspace <span className="arcade-copy">▶</span><ArrowUpRight className="modern-icon" size={16} />
+                Open workspace <DotIcon name="arrowUp" size={16} />
               </PixelButton>
             </Link>
             <PixelButton
@@ -203,7 +203,7 @@ export function CommandStation() {
               onClick={() => setIsEditOpen(true)}
               className="whitespace-nowrap"
             >
-              Edit profile <span className="arcade-copy">✎</span><Pencil className="modern-icon" size={15} />
+              Edit profile <DotIcon name="pencil" size={15} />
             </PixelButton>
           </div>
         </div>
@@ -303,7 +303,7 @@ export function CommandStation() {
               className="text-xs font-mono text-[var(--color-accent)] hover:underline flex items-center gap-1 group"
             >
               <span>Open scratchpad</span>
-              <span className="group-hover:translate-x-0.5 transition-transform">&rarr;</span>
+              <span className="group-hover:translate-x-0.5 transition-transform"><DotIcon name="arrowRight" size={14} aria-hidden="true" /></span>
             </Link>
           </div>
         </PixelCard>
@@ -313,10 +313,10 @@ export function CommandStation() {
 
       {/* Track Blueprint Preview */}
       <section className="dashboard-recent modern-surface">
-        <div className="flex items-center gap-2"><Terminal size={18} /><h2>Continue coding</h2></div>
+        <div className="flex items-center gap-2"><DotIcon name="powershell" size={18} /><h2>Continue coding</h2></div>
         <p>{activeDraft ? `${filename} · Last saved ${new Date(activeDraft.updatedAt).toLocaleString()}` : "Your scratchpad is ready when you are."}</p>
         <pre><code>{activeDraft?.code ? activeDraft.code.split("\n").slice(0, 5).join("\n") : "// No saved code in this language yet."}</code></pre>
-        <Link href="/app/workspace">Open {filename} <ArrowUpRight size={14} /></Link>
+        <Link href="/app/workspace">Open {filename} <DotIcon name="arrowUp" size={14} /></Link>
       </section>
       <PixelCard variant="elevated" className="dashboard-track p-5 sm:p-6 border-2 border-[var(--color-border)] space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--color-border)] pb-3">

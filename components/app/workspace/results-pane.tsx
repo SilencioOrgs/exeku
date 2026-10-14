@@ -2,7 +2,7 @@
 
 import React from "react";
 import { PixelBadge } from "@/components/retro/pixel-badge";
-import { XCircle, AlertTriangle, Clock } from "lucide-react";
+
 import { DotIcon } from "@/components/retro/dot-icon";
 import type { ExecutionResult } from "@/types/execution";
 import type { JudgingResult } from "@/lib/judge/judging-service";
@@ -119,7 +119,7 @@ export function ResultsPane({
       {/* Demo Warning Banner if Custom Code is Not Evaluated */}
       {isDemoMode && demoNote && (
         <div className="px-3 py-1.5 bg-[var(--color-elevated)] border-b border-[var(--color-accent)] text-[0.6875rem] font-mono text-[var(--color-accent)] flex items-center gap-1.5 shrink-0">
-          <AlertTriangle size={12} />
+          <DotIcon name="circleBlock" size={12} />
           <span>{demoNote}</span>
         </div>
       )}
@@ -133,7 +133,7 @@ export function ResultsPane({
               <div className="text-[var(--color-text-dim)] space-y-2 py-4">
                 <p>&gt; Execution console ready.</p>
                 <p className="text-[0.6875rem] text-[var(--color-text-muted)]">
-                  Click &quot;RUN CODE ▶&quot; to execute {filename} with standard input.
+                  Click &quot;RUN CODE <DotIcon name="circlePlay" size={14} aria-hidden="true" />&quot; to execute {filename} with standard input.
                 </p>
                 <div className="p-2.5 bg-[var(--color-surface)] border border-[var(--color-border)] text-[0.625rem] space-y-1 mt-2">
                   <div className="text-[var(--color-accent)] font-bold">[ENVIRONMENT TELEMETRY]</div>
@@ -242,7 +242,7 @@ export function ResultsPane({
               <div className="text-[var(--color-text-dim)] space-y-2 py-4">
                 <p>&gt; Test evaluator ready.</p>
                 <p className="text-[0.6875rem] text-[var(--color-text-muted)]">
-                  Click &quot;SUBMIT SOLUTION ✔&quot; to test your code against the full evaluation suite.
+                  Click &quot;SUBMIT SOLUTION <DotIcon name="circleCheck" size={14} aria-hidden="true" />&quot; to test your code against the full evaluation suite.
                 </p>
               </div>
             )}
@@ -276,7 +276,7 @@ export function ResultsPane({
 
                   <div className="flex items-center justify-between text-[0.6875rem] text-[var(--color-text-dim)] pt-1 border-t border-[var(--color-border)]/50">
                     <div className="flex items-center gap-1">
-                      <Clock size={11} />
+                      <DotIcon name="alarm" size={11} />
                       <span>Max Runtime: {judgingResult.maxDurationMs}ms</span>
                     </div>
                     {isDemoMode && (
@@ -315,7 +315,7 @@ export function ResultsPane({
                           {tc.passed ? (
                             <DotIcon name="circleCheck" size={13} aria-hidden="true" className="text-[var(--color-mint)]" />
                           ) : (
-                            <XCircle size={13} className="text-[var(--color-pink)]" />
+                            <DotIcon name="circleClose" size={13} className="text-[var(--color-pink)]" />
                           )}
                           <span className="text-[var(--color-text-main)] font-bold">
                             Test Case #{idx + 1}

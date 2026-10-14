@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { PixelCard } from "@/components/retro/pixel-card";
 import { PixelBadge } from "@/components/retro/pixel-badge";
-import { Copy, Clock, Cpu } from "lucide-react";
+
 import { DotIcon } from "@/components/retro/dot-icon";
 import type { VisibleProblem } from "@/types/problem";
 
@@ -77,11 +77,11 @@ export function ProblemPane({
       {/* Resource Limits Telemetry */}
       <div className="px-3 py-1.5 bg-[var(--color-canvas)] border-b border-[var(--color-border)] flex items-center justify-between text-[0.625rem] font-mono text-[var(--color-text-muted)] shrink-0">
         <div className="flex items-center gap-1">
-          <Clock size={11} className="text-[var(--color-accent)]" />
+          <DotIcon name="alarm" size={11} className="text-[var(--color-accent)]" />
           <span>Time Limit: {problem.timeLimitMs}ms</span>
         </div>
         <div className="flex items-center gap-1">
-          <Cpu size={11} className="text-[var(--color-mint)]" />
+          <DotIcon name="box" size={11} className="text-[var(--color-mint)]" />
           <span>Memory: {Math.round(problem.memoryLimitKb / 1000)}MB</span>
         </div>
       </div>
@@ -170,7 +170,7 @@ export function ProblemPane({
                       </>
                     ) : (
                       <>
-                        <Copy size={10} />
+                        <DotIcon name="file" size={10} />
                         <span>COPY INPUT</span>
                       </>
                     )}
@@ -182,7 +182,7 @@ export function ProblemPane({
                     className="text-[0.625rem] text-[var(--color-accent)] hover:underline cursor-pointer px-1.5 py-0.5 border border-[var(--color-accent)]/40 bg-[var(--color-accent)]/10"
                     title="Load this input into Custom Stdin tab"
                   >
-                    USE IN STDIN &rarr;
+                    USE IN STDIN <DotIcon name="arrowRight" size={14} aria-hidden="true" />
                   </button>
                 </div>
               </div>

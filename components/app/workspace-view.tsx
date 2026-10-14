@@ -43,18 +43,6 @@ import type { PreferredLanguage } from "@/types/profile";
 import type { VisibleProblem } from "@/types/problem";
 import type { ExecutionResult, SandboxHealth } from "@/types/execution";
 import type { JudgingResult } from "@/lib/judge/judging-service";
-import {
-  Clock,
-  AlertTriangle,
-  RotateCcw,
-  Download,
-  Maximize2,
-  Minimize2,
-  Play,
-  Check,
-  Terminal,
-  FileText,
-} from "lucide-react";
 
 type MobileActivePane = "problem" | "code" | "results";
 
@@ -582,7 +570,7 @@ export function WorkspaceView() {
       {/* Slim dismissible offline notice; no execution fallbacks. */}
       {sandboxHealth && !sandboxHealth.isAvailable && !offlineDismissed && (
         <div className="flex h-8 min-w-0 shrink-0 items-center gap-2 overflow-hidden border border-[var(--color-pink)] bg-[var(--color-elevated)] px-2 text-[11px] text-[var(--color-text-main)]">
-          <AlertTriangle size={13} className="shrink-0 text-[var(--color-pink)]" aria-hidden="true" />
+          <DotIcon name="circleBlock" size={13} className="shrink-0 text-[var(--color-pink)]" aria-hidden="true" />
           <span className="min-w-0 flex-1 truncate">Sandbox offline: Piston not running on :2000</span>
           <button
             type="button" title="Copy command to start Piston" aria-label="Copy docker command"
@@ -593,7 +581,7 @@ export function WorkspaceView() {
           <button type="button" title="Dismiss for this session" aria-label="Dismiss sandbox notice" className="h-7 w-6 shrink-0 text-base" onClick={() => {
             setOfflineDismissed(true);
             try { sessionStorage.setItem("exeku.workspace.sandbox-dismissed", "1"); } catch { /* restricted */ }
-          }}>×</button>
+          }}><DotIcon name="close" size={14} aria-hidden="true" /></button>
         </div>
       )}
 
@@ -608,7 +596,7 @@ export function WorkspaceView() {
         >
           <div className="flex shrink-0 items-center gap-3">
             <div className="flex items-center gap-1.5 font-heading text-[0.6875rem] text-[var(--color-accent)]">
-              <Clock
+              <DotIcon name="alarm"
                 size={16}
                 className={challenge.isWarningTime ? "text-[var(--color-pink)] animate-bounce" : "text-[var(--color-accent)]"}
               />
@@ -646,7 +634,7 @@ export function WorkspaceView() {
                   : "Submit solution at least once to enable finishing challenge"
               }
             >
-              FINISH CHALLENGE ✔
+              FINISH CHALLENGE <DotIcon name="circleCheck" size={14} aria-hidden="true" />
             </PixelButton>
 
             <PixelButton
@@ -655,7 +643,7 @@ export function WorkspaceView() {
               onClick={() => setIsForfeitModalOpen(true)}
               className="text-xs"
             >
-              FORFEIT / EXIT ✖
+              FORFEIT / EXIT <DotIcon name="close" size={14} aria-hidden="true" />
             </PixelButton>
           </div>
         </div>
@@ -819,10 +807,10 @@ export function WorkspaceView() {
             >DEMO</button>
             <span className="hidden h-5 shrink-0 border-l border-[var(--color-border)] sm:inline" aria-hidden="true" />
             <PixelButton size="icon" variant="ghost" onClick={() => setIsResetOpen(true)} aria-label="Reset active file" title="Reset active file">
-              <RotateCcw size={14} aria-hidden="true" />
+              <DotIcon name="arrowLeft" size={14} aria-hidden="true" />
             </PixelButton>
             <PixelButton size="icon" variant="ghost" onClick={handleDownloadFile} aria-label="Download active file" title="Download active file">
-              <Download size={14} aria-hidden="true" />
+              <DotIcon name="arrowDown" size={14} aria-hidden="true" />
             </PixelButton>
             <PixelButton
               size="icon" variant="ghost" className="hidden xl:inline-flex"
@@ -831,7 +819,7 @@ export function WorkspaceView() {
               onClick={nextLayout}
               title={`Layout: ${layout}. Click to cycle split, wide and focus`}
             >
-              {layout === "focus" ? <Minimize2 size={14} aria-hidden="true" /> : <Maximize2 size={14} aria-hidden="true" />}
+              {layout === "focus" ? <DotIcon name="windows" size={14} aria-hidden="true" /> : <DotIcon name="windows" size={14} aria-hidden="true" />}
             </PixelButton>
             {layout === "focus" && (
               <button
@@ -842,7 +830,7 @@ export function WorkspaceView() {
                 title={drawerOpen ? "Collapse output drawer" : "Open output drawer"}
                 aria-label={drawerOpen ? "Collapse output drawer" : "Open output drawer"}
               >
-                <Terminal size={14} aria-hidden="true" />
+                <DotIcon name="powershell" size={14} aria-hidden="true" />
                 Output
               </button>
             )}
@@ -851,16 +839,16 @@ export function WorkspaceView() {
                 type="button" className="hidden h-8 shrink-0 items-center gap-1 border border-[var(--color-border)] px-2 text-xs xl:inline-flex"
                 onClick={() => setProblemSlideOpen(true)}
                 aria-label="Open problem statement"
-              ><FileText size={14} aria-hidden="true" /> Problem</button>
+              ><DotIcon name="file" size={14} aria-hidden="true" /> Problem</button>
             )}
             <span className="hidden h-5 shrink-0 border-l border-[var(--color-border)] sm:inline" aria-hidden="true" />
             <PixelButton size="xs" variant="cyan" aria-label="Run code" title="Run code (Ctrl/Cmd+Enter)"
               disabled={isRunning || isSubmitting} onClick={() => void handleRunCode()} className="shrink-0">
-              <Play size={14} aria-hidden="true" /><span className="hidden sm:inline">{isRunning ? "RUNNING" : "RUN"}</span>
+              <DotIcon name="circlePlay" size={14} aria-hidden="true" /><span className="hidden sm:inline">{isRunning ? "RUNNING" : "RUN"}</span>
             </PixelButton>
             <PixelButton size="xs" variant="primary" aria-label="Submit solution" title="Submit solution (Ctrl/Cmd+Shift+Enter)"
               disabled={!problem || isRunning || isSubmitting} onClick={handleOpenSubmitModal} className="shrink-0">
-              <Check size={14} aria-hidden="true" /><span className="hidden sm:inline">{isSubmitting ? "JUDGING" : "SUBMIT"}</span>
+              <DotIcon name="circleCheck" size={14} aria-hidden="true" /><span className="hidden sm:inline">{isSubmitting ? "JUDGING" : "SUBMIT"}</span>
             </PixelButton>
           </div>
 
@@ -918,7 +906,6 @@ export function WorkspaceView() {
           </section>
         </div>
       )}
-
 
       {/* MODAL 1: Submit Confirmation Dialog */}
       {problem && (
@@ -1056,7 +1043,7 @@ export function WorkspaceView() {
                   setIsForfeitModalOpen(false);
                 }}
               >
-                CONFIRM FORFEIT ✖
+                CONFIRM FORFEIT <DotIcon name="close" size={14} aria-hidden="true" />
               </PixelButton>
             </div>
           </PixelCard>

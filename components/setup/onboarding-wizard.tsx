@@ -130,7 +130,7 @@ export function OnboardingWizard() {
                 size="sm"
                 onClick={() => router.push("/app")}
               >
-                CONTINUE TO APP ▶
+                CONTINUE TO APP <DotIcon name="circlePlay" size={14} aria-hidden="true" />
               </PixelButton>
               <PixelButton
                 variant="ghost"
@@ -164,7 +164,7 @@ export function OnboardingWizard() {
               >
                 01 IDENTITY
               </span>
-              <span className="text-[var(--color-text-dim)]">▶</span>
+              <span className="text-[var(--color-text-dim)]"><DotIcon name="circlePlay" size={14} aria-hidden="true" /></span>
               <span
                 className={cn(
                   "px-2 py-1 border transition-colors",
@@ -175,7 +175,7 @@ export function OnboardingWizard() {
               >
                 02 AVATAR
               </span>
-              <span className="text-[var(--color-text-dim)]">▶</span>
+              <span className="text-[var(--color-text-dim)]"><DotIcon name="circlePlay" size={14} aria-hidden="true" /></span>
               <span
                 className={cn(
                   "px-2 py-1 border transition-colors",
@@ -244,7 +244,7 @@ export function OnboardingWizard() {
                 onClick={() => setStep((s) => (s - 1) as 1 | 2)}
                 disabled={isSubmitting}
               >
-                ◀ BACK
+                <DotIcon name="arrowLeft" size={14} aria-hidden="true" /> BACK
               </PixelButton>
             ) : (
               <div />
@@ -256,7 +256,7 @@ export function OnboardingWizard() {
                 size="md"
                 onClick={step === 1 ? handleNextFromIdentity : () => setStep(3)}
               >
-                NEXT STEP ▶
+                NEXT STEP <DotIcon name="circlePlay" size={14} aria-hidden="true" />
               </PixelButton>
             ) : (
               <PixelButton
@@ -266,7 +266,7 @@ export function OnboardingWizard() {
                 disabled={isSubmitting}
                 className="bg-[var(--color-mint)] text-[var(--color-accent-foreground)] border-[var(--color-border)] hover:bg-[var(--color-mint)] font-bold"
               >
-                {isSubmitting ? "STORING PROFILE..." : "CREATE PROFILE ▶"}
+                {isSubmitting ? "STORING PROFILE..." : "CREATE PROFILE"}
               </PixelButton>
             )}
           </div>

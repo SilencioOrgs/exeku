@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import { PixelBadge } from "@/components/retro/pixel-badge";
 import { PixelCard } from "@/components/retro/pixel-card";
 import { DotIcon, type DotIconName } from "@/components/retro/dot-icon";
-import { Copy, Check } from "lucide-react";
 
 export function InstallGuide() {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
@@ -128,12 +127,12 @@ export function InstallGuide() {
                 >
                   {copiedIndex === idx ? (
                     <>
-                      <Check className="w-3 h-3 text-[var(--color-mint)]" />
+                      <DotIcon name="circleCheck" className="w-3 h-3 text-[var(--color-mint)]" />
                       <span className="text-[var(--color-mint)]">COPIED!</span>
                     </>
                   ) : (
                     <>
-                      <Copy className="w-3 h-3" />
+                      <DotIcon name="file" className="w-3 h-3" />
                       <span>COPY</span>
                     </>
                   )}

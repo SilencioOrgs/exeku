@@ -54,7 +54,7 @@ export function Footer() {
                     href={link.href}
                     className="hover:text-[var(--color-accent)] transition-colors flex items-center gap-1.5"
                   >
-                    <span className="text-[var(--color-primary-text)]">▶</span>
+                    <span className="text-[var(--color-primary-text)]"><DotIcon name="circlePlay" size={14} aria-hidden="true" /></span>
                     {link.label}
                   </a>
                 </li>

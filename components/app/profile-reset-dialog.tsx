@@ -1,5 +1,7 @@
 "use client";
 
+import { DotIcon } from "@/components/retro/dot-icon";
+
 import React, { useState } from "react";
 import { PixelButton } from "@/components/retro/pixel-button";
 import { PixelBadge } from "@/components/retro/pixel-badge";
@@ -64,7 +66,7 @@ export function ProfileResetDialog({
             aria-label="Close dialog"
             className="text-[var(--color-text-muted)] hover:text-[var(--color-pink)] font-mono text-sm px-2 py-1 transition-colors"
           >
-            ✕
+            <DotIcon name="close" size={14} aria-hidden="true" />
           </button>
         </div>
 
@@ -120,7 +122,7 @@ export function ProfileResetDialog({
             onClick={handleReset}
             disabled={!isConfirmed || isDeleting}
           >
-            {isDeleting ? "DELETING..." : "CONFIRM DELETION ✖"}
+            {isDeleting ? "DELETING..." : "CONFIRM DELETION"}
           </PixelButton>
         </div>
       </div>

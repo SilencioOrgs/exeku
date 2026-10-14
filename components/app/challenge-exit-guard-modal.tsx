@@ -1,5 +1,7 @@
 "use client";
 
+import { DotIcon } from "@/components/retro/dot-icon";
+
 import React from "react";
 import { PixelCard } from "@/components/retro/pixel-card";
 import { PixelButton } from "@/components/retro/pixel-button";
@@ -64,7 +66,7 @@ export function ChallengeExitGuardModal() {
             onClick={confirmPendingNavigation}
             className="text-xs font-heading"
           >
-            EXIT AND FORFEIT ✕
+            EXIT AND FORFEIT <DotIcon name="close" size={14} aria-hidden="true" />
           </PixelButton>
         </div>
       </PixelCard>

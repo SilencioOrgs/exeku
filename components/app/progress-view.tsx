@@ -263,7 +263,7 @@ export function ProgressView() {
                     className="text-[var(--color-accent)] hover:underline flex items-center gap-1 group"
                   >
                     <span>OPEN</span>
-                    <span className="group-hover:translate-x-0.5 transition-transform">&rarr;</span>
+                    <span className="group-hover:translate-x-0.5 transition-transform"><DotIcon name="arrowRight" size={14} aria-hidden="true" /></span>
                   </Link>
                 </div>
               </div>

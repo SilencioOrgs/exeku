@@ -7,9 +7,9 @@ import {
 } from "@/types/appearance";
 
 export const STYLE_PRESENTATIONS = {
-  "pixel-arcade": { name: "Pixel Arcade", description: "A programming arcade. Neon, pixel type, tactile controls.", density: "comfortable", heading: "pixel", radius: 0 },
-  "minimal-saas": { name: "Clarity", description: "Room to think. Clean type, soft surfaces, considered space.", density: "spacious", heading: "sans", radius: 14 },
-  "studio-crm": { name: "Command", description: "A focused developer workspace. Structured, precise, efficient.", density: "compact", heading: "sans", radius: 4 },
+  "pixel-arcade": { name: "Pixel Arcade", description: "Retro, expressive, colorful.", density: "comfortable", heading: "pixel", radius: 0 },
+  "minimal-saas": { name: "Clarity", description: "Clean, minimal, distraction-free.", density: "spacious", heading: "sans", radius: 14 },
+  "studio-crm": { name: "Command", description: "Structured, focused, professional.", density: "compact", heading: "sans", radius: 4 },
 } as const;
 
 export interface PalettePresentation {

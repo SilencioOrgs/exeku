@@ -1,7 +1,9 @@
 "use client";
 
+import { DotIcon } from "@/components/retro/dot-icon";
+
 import { useRef, useState, type KeyboardEvent } from "react";
-import { FileText } from "lucide-react";
+
 import type { PreferredLanguage } from "@/types/profile";
 import type { WorkspaceFile } from "@/types/draft";
 
@@ -101,7 +103,7 @@ export function FileTabs({ language, files, activeName, mainName, saveStatus, on
                 onKeyDown={(e) => moveTab(e, index)}
                 className="inline-flex h-8 items-center gap-1.5 px-2 text-xs"
               >
-                <FileText size={14} aria-hidden="true" />
+                <DotIcon name="file" size={14} aria-hidden="true" />
                 <span>{file.name}</span>
                 {activeName === file.name && <span aria-label={saveStatus} title={saveStatus} className={`h-1.5 w-1.5 rounded-full ${saveStatus === "SAVED" ? "bg-[var(--color-mint)]" : "bg-[var(--color-pink)]"}`} />}
               </button>
@@ -113,7 +115,7 @@ export function FileTabs({ language, files, activeName, mainName, saveStatus, on
                 aria-label={`Close ${file.name}`}
                 className="mr-1 rounded p-0.5 text-[var(--color-text-muted)] opacity-70 hover:opacity-100 focus-visible:opacity-100 sm:group-hover:opacity-100"
                 onClick={() => close(file)}
-              >×</button>
+              ><DotIcon name="close" size={12} aria-hidden="true" /></button>
             )}
           </div>
         ))}
@@ -132,7 +134,7 @@ export function FileTabs({ language, files, activeName, mainName, saveStatus, on
         <button
           type="button" onClick={() => begin(null)} title="Add source file" aria-label="Add source file"
           disabled={files.length >= 6} className="h-8 w-7 shrink-0 text-base hover:bg-[var(--color-elevated)] disabled:opacity-40"
-        >+</button>
+        ><DotIcon name="circlePlus" size={14} aria-hidden="true" /></button>
       )}
       {error && <span role="alert" title={error} className="absolute left-0 top-full z-30 mt-1 max-w-60 border border-[var(--color-pink)] bg-[var(--color-surface)] p-1 text-[10px] text-[var(--color-pink)]">{error}</span>}
     </div>

@@ -7,7 +7,6 @@ import { useProfile } from "@/hooks/use-profile";
 import { PixelBadge } from "@/components/retro/pixel-badge";
 import { PixelButton } from "@/components/retro/pixel-button";
 import { DotIcon } from "@/components/retro/dot-icon";
-import { Menu, X, ArrowUpRight } from "lucide-react";
 
 export function Navbar() {
   const router = useRouter();
@@ -56,7 +55,7 @@ export function Navbar() {
               className="text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors flex items-center gap-1 group outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-accent)]"
             >
               <span className="text-[var(--color-primary)] opacity-0 group-hover:opacity-100 transition-opacity">
-                ▶
+                <DotIcon name="circlePlay" size={14} aria-hidden="true" />
               </span>
               {link.label}
             </a>
@@ -72,7 +71,7 @@ export function Navbar() {
               size="sm"
               onClick={() => router.push(profile ? "/app" : "/setup")}
             >
-              {profile ? "Workspace ▶" : "Get Started"} <ArrowUpRight className="w-3.5 h-3.5" />
+              {profile ? "Workspace" : "Get Started"} <DotIcon name="arrowUp" className="w-3.5 h-3.5" />
             </PixelButton>
           </div>
 
@@ -83,7 +82,7 @@ export function Navbar() {
             aria-label="Toggle navigation menu"
             aria-expanded={mobileMenuOpen}
           >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {mobileMenuOpen ? <DotIcon name="close" className="w-5 h-5" /> : <DotIcon name="burger" className="w-5 h-5" />}
           </button>
         </div>
       </div>
@@ -108,7 +107,7 @@ export function Navbar() {
                 className="text-[var(--color-text-main)] hover:text-[var(--color-accent)] font-mono text-base py-1.5 border-b border-[var(--color-elevated)] flex items-center justify-between"
               >
                 <span>{link.label}</span>
-                <span className="text-[var(--color-accent)] text-sm">▶</span>
+                <span className="text-[var(--color-accent)] text-sm"><DotIcon name="circlePlay" size={14} aria-hidden="true" /></span>
               </a>
             ))}
           </nav>
@@ -123,7 +122,7 @@ export function Navbar() {
               }}
               className="w-full"
             >
-              {profile ? "Open Workspace ▶" : "Get Started (Setup Profile)"}
+              {profile ? "Open Workspace" : "Get Started (Setup Profile)"}
             </PixelButton>
           </div>
         </div>

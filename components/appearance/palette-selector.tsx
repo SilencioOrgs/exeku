@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
-import { Check } from "lucide-react";
+import React, { useId } from "react";
+import { DotIcon } from "@/components/retro/dot-icon";
 import { PALETTE_PRESENTATIONS } from "@/lib/appearance-styles";
 import type { UIStyle, ColorPalette } from "@/types/appearance";
 
@@ -16,43 +16,38 @@ export function PaletteSelector({
   uiStyle,
   activePalette,
   onSelectPalette,
-  compact = false,
 }: PaletteSelectorProps) {
+  const id = useId();
   const palettes = PALETTE_PRESENTATIONS[uiStyle] || PALETTE_PRESENTATIONS["pixel-arcade"];
 
   return (
     <fieldset className="appearance-control-group palette-selector-group">
       <legend className="font-heading text-sm font-semibold text-[var(--color-text-main)] mb-1">
-        Theme Color Palette
+        Color palette
       </legend>
-      <p className="text-xs text-[var(--color-text-muted)] mb-2.5">
-        Choose a color scheme tailored for {uiStyle === "pixel-arcade" ? "Pixel Arcade" : uiStyle === "minimal-saas" ? "Clarity" : "Command"}.
-      </p>
 
       <div
         role="radiogroup"
         aria-label="Color palette selection"
-        className="palette-swatch-grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2"
+        className="palette-swatch-grid"
       >
         {palettes.map((p) => {
           const isSelected = activePalette === p.id;
 
           return (
-            <button
+            <label
               key={p.id}
-              type="button"
-              role="radio"
-              aria-checked={isSelected}
-              aria-label={`${p.name} palette`}
               title={`${p.name}: ${p.description}`}
-              onClick={() => onSelectPalette(p.id)}
-              className={`palette-swatch-card group relative p-2 text-left border transition-all cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] ${
+              className={`palette-swatch-card group relative text-left border cursor-pointer ${
                 isSelected
                   ? "bg-[var(--color-elevated)] border-[var(--color-primary)] [box-shadow:var(--shadow-btn)]"
                   : "bg-[var(--color-canvas)] border-[var(--color-border)] hover:border-[var(--color-border-subtle)] hover:bg-[var(--color-surface)]"
               }`}
             >
-              <div className="flex items-center justify-between gap-1 mb-1.5">
+              <input type="radio" name={id} value={p.id} checked={isSelected}
+                aria-label={`${p.name} palette`} className="sr-only"
+                onChange={() => onSelectPalette(p.id)} />
+              <div className="flex items-center gap-1">
                 {/* Visual Swatch: Primary & Accent side by side */}
                 <div className="flex items-center -space-x-1.5 shrink-0">
                   <span
@@ -69,21 +64,16 @@ export function PaletteSelector({
 
                 {isSelected && (
                   <span className="w-3.5 h-3.5 rounded-full bg-[var(--color-primary)] text-[var(--color-primary-foreground)] flex items-center justify-center shrink-0">
-                    <Check size={10} strokeWidth={3} aria-hidden="true" />
+                    <DotIcon name="circleCheck" size={12} aria-hidden="true" />
                   </span>
                 )}
               </div>
 
-              <span className="block font-mono text-xs font-semibold text-[var(--color-text-main)] truncate">
+              <span className="text-xs font-medium text-[var(--color-text-main)]">
                 {p.name}
               </span>
 
-              {!compact && (
-                <span className="block text-[0.6875rem] text-[var(--color-text-muted)] line-clamp-1 mt-0.5">
-                  {p.description}
-                </span>
-              )}
-            </button>
+            </label>
           );
         })}
       </div>

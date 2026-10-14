@@ -9,7 +9,7 @@ import { PixelCard } from "@/components/retro/pixel-card";
 import { PixelButton } from "@/components/retro/pixel-button";
 import { PixelBadge } from "@/components/retro/pixel-badge";
 import { DotIcon, type DotIconName } from "@/components/retro/dot-icon";
-import { Clock } from "lucide-react";
+
 import {
   ALL_SUPPORTED_LANGUAGES,
   LANGUAGE_DISPLAY_NAMES,
@@ -107,14 +107,14 @@ export function ChallengesView() {
       {challenge.isTimedActive && (
         <div className="p-3 bg-[var(--color-canvas)] border-2 border-[var(--color-accent)] flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2 font-mono text-xs text-[var(--color-text-main)]">
-            <Clock size={16} className="text-[var(--color-accent)] animate-pulse" />
+            <DotIcon name="alarm" size={16} className="text-[var(--color-accent)] animate-pulse" />
             <span>
               ACTIVE CHALLENGE: <strong>{challenge.session?.problemTitle}</strong> ({challenge.formattedTime} left)
             </span>
           </div>
           <Link href={`/app/workspace?problem=${encodeURIComponent(challenge.session?.problemId ?? "")}`}>
             <PixelButton variant="cyan" size="sm" className="text-xs">
-              RESUME CHALLENGE &rarr;
+              RESUME CHALLENGE <DotIcon name="arrowRight" size={14} aria-hidden="true" />
             </PixelButton>
           </Link>
         </div>
@@ -274,13 +274,13 @@ export function ChallengesView() {
                       className="px-2.5 py-1.5 border border-[var(--color-pink)] text-[var(--color-pink)] hover:bg-[var(--color-pink)]/10 font-heading text-xs cursor-pointer transition-colors flex items-center gap-1"
                       title="Start a 15-minute timed challenge session"
                     >
-                      <Clock size={12} />
-                      <span>TIMED ⏱</span>
+                      <DotIcon name="alarm" size={12} />
+                      <span>TIMED <DotIcon name="alarm" size={14} aria-hidden="true" /></span>
                     </button>
 
                     <Link href={`/app/workspace?problem=${encodeURIComponent(prob.id)}`}>
                       <PixelButton variant="primary" size="sm" className="text-xs">
-                        SOLVE ▶
+                        SOLVE <DotIcon name="circlePlay" size={14} aria-hidden="true" />
                       </PixelButton>
                     </Link>
                   </div>
@@ -348,7 +348,7 @@ export function ChallengesView() {
                 onClick={() => setInspectProblemId(null)}
                 className="text-[var(--color-text-dim)] hover:text-[var(--color-text-main)] font-mono text-sm cursor-pointer"
               >
-                ✕ CLOSE
+                <DotIcon name="close" size={14} aria-hidden="true" /> CLOSE
               </button>
             </div>
 
@@ -439,13 +439,13 @@ export function ChallengesView() {
                   }}
                   className="px-3 py-1.5 border border-[var(--color-pink)] text-[var(--color-pink)] hover:bg-[var(--color-pink)]/10 font-heading text-xs cursor-pointer transition-colors flex items-center gap-1.5"
                 >
-                  <Clock size={13} />
-                  <span>START TIMED CHALLENGE ⏱</span>
+                  <DotIcon name="alarm" size={13} />
+                  <span>START TIMED CHALLENGE <DotIcon name="alarm" size={14} aria-hidden="true" /></span>
                 </button>
 
                 <Link href={`/app/workspace?problem=${encodeURIComponent(activeProblemDetail.id)}`}>
                   <PixelButton variant="primary" size="sm">
-                    SOLVE IN WORKSPACE ▶
+                    SOLVE IN WORKSPACE <DotIcon name="circlePlay" size={14} aria-hidden="true" />
                   </PixelButton>
                 </Link>
               </div>

@@ -101,7 +101,7 @@ function ProfileEditModalContent({
             aria-label="Close dialog"
             className="text-[var(--color-text-muted)] hover:text-[var(--color-pink)] font-mono text-sm px-2 py-1 border border-transparent hover:border-[var(--color-pink)] transition-colors"
           >
-            ✕
+            <DotIcon name="close" size={14} aria-hidden="true" />
           </button>
         </div>
 
@@ -256,7 +256,7 @@ function ProfileEditModalContent({
             onClick={handleSave}
             disabled={isSaving}
           >
-            {isSaving ? "SAVING..." : "SAVE CHANGES ▶"}
+            {isSaving ? "SAVING..." : "SAVE CHANGES"}
           </PixelButton>
         </div>
       </div>

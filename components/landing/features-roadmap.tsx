@@ -2,7 +2,6 @@ import React from "react";
 import { PixelBadge } from "@/components/retro/pixel-badge";
 import { PixelCard } from "@/components/retro/pixel-card";
 import { DotIcon, type DotIconName } from "@/components/retro/dot-icon";
-import { Clock } from "lucide-react";
 
 export function FeaturesRoadmap() {
   const currentFoundation: Array<{
@@ -180,7 +179,7 @@ export function FeaturesRoadmap() {
                           {item.title}
                         </h4>
                         <span className="text-[0.625rem] font-mono px-1.5 py-0.2 bg-[var(--color-elevated)] text-[var(--color-pink)] border border-[var(--color-pink)]/40 flex items-center gap-1">
-                          <Clock className="w-2.5 h-2.5" /> Planned
+                          <DotIcon name="alarm" className="w-2.5 h-2.5" /> Planned
                         </span>
                       </div>
                       <p className="text-xs sm:text-sm text-[var(--color-text-muted)] leading-relaxed">

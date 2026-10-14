@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import { PixelBadge } from "@/components/retro/pixel-badge";
 import { DotIcon } from "@/components/retro/dot-icon";
-import { ChevronDown, ChevronUp } from "lucide-react";
 
 export function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
@@ -79,7 +78,7 @@ export function FAQ() {
                     </span>
                   </div>
                   <div className="p-1 bg-[var(--color-elevated)] border border-[var(--color-border)] text-[var(--color-accent)] shrink-0">
-                    {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    {isOpen ? <DotIcon name="arrowUp" className="w-4 h-4" /> : <DotIcon name="arrowDown" className="w-4 h-4" />}
                   </div>
                 </button>
 

@@ -1,11 +1,13 @@
 "use client";
 
+import { DotIcon } from "@/components/retro/dot-icon";
+
 import React, { useEffect } from "react";
 import Link from "next/link";
 import { PixelCard } from "@/components/retro/pixel-card";
 import { PixelButton } from "@/components/retro/pixel-button";
 import { PixelBadge } from "@/components/retro/pixel-badge";
-import { Check, X, Clock, Terminal } from "lucide-react";
+
 import type { JudgingResult, OverallVerdict } from "@/lib/judge/judging-service";
 import type { VisibleProblem } from "@/types/problem";
 import type { PreferredLanguage } from "@/types/profile";
@@ -90,7 +92,7 @@ export function SubmitConfirmModal({
             onClick={onConfirm}
             className="text-xs font-heading"
           >
-            CONFIRM SUBMIT ✔
+            CONFIRM SUBMIT <DotIcon name="circleCheck" size={14} aria-hidden="true" />
           </PixelButton>
         </div>
       </PixelCard>
@@ -225,11 +227,11 @@ export function SubmissionResultModal({
             }`}
           >
             {isAccepted ? (
-              <Check size={24} strokeWidth={3} />
+              <DotIcon name="circleCheck" size={24} strokeWidth={3} />
             ) : isUnavailable ? (
-              <Terminal size={22} />
+              <DotIcon name="powershell" size={22} />
             ) : (
-              <X size={24} strokeWidth={3} />
+              <DotIcon name="close" size={24} strokeWidth={3} />
             )}
           </div>
 
@@ -314,7 +316,7 @@ export function SubmissionResultModal({
               }}
               className="text-xs"
             >
-              VIEW TEST DETAILS &rarr;
+              VIEW TEST DETAILS <DotIcon name="arrowRight" size={14} aria-hidden="true" />
             </PixelButton>
           ) : (
             <div />
@@ -333,7 +335,7 @@ export function SubmissionResultModal({
             {isAccepted && nextProblemId && (
               <Link href={`/app/workspace?problem=${encodeURIComponent(nextProblemId)}`}>
                 <PixelButton variant="primary" size="sm" className="text-xs font-heading">
-                  NEXT PROBLEM &rarr;
+                  NEXT PROBLEM <DotIcon name="arrowRight" size={14} aria-hidden="true" />
                 </PixelButton>
               </Link>
             )}
@@ -381,7 +383,7 @@ export function TimeExpiredModal({
       >
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 border-2 border-[var(--color-pink)] bg-[var(--color-canvas)] flex items-center justify-center text-[var(--color-pink)] font-heading text-xl font-bold">
-            <Clock size={24} />
+            <DotIcon name="alarm" size={24} />
           </div>
           <div>
             <h3

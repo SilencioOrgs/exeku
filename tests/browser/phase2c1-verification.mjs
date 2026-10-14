@@ -64,7 +64,7 @@ export async function runBrowserVerification() {
       tx.objectStore('profiles').put({
         id: 'visual-review',
         displayName: 'Demo Runner',
-        avatarId: 'pixel-wizard',
+        avatarId: 'glitch-bot',
         experienceLevel: 'beginner',
         preferredLanguage: 'python',
         createdAt: '2026-10-14T00:00:00.000Z',
@@ -121,7 +121,7 @@ export async function runBrowserVerification() {
   await page.screenshot({ path: path.join(outputDir, '06-challenges-catalog-timed-options.png') });
 
   // Start timed challenge
-  await page.locator('button', { hasText: 'TIMED ⏱' }).first().click();
+  await page.getByRole('button', { name: 'TIMED', exact: true }).first().click();
   await page.waitForSelector('.workspace-view');
   await page.screenshot({ path: path.join(outputDir, '07-workspace-timed-challenge-active.png') });
 

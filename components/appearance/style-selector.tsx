@@ -4,8 +4,7 @@ import { useId } from "react";
 import { DotIcon } from "@/components/retro/dot-icon";
 import { useAppearance } from "@/hooks/use-appearance";
 import { STYLE_PRESENTATIONS } from "@/lib/appearance-styles";
-import { AppearancePreview } from "./appearance-preview";
-import { DEFAULT_APPEARANCE_PREFERENCES, DEFAULT_PALETTES, type AppearancePreferences, type UIStyle } from "@/types/appearance";
+import { DEFAULT_PALETTES, type AppearancePreferences, type UIStyle } from "@/types/appearance";
 
 export function StyleSelector({
   preferences,
@@ -17,6 +16,7 @@ export function StyleSelector({
   onSelect: (style: UIStyle) => void;
 }) {
   const id = useId();
+  const { systemColorMode } = useAppearance();
   return (
     <fieldset className="theme-gallery min-w-0">
       <legend className="sr-only">Interface style</legend>
@@ -40,17 +40,11 @@ export function StyleSelector({
                   onChange={() => onSelect(style)}
                 />
                 <span className="theme-option-frame">
-                  <span aria-hidden="true" className="theme-option-preview">
-                    <AppearancePreview
-                      miniature
-                      preferences={{
-                        ...DEFAULT_APPEARANCE_PREFERENCES,
-                        uiStyle: style,
-                        colorPalette: previewPalette,
-                        colorMode: preferences.colorMode,
-                        density: meta.density,
-                      }}
-                    />
+                  <span aria-hidden="true" className="theme-option-preview"
+                    data-ui-style={style} data-palette={previewPalette}
+                    data-color-mode={preferences.colorMode === "system" ? systemColorMode : preferences.colorMode}>
+                    <span className="theme-type-sample">Aa</span>
+                    <span className="theme-color-sample"><span /><span /><span /></span>
                   </span>
                   <span className="theme-option-caption">
                     <span className="theme-option-title">
@@ -64,7 +58,7 @@ export function StyleSelector({
                     <span className="theme-option-description line-clamp-2">
                       {meta.description}
                     </span>
-                    <span className="theme-option-state">
+                    <span className="theme-option-state sr-only">
                       {isSaved
                         ? "Saved style"
                         : isSelected

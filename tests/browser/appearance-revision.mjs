@@ -31,6 +31,7 @@ const canonical = target => target.evaluate(async () => {
 const selectStyle = async (name, target = page) => target.locator('label.theme-option').filter({ hasText: name }).click();
 const apply = async (target = page) => { await target.getByRole('button', { name: 'Apply changes', exact: true }).click(); await target.waitForFunction(() => !document.querySelector('.appearance-studio .appearance-action-status')?.textContent.includes('Applying')); };
 const checkOverflow = async (label, target = page) => {
+  await target.evaluate(() => document.fonts.ready);
   const dimensions = await target.evaluate(() => { const main = document.querySelector('.app-shell main'); return { viewport: innerWidth, document: document.documentElement.scrollWidth, mainClient: main?.clientWidth, mainScroll: main?.scrollWidth, studio: document.querySelector('.appearance-studio')?.getBoundingClientRect().right }; });
   if (dimensions.document > dimensions.viewport + 1 || dimensions.studio > dimensions.viewport + 1 || dimensions.mainScroll > dimensions.mainClient + 1) responsiveFailures.push({ label, ...dimensions });
 };
@@ -58,7 +59,7 @@ try {
   assert.equal(await canonical(page), undefined);
   await selectStyle('Command');
   await page.getByLabel('Color mode', { exact: true }).selectOption('light');
-  await page.getByRole('button', { name: 'Typography', exact: true }).click();
+
   await page.getByLabel('UI font size', { exact: true }).fill('115');
   await apply();
   assert.equal((await canonical(page)).uiStyle, 'studio-crm');
@@ -91,7 +92,7 @@ try {
       await page.getByRole('heading', { name: 'Appearance Studio', exact: true }).waitFor();
       await selectStyle(name);
       await page.getByLabel('Color mode', { exact: true }).selectOption(mode);
-      await page.getByRole('button', { name: 'Typography', exact: true }).click();
+
       await page.getByLabel('UI font size', { exact: true }).fill('100');
       if (await page.getByRole('button', { name: 'Apply changes', exact: true }).isEnabled()) await apply();
       await page.waitForFunction(({ id, mode }) => document.documentElement.dataset.uiStyle === id && document.documentElement.dataset.colorMode === mode, { id, mode });
@@ -104,11 +105,13 @@ try {
       await page.setViewportSize({ width: 1440, height: 1000 });
       await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: /Overview/ }).click();
       await page.waitForURL(base + '/app');
-      await page.locator('.dashboard h1').waitFor();
+      await page.locator('.dashboard h1:visible, .modern-overview h1:visible').waitFor();
+      if (id !== 'pixel-arcade') await page.locator('.modern-problem-row').first().waitFor();
       await screenshot(id + '-' + mode + '-dashboard');
       for (const route of ['/app', '/app/challenges', '/app/progress', '/app/workspace']) {
         if (route !== '/app') await page.goto(base + route);
-        await page.locator('.app-content').waitFor();
+        await page.locator(route === '/app' ? '.dashboard h1:visible, .modern-overview h1:visible' : route.includes('workspace') ? '.workspace-toolbar:visible' : route.includes('challenges') ? '.challenges-view:visible' : '.app-content h1:visible').waitFor();
+        if (route === '/app' && id !== 'pixel-arcade') await page.locator('.modern-problem-row').first().waitFor();
         for (const width of [320, 375, 390, 768, 1024, 1366, 1440]) {
           await page.setViewportSize({ width, height: width === 1366 ? 768 : 1000 });
           await checkOverflow(name + ' ' + mode + ' ' + route + ' ' + width);
@@ -116,19 +119,21 @@ try {
       }
     }
   }
+  assert.deepEqual(responsiveFailures, [], 'Responsive overflow failures at 100% scaling');
   results.push('210 responsive checks: all 3 styles, both modes, 7 widths, and all 5 app routes; dashboard screenshots captured');
   console.log(results.at(-1));
-  for (const [name] of styles) {
+  for (const [name, id] of styles) {
     for (const mode of ['light', 'dark']) {
       await page.goto(base + '/app/settings');
       await selectStyle(name);
       await page.getByLabel('Color mode', { exact: true }).selectOption(mode);
-      await page.getByRole('button', { name: 'Typography', exact: true }).click();
+
       await page.getByLabel('UI font size', { exact: true }).fill('150');
       if (await page.getByRole('button', { name: 'Apply changes', exact: true }).isEnabled()) await apply();
       for (const route of ['/app/settings', '/app', '/app/challenges', '/app/progress', '/app/workspace']) {
         if (route !== '/app/settings') await page.goto(base + route);
-        await page.locator('.app-content').waitFor();
+        await page.locator(route === '/app' ? '.dashboard h1:visible, .modern-overview h1:visible' : route.includes('workspace') ? '.workspace-toolbar:visible' : route.includes('challenges') ? '.challenges-view:visible' : route.includes('settings') ? '.appearance-studio:visible' : '.app-content h1:visible').waitFor();
+        if (route === '/app' && id !== 'pixel-arcade') await page.locator('.modern-problem-row').first().waitFor();
         for (const width of [320, 375, 390, 768, 1024, 1366, 1440]) {
           await page.setViewportSize({ width, height: width === 1366 ? 768 : 1000 });
           await checkOverflow(name + ' ' + mode + ' 150% ' + route + ' ' + width);
@@ -136,10 +141,11 @@ try {
       }
     }
   }
+  assert.deepEqual(responsiveFailures, [], 'Responsive overflow failures at 150% scaling');
   results.push('210 additional responsive checks at 150% UI font scaling: all styles, modes, widths, and app routes');
   console.log(results.at(-1));
   await page.goto(base + '/app/settings');
-  await page.getByRole('button', { name: 'Typography', exact: true }).click();
+
   await page.getByLabel('UI font size', { exact: true }).fill('150');
   if (await page.getByRole('button', { name: 'Apply changes', exact: true }).isEnabled()) await apply();
   for (const width of [320, 375, 768, 1366]) { await page.setViewportSize({ width, height: 1000 }); await checkOverflow('150% ' + width); }
@@ -157,12 +163,22 @@ try {
 
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto(base + '/app/settings');
-  await page.getByRole('button', { name: 'Typography', exact: true }).click();
+
   await page.getByLabel('UI font size', { exact: true }).fill('100');
   await apply();
+  await page.evaluate(async () => {
+    const db = await new Promise(resolve => { const request = indexedDB.open('exeku_local_v1', 2); request.onsuccess = () => resolve(request.result); });
+    await new Promise((resolve, reject) => {
+      const transaction = db.transaction('drafts', 'readwrite');
+      transaction.objectStore('drafts').put({ id: 'visual-review_sum-two-integers_python', profileId: 'visual-review', language: 'python', filename: 'main.py', code: 'print("existing draft")\n', files: [{ name: 'main.py', content: 'print("existing draft")\n' }, { name: 'helpers.py', content: 'def helper(): return 1\n' }], updatedAt: new Date().toISOString() });
+      transaction.oncomplete = resolve; transaction.onerror = () => reject(transaction.error);
+    });
+    db.close();
+  });
   const workspace = await context.newPage();
   await workspace.goto(base + '/app/workspace?problem=sum-two-integers');
-  await workspace.waitForFunction(() => globalThis.monaco?.editor.getEditors().length, { timeout: 30000 });
+  await workspace.waitForFunction(() => globalThis.monaco?.editor.getEditors().some(editor => editor.getModel()?.uri.path === '/visual-review/sum-two-integers/python/main.py' && editor.getValue() === 'print("existing draft")\n'), { timeout: 30000 });
+  await workspace.getByRole('tab', { name: 'helpers.py', exact: true }).waitFor();
   const editorBefore = await workspace.evaluate(() => {
     const editor = globalThis.monaco.editor.getEditors()[0]; const model = editor.getModel(); const original = model.getValue();
     editor.executeEdits('appearance-test', [{ range: model.getFullModelRange(), text: 'print("appearance keeps this code")\n' }]); editor.pushUndoStop(); editor.setPosition({ lineNumber: 1, column: 8 }); editor.focus();
@@ -182,8 +198,16 @@ try {
   assert.equal(await workspace.evaluate(() => globalThis.monaco.editor.getEditors()[0].getValue()), editorBefore.code);
   await workspace.waitForFunction(async code => {
     const db = await new Promise(resolve => { const request = indexedDB.open('exeku_local_v1', 2); request.onsuccess = () => resolve(request.result); });
-    const draft = await new Promise(resolve => { const request = db.transaction('drafts').objectStore('drafts').get('visual-review_python'); request.onsuccess = () => resolve(request.result); }); db.close(); return draft?.code === code;
+    const draft = await new Promise(resolve => { const request = db.transaction('drafts').objectStore('drafts').get('visual-review_sum-two-integers_python'); request.onsuccess = () => resolve(request.result); }); db.close(); return draft?.code === code && draft.files?.length === 2 && draft.files[1].content === 'def helper(): return 1\n';
   }, editorBefore.code);
+  await workspace.locator('nav[aria-label="Main navigation"] a[href="/app/challenges"]:visible').click();
+  await workspace.locator('a[href="/app/workspace?problem=sum-two-integers"]:visible').first().click();
+  await workspace.waitForFunction(code => globalThis.monaco?.editor.getEditors().some(editor => editor.getDomNode()?.getBoundingClientRect().height > 0 && editor.getValue() === code), editorBefore.code);
+  await workspace.waitForFunction(position => globalThis.monaco?.editor.getEditors().some(editor => editor.getDomNode()?.getBoundingClientRect().height > 0 && JSON.stringify(editor.getPosition()) === JSON.stringify(position)), editorBefore.position);
+  const returned = await workspace.evaluate(() => { const editor = globalThis.monaco.editor.getEditors().find(editor => editor.getDomNode()?.getBoundingClientRect().height > 0); return { id: editor.getModel().id, selection: editor.getSelection() }; });
+  assert.equal(returned.id, editorBefore.id);
+  assert.deepEqual(returned.selection, editorBefore.selection);
+  await workspace.getByRole('tab', { name: 'helpers.py', exact: true }).waitFor();
   await screenshot('monaco-preserved', workspace);
   results.push('Real Monaco model, source, language, cursor, undo, redo, and selected problem preserved across cross-tab Apply');
   await workspace.close();

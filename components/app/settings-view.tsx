@@ -143,7 +143,7 @@ export function SettingsView() {
             onClick={() => setIsEditOpen(true)}
             className="w-full sm:w-auto"
           >
-            Edit profile <span className="arcade-copy">✎</span>
+            Edit profile <span className="arcade-copy"><DotIcon name="pencil" size={14} aria-hidden="true" /></span>
           </PixelButton>
         </div>
 
@@ -264,7 +264,7 @@ export function SettingsView() {
             onClick={() => setIsResetOpen(true)}
             className="w-full sm:w-auto shrink-0"
           >
-            Reset local profile <span className="arcade-copy">✖</span>
+            Reset local profile <span className="arcade-copy"><DotIcon name="close" size={14} aria-hidden="true" /></span>
           </PixelButton>
         </div>
       </PixelCard>

@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import { PixelBadge } from "@/components/retro/pixel-badge";
 import { DotIcon, type DotIconName } from "@/components/retro/dot-icon";
-import { RotateCcw, AlertTriangle } from "lucide-react";
 
 type LanguageKey = "python" | "cpp" | "java";
 
@@ -142,7 +141,7 @@ export function PixelTerminal() {
       {/* Disclaimer Banner: Strictly labeled as demo */}
       <div className="px-3 sm:px-4 py-1.5 bg-[var(--color-elevated)] border-b border-[var(--color-pink)]/40 flex items-center justify-between gap-2 text-[0.6875rem] font-mono text-[var(--color-pink)]">
         <div className="flex items-center gap-1.5">
-          <AlertTriangle className="w-3.5 h-3.5 text-[var(--color-pink)] shrink-0" />
+          <DotIcon name="circleBlock" className="w-3.5 h-3.5 text-[var(--color-pink)] shrink-0" />
           <span>DEMO SIMULATION ONLY — Local execution engine is in active development on the roadmap.</span>
         </div>
         <span className="hidden md:inline text-[0.625rem] uppercase opacity-75">Not a live compiler</span>
@@ -223,7 +222,7 @@ export function PixelTerminal() {
               className="px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-accent-foreground)] font-mono font-bold text-xs uppercase flex items-center gap-1.5 transition-all [box-shadow:var(--shadow-btn)] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer disabled:opacity-50"
             >
               <DotIcon name="circlePlay" size={14} className="text-[var(--color-accent-foreground)]" />
-              {isRunning ? "Simulating..." : "Run Demo ▶"}
+              {isRunning ? "Simulating..." : "Run Demo"}
             </button>
 
             {hasRun && (
@@ -233,7 +232,7 @@ export function PixelTerminal() {
                 className="px-3 py-2 bg-[var(--color-elevated)] hover:bg-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] font-mono text-xs uppercase flex items-center gap-1 border border-[var(--color-border)] cursor-pointer"
                 title="Reset simulation"
               >
-                <RotateCcw className="w-3 h-3" />
+                <DotIcon name="arrowLeft" className="w-3 h-3" />
                 Reset
               </button>
             )}
@@ -272,7 +271,7 @@ export function PixelTerminal() {
             </div>
           ) : (
             <div className="text-[var(--color-text-dim)] italic">
-              Click &quot;Run Demo ▶&quot; to simulate how local tests will run on your machine once the execution engine is released.
+              Click &quot;Run Demo <DotIcon name="circlePlay" size={14} aria-hidden="true" />&quot; to simulate how local tests will run on your machine once the execution engine is released.
             </div>
           )}
         </div>

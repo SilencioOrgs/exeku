@@ -7,7 +7,7 @@ import { PixelBadge } from "@/components/retro/pixel-badge";
 import { PixelButton } from "@/components/retro/pixel-button";
 import { DotIcon } from "@/components/retro/dot-icon";
 import { PixelTerminal } from "./pixel-terminal";
-import { ArrowDown } from "lucide-react";
+
 import { StyleText } from "@/components/appearance/style-text";
 
 export function Hero() {
@@ -54,7 +54,7 @@ export function Hero() {
               className="w-full sm:w-auto"
             >
               <DotIcon name="windows" size={16} className="text-[var(--color-accent-foreground)]" />{" "}
-              {profile ? "Launch Workspace ▶" : "Get Started (Setup Profile) ▶"}
+              {profile ? "Launch Workspace" : "Get Started (Setup Profile)"}
             </PixelButton>
 
             <PixelButton
@@ -63,7 +63,7 @@ export function Hero() {
               href="#about"
               className="w-full sm:w-auto"
             >
-              About Exeku <ArrowDown className="w-4 h-4 text-[var(--color-accent)]" />
+              About Exeku <DotIcon name="arrowDown" className="w-4 h-4 text-[var(--color-accent)]" />
             </PixelButton>
           </div>
 
