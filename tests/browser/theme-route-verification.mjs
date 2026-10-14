@@ -2,6 +2,8 @@
 //   node tests/browser/theme-route-verification.mjs
 // This uses installed Playwright + Edge/Chromium; it is NOT a mocked route test.
 import assert from "node:assert/strict";
+import { mkdir } from "node:fs/promises";
+import path from "node:path";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
@@ -14,11 +16,15 @@ catch {
 const base = process.env.EXEKU_TEST_URL ?? "http://localhost:3000";
 const browser = await chromium.launch({ channel: "msedge", headless: true })
   .catch(() => chromium.launch({ headless: true }));
+let page;
+const pageErrors = [];
+const requestFailures = [];
+const navigation404s = [];
 try {
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
-  const page = await context.newPage();
-  const pageErrors = [];
-  const navigation404s = [];
+  page = await context.newPage();
+  page.on("console", (message) => { if (message.type() === "error") pageErrors.push("console: " + message.text()); });
+  page.on("requestfailed", (request) => requestFailures.push(`${request.url()}: ${request.failure()?.errorText ?? "unknown"}`));
   page.on("pageerror", (error) => pageErrors.push(error.message));
   page.on("response", (response) => {
     if (response.status() === 404 && new URL(response.url()).pathname.startsWith("/app")) {
@@ -58,6 +64,7 @@ try {
     await page.waitForURL((url) => url.pathname === href, { timeout: 15000 });
     await page.locator(selector).first().waitFor({ timeout: 15000 });
     assert.equal(await page.getByText("404", { exact: true }).count(), 0, `404 rendered on ${href}`);
+    assert.equal(await page.getByText("This page couldn\u0027t load", { exact: false }).count(), 0, "Next.js global navigation fallback was rendered");
   };
 
   for (const style of ["Clarity", "Command", "Pixel Arcade"]) {
@@ -78,8 +85,21 @@ try {
     console.log(`PASS ${style}: Settings → Problems → Code → Profile → Overview`);
   }
   assert.deepEqual(navigation404s, [], "Client navigation returned 404 responses");
+  assert.deepEqual(requestFailures, [], "Requests failed during client navigation");
   assert.deepEqual(pageErrors, [], "Browser runtime errors");
   console.log("PASS: all three themes navigated without Not Found errors");
+} catch (error) {
+  const filename = path.join(process.cwd(), ".git", "theme-navigation-error.png");
+  if (page) {
+    await mkdir(path.dirname(filename), { recursive: true });
+    await page.screenshot({ path: filename }).catch(() => {});
+    console.error("Failure URL:", page.url());
+  }
+  console.error("Browser exceptions:", pageErrors);
+  console.error("Failed requests:", requestFailures);
+  console.error("404 responses:", navigation404s);
+  console.error("Screenshot:", filename);
+  throw error;
 } finally {
   await browser.close();
 }
