@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import type { LocalProfile } from "@/types/profile";
 import { PixelBadge } from "@/components/retro/pixel-badge";
 import { PixelButton } from "@/components/retro/pixel-button";
-import { Menu, ArrowUpRight } from "lucide-react";
+import { DotIcon } from "@/components/retro/dot-icon";
 
 import { useChallengeSession } from "@/hooks/use-challenge-session";
 
@@ -19,6 +19,7 @@ const ROUTE_LABELS: Record<string, string> = {
   "/app": "Overview",
   "/app/challenges": "Challenges",
   "/app/workspace": "Workspace",
+  "/app/profile": "Profile",
   "/app/settings": "Settings",
 };
 
@@ -53,7 +54,7 @@ export function AppTopbar({ profile, onToggleMobileMenu }: AppTopbarProps) {
           aria-label="Toggle navigation menu"
           className="lg:hidden p-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] bg-[var(--color-elevated)] border border-[var(--color-border)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
         >
-          <Menu className="w-4 h-4" />
+          <DotIcon name="list" size={16} aria-hidden="true" />
         </button>
 
         <div className="flex items-center gap-2 font-mono text-xs">
@@ -121,7 +122,7 @@ export function AppTopbar({ profile, onToggleMobileMenu }: AppTopbarProps) {
         >
           <PixelButton variant="ghost" size="sm" className="text-xs px-2.5 py-1">
             <span className="hidden sm:inline">LANDING</span>
-            <ArrowUpRight className="w-3.5 h-3.5 text-[var(--color-accent)]" />
+            <DotIcon name="arrowUp" size={14} aria-hidden="true" />
           </PixelButton>
         </Link>
       </div>
