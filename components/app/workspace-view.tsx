@@ -588,14 +588,14 @@ export function WorkspaceView() {
       {/* Timed Challenge Active Banner */}
       {challenge.isTimedActive && (
         <div
-          className={`px-2 py-1 border flex flex-wrap items-center justify-between gap-2 shrink-0 text-[0.6875rem] transition-colors ${
+          className={`px-2 py-1 border flex flex-nowrap items-center justify-between gap-2 shrink-0 overflow-x-auto text-[0.6875rem] transition-colors ${
             challenge.isWarningTime
               ? "bg-[var(--color-pink)]/15 border-[var(--color-pink)] animate-pulse"
               : "bg-[var(--color-canvas)] border-[var(--color-accent)]"
           }`}
         >
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 font-heading text-sm text-[var(--color-accent)]">
+          <div className="flex shrink-0 items-center gap-3">
+            <div className="flex items-center gap-1.5 font-heading text-[0.6875rem] text-[var(--color-accent)]">
               <Clock
                 size={16}
                 className={challenge.isWarningTime ? "text-[var(--color-pink)] animate-bounce" : "text-[var(--color-accent)]"}
@@ -603,7 +603,7 @@ export function WorkspaceView() {
               <span>TIMED CHALLENGE ACTIVE:</span>
             </div>
             <span
-              className={`font-mono text-base font-bold tracking-wider px-2 py-0.5 border ${
+              className={`font-mono text-[0.6875rem] font-bold tracking-wider px-2 py-0 border ${
                 challenge.isWarningTime
                   ? "border-[var(--color-pink)] text-[var(--color-pink)] bg-[var(--color-pink)]/20"
                   : "border-[var(--color-mint)] text-[var(--color-mint)] bg-[var(--color-mint)]/10"
@@ -616,10 +616,10 @@ export function WorkspaceView() {
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <PixelButton
               variant={challenge.hasSubmittedAtLeastOnce ? "primary" : "ghost"}
-              size="sm"
+              size="xs"
               onClick={() => {
                 const finished = challenge.finishChallenge();
                 if (finished) {
@@ -639,7 +639,7 @@ export function WorkspaceView() {
 
             <PixelButton
               variant="pink"
-              size="sm"
+              size="xs"
               onClick={() => setIsForfeitModalOpen(true)}
               className="text-xs"
             >
