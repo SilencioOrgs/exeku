@@ -18,6 +18,7 @@ import {
   TimeExpiredModal,
 } from "./workspace/submission-modals";
 import { draftRepository } from "@/lib/storage/draft-repository";
+import { recordCodingDay } from "@/lib/storage/coding-activity";
 import {
   ALL_SUPPORTED_LANGUAGES,
   LANGUAGE_DISPLAY_NAMES,
@@ -239,6 +240,8 @@ export function WorkspaceView() {
         setSaveStatus("SAVING...");
         try {
           await draftRepository.saveDraft(profile.id, activeLang, newCode);
+          // A successful edited draft marks one activity day; no fake contributions.
+          recordCodingDay(profile.id);
           setSaveStatus("SAVED");
         } catch {
           setSaveStatus("MODIFIED");
