@@ -507,7 +507,7 @@ export function WorkspaceView() {
   const monacoLang = getMonacoLanguage(activeLang);
 
   return (
-    <div className="workspace-view flex flex-col h-[calc(100vh-120px)] min-h-[640px] space-y-3">
+    <div className="workspace-view flex min-h-[420px] h-[calc(100dvh-90px)] flex-col gap-2 overflow-hidden">
       {/* Sandbox Offline Warning Banner */}
       {sandboxHealth && !sandboxHealth.isAvailable && (
         <div className="px-3.5 py-2 bg-[var(--color-elevated)] border-2 border-[var(--color-pink)] text-xs font-mono text-[var(--color-text-main)] flex flex-col sm:flex-row sm:items-center justify-between gap-2 shrink-0 animate-fade-in">
@@ -687,150 +687,74 @@ export function WorkspaceView() {
 
         {/* CENTER PANE: Code Editor & Actions Toolbar */}
         <div
-          className={`h-full min-h-0 flex flex-col space-y-2 ${
+          className={`h-full min-h-0 flex flex-col gap-1 ${
             mobileActivePane === "code" ? "flex flex-col flex-1" : "hidden xl:flex xl:flex-col"
           }`}
         >
-          {/* Editor Header Toolbar */}
-          <PixelCard
-            variant="default"
-            className="p-2 sm:p-2.5 border-2 border-[var(--color-border)] bg-[var(--color-surface)] flex flex-wrap items-center justify-between gap-2 shrink-0"
-          >
-            {/* Left: Active File Tab & Languages */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[var(--color-canvas)] border border-[var(--color-accent)] text-[var(--color-text-main)]">
-                <DotIcon name={LANGUAGE_ICONS[activeLang]} size={14} color="var(--color-accent)" />
-                <span className="font-heading text-xs">{filename}</span>
-                <span
-                  className={`w-1.5 h-1.5 rounded-full ml-0.5 ${
-                    saveStatus === "SAVED"
-                      ? "bg-[var(--color-mint)]"
-                      : saveStatus === "SAVING..."
-                      ? "bg-[var(--color-accent)] animate-pulse"
-                      : "bg-[var(--color-pink)]"
-                  }`}
-                  title={`Buffer: ${saveStatus}`}
-                />
-              </div>
-
-              {/* Language Switchers */}
-              <div className="flex items-center gap-1 bg-[var(--color-canvas)] p-0.5 border border-[var(--color-border)]">
-                {ALL_SUPPORTED_LANGUAGES.map((lang) => {
-                  const isCurrent = activeLang === lang;
-                  return (
-                    <button
-                      key={lang}
-                      type="button"
-                      onClick={() => handleSwitchLanguage(lang)}
-                      className={`px-2 py-0.5 text-[0.6875rem] font-mono transition-colors cursor-pointer ${
-                        isCurrent
-                          ? "bg-[var(--color-elevated)] text-[var(--color-accent)] font-bold border border-[var(--color-accent)]"
-                          : "text-[var(--color-text-dim)] hover:text-[var(--color-text-muted)] border border-transparent"
-                      }`}
-                    >
-                      {LANGUAGE_DISPLAY_NAMES[lang]}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Demo Mode Toggle Button */}
-              <button
-                type="button"
-                onClick={() => setUserDemoToggle(!isDemoMode)}
-                className={`px-2 py-1 text-[0.625rem] font-mono border flex items-center gap-1 cursor-pointer transition-colors ${
-                  isDemoMode
-                    ? "bg-[var(--color-elevated)] border-[var(--color-accent)] text-[var(--color-accent)] font-bold"
-                    : "border-[var(--color-border)] text-[var(--color-text-dim)] hover:text-[var(--color-text-main)]"
-                }`}
-                title="Toggle development demo utilities"
-              >
-                <DotIcon name="stars" size={11} adaptive aria-hidden="true" />
-                <span>DEMO</span>
-              </button>
-            </div>
-
-            {/* Right: Actions */}
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <button
-                type="button"
-                aria-label={editorExpanded ? "Restore problem and results panels" : "Expand code editor"}
-                aria-pressed={editorExpanded}
-                aria-controls="workspace-panes"
-                title={editorExpanded ? "Restore three-panel workspace" : "Expand the editor to use the full workspace"}
-                onClick={() => setEditorExpanded((current) => !current)}
-                className="hidden xl:inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 py-2 text-xs font-medium text-[var(--color-text-main)] hover:bg-[var(--color-elevated)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ring)]"
-              >
-                <DotIcon name={editorExpanded ? "list" : "box"} size={14} aria-hidden="true" />
-                {editorExpanded ? "Restore panels" : "Expand editor"}
-              </button>
-              {editorExpanded && (executionResult || judgingResult) && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditorExpanded(false);
-                    setActiveResultsTab(judgingResult ? "results" : "console");
-                  }}
-                  className="hidden xl:inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] border border-[var(--color-border)] px-2.5 py-2 text-xs font-medium text-[var(--color-text-main)] hover:bg-[var(--color-elevated)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ring)]"
-                >
-                  <DotIcon name="circleCheck" size={14} aria-hidden="true" />
-                  View results
-                </button>
-              )}
-              <PixelButton
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsResetOpen(true)}
-                className="text-[0.6875rem] py-1 px-2"
-                title="Reset buffer to starter code"
-              >
-                RESET ↺
-              </PixelButton>
-
-              <PixelButton
-                variant="ghost"
-                size="sm"
-                onClick={handleDownloadFile}
-                className="text-[0.6875rem] py-1 px-2"
-                title="Download source code"
-              >
-                SAVE ↓
-              </PixelButton>
-
-              {/* Run Code Button */}
-              <PixelButton
-                variant="cyan"
-                size="sm"
-                onClick={handleRunCode}
-                disabled={isRunning}
-                className="text-[0.6875rem] py-1 px-2.5 font-heading"
-              >
-                <DotIcon name="circlePlay" size={14} aria-hidden="true" />
-                {isRunning ? "RUNNING..." : "RUN"}
-              </PixelButton>
-
-              {/* Submit Solution Button */}
-              {problem && (
-                <PixelButton
-                  variant="primary"
-                  size="sm"
-                  onClick={handleOpenSubmitModal}
-                  disabled={isSubmitting}
-                  className="text-[0.6875rem] py-1 px-2.5 font-heading"
-                >
-                  <DotIcon name="circleCheck" size={14} aria-hidden="true" />
-                  {isSubmitting ? "JUDGING..." : "SUBMIT"}
-                </PixelButton>
-              )}
-            </div>
-          </PixelCard>
+          {/* Compact editor toolbar, one line at desktop widths. */}
+          <div className="workspace-toolbar flex h-10 shrink-0 items-center gap-1.5 overflow-hidden border border-[var(--color-border)] bg-[var(--color-surface)] px-1.5 data-[density=compact]:h-9">
+            <FileTabs
+              language={activeLang}
+              files={files}
+              mainName={mainFilename}
+              activeName={activeFile}
+              saveStatus={saveStatus}
+              onSelect={setActiveFile}
+              onAdd={onFileAdd}
+              onRename={onFileRename}
+              onClose={onFileClose}
+            />
+            <select
+              aria-label="Programming language"
+              value={activeLang}
+              onChange={(e) => void handleSwitchLanguage(e.target.value as PreferredLanguage)}
+              className="h-8 w-[76px] shrink-0 border border-[var(--color-border)] bg-[var(--color-canvas)] px-1 text-[11px] text-[var(--color-text-main)] sm:w-[100px]"
+            >
+              {ALL_SUPPORTED_LANGUAGES.map((lang) => <option key={lang} value={lang}>{LANGUAGE_DISPLAY_NAMES[lang]}</option>)}
+            </select>
+            <button
+              type="button"
+              aria-pressed={isDemoMode}
+              onClick={() => setUserDemoToggle(!isDemoMode)}
+              title="Toggle frontend-only demo"
+              className={`h-6 shrink-0 rounded-[var(--radius-btn)] border px-1.5 text-[10px] ${isDemoMode ? "border-[var(--color-accent)] text-[var(--color-accent)]" : "border-[var(--color-border)]"}`}
+            >DEMO</button>
+            <span className="hidden h-5 shrink-0 border-l border-[var(--color-border)] sm:inline" aria-hidden="true" />
+            <PixelButton size="icon" variant="ghost" onClick={() => setIsResetOpen(true)} aria-label="Reset active file" title="Reset active file">
+              <DotIcon name="arrowRight" className="rotate-180" size={14} aria-hidden="true" />
+            </PixelButton>
+            <PixelButton size="icon" variant="ghost" onClick={handleDownloadFile} aria-label="Download active file" title="Download active file">
+              <DotIcon name="file" size={14} aria-hidden="true" />
+            </PixelButton>
+            <PixelButton
+              size="icon" variant="ghost" className="hidden xl:inline-flex"
+              aria-label={editorExpanded ? "Restore panels" : "Expand editor"}
+              aria-controls="workspace-panes"
+              onClick={() => setEditorExpanded((value) => !value)}
+              title={editorExpanded ? "Restore panels" : "Expand editor"}
+            >
+              <DotIcon name={editorExpanded ? "list" : "box"} size={14} aria-hidden="true" />
+            </PixelButton>
+            <span className="hidden h-5 shrink-0 border-l border-[var(--color-border)] sm:inline" aria-hidden="true" />
+            <PixelButton size="xs" variant="cyan" aria-label="Run code" title="Run code (Ctrl/Cmd+Enter)"
+              disabled={isRunning || isSubmitting} onClick={() => void handleRunCode()} className="shrink-0">
+              <DotIcon name="circlePlay" size={14} aria-hidden="true" /><span className="hidden sm:inline">{isRunning ? "RUNNING" : "RUN"}</span>
+            </PixelButton>
+            <PixelButton size="xs" variant="primary" aria-label="Submit solution" title="Submit solution (Ctrl/Cmd+Shift+Enter)"
+              disabled={!problem || isRunning || isSubmitting} onClick={handleOpenSubmitModal} className="shrink-0">
+              <DotIcon name="circleCheck" size={14} aria-hidden="true" /><span className="hidden sm:inline">{isSubmitting ? "JUDGING" : "SUBMIT"}</span>
+            </PixelButton>
+          </div>
 
           {/* Monaco Editor Frame */}
           <div className="flex-1 min-h-0 border-2 border-[var(--color-border)] bg-[var(--color-canvas)] [border-radius:var(--radius-card)] overflow-hidden relative">
             <MonacoEditorPane
               language={monacoLang}
               value={code}
+              path={`/${profile?.id ?? "guest"}/${problem?.id ?? "free"}/${activeLang}/${activeFile}`}
               onChange={handleCodeChange}
+              onRun={() => { if (!isRunning && !isSubmitting) void handleRunCode(); }}
+              onSubmit={() => { if (problem && !isRunning && !isSubmitting) handleOpenSubmitModal(); }}
             />
           </div>
         </div>
