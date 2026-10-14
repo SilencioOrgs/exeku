@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { PixelCard } from "@/components/retro/pixel-card";
 import { PixelBadge } from "@/components/retro/pixel-badge";
