@@ -37,7 +37,7 @@ test("normalizeAppearancePreferences - validates palette and assigns default per
   assert.equal(legacyArcade.colorPalette, "neon-violet");
 
   const legacySaaS = normalizeAppearancePreferences({ uiStyle: "minimal-saas" });
-  assert.equal(legacySaaS.colorPalette, "sapphire");
+  assert.equal(legacySaaS.colorPalette, "monochrome");
 
   const legacyCommand = normalizeAppearancePreferences({ uiStyle: "studio-crm" });
   assert.equal(legacyCommand.colorPalette, "emerald-console");
@@ -60,7 +60,7 @@ test("normalizeAppearancePreferences - validates palette and assigns default per
     uiStyle: "minimal-saas",
     colorPalette: "pastel-dream", // pastel-dream belongs to pixel-arcade
   });
-  assert.equal(mismatched.colorPalette, "sapphire");
+  assert.equal(mismatched.colorPalette, "monochrome");
 });
 
 test("selectStylePreferences - switches to valid palette when style changes", () => {
@@ -72,7 +72,7 @@ test("selectStylePreferences - switches to valid palette when style changes", ()
 
   const switchedToSaaS = selectStylePreferences(currentArcade, "minimal-saas");
   assert.equal(switchedToSaaS.uiStyle, "minimal-saas");
-  assert.equal(switchedToSaaS.colorPalette, DEFAULT_PALETTES["minimal-saas"]); // "sapphire"
+  assert.equal(switchedToSaaS.colorPalette, DEFAULT_PALETTES["minimal-saas"]); // "monochrome"
 
   const switchedToCommand = selectStylePreferences(switchedToSaaS, "studio-crm");
   assert.equal(switchedToCommand.uiStyle, "studio-crm");
@@ -89,6 +89,6 @@ test("restoreStyleDefaults - restores both style defaults and default palette", 
 
   const restored = restoreStyleDefaults(modified);
   assert.equal(restored.uiStyle, "minimal-saas");
-  assert.equal(restored.colorPalette, "sapphire");
+  assert.equal(restored.colorPalette, "monochrome");
   assert.equal(restored.uiFontScale, 100);
 });
