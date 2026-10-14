@@ -107,6 +107,7 @@ export function WorkspaceView() {
 
   // Sandbox Health
   const [sandboxHealth, setSandboxHealth] = useState<SandboxHealth | null>(null);
+  const [offlineDismissed, setOfflineDismissed] = useState(false);
 
   // Demo Mode state
   const [userDemoToggle, setUserDemoToggle] = useState<boolean | null>(null);
@@ -117,6 +118,12 @@ export function WorkspaceView() {
   const [demoNote, setDemoNote] = useState<string | null>(null);
 
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      try { setOfflineDismissed(sessionStorage.getItem("exeku.workspace.sandbox-dismissed") === "1"); } catch { /* restricted */ }
+    });
+  }, []);
 
   // 1. Sandbox Health Check
   useEffect(() => {
@@ -493,6 +500,21 @@ export function WorkspaceView() {
     }
   };
 
+  useEffect(() => {
+    const shortcut = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.key !== "Enter") return;
+      event.preventDefault();
+      if (isRunning || isSubmitting) return;
+      if (event.shiftKey) {
+        if (problem) handleOpenSubmitModal();
+      } else {
+        void handleRunCode();
+      }
+    };
+    window.addEventListener("keydown", shortcut);
+    return () => window.removeEventListener("keydown", shortcut);
+  });
+
   // 13. Next Problem Resolution
   const nextProblemId = useMemo(() => {
     if (!problem) return null;
@@ -508,34 +530,28 @@ export function WorkspaceView() {
 
   return (
     <div className="workspace-view flex min-h-[420px] h-[calc(100dvh-90px)] flex-col gap-2 overflow-hidden">
-      {/* Sandbox Offline Warning Banner */}
-      {sandboxHealth && !sandboxHealth.isAvailable && (
-        <div className="px-3.5 py-2 bg-[var(--color-elevated)] border-2 border-[var(--color-pink)] text-xs font-mono text-[var(--color-text-main)] flex flex-col sm:flex-row sm:items-center justify-between gap-2 shrink-0 animate-fade-in">
-          <div className="flex items-center gap-2 text-[var(--color-pink)]">
-            <AlertTriangle size={15} />
-            <span className="font-bold">
-              SANDBOX OFFLINE: Piston container is not running on port 2000.
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[0.6875rem] text-[var(--color-text-muted)] bg-[var(--color-canvas)] px-2 py-0.5 border border-[var(--color-border)] select-all">
-              docker run -d -p 2000:2000 ghcr.io/engineerman/piston/piston
-            </span>
-            <button
-              type="button"
-              onClick={() => setUserDemoToggle(true)}
-              className="text-[0.6875rem] text-[var(--color-accent)] underline hover:text-[var(--color-text-main)] cursor-pointer"
-            >
-              Enable Demo Mode &rarr;
-            </button>
-          </div>
+      {/* Slim dismissible offline notice; no execution fallbacks. */}
+      {sandboxHealth && !sandboxHealth.isAvailable && !offlineDismissed && (
+        <div className="flex h-8 min-w-0 shrink-0 items-center gap-2 overflow-hidden border border-[var(--color-pink)] bg-[var(--color-elevated)] px-2 text-[11px] text-[var(--color-text-main)]">
+          <AlertTriangle size={13} className="shrink-0 text-[var(--color-pink)]" aria-hidden="true" />
+          <span className="min-w-0 flex-1 truncate">Sandbox offline: Piston not running on :2000</span>
+          <button
+            type="button" title="Copy command to start Piston" aria-label="Copy docker command"
+            onClick={() => void navigator.clipboard?.writeText("docker run -d -p 2000:2000 ghcr.io/engineerman/piston/piston")}
+            className="h-7 shrink-0 px-1 text-[var(--color-accent)] hover:underline"
+          ><DotIcon name="file" size={14} aria-hidden="true" /></button>
+          <button type="button" className="h-7 shrink-0 whitespace-nowrap text-[var(--color-accent)] hover:underline" onClick={() => setUserDemoToggle(true)}>Enable Demo Mode</button>
+          <button type="button" title="Dismiss for this session" aria-label="Dismiss sandbox notice" className="h-7 w-6 shrink-0 text-base" onClick={() => {
+            setOfflineDismissed(true);
+            try { sessionStorage.setItem("exeku.workspace.sandbox-dismissed", "1"); } catch { /* restricted */ }
+          }}>×</button>
         </div>
       )}
 
       {/* Timed Challenge Active Banner */}
       {challenge.isTimedActive && (
         <div
-          className={`px-3.5 py-2 border-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shrink-0 transition-colors ${
+          className={`px-2 py-1 border flex flex-wrap items-center justify-between gap-2 shrink-0 text-[0.6875rem] transition-colors ${
             challenge.isWarningTime
               ? "bg-[var(--color-pink)]/15 border-[var(--color-pink)] animate-pulse"
               : "bg-[var(--color-canvas)] border-[var(--color-accent)]"
@@ -574,7 +590,7 @@ export function WorkspaceView() {
                 }
               }}
               disabled={!challenge.hasSubmittedAtLeastOnce}
-              className="text-xs"
+              className="text-[0.6875rem] py-0"
               title={
                 challenge.hasSubmittedAtLeastOnce
                   ? "Finish and submit challenge"
