@@ -81,7 +81,7 @@ export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfil
               <span className="modern-problem-icon"><DotIcon name="vscode" aria-hidden="true" size={16} /></span>
               <span className="min-w-0 flex-1"><strong className="block font-medium">{problem.title}</strong><span className="block text-xs text-muted-foreground">{problem.category}</span></span>
               <span className="modern-difficulty">{problem.difficulty}</span>
-              <ArrowRight aria-hidden="true" className="size-4 shrink-0" />
+              <DotIcon name="arrowRight" aria-hidden="true" size={16} className="shrink-0" />
             </Link>
           ))}
         </div>
