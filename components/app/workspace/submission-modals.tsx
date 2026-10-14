@@ -50,7 +50,7 @@ export function SubmitConfirmModal({
     >
       <PixelCard
         variant="elevated"
-        className="w-full max-w-md border-2 border-[var(--color-primary)] p-6 bg-[var(--color-surface)] [box-shadow:var(--shadow-btn)] space-y-4"
+        className="w-full max-w-md border-2 border-[var(--color-primary)] p-4 sm:p-5 bg-[var(--color-surface)] [box-shadow:var(--shadow-btn)] space-y-3"
       >
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 border-2 border-[var(--color-primary)] bg-[var(--color-canvas)] flex items-center justify-center text-[var(--color-primary)] font-heading text-lg font-bold">
@@ -120,7 +120,7 @@ export function SubmissionEvaluatingModal({
     >
       <PixelCard
         variant="elevated"
-        className="w-full max-w-sm border-2 border-[var(--color-mint)] p-6 bg-[var(--color-surface)] [box-shadow:var(--shadow-btn)] text-center space-y-4"
+        className="w-full max-w-sm border-2 border-[var(--color-mint)] p-4 sm:p-5 bg-[var(--color-surface)] [box-shadow:var(--shadow-btn)] text-center space-y-3"
       >
         <div className="flex justify-center">
           <div className="w-12 h-12 border-4 border-[var(--color-mint)] border-t-transparent animate-spin" />
@@ -205,7 +205,7 @@ export function SubmissionResultModal({
     >
       <PixelCard
         variant="elevated"
-        className={`w-full max-w-md border-2 p-6 bg-[var(--color-surface)] [box-shadow:var(--shadow-btn)] space-y-4 ${
+        className={`w-full max-w-md border-2 p-4 sm:p-5 bg-[var(--color-surface)] [box-shadow:var(--shadow-btn)] space-y-3 ${
           isAccepted
             ? "border-[var(--color-mint)]"
             : isUnavailable
@@ -377,7 +377,7 @@ export function TimeExpiredModal({
     >
       <PixelCard
         variant="elevated"
-        className="w-full max-w-md border-2 border-[var(--color-pink)] p-6 bg-[var(--color-surface)] [box-shadow:var(--shadow-btn)] space-y-4"
+        className="w-full max-w-md border-2 border-[var(--color-pink)] p-4 sm:p-5 bg-[var(--color-surface)] [box-shadow:var(--shadow-btn)] space-y-3"
       >
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 border-2 border-[var(--color-pink)] bg-[var(--color-canvas)] flex items-center justify-center text-[var(--color-pink)] font-heading text-xl font-bold">
