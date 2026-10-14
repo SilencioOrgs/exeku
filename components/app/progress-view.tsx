@@ -99,7 +99,7 @@ export function ProgressView() {
   });
 
   return (
-    <div className="appearance-stack space-y-6">
+    <div className="progress-view appearance-stack space-y-6">
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-[var(--color-border)] pb-4">
         <div>

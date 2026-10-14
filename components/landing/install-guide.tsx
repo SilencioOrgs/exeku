@@ -117,7 +117,7 @@ export function InstallGuide() {
 
               {/* Command Box with Copy Button */}
               <div className="mt-2 bg-[var(--color-canvas)] border border-[var(--color-border)] p-3 flex flex-col justify-between gap-2">
-                <code className="text-xs font-mono text-[var(--color-mint)] whitespace-pre break-all">
+                <code className="text-xs font-mono text-[var(--color-mint)] whitespace-pre-wrap break-all">
                   {s.command}
                 </code>
 

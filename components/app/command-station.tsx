@@ -9,6 +9,8 @@ import { PixelButton } from "@/components/retro/pixel-button";
 import { PixelBadge } from "@/components/retro/pixel-badge";
 import { DotIcon, type DotIconName } from "@/components/retro/dot-icon";
 import { ProfileEditDialog } from "./profile-edit-dialog";
+import { StyleText } from "@/components/appearance/style-text";
+import { ArrowUpRight, Pencil, Terminal } from "lucide-react";
 import { draftRepository } from "@/lib/storage/draft-repository";
 import {
   getFilenameForLanguage,
@@ -144,11 +146,11 @@ export function CommandStation() {
       : "03";
 
   return (
-    <div className="appearance-stack space-y-6">
+    <div className="dashboard appearance-stack space-y-6">
       {/* Coder Spotlight Header */}
       <PixelCard
         variant="elevated"
-        className="p-5 sm:p-6 border-2 border-[var(--color-border)] bg-[var(--color-surface)] relative overflow-hidden"
+        className="dashboard-profile p-5 sm:p-6 border-2 border-[var(--color-border)] bg-[var(--color-surface)] relative overflow-hidden"
       >
         <div
           className="arcade-decoration absolute -right-16 -top-16 w-64 h-64 rounded-full pointer-events-none opacity-20 blur-3xl"
@@ -164,9 +166,7 @@ export function CommandStation() {
             />
             <div className="space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-heading text-xl sm:text-2xl text-[var(--color-text-main)] tracking-wide">
-                  WELCOME, {profile.displayName.toUpperCase()}_
-                </span>
+                <h1 className="dashboard-heading font-heading text-xl sm:text-2xl text-[var(--color-text-main)] tracking-wide"><StyleText arcade={<>WELCOME, {profile.displayName.toUpperCase()}_</>} clarity={<>Welcome back, {profile.displayName}</>} command="Workspace overview" /></h1>
                 <PixelBadge variant={levelBadgeVariant} bracketed>
                   LVL {levelNum}: {profile.experienceLevel.toUpperCase()}
                 </PixelBadge>
@@ -186,7 +186,7 @@ export function CommandStation() {
           <div className="flex items-center gap-2.5 w-full md:w-auto">
             <Link href="/app/workspace" className="flex-1 md:flex-initial">
               <PixelButton variant="primary" size="md" className="w-full">
-                LAUNCH WORKSPACE ▶
+                Open workspace <span className="arcade-copy">▶</span><ArrowUpRight className="modern-icon" size={16} />
               </PixelButton>
             </Link>
             <PixelButton
@@ -195,19 +195,19 @@ export function CommandStation() {
               onClick={() => setIsEditOpen(true)}
               className="whitespace-nowrap"
             >
-              EDIT PROFILE ✎
+              Edit profile <span className="arcade-copy">✎</span><Pencil className="modern-icon" size={15} />
             </PixelButton>
           </div>
         </div>
       </PixelCard>
 
       {/* Loadout Telemetry Matrix */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="dashboard-summary grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Card 1: Target Language */}
         <PixelCard variant="default" className="p-4 sm:p-5 border-2 border-[var(--color-border)] space-y-3">
           <div className="flex items-center justify-between">
             <span className="font-mono text-[0.625rem] text-[var(--color-text-muted)] uppercase tracking-wider">
-              [01 // TARGET LANGUAGE]
+              <StyleText arcade="[01 // TARGET LANGUAGE]" clarity="Preferred language" command="Language & runtime" />
             </span>
             <PixelBadge variant="purple" bracketed>
               PRIMARY
@@ -239,7 +239,7 @@ export function CommandStation() {
         <PixelCard variant="default" className="p-4 sm:p-5 border-2 border-[var(--color-border)] space-y-3">
           <div className="flex items-center justify-between">
             <span className="font-mono text-[0.625rem] text-[var(--color-text-muted)] uppercase tracking-wider">
-              [02 // EXECUTION ENGINE]
+              <StyleText arcade="[02 // EXECUTION ENGINE]" clarity="Execution services" command="Service configuration" />
             </span>
             <span className="flex items-center gap-1.5 font-mono text-[0.625rem] text-[var(--color-accent)]">
               <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-pulse" />
@@ -253,16 +253,16 @@ export function CommandStation() {
             </div>
             <div className="flex items-center justify-between">
               <span className="text-[var(--color-text-dim)]">Execution Sandbox:</span>
-              <span className="text-[var(--color-mint)]">PISTON ADAPTER READY</span>
+              <span className="text-[var(--color-text-main)]">Piston adapter · unverified</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-[var(--color-text-dim)]">Automatic Judge:</span>
-              <span className="text-[var(--color-accent)]">ACTIVE (4 Languages)</span>
+              <span className="text-[var(--color-accent)]">4 supported languages</span>
             </div>
           </div>
           <div className="pt-2 border-t border-[var(--color-border)]/60 flex items-center justify-between text-[0.6875rem] font-mono text-[var(--color-text-dim)]">
             <span>Runtime Security:</span>
-            <span className="text-[var(--color-text-main)]">CONTAINER ISOLATED</span>
+            <span className="text-[var(--color-text-main)]">Sandbox required</span>
           </div>
         </PixelCard>
 
@@ -270,7 +270,7 @@ export function CommandStation() {
         <PixelCard variant="default" className="p-4 sm:p-5 border-2 border-[var(--color-border)] space-y-3">
           <div className="flex items-center justify-between">
             <span className="font-mono text-[0.625rem] text-[var(--color-text-muted)] uppercase tracking-wider">
-              [03 // BUFFER CACHE]
+              <StyleText arcade="[03 // BUFFER CACHE]" clarity="Your scratchpad" command="Active buffer" />
             </span>
             <PixelBadge variant="cyan" bracketed>
               {totalDrafts > 0 ? `${totalDrafts} DRAFT${totalDrafts > 1 ? "S" : ""}` : "READY"}
@@ -294,7 +294,7 @@ export function CommandStation() {
               href="/app/workspace"
               className="text-xs font-mono text-[var(--color-accent)] hover:underline flex items-center gap-1 group"
             >
-              <span>OPEN SCRATCHPAD</span>
+              <span>Open scratchpad</span>
               <span className="group-hover:translate-x-0.5 transition-transform">&rarr;</span>
             </Link>
           </div>
@@ -302,11 +302,17 @@ export function CommandStation() {
       </div>
 
       {/* Track Blueprint Preview */}
-      <PixelCard variant="elevated" className="p-5 sm:p-6 border-2 border-[var(--color-border)] space-y-4">
+      <section className="dashboard-recent modern-surface">
+        <div className="flex items-center gap-2"><Terminal size={18} /><h2>Continue coding</h2></div>
+        <p>{activeDraft ? `${filename} · Last saved ${new Date(activeDraft.updatedAt).toLocaleString()}` : "Your scratchpad is ready when you are."}</p>
+        <pre><code>{activeDraft?.code ? activeDraft.code.split("\n").slice(0, 5).join("\n") : "// No saved code in this language yet."}</code></pre>
+        <Link href="/app/workspace">Open {filename} <ArrowUpRight size={14} /></Link>
+      </section>
+      <PixelCard variant="elevated" className="dashboard-track p-5 sm:p-6 border-2 border-[var(--color-border)] space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--color-border)] pb-3">
           <div>
             <h2 className="font-heading text-lg text-[var(--color-text-main)] tracking-wide">
-              {LANGUAGE_DISPLAY_NAMES[profile.preferredLanguage].toUpperCase()} CURRICULUM BLUEPRINT_
+              <StyleText arcade={<>{LANGUAGE_DISPLAY_NAMES[profile.preferredLanguage].toUpperCase()} CURRICULUM BLUEPRINT_</>} clarity="Explore your learning track" command="Track reference" />
             </h2>
             <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
               Verified roadmap for upcoming offline problem packages. No fabricated progression or false streaks.

@@ -323,7 +323,7 @@ export function WorkspaceView() {
   const monacoLang = getMonacoLanguage(activeLang);
 
   return (
-    <div className="space-y-4 flex flex-col h-[calc(100vh-140px)] min-h-[640px]">
+    <div className="workspace-view space-y-4 flex flex-col h-[calc(100vh-140px)] min-h-[640px]">
       {/* Sandbox Offline Warning Banner */}
       {sandboxHealth && !sandboxHealth.isAvailable && (
         <div className="px-4 py-2.5 bg-[var(--color-elevated)] border-2 border-[var(--color-pink)] text-xs font-mono text-[var(--color-text-main)] flex flex-col sm:flex-row sm:items-center justify-between gap-2 shrink-0">
@@ -547,7 +547,7 @@ export function WorkspaceView() {
         {/* Docked Execution & Output Split Pane */}
         <div className="border-t-2 border-[var(--color-border)] bg-[var(--color-surface)] shrink-0">
           {/* Dock Header Tabs */}
-          <div className="px-3 py-1.5 bg-[var(--color-elevated)] border-b border-[var(--color-border)] flex items-center justify-between text-xs font-mono">
+          <div className="workspace-output-header px-3 py-1.5 bg-[var(--color-elevated)] border-b border-[var(--color-border)] flex items-center justify-between text-xs font-mono">
             <div className="flex items-center gap-2">
               <button
                 type="button"

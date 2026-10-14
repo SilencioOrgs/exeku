@@ -46,7 +46,7 @@ export function AppSidebar({
     <aside
       aria-label="Application sidebar"
       className={cn(
-        "bg-[var(--color-surface)] border-r-2 border-[var(--color-border)] flex flex-col justify-between transition-all duration-200 select-none z-30 shrink-0",
+        "app-sidebar bg-[var(--color-surface)] border-r-2 border-[var(--color-border)] flex flex-col justify-between transition-all duration-200 select-none z-30 shrink-0",
         collapsed ? "w-16" : "w-60",
         className
       )}
@@ -92,6 +92,7 @@ export function AppSidebar({
 
         {/* Navigation Item List */}
         <nav className="p-2 space-y-1" aria-label="Main navigation">
+          {!collapsed && <p className="modern-nav-group">Workspace</p>}
           {NAV_ITEMS.map((item) => {
             const isActive =
               item.href === "/app"
@@ -102,6 +103,7 @@ export function AppSidebar({
               <Link
                 key={item.id}
                 href={item.href}
+                aria-current={isActive ? "page" : undefined}
                 onClick={onNavigate}
                 title={collapsed ? `${item.index} ${item.label}` : undefined}
                 className={cn(
@@ -126,7 +128,7 @@ export function AppSidebar({
                     <span className="truncate">{item.label}</span>
                     <span
                       className={cn(
-                        "text-[0.625rem] opacity-40 group-hover:opacity-100 transition-opacity",
+                        "nav-index text-[0.625rem] opacity-40 group-hover:opacity-100 transition-opacity",
                         isActive && "text-[var(--color-accent)] opacity-80"
                       )}
                     >

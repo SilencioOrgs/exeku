@@ -58,9 +58,12 @@ export function AppShell({ children }: AppShellProps) {
     }
   };
 
-  if (isLoading || !profile) {
-    return (
-      <div className="min-h-screen bg-[var(--color-canvas)] flex flex-col items-center justify-center p-4">
+  const blocked = isLoading || !profile;
+
+  return (
+    <div className="app-shell min-h-screen bg-[var(--color-canvas)] text-[var(--color-text-main)] flex flex-col overflow-hidden relative">
+      {blocked && (
+      <div role="status" aria-live="polite" className="min-h-screen bg-[var(--color-canvas)] flex flex-col items-center justify-center p-4">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-[var(--color-accent)] border-t-transparent animate-spin" />
           <span className="font-mono text-xs text-[var(--color-accent)] uppercase tracking-widest animate-pulse">
@@ -68,11 +71,7 @@ export function AppShell({ children }: AppShellProps) {
           </span>
         </div>
       </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-[var(--color-canvas)] text-[var(--color-text-main)] flex flex-col overflow-hidden relative">
+      )}
       {/* Background Pixel Grid Pattern */}
       <div
         className="arcade-decoration absolute inset-0 pointer-events-none opacity-20 z-0"
@@ -84,20 +83,20 @@ export function AppShell({ children }: AppShellProps) {
       />
 
       {/* Top Application Bar */}
-      <AppTopbar
+      {!blocked && <AppTopbar
         profile={profile}
         onToggleMobileMenu={() => setMobileOpen((o) => !o)}
-      />
+      />}
 
       {/* Main Workspace Frame */}
       <div className="flex-1 flex min-w-0 overflow-hidden relative z-10">
         {/* Desktop Collapsible Sidebar */}
-        <AppSidebar
+        {!blocked && <AppSidebar
           profile={profile}
           collapsed={collapsed}
           onToggleCollapse={toggleCollapse}
-          className="hidden md:flex"
-        />
+          className="hidden lg:flex"
+        />}
 
         {/* Mobile Slide-Out Drawer with Backdrop */}
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
@@ -117,10 +116,12 @@ export function AppShell({ children }: AppShellProps) {
         {/* Dynamic Page Content Canvas */}
         <main
           id="main-content"
+          hidden={blocked}
+          inert={blocked}
           tabIndex={-1}
           className="flex-1 min-w-0 overflow-y-auto min-h-0 focus:outline-none"
         >
-          {children}
+          <div className="app-content">{children}</div>
         </main>
       </div>
     </div>

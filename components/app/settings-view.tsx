@@ -1,6 +1,7 @@
 "use client";
 
 import { AppearanceStudio } from "./appearance-studio";
+import { StyleText } from "@/components/appearance/style-text";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useProfile } from "@/hooks/use-profile";
@@ -108,17 +109,17 @@ export function SettingsView() {
         variant="elevated"
         className="p-5 sm:p-6 border-2 border-[var(--color-border)] bg-[var(--color-surface)] space-y-4"
       >
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-start sm:items-center gap-4">
+        <div className="flex flex-wrap flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex min-w-0 items-start sm:items-center gap-4">
             <PixelAvatar
               avatarId={profile.avatarId}
               size={56}
               className="border-2 border-[var(--color-accent)] shadow-[2px_2px_0px_#000000] shrink-0"
             />
-            <div className="space-y-1">
+            <div className="min-w-0 space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-heading text-xl text-foreground">
-                  {profile.displayName.toUpperCase()}_
+                <span className="font-heading text-xl text-foreground [overflow-wrap:anywhere]">
+                  <StyleText arcade={<>{profile.displayName.toUpperCase()}_</>} clarity={profile.displayName} />
                 </span>
                 <PixelBadge variant={levelBadgeVariant} bracketed>
                   LVL {levelNum}: {profile.experienceLevel.toUpperCase()}
@@ -142,7 +143,7 @@ export function SettingsView() {
             onClick={() => setIsEditOpen(true)}
             className="w-full sm:w-auto"
           >
-            EDIT PROFILE ✎
+            Edit profile <span className="arcade-copy">✎</span>
           </PixelButton>
         </div>
 
@@ -178,10 +179,10 @@ export function SettingsView() {
 
       {/* Storage Health & Locality Panel */}
       <PixelCard variant="default" className="p-5 sm:p-6 border-2 border-[var(--color-border)] space-y-4">
-        <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-3">
+        <div className="flex flex-wrap gap-3 items-center justify-between border-b border-[var(--color-border)] pb-3">
           <div>
             <h2 className="font-heading text-base text-foreground">
-              INDEXEDDB STORAGE TELEMETRY_
+              <StyleText arcade="INDEXEDDB STORAGE TELEMETRY_" clarity="Device storage" command="Local storage" />
             </h2>
             <p className="text-xs text-[var(--color-text-dim)]">
               Real inspection of client storage schemas and data isolation.
@@ -237,7 +238,7 @@ export function SettingsView() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--color-pink)]/40 pb-3">
           <div>
             <h2 className="font-heading text-base text-[var(--color-pink)]">
-              DANGER ZONE: MACHINE RESET_
+              <StyleText arcade="DANGER ZONE: MACHINE RESET_" clarity="Reset local data" />
             </h2>
             <p className="text-xs text-[var(--color-text-muted)]">
               Permanently wipe profile records and workspace buffers from this computer.
@@ -248,7 +249,7 @@ export function SettingsView() {
           </PixelBadge>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex flex-wrap flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <p className="text-xs text-[var(--color-text-muted)] max-w-xl leading-relaxed">
             Resetting your profile will permanently erase your local identity, experience settings,
             and all saved code scratchpads from IndexedDB. You will be redirected back to the
@@ -260,7 +261,7 @@ export function SettingsView() {
             onClick={() => setIsResetOpen(true)}
             className="w-full sm:w-auto shrink-0"
           >
-            RESET LOCAL PROFILE ✖
+            Reset local profile <span className="arcade-copy">✖</span>
           </PixelButton>
         </div>
       </PixelCard>

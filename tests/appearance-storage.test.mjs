@@ -6,6 +6,13 @@ import {
 } from "../types/appearance.js";
 import { AppearanceRepository } from "../lib/storage/appearance-repository.js";
 
+test('transactional Apply does not replace canonical preferences when storage fails', () => {
+  const repo = new AppearanceRepository({ storage: { getItem: () => JSON.stringify({ uiStyle: 'studio-crm' }), setItem() { throw Error('denied'); }, removeItem() {} } });
+  assert.equal(repo.commitPreferences({ uiStyle: 'minimal-saas' }), false);
+  assert.equal(repo.getPreferences().uiStyle, 'studio-crm');
+  assert.equal(repo.persistenceStatus, 'error');
+});
+
 test("DEFAULT_APPEARANCE_PREFERENCES - has expected default values", () => {
   assert.equal(DEFAULT_APPEARANCE_PREFERENCES.uiStyle, "pixel-arcade");
   assert.equal(DEFAULT_APPEARANCE_PREFERENCES.colorMode, "dark");

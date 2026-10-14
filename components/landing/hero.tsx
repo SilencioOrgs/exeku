@@ -8,6 +8,7 @@ import { PixelButton } from "@/components/retro/pixel-button";
 import { DotIcon } from "@/components/retro/dot-icon";
 import { PixelTerminal } from "./pixel-terminal";
 import { ArrowDown } from "lucide-react";
+import { StyleText } from "@/components/appearance/style-text";
 
 export function Hero() {
   const router = useRouter();
@@ -19,8 +20,8 @@ export function Hero() {
       <div className="arcade-decoration absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-[var(--color-primary)]/15 blur-[120px] pointer-events-none rounded-full" />
       <div className="arcade-decoration absolute top-1/3 left-1/4 w-[300px] h-[200px] bg-[var(--color-accent)]/10 blur-[100px] pointer-events-none rounded-full" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="flex flex-col items-center text-center max-w-4xl mx-auto mb-12 sm:mb-16">
+      <div className="landing-hero-layout max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="landing-hero-copy flex flex-col items-center text-center max-w-4xl mx-auto mb-12 sm:mb-16">
           {/* Section Kicker */}
           <div className="mb-6 flex flex-wrap items-center justify-center gap-2">
             <PixelBadge variant="pink">LOCAL DEVELOPER PREVIEW</PixelBadge>
@@ -32,9 +33,9 @@ export function Hero() {
             className="text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-[var(--color-text-main)] mb-6 uppercase leading-[1.1]"
             style={{ fontFamily: "var(--font-heading-active)" }}
           >
-            YOUR CODE. <br className="hidden sm:inline" />
+            <StyleText arcade="YOUR CODE." clarity="Your code." /> <br className="hidden sm:inline" />
             <span className="text-[var(--color-accent)]">
-              YOUR MACHINE.
+              <StyleText arcade="YOUR MACHINE." clarity="Your machine." />
             </span>
           </h1>
 
@@ -84,8 +85,8 @@ export function Hero() {
         </div>
 
         {/* Centerpiece Pixel Terminal */}
-        <div className="max-w-5xl mx-auto">
-          <div className="mb-2 flex items-center justify-between text-xs font-mono text-[var(--color-text-muted)] px-1">
+        <div className="landing-hero-demo max-w-5xl mx-auto">
+          <div className="arcade-decoration mb-2 flex items-center justify-between text-xs font-mono text-[var(--color-text-muted)] px-1">
             <span>[CENTERPIECE: INTERACTIVE PREVIEW]</span>
             <span className="text-[var(--color-accent)]">LOCAL_CONSOLE</span>
           </div>

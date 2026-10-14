@@ -397,3 +397,48 @@ At completion verification, branch was `feat/appearance-studio`; local `main` an
 - `tests/editor-appearance.test.mjs`
 - `types/appearance.ts`
 - `types/profile.ts`
+
+## Phase 2C revision — visual transformation and explicit Apply
+
+This revision supersedes the earlier browser-verification limitations above. It stays on `feat/appearance-studio`; PR #7 remains open and must not merge before visual approval.
+
+### Delivered behavior
+
+- Pixel Arcade retains neon, pixel headings, square controls, hard shadows, and its original dashboard composition.
+- Clarity uses sans headings, rounded navigation/cards, generous spacing, a welcoming dashboard, and recent local code beside the learning track.
+- Command uses slate surfaces, restrained teal, precise controls, sans headings, mono metadata, and a code panel beside stacked service summaries.
+- Existing persisted IDs remain `pixel-arcade`, `minimal-saas`, and `studio-crm`. Shared routes, components, and handlers provide each presentation.
+- Settings and landing modal share a local draft editor and scoped live preview. Apply writes explicitly; Discard and Reset only change the draft. Closing the modal discards edits; dismissal is blocked during a pending Apply.
+- Persistence completes before canonical preferences or the global page change. Failed writes preserve saved appearance and retryable edits. Apply merges edited fields into the latest canonical record. Profile identity changes clear draft edits.
+- Style selection preserves font, scale, line height, editor, and color overrides. Density follows the selected style preset unless customized. Restore style defaults stages UI typography and density only.
+- Modern landing composition, controls, dialogs, and navigation adapt alongside app pages. Preview density changes actual spacing.
+
+### Next.js diagnosis
+
+The profile guard returned before rendering the child route segment. The original source reproduced the exact dropped-segment warning during client navigation from Overview to Settings in development. The corrected shell always represents children, using hidden/inert while the profile loads; navigation and setup redirect behavior remain guarded. No instant-validation opt-out or diagnostics suppression was added. Direct navigation, client navigation, reload, missing-profile redirects, and other routes were exercised without the warning.
+
+Reference: https://nextjs.org/docs/messages/instant-unrendered-segment
+
+### Review and evidence
+
+The independent review identified modal dismissal during Apply, missing density-preview feedback, and an unreliable screenshot navigation wait. All were corrected with focused tests. Profile-boundary draft cleanup also has unit and real-browser coverage. Ponytail review kept the existing repositories, provider, routes, judge, execution APIs, and dependencies; no duplicate theme store or dashboard route was introduced.
+
+Real headless Microsoft Edge runs against the development server with isolated browser storage. The runner is `tests/browser/appearance-revision.mjs`. Set `EXEKU_PLAYWRIGHT_MODULE` to an available `playwright-core` module, then run `node tests/browser/appearance-revision.mjs`. No project dependency was added. Artifacts default to `.git/appearance-review/screenshots/` and are intentionally local.
+
+Browser evidence covers profile and guest Apply/reload, preview/cancel without writes, injected IndexedDB failure/retry, profile switching, OS color/reduced-motion changes, no-profile redirect, mobile Sheet Escape/focus restoration, and actual Monaco model/source/language/cursor/undo/redo/problem preservation across cross-tab Apply. Appearance operations send no execute/judge requests. Dashboard capture waits for the actual route and dashboard heading.
+
+Screenshots include all six style/mode Settings and dashboard combinations, before/after Apply, mobile navigation, landing selector, 150% mobile preview/actions, and preserved Monaco. Compare `pixel-arcade-dark-dashboard.png`, `minimal-saas-dark-dashboard.png`, and `studio-crm-dark-dashboard.png` for the three distinct compositions. The earlier baseline is `.git/appearance-review/before-settings.png`.
+
+The 150% matrix exposed dashboard fixed-column/header crowding and challenge action/search overflow. Container-aware dashboard columns, wrapping header actions, and flexible challenge controls correct the observed failures without hiding overflow.
+
+### Delivery boundaries
+
+No changes to judge/execution architecture, API routes, problem catalog, draft repository, lessons, or package dependencies. The unrelated staged deletions of `.codex/hooks.json` and `.gemini/settings.json` remain excluded. This revision requires fresh permission before pushing to PR #7. Merge and deployment remain unauthorized.
+
+Real Piston execution, physical touch devices, other browser engines, and a full screen-reader audit remain unverified. Visual acceptance belongs to the user.
+
+Verification commands for this revision: `npx.cmd tsx --test tests/*.test.mjs` (92 passed, zero failures/skips), `npm.cmd run lint` (zero warnings/errors), `npx.cmd tsc --noEmit`, and `npm.cmd run build` (all 14 pages generated). Impeccable static detection on revised CSS, studio, preview components, and hero returned an empty findings array. Visual inspection confirmed distinct Clarity light and Command dark dashboard typography, navigation, geometry, and composition. Detector output is not a full accessibility certification.
+
+The expanded responsive runner checks all five app routes at 320, 375, 390, 768, 1024, 1366x768, and 1440 widths, in each style and both color modes, at 100% and 150% UI text. Workspace language controls, output tabs, and sandbox instructions now wrap; dashboard track cards size against available content width. Monaco checks also preserve a nonempty selection and text focus.
+
+Final Edge run passed all 420 matrix checks, plus the four targeted 150% Settings widths and interaction regressions. Captured browser errors: zero. Execute/judge POST requests: zero. All style/mode screenshots and `results.json` were refreshed. The final development server remains at http://localhost:3000 for visual review. PR #7 still points to the previous `5dc9460` revision until fresh push approval.

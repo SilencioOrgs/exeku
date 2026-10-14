@@ -11,6 +11,7 @@ function providerHarness(profilePromise, { indexedDB = {}, saveAppearance } = {}
   let index = 0;
   let guest = { ...appearanceTypes.DEFAULT_APPEARANCE_PREFERENCES };
   const writes = [];
+  let storedAppearance;
   const events = new Map();
   const queries = new Map();
   const react = {
@@ -28,6 +29,7 @@ function providerHarness(profilePromise, { indexedDB = {}, saveAppearance } = {}
     getPreferences: () => guest, persistenceStatus: 'saved',
     resolveEffectiveColorMode: (mode, dark) => mode === 'system' ? dark ? 'dark' : 'light' : mode,
     savePreferences: next => { guest = next; writes.push(['guest', next]); },
+    commitPreferences: next => { guest = next; writes.push(['guest', next]); return true; },
   };
   const root = { dataset: {}, classList: { toggle() {} }, style: { setProperty() {} } };
   const source = readFileSync(new URL('../hooks/use-appearance.tsx', import.meta.url), 'utf8');
@@ -48,7 +50,7 @@ function providerHarness(profilePromise, { indexedDB = {}, saveAppearance } = {}
       if (name === 'react/jsx-runtime') return { jsx: (type, props) => ({ type, props }) };
       if (name === '@/types/appearance') return appearanceTypes;
       if (name === '@/lib/storage/appearance-repository') return { appearanceRepository: repository, cacheAppearanceSnapshot() {}, APPEARANCE_STORAGE_KEY: 'guest', APPEARANCE_SNAPSHOT_KEY: 'snapshot' };
-      if (name === '@/lib/storage/profile-repository') return { profileRepository: { getActiveProfile: () => typeof profilePromise === 'function' ? profilePromise() : profilePromise, saveAppearancePreferences: async (id, next) => { writes.push([id, next]); await saveAppearance?.(id, next); } } };
+      if (name === '@/lib/storage/profile-repository') return { profileRepository: { getActiveProfile: async () => { const profile = await (typeof profilePromise === 'function' ? profilePromise() : profilePromise); return profile && storedAppearance ? { ...profile, appearancePreferences: storedAppearance } : profile; }, saveAppearancePreferences: async (id, next) => { writes.push([id, next]); await saveAppearance?.(id, next); storedAppearance = next; } } };
       throw Error(name);
     },
   });
@@ -88,7 +90,7 @@ test('system scheme and motion changes update the interface while keeping saved 
   assert.equal(harness.writes.length, 0);
 });
 
-test('profile writes serialize rapid edits and retain failed changes after profile reload', async () => {
+test('Apply serializes writes and keeps canonical appearance unchanged until persistence succeeds', async () => {
   let finishFirst;
   let calls = 0;
   const harness = providerHarness(Promise.resolve({ id: 'profile', appearancePreferences: { uiStyle: 'pixel-arcade' } }), {
@@ -101,6 +103,7 @@ test('profile writes serialize rapid edits and retain failed changes after profi
   context.updatePreferences({ density: 'spacious' });
   await new Promise(setImmediate);
   assert.equal(harness.writes.length, 1);
+  assert.equal(harness.render().preferences.uiStyle, 'pixel-arcade');
   finishFirst();
   await new Promise(setImmediate);
   assert.equal(harness.writes.length, 2);
@@ -109,7 +112,8 @@ test('profile writes serialize rapid edits and retain failed changes after profi
   assert.equal(harness.render().persistenceStatus, 'error');
   harness.events.get('exeku:profile-changed')();
   await new Promise(setImmediate);
-  assert.equal(harness.render().preferences.density, 'spacious');
+  assert.equal(harness.render().preferences.uiStyle, 'minimal-saas');
+  assert.equal(harness.render().preferences.density, 'comfortable');
 });
 
 test('null IndexedDB reports session-only profile persistence', async () => {

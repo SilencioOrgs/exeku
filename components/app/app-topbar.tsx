@@ -14,11 +14,11 @@ export interface AppTopbarProps {
 }
 
 const ROUTE_LABELS: Record<string, string> = {
-  "/app": "OVERVIEW",
-  "/app/challenges": "CHALLENGES",
-  "/app/workspace": "WORKSPACE",
-  "/app/progress": "PROGRESS",
-  "/app/settings": "SETTINGS",
+  "/app": "Overview",
+  "/app/challenges": "Challenges",
+  "/app/workspace": "Workspace",
+  "/app/progress": "Progress",
+  "/app/settings": "Settings",
 };
 
 export function AppTopbar({ profile, onToggleMobileMenu }: AppTopbarProps) {
@@ -34,7 +34,7 @@ export function AppTopbar({ profile, onToggleMobileMenu }: AppTopbarProps) {
       : "LVL 03";
 
   return (
-    <header className="min-h-13 py-2 bg-[var(--color-canvas)] border-b-2 border-[var(--color-border)] px-4 flex flex-wrap gap-2 items-center justify-between z-20 shrink-0 select-none">
+    <header className="app-topbar min-h-13 py-2 bg-[var(--color-canvas)] border-b-2 border-[var(--color-border)] px-4 flex flex-wrap gap-2 items-center justify-between z-20 shrink-0 select-none">
       {/* Skip to Main Content Link for A11y */}
       <a
         href="#main-content"
@@ -49,7 +49,7 @@ export function AppTopbar({ profile, onToggleMobileMenu }: AppTopbarProps) {
           type="button"
           onClick={onToggleMobileMenu}
           aria-label="Toggle navigation menu"
-          className="md:hidden p-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] bg-[var(--color-elevated)] border border-[var(--color-border)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+          className="lg:hidden p-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] bg-[var(--color-elevated)] border border-[var(--color-border)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
         >
           <Menu className="w-4 h-4" />
         </button>

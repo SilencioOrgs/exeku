@@ -7,15 +7,18 @@ import { profileRepository } from "@/lib/storage/profile-repository";
 
 export interface AppearanceContextValue {
   preferences: AppearancePreferences;
+  preferenceOwner: string | null;
   effectiveColorMode: "dark" | "light";
   effectiveReducedMotion: boolean;
+  systemColorMode: 'light' | 'dark';
+  systemReducedMotion: boolean;
   persistenceStatus: PersistenceStatus;
   persistenceMessage: string | null;
-  updatePreferences: (updates: Partial<AppearancePreferences>) => void;
-  resetPreferences: () => void;
-  setStyle: (style: UIStyle) => void;
-  setColorMode: (mode: ColorMode) => void;
-  setContrastMode: (contrast: ContrastMode) => void;
+  updatePreferences: (updates: Partial<AppearancePreferences>) => Promise<boolean>;
+  resetPreferences: () => Promise<boolean>;
+  setStyle: (style: UIStyle) => Promise<boolean>;
+  setColorMode: (mode: ColorMode) => Promise<boolean>;
+  setContrastMode: (contrast: ContrastMode) => Promise<boolean>;
 }
 
 const AppearanceContext = createContext<AppearanceContextValue | null>(null);
@@ -42,6 +45,7 @@ export function applyPreferencesToDom(prefs: AppearancePreferences, effectiveCol
 export function AppearanceProvider({ children }: { children: React.ReactNode }) {
   // Initial markup always matches SSR; the root boot snapshot handles first-paint styling.
   const [preferences, setPreferences] = useState<AppearancePreferences>({ ...DEFAULT_APPEARANCE_PREFERENCES });
+  const [preferenceOwner, setPreferenceOwner] = useState<string | null>(null);
   const [systemDark, setSystemDark] = useState(true);
   const [systemReducedMotion, setSystemReducedMotion] = useState(false);
   const [hydrated, setHydrated] = useState(false);
@@ -50,11 +54,8 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
   const profileId = useRef<string | null>(null);
   const profileLoaded = useRef(false);
   const initialLoad = useRef(Promise.resolve());
-  const hydrationBase = useRef(preferences);
-  const hydrationUpdates = useRef<Partial<AppearancePreferences>>({});
   const revision = useRef(0);
-  const sessionProfiles = useRef(new Map<string, AppearancePreferences>());
-  const pendingWrites = useRef(Promise.resolve());
+  const pendingWrites = useRef(Promise.resolve(true));
 
   useEffect(() => {
     let disposed = false;
@@ -72,25 +73,16 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
       const guest = appearanceRepository.getPreferences();
       try {
         const profile = await profileRepository.getActiveProfile();
-        if (disposed) return;
+        if (disposed || loadRevision !== revision.current) return;
         profileId.current = profile?.id ?? null;
-        const initializing = !profileLoaded.current;
         profileLoaded.current = true;
+        setPreferenceOwner(profile?.id ?? "guest");
         // Explicit profile settings win. Legacy profiles inherit guest preferences until first edit.
-        const session = profile ? sessionProfiles.current.get(profile.id) : undefined;
-        const resolved = session ?? (profile?.appearancePreferences ? normalizeAppearancePreferences(profile.appearancePreferences) : guest);
-        if (initializing) hydrationBase.current = resolved;
-        if (loadRevision !== revision.current) {
-          if (initializing) {
-            current.current = normalizeAppearancePreferences({ ...resolved, ...hydrationUpdates.current });
-            setPreferences(current.current);
-          }
-          return;
-        }
+        const resolved = profile?.appearancePreferences ? normalizeAppearancePreferences(profile.appearancePreferences) : guest;
         current.current = resolved;
         setPreferences(resolved);
         const persistentProfile = profile?.appearancePreferences && window.indexedDB != null;
-        setPersistenceStatus(session ? "error" : profile?.appearancePreferences ? (persistentProfile ? "saved" : "session") : appearanceRepository.persistenceStatus);
+        setPersistenceStatus(profile?.appearancePreferences ? (persistentProfile ? "saved" : "session") : appearanceRepository.persistenceStatus);
       } catch {
         if (disposed || loadRevision !== revision.current) return;
         current.current = guest;
@@ -102,9 +94,9 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
     };
     initialLoad.current = load();
     const storageChanged = (event: StorageEvent) => {
-      if (event.key === APPEARANCE_STORAGE_KEY || event.key === APPEARANCE_SNAPSHOT_KEY || event.key === null) void load();
+      if (event.key === APPEARANCE_STORAGE_KEY || event.key === APPEARANCE_SNAPSHOT_KEY || event.key === null) { setPersistenceStatus("loading"); void pendingWrites.current.then(load); }
     };
-    const profileChanged = () => { void pendingWrites.current.then(load); };
+    const profileChanged = () => { setPersistenceStatus("loading"); void pendingWrites.current.then(load); };
     window.addEventListener("storage", storageChanged);
     window.addEventListener("exeku:profile-changed", profileChanged);
     return () => {
@@ -123,49 +115,42 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
     if (persistenceStatus !== "saving" && persistenceStatus !== "loading") cacheAppearanceSnapshot(preferences);
   }, [preferences, effectiveColorMode, systemReducedMotion, hydrated, persistenceStatus]);
 
-  const updatePreferences = useCallback((updates: Partial<AppearancePreferences>) => {
-    const next = normalizeAppearancePreferences({ ...current.current, ...updates });
-    const updateRevision = ++revision.current;
-    const initializing = !profileLoaded.current;
-    if (initializing) hydrationUpdates.current = { ...hydrationUpdates.current, ...updates };
-    const pendingUpdates = { ...hydrationUpdates.current };
-    current.current = next;
-    setPreferences(next);
-    setHydrated(true);
-    if (profileId.current) sessionProfiles.current.set(profileId.current, next);
+  const updatePreferences = useCallback((updates: Partial<AppearancePreferences>): Promise<boolean> => {
     setPersistenceStatus("saving");
     // Serialize writes so rapid slider changes cannot persist an older value last.
-    pendingWrites.current = pendingWrites.current.then(async () => {
+    const write = pendingWrites.current.then(async () => {
       try {
         await initialLoad.current;
         if (!profileLoaded.current) {
           const profile = await profileRepository.getActiveProfile();
           profileId.current = profile?.id ?? null;
-          hydrationBase.current = profile?.appearancePreferences ? normalizeAppearancePreferences(profile.appearancePreferences) : appearanceRepository.getPreferences();
+          setPreferenceOwner(profile?.id ?? "guest");
+          current.current = profile?.appearancePreferences ? normalizeAppearancePreferences(profile.appearancePreferences) : appearanceRepository.getPreferences();
           profileLoaded.current = true;
         }
         // Apply early edits to canonical preferences, never to server-rendered defaults.
-        const resolvedNext = initializing ? normalizeAppearancePreferences({ ...hydrationBase.current, ...pendingUpdates }) : next;
-        if (updateRevision === revision.current) {
-          current.current = resolvedNext;
-          setPreferences(resolvedNext);
-        }
+        const next = normalizeAppearancePreferences({ ...current.current, ...updates });
+        ++revision.current;
         const id = profileId.current;
-        if (!id) {
-          appearanceRepository.savePreferences(resolvedNext);
-          if (updateRevision === revision.current) setPersistenceStatus(appearanceRepository.persistenceStatus);
-          return;
+        if (id) {
+          if (window.indexedDB == null) { setPersistenceStatus("session"); return false; }
+          await profileRepository.saveAppearancePreferences(id, next);
+        } else if (!appearanceRepository.commitPreferences(next)) {
+          setPersistenceStatus(appearanceRepository.persistenceStatus);
+          return false;
         }
-        if (updateRevision === revision.current || !sessionProfiles.current.has(id)) sessionProfiles.current.set(id, resolvedNext);
-        await profileRepository.saveAppearancePreferences(id, resolvedNext);
-        if (sessionProfiles.current.get(id) === resolvedNext) sessionProfiles.current.delete(id);
-        if (updateRevision === revision.current) {
-          setPersistenceStatus(window.indexedDB == null ? "session" : "saved");
-        }
+        current.current = next;
+        setPreferences(next);
+        setHydrated(true);
+        setPersistenceStatus("saved");
+        return true;
       } catch {
-        if (updateRevision === revision.current) setPersistenceStatus("error");
+        setPersistenceStatus("error");
+        return false;
       }
     });
+    pendingWrites.current = write;
+    return write;
   }, []);
 
   const resetPreferences = useCallback(() => updatePreferences(DEFAULT_APPEARANCE_PREFERENCES), [updatePreferences]);
@@ -174,11 +159,11 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
   const setContrastMode = useCallback((contrastMode: ContrastMode) => updatePreferences({ contrastMode }), [updatePreferences]);
   const effectiveReducedMotion = preferences.reducedMotion === "system" ? systemReducedMotion : preferences.reducedMotion;
   const persistenceMessage = persistenceStatus === "error"
-    ? "Appearance is active for this session. Local storage failed; changes may not survive reload."
-    : persistenceStatus === "session" ? "Appearance is active for this session. Persistent storage is unavailable."
+    ? "Changes were not applied. Local storage failed; your draft is available to retry."
+    : persistenceStatus === "session" ? "Changes cannot be applied because persistent browser storage is unavailable."
     : persistenceStatus === "saving" ? "Saving appearance…"
     : persistenceStatus === "loading" ? "Loading appearance…" : "Appearance saved locally.";
-  const contextValue = useMemo<AppearanceContextValue>(() => ({ preferences, effectiveColorMode, effectiveReducedMotion, persistenceStatus, persistenceMessage, updatePreferences, resetPreferences, setStyle, setColorMode, setContrastMode }), [preferences, effectiveColorMode, effectiveReducedMotion, persistenceStatus, persistenceMessage, updatePreferences, resetPreferences, setStyle, setColorMode, setContrastMode]);
+  const contextValue = useMemo<AppearanceContextValue>(() => ({ preferences, preferenceOwner, effectiveColorMode, effectiveReducedMotion, systemColorMode: systemDark ? "dark" : "light", systemReducedMotion, persistenceStatus, persistenceMessage, updatePreferences, resetPreferences, setStyle, setColorMode, setContrastMode }), [preferences, preferenceOwner, effectiveColorMode, effectiveReducedMotion, systemDark, systemReducedMotion, persistenceStatus, persistenceMessage, updatePreferences, resetPreferences, setStyle, setColorMode, setContrastMode]);
   return <AppearanceContext.Provider value={contextValue}>{children}</AppearanceContext.Provider>;
 }
 

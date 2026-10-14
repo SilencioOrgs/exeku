@@ -90,6 +90,20 @@ export class AppearanceRepository {
     return { ...this.memoryCache };
   }
 
+  /** Commits preferences only when durable storage accepts the complete record. */
+  commitPreferences(updates: Partial<AppearancePreferences>): boolean {
+    const next = normalizeAppearancePreferences({ ...this.getPreferences(), ...updates });
+    if (!this.storage) { this.persistenceStatus = "session"; return false; }
+    try {
+      this.storage.setItem(APPEARANCE_STORAGE_KEY, JSON.stringify(next));
+      this.memoryCache = next;
+      this.unsaved = false;
+      this.persistenceStatus = "saved";
+      this.notifyChange();
+      return true;
+    } catch { this.persistenceStatus = "error"; return false; }
+  }
+
   /**
    * Resets all appearance preferences back to defaults.
    */
