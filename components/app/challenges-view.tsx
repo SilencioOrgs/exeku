@@ -74,12 +74,12 @@ export function ChallengesView() {
             PROGRAMMING PROBLEMS &amp; ASSESSMENTS_
           </h1>
           <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-            Algorithmic problem practice with automated multi-test sandbox evaluation.
+            Choose a problem, write code, and test your solution in the workspace.
           </p>
         </div>
         <div className="flex items-center gap-2">
           <PixelBadge variant="mint" bracketed>
-            AUTOMATIC JUDGE READY
+            Sandbox needed to run code
           </PixelBadge>
         </div>
       </div>
