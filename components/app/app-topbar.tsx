@@ -19,7 +19,6 @@ const ROUTE_LABELS: Record<string, string> = {
   "/app": "Overview",
   "/app/challenges": "Challenges",
   "/app/workspace": "Workspace",
-  "/app/progress": "Progress",
   "/app/settings": "Settings",
 };
 
