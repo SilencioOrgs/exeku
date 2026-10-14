@@ -85,7 +85,7 @@ export function FileTabs({ language, files, activeName, mainName, saveStatus, on
                 aria-label="Rename file"
                 onChange={(e) => { setDraftName(e.target.value); setError(null); }}
                 onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") cancel(); }}
-                onBlur={save}
+                onBlur={cancel}
               />
             ) : (
               <button
