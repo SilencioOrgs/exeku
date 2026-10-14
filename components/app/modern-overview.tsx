@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Code2, FileCode2, ShieldAlert } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ProfileEditDialog } from "./profile-edit-dialog";
 import { CodingActivity } from "./coding-activity";
-import { getProblemSummaries } from "@/lib/problems/catalog";
+import type { ProblemSummary } from "@/types/problem";
 import { getFilenameForLanguage } from "@/lib/workspace-defaults";
 import type { LocalProfile, ProfileInput } from "@/types/profile";
 import type { WorkspaceDraft } from "@/types/draft";
@@ -21,7 +21,15 @@ interface ModernOverviewProps {
 
 export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfile }: ModernOverviewProps) {
   const [editing, setEditing] = useState(false);
-  const problems = getProblemSummaries({}).slice(0, 3);
+  const [problems, setProblems] = useState<ProblemSummary[]>([]);
+  useEffect(() => {
+    let active = true;
+    fetch("/api/problems")
+      .then((response) => { if (!response.ok) throw new Error("Problem catalog unavailable"); return response.json(); })
+      .then((data: { problems?: ProblemSummary[] }) => { if (active) setProblems((data.problems ?? []).slice(0, 3)); })
+      .catch(() => { if (active) setProblems([]); });
+    return () => { active = false; };
+  }, []);
   const filename = getFilenameForLanguage(profile.preferredLanguage);
 
   return (
