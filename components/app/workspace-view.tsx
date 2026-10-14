@@ -777,7 +777,7 @@ export function WorkspaceView() {
           }`}
         >
           {/* Compact editor toolbar, one line at desktop widths. */}
-          <div className="workspace-toolbar flex h-10 shrink-0 items-center gap-1.5 overflow-hidden border border-[var(--color-border)] bg-[var(--color-surface)] px-1.5 data-[density=compact]:h-9">
+          <div className="workspace-toolbar relative z-10 flex h-10 shrink-0 items-center gap-1.5 overflow-visible border border-[var(--color-border)] bg-[var(--color-surface)] px-1.5 data-[density=compact]:h-9">
             <FileTabs
               language={activeLang}
               files={files}
