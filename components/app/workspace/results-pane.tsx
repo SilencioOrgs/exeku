@@ -2,7 +2,8 @@
 
 import React from "react";
 import { PixelBadge } from "@/components/retro/pixel-badge";
-import { Terminal, Database, CheckCircle2, XCircle, AlertTriangle, Clock } from "lucide-react";
+import { XCircle, AlertTriangle, Clock } from "lucide-react";
+import { DotIcon } from "@/components/retro/dot-icon";
 import type { ExecutionResult } from "@/types/execution";
 import type { JudgingResult } from "@/lib/judge/judging-service";
 import type { PreferredLanguage } from "@/types/profile";
@@ -58,7 +59,7 @@ export function ResultsPane({
                 : "border-transparent text-[var(--color-text-dim)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-canvas)]/50"
             }`}
           >
-            <Terminal size={12} />
+            <DotIcon name="powershell" adaptive size={13} aria-hidden="true" />
             <span>CONSOLE</span>
           </button>
 
@@ -72,7 +73,7 @@ export function ResultsPane({
                 : "border-transparent text-[var(--color-text-dim)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-canvas)]/50"
             }`}
           >
-            <Database size={12} />
+            <DotIcon name="database" size={13} aria-hidden="true" />
             <span>STDIN</span>
             {customStdin.length > 0 && (
               <span className="text-[0.625rem] opacity-75 font-mono">
@@ -91,7 +92,7 @@ export function ResultsPane({
                 : "border-transparent text-[var(--color-text-dim)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-canvas)]/50"
             }`}
           >
-            <CheckCircle2 size={12} />
+            <DotIcon name="circleCheck" size={13} aria-hidden="true" />
             <span>RESULTS</span>
             {judgingResult && (
               <span
@@ -312,7 +313,7 @@ export function ResultsPane({
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           {tc.passed ? (
-                            <CheckCircle2 size={13} className="text-[var(--color-mint)]" />
+                            <DotIcon name="circleCheck" size={13} aria-hidden="true" className="text-[var(--color-mint)]" />
                           ) : (
                             <XCircle size={13} className="text-[var(--color-pink)]" />
                           )}
