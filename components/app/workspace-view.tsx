@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { useProfile } from "@/hooks/use-profile";
 import { useChallengeSession } from "@/hooks/use-challenge-session";
 import { PixelCard } from "@/components/retro/pixel-card";
 import { PixelButton } from "@/components/retro/pixel-button";
-import { DotIcon, type DotIconName } from "@/components/retro/dot-icon";
+import { DotIcon } from "@/components/retro/dot-icon";
 import { MonacoEditorPane } from "./monaco-editor-pane";
 import { ProblemPane } from "./workspace/problem-pane";
 import { ResultsPane, type ResultsTab } from "./workspace/results-pane";
@@ -47,13 +47,6 @@ import {
   Clock,
   AlertTriangle,
 } from "lucide-react";
-
-const LANGUAGE_ICONS: Record<PreferredLanguage, DotIconName> = {
-  python: "python",
-  java: "java",
-  cpp: "cplusplus",
-  c: "file",
-};
 
 type MobileActivePane = "problem" | "code" | "results";
 
