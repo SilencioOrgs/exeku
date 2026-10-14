@@ -109,7 +109,7 @@ export async function runBrowserVerification() {
   await page.waitForSelector('[role="dialog"]', { state: 'detached' });
 
   // 5. Submit Confirmation Dialog
-  await page.getByRole('button', { name: 'SUBMIT', exact: true }).click();
+  await page.getByRole('button', { name: 'Submit solution' }).click();
   await page.waitForSelector('[role="dialog"]');
   await page.screenshot({ path: path.join(outputDir, '05-modal-submit-confirmation.png') });
   await page.locator('button', { hasText: 'CANCEL' }).click();
