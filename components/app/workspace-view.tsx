@@ -248,7 +248,7 @@ export function WorkspaceView() {
     let current = true;
     const starter = problem?.starterCodes[activeLang] || getStarterCode(activeLang);
     const primaryName = getFilenameForLanguage(activeLang);
-    draftRepository.getDraft(profile.id, activeLang)
+    draftRepository.getDraft(profile.id, activeLang, problemIdParam)
       .then((draft) => {
         if (!current) return;
         const loaded = draft?.files?.length
@@ -270,7 +270,7 @@ export function WorkspaceView() {
         setSaveStatus("SAVED");
       });
     return () => { current = false; };
-  }, [profile, activeLang, problem]);
+  }, [profile, activeLang, problem, problemIdParam]);
 
   const persistFiles = useCallback((next: WorkspaceFile[]) => {
     filesRef.current = next;
@@ -281,14 +281,14 @@ export function WorkspaceView() {
       if (!profile) return;
       setSaveStatus("SAVING...");
       try {
-        await draftRepository.saveDraft(profile.id, activeLang, next[0]?.content ?? "", next);
+        await draftRepository.saveDraft(profile.id, activeLang, next[0]?.content ?? "", next, problemIdParam);
         recordCodingDay(profile.id);
         setSaveStatus("SAVED");
       } catch {
         setSaveStatus("MODIFIED");
       }
     }, 600);
-  }, [profile, activeLang]);
+  }, [profile, activeLang, problemIdParam]);
 
   const handleCodeChange = useCallback((newCode: string) => {
     const next = filesRef.current.map((file) =>
@@ -343,7 +343,7 @@ export function WorkspaceView() {
 
     if (profile && saveStatus !== "SAVED") {
       try {
-        await draftRepository.saveDraft(profile.id, activeLang, filesRef.current[0]?.content ?? "", filesRef.current);
+        await draftRepository.saveDraft(profile.id, activeLang, filesRef.current[0]?.content ?? "", filesRef.current, problemIdParam);
       } catch {
         // continue
       }
@@ -364,7 +364,7 @@ export function WorkspaceView() {
             : file
         );
     try {
-      await draftRepository.saveDraft(profile.id, activeLang, next[0]?.content ?? "", next);
+      await draftRepository.saveDraft(profile.id, activeLang, next[0]?.content ?? "", next, problemIdParam);
       updateFiles(next);
       if (resetAllFiles) setActiveFile(mainFilename);
       setSaveStatus("SAVED");
