@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useProfile } from "@/hooks/use-profile";
@@ -14,12 +14,9 @@ import {
   ALL_SUPPORTED_LANGUAGES,
   LANGUAGE_DISPLAY_NAMES,
 } from "@/lib/workspace-defaults";
-import {
-  getProblemSummaries,
-  getVisibleProblem,
-} from "@/lib/problems/catalog";
+
 import type { PreferredLanguage } from "@/types/profile";
-import type { ProblemDifficulty, VisibleProblem } from "@/types/problem";
+import type { ProblemDifficulty, ProblemSummary, VisibleProblem } from "@/types/problem";
 
 type FilterTier = "all" | ProblemDifficulty;
 
@@ -45,24 +42,46 @@ export function ChallengesView() {
   const [selectedTier, setSelectedTier] = useState<FilterTier>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [inspectProblemId, setInspectProblemId] = useState<string | null>(null);
+  const [problems, setProblems] = useState<ProblemSummary[]>([]);
+  const [activeProblemDetail, setActiveProblemDetail] = useState<VisibleProblem | null>(null);
 
   const handleStartTimedChallenge = (problemId: string, problemTitle: string) => {
     challenge.startChallenge(problemId, problemTitle);
     router.push(`/app/workspace?problem=${encodeURIComponent(problemId)}`);
   };
 
-  // Filter problems based on criteria
-  const problems = useMemo(() => {
-    return getProblemSummaries({
-      difficulty: selectedTier === "all" ? undefined : selectedTier,
-      language: selectedLanguage === "all" ? undefined : selectedLanguage,
-      search: searchQuery.trim() || undefined,
-    });
+  // Always load public, redacted metadata through the API. Never ship server test cases.
+  useEffect(() => {
+    let active = true;
+    const query = new URLSearchParams();
+    if (selectedTier !== "all") query.set("difficulty", selectedTier);
+    if (selectedLanguage !== "all") query.set("language", selectedLanguage);
+    if (searchQuery.trim()) query.set("search", searchQuery.trim());
+    fetch(`/api/problems?${query.toString()}`)
+      .then((response) => {
+        if (!response.ok) throw new Error("Unable to load problems");
+        return response.json();
+      })
+      .then((data: { problems?: ProblemSummary[] }) => {
+        if (active) setProblems(data.problems ?? []);
+      })
+      .catch(() => { if (active) setProblems([]); });
+    return () => { active = false; };
   }, [selectedTier, selectedLanguage, searchQuery]);
 
-  const activeProblemDetail: VisibleProblem | null = useMemo(() => {
-    if (!inspectProblemId) return null;
-    return getVisibleProblem(inspectProblemId);
+  useEffect(() => {
+    let active = true;
+    setActiveProblemDetail(null);
+    if (inspectProblemId) {
+      fetch(`/api/problems/${encodeURIComponent(inspectProblemId)}`)
+        .then((response) => {
+          if (!response.ok) throw new Error("Unable to load problem");
+          return response.json();
+        })
+        .then((data: VisibleProblem) => { if (active) setActiveProblemDetail(data); })
+        .catch(() => { if (active) setActiveProblemDetail(null); });
+    }
+    return () => { active = false; };
   }, [inspectProblemId]);
 
   return (
