@@ -70,7 +70,7 @@ export function WorkspaceView() {
   const [resetAllFiles, setResetAllFiles] = useState(false);
   const code = files.find((file) => file.name === activeFile)?.content ?? "";
   const mainCode = files.find((file) => file.name === mainFilename)?.content ?? "";
-  const updateFiles = (next: WorkspaceFile[]) => { filesRef.current = next; setFiles(next); };
+  const updateFiles = useCallback((next: WorkspaceFile[]) => { filesRef.current = next; setFiles(next); }, []);
   const [customStdin, setCustomStdin] = useState<string>("");
   const [saveStatus, setSaveStatus] = useState<"SAVED" | "SAVING..." | "MODIFIED">("SAVED");
   const [isResetOpen, setIsResetOpen] = useState<boolean>(false);
@@ -263,7 +263,7 @@ export function WorkspaceView() {
         setSaveStatus("SAVED");
       });
     return () => { current = false; };
-  }, [profile, activeLang, problem, problemIdParam]);
+  }, [profile, activeLang, problem, problemIdParam, updateFiles]);
 
   const persistFiles = useCallback((next: WorkspaceFile[]) => {
     filesRef.current = next;
