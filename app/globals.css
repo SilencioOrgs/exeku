@@ -6,154 +6,359 @@
 
 @theme inline {
   --font-pixel: var(--font-pixelify), monospace;
-  --font-sans: var(--font-geist-sans), sans-serif;
-  --font-mono: var(--font-geist-mono), monospace;
-  --font-heading: var(--font-pixelify), monospace;
+  --font-sans: var(--font-ui, var(--font-geist-sans), sans-serif);
+  --font-mono: var(--font-code, var(--font-geist-mono), monospace);
+  --font-heading: var(--font-heading-active, var(--font-pixelify), monospace);
 
   --color-neon-purple: #9E00FF;
   --color-neon-cyan: #00F0FF;
   --color-neon-pink: #FF007A;
   --color-retro-mint: #00FF9D;
-  --color-retro-canvas: #090514;
-  --color-retro-card: #120A24;
-  --color-retro-elevated: #1B0F36;
-  --color-retro-border: #2E1A57;
+  --color-retro-canvas: var(--color-canvas);
+  --color-retro-card: var(--color-surface);
+  --color-retro-elevated: var(--color-elevated);
+  --color-retro-border: var(--color-border);
 
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
+  --color-background: var(--color-canvas);
+  --color-foreground: var(--color-text-main);
+  --color-card: var(--color-surface);
+  --color-card-foreground: var(--color-text-main);
+  --color-popover: var(--color-surface);
+  --color-popover-foreground: var(--color-text-main);
+  --color-primary: var(--color-primary);
+  --color-primary-foreground: #FFFFFF;
+  --color-secondary: var(--color-elevated);
+  --color-secondary-foreground: var(--color-accent);
+  --color-muted: var(--color-elevated);
+  --color-muted-foreground: var(--color-text-muted);
+  --color-accent: var(--color-accent);
+  --color-accent-foreground: #090514;
+  --color-destructive: var(--color-pink);
+  --color-border: var(--color-border);
+  --color-input: var(--color-border);
+  --color-ring: var(--color-ring);
+  --radius: var(--radius-card);
 }
+
+/* =========================================================================
+   EXEKU THEME SYSTEM TOKENS
+   ========================================================================= */
 
 :root {
-  --background: #090514;
-  --foreground: #F5F3FF;
-  --card: #120A24;
-  --card-foreground: #F5F3FF;
-  --popover: #120A24;
-  --popover-foreground: #F5F3FF;
-  --primary: #9E00FF;
-  --primary-foreground: #FFFFFF;
-  --secondary: #1B0F36;
-  --secondary-foreground: #00F0FF;
-  --muted: #1B0F36;
-  --muted-foreground: #A79EC4;
-  --accent: #1B0F36;
-  --accent-foreground: #00F0FF;
-  --destructive: #FF007A;
-  --border: #2E1A57;
-  --input: #2E1A57;
-  --ring: #00F0FF;
-  --radius: 0px;
+  /* Default: Pixel Arcade Dark */
+  --ui-style: "pixel-arcade";
+  --color-canvas: #090514;
+  --color-surface: #120A24;
+  --color-elevated: #1B0F36;
+  --color-border: #2E1A57;
+  --color-border-subtle: #1B0F36;
+  --color-primary: #9E00FF;
+  --color-primary-hover: #8B00E6;
+  --color-accent: #00F0FF;
+  --color-accent-hover: #38BDF8;
+  --color-pink: #FF007A;
+  --color-mint: #00FF9D;
+  --color-text-main: #F5F3FF;
+  --color-text-muted: #A79EC4;
+  --color-text-dim: #7A6E9B;
+  --color-ring: #00F0FF;
+
+  --font-heading-active: var(--font-pixelify), monospace;
+  --font-ui: var(--font-geist-sans), sans-serif;
+  --font-code: var(--font-geist-mono), monospace;
+
+  --radius-card: 0px;
+  --radius-btn: 0px;
+  --shadow-card: 4px 4px 0px #000000;
+  --shadow-btn: 3px 3px 0px #000000;
+
+  --ui-font-scale: 100%;
+  --line-height-base: 1.5;
+  --app-brightness: 100%;
 }
 
-.dark {
-  --background: #090514;
-  --foreground: #F5F3FF;
-  --card: #120A24;
-  --card-foreground: #F5F3FF;
-  --popover: #120A24;
-  --popover-foreground: #F5F3FF;
-  --primary: #9E00FF;
-  --primary-foreground: #FFFFFF;
-  --secondary: #1B0F36;
-  --secondary-foreground: #00F0FF;
-  --muted: #1B0F36;
-  --muted-foreground: #A79EC4;
-  --accent: #1B0F36;
-  --accent-foreground: #00F0FF;
-  --destructive: #FF007A;
-  --border: #2E1A57;
-  --input: #2E1A57;
-  --ring: #00F0FF;
-  --radius: 0px;
+/* -------------------------------------------------------------------------
+   1. PIXEL ARCADE THEME (Dark & Light)
+   ------------------------------------------------------------------------- */
+[data-ui-style="pixel-arcade"][data-color-mode="dark"],
+:root:not([data-ui-style]) {
+  --color-canvas: #090514;
+  --color-surface: #120A24;
+  --color-elevated: #1B0F36;
+  --color-border: #2E1A57;
+  --color-border-subtle: #1B0F36;
+  --color-primary: #9E00FF;
+  --color-primary-hover: #8B00E6;
+  --color-accent: #00F0FF;
+  --color-accent-hover: #38BDF8;
+  --color-pink: #FF007A;
+  --color-mint: #00FF9D;
+  --color-text-main: #F5F3FF;
+  --color-text-muted: #A79EC4;
+  --color-text-dim: #7A6E9B;
+  --color-ring: #00F0FF;
+  --font-heading-active: var(--font-pixelify), monospace;
+  --radius-card: 0px;
+  --radius-btn: 0px;
+  --shadow-card: 4px 4px 0px #000000;
+  --shadow-btn: 3px 3px 0px #000000;
 }
+
+[data-ui-style="pixel-arcade"][data-color-mode="light"] {
+  --color-canvas: #F5EEFD;
+  --color-surface: #FFFFFF;
+  --color-elevated: #EDE0FA;
+  --color-border: #D3B8F5;
+  --color-border-subtle: #E5D4F9;
+  --color-primary: #7E00CC;
+  --color-primary-hover: #6A00AD;
+  --color-accent: #00828C;
+  --color-accent-hover: #006C74;
+  --color-pink: #D60067;
+  --color-mint: #008F59;
+  --color-text-main: #1F0A38;
+  --color-text-muted: #5C447A;
+  --color-text-dim: #856E9E;
+  --color-ring: #7E00CC;
+  --font-heading-active: var(--font-pixelify), monospace;
+  --radius-card: 0px;
+  --radius-btn: 0px;
+  --shadow-card: 4px 4px 0px #2E1A57;
+  --shadow-btn: 3px 3px 0px #2E1A57;
+}
+
+/* -------------------------------------------------------------------------
+   2. MINIMAL SAAS THEME (Dark & Light)
+   ------------------------------------------------------------------------- */
+[data-ui-style="minimal-saas"] {
+  --font-heading-active: var(--font-ui, var(--font-geist-sans), sans-serif);
+  --radius-card: 10px;
+  --radius-btn: 6px;
+}
+
+[data-ui-style="minimal-saas"][data-color-mode="dark"] {
+  --color-canvas: #0B0F19;
+  --color-surface: #111827;
+  --color-elevated: #1F2937;
+  --color-border: #374151;
+  --color-border-subtle: #1F2937;
+  --color-primary: #3B82F6;
+  --color-primary-hover: #2563EB;
+  --color-accent: #60A5FA;
+  --color-accent-hover: #93C5FD;
+  --color-pink: #EF4444;
+  --color-mint: #10B981;
+  --color-text-main: #F9FAFB;
+  --color-text-muted: #9CA3AF;
+  --color-text-dim: #6B7280;
+  --color-ring: #3B82F6;
+  --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
+  --shadow-btn: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+}
+
+[data-ui-style="minimal-saas"][data-color-mode="light"] {
+  --color-canvas: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-elevated: #F1F5F9;
+  --color-border: #E2E8F0;
+  --color-border-subtle: #F1F5F9;
+  --color-primary: #2563EB;
+  --color-primary-hover: #1D4ED8;
+  --color-accent: #3B82F6;
+  --color-accent-hover: #1D4ED8;
+  --color-pink: #DC2626;
+  --color-mint: #059669;
+  --color-text-main: #0F172A;
+  --color-text-muted: #475569;
+  --color-text-dim: #94A3B8;
+  --color-ring: #2563EB;
+  --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --shadow-btn: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+/* -------------------------------------------------------------------------
+   3. STUDIO / CRM THEME (Dark & Light)
+   ------------------------------------------------------------------------- */
+[data-ui-style="studio-crm"] {
+  --font-heading-active: var(--font-code, var(--font-geist-mono), monospace);
+  --radius-card: 2px;
+  --radius-btn: 2px;
+}
+
+[data-ui-style="studio-crm"][data-color-mode="dark"] {
+  --color-canvas: #0A0A0A;
+  --color-surface: #141414;
+  --color-elevated: #1F1F1F;
+  --color-border: #2A2A2A;
+  --color-border-subtle: #1C1C1C;
+  --color-primary: #10B981;
+  --color-primary-hover: #059669;
+  --color-accent: #F59E0B;
+  --color-accent-hover: #D97706;
+  --color-pink: #F43F5E;
+  --color-mint: #10B981;
+  --color-text-main: #EDEDED;
+  --color-text-muted: #A1A1AA;
+  --color-text-dim: #71717A;
+  --color-ring: #10B981;
+  --shadow-card: 0 1px 1px 0 rgba(0, 0, 0, 0.4);
+  --shadow-btn: 0 1px 1px 0 rgba(0, 0, 0, 0.3);
+}
+
+[data-ui-style="studio-crm"][data-color-mode="light"] {
+  --color-canvas: #F4F4F5;
+  --color-surface: #FFFFFF;
+  --color-elevated: #E4E4E7;
+  --color-border: #D4D4D8;
+  --color-border-subtle: #E4E4E7;
+  --color-primary: #059669;
+  --color-primary-hover: #047857;
+  --color-accent: #D97706;
+  --color-accent-hover: #B45309;
+  --color-pink: #E11D48;
+  --color-mint: #059669;
+  --color-text-main: #18181B;
+  --color-text-muted: #52525B;
+  --color-text-dim: #71717A;
+  --color-ring: #059669;
+  --shadow-card: 0 1px 1px 0 rgba(0, 0, 0, 0.08);
+  --shadow-btn: 0 1px 1px 0 rgba(0, 0, 0, 0.05);
+}
+
+/* -------------------------------------------------------------------------
+   HIGH CONTRAST MODE (WCAG AAA)
+   ------------------------------------------------------------------------- */
+[data-contrast="high"][data-color-mode="dark"] {
+  --color-canvas: #000000 !important;
+  --color-surface: #0A0A0A !important;
+  --color-elevated: #121212 !important;
+  --color-border: #FFFFFF !important;
+  --color-border-subtle: #D4D4D4 !important;
+  --color-text-main: #FFFFFF !important;
+  --color-text-muted: #E5E5E5 !important;
+  --color-text-dim: #D4D4D4 !important;
+  --color-ring: #FFFF00 !important;
+  --shadow-card: none !important;
+  --shadow-btn: none !important;
+}
+
+[data-contrast="high"][data-color-mode="light"] {
+  --color-canvas: #FFFFFF !important;
+  --color-surface: #FFFFFF !important;
+  --color-elevated: #F4F4F5 !important;
+  --color-border: #000000 !important;
+  --color-border-subtle: #262626 !important;
+  --color-text-main: #000000 !important;
+  --color-text-muted: #171717 !important;
+  --color-text-dim: #262626 !important;
+  --color-ring: #0000FF !important;
+  --shadow-card: none !important;
+  --shadow-btn: none !important;
+}
+
+/* -------------------------------------------------------------------------
+   LINE HEIGHT OVERRIDES
+   ------------------------------------------------------------------------- */
+[data-line-height="compact"] {
+  --line-height-base: 1.25;
+}
+
+[data-line-height="normal"] {
+  --line-height-base: 1.5;
+}
+
+[data-line-height="comfortable"] {
+  --line-height-base: 1.75;
+}
+
+/* -------------------------------------------------------------------------
+   FONT FAMILY OVERRIDES
+   ------------------------------------------------------------------------- */
+[data-ui-font="geist-sans"] {
+  --font-ui: var(--font-geist-sans), sans-serif;
+}
+[data-ui-font="inter"] {
+  --font-ui: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+[data-ui-font="pixelify-sans"] {
+  --font-ui: var(--font-pixelify), monospace;
+}
+[data-ui-font="system-sans"] {
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+[data-editor-font="geist-mono"] {
+  --font-code: var(--font-geist-mono), monospace;
+}
+[data-editor-font="consolas"] {
+  --font-code: Consolas, "Liberation Mono", Menlo, Courier, monospace;
+}
+[data-editor-font="monospace"] {
+  --font-code: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* -------------------------------------------------------------------------
+   REDUCED MOTION
+   ------------------------------------------------------------------------- */
+[data-reduced-motion="true"] *,
+[data-reduced-motion="true"] *::before,
+[data-reduced-motion="true"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Hide corner marks in non-arcade themes */
+[data-ui-style="minimal-saas"] .pixel-corner-mark,
+[data-ui-style="studio-crm"] .pixel-corner-mark {
+  display: none !important;
+}
+
+/* Hide pixel CRT scanlines in minimal & studio modes */
+[data-ui-style="minimal-saas"] .scanlines,
+[data-ui-style="studio-crm"] .scanlines {
+  background: none !important;
+}
+
+/* =========================================================================
+   BASE STYLES
+   ========================================================================= */
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-    font-family: var(--font-geist-sans), sans-serif;
-  }
   html {
-    font-family: var(--font-geist-sans), sans-serif;
+    font-size: var(--ui-font-scale, 100%);
+    line-height: var(--line-height-base, 1.5);
+    font-family: var(--font-ui, var(--font-geist-sans), sans-serif);
+    background-color: var(--color-canvas);
+    color: var(--color-text-main);
+  }
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-text-main);
+    font-family: var(--font-ui, var(--font-geist-sans), sans-serif);
+    line-height: var(--line-height-base, 1.5);
   }
 }
 
-/* Retro Pixel Utilities */
-.pixel-box {
-  box-shadow: 4px 4px 0px 0px #000000;
-}
-
-.pixel-box-sm {
-  box-shadow: 2px 2px 0px 0px #000000;
-}
-
-.pixel-box-cyan {
-  box-shadow: 4px 4px 0px 0px #000000, 0px 0px 14px 0px rgba(0, 240, 255, 0.25);
-}
-
-.pixel-box-purple {
-  box-shadow: 4px 4px 0px 0px #000000, 0px 0px 16px 0px rgba(158, 0, 255, 0.3);
-}
-
-.pixel-box-pink {
-  box-shadow: 4px 4px 0px 0px #000000, 0px 0px 14px 0px rgba(255, 0, 122, 0.25);
-}
-
-/* Authentic CRT scanlines effect */
-.scanlines {
-  background: linear-gradient(
-    rgba(18, 16, 38, 0) 50%, 
-    rgba(0, 0, 0, 0.25) 50%
-  ), linear-gradient(
-    90deg,
-    rgba(255, 0, 0, 0.03),
-    rgba(0, 255, 0, 0.01),
-    rgba(0, 0, 255, 0.03)
-  );
-  background-size: 100% 3px, 6px 100%;
-}
-
-/* Custom retro scrollbar */
+/* Custom retro scrollbar matching active theme tokens */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #090514;
-  border-left: 1px solid #2E1A57;
+  background: var(--color-canvas);
+  border-left: 1px solid var(--color-border);
 }
 ::-webkit-scrollbar-thumb {
-  background: #2E1A57;
-  border: 1px solid #120A24;
+  background: var(--color-border);
+  border: 1px solid var(--color-surface);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #9E00FF;
+  background: var(--color-primary);
 }
 
 @keyframes terminal-blink {
