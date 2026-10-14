@@ -84,7 +84,7 @@ export function SettingsView() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="settings-page space-y-6">
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-[var(--color-border)] pb-4">
         <div>
@@ -92,10 +92,10 @@ export function SettingsView() {
             Settings
           </h1>
           <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-            Manage local coder identity, inspect IndexedDB health, or reset device state.
+            Customize your workspace and manage your profile.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="settings-technical-badge flex items-center gap-2">
           <PixelBadge variant="purple" bracketed>
             LOCAL PARTITION: exeku_local_v1
           </PixelBadge>
@@ -177,6 +177,9 @@ export function SettingsView() {
         </div>
       </PixelCard>
 
+      {/* Advanced details remain available without overwhelming regular settings. */}
+      <details className="settings-advanced">
+        <summary>Advanced device settings <span>Local storage and reset</span></summary>
       {/* Storage Health & Locality Panel */}
       <PixelCard variant="default" className="p-5 sm:p-6 border-2 border-[var(--color-border)] space-y-4">
         <div className="flex flex-wrap gap-3 items-center justify-between border-b border-[var(--color-border)] pb-3">
@@ -265,6 +268,8 @@ export function SettingsView() {
           </PixelButton>
         </div>
       </PixelCard>
+
+      </details>
 
       {/* Edit Profile Dialog */}
       <ProfileEditDialog
