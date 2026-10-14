@@ -41,11 +41,7 @@ import type { ExecutionResult, SandboxHealth } from "@/types/execution";
 import type { JudgingResult } from "@/lib/judge/judging-service";
 import {
   Clock,
-  Terminal,
-  FileCode,
-  BookOpen,
   AlertTriangle,
-  Sparkles,
 } from "lucide-react";
 
 const LANGUAGE_ICONS: Record<PreferredLanguage, DotIconName> = {
@@ -81,6 +77,8 @@ export function WorkspaceView() {
 
   // Layout & Tabs
   const [mobileActivePane, setMobileActivePane] = useState<MobileActivePane>("code");
+  // Keeps Monaco mounted while letting students expand or restore the editor.
+  const [editorExpanded, setEditorExpanded] = useState(false);
   const [activeResultsTab, setActiveResultsTab] = useState<ResultsTab>("console");
 
   // Execution & Judging state
@@ -585,7 +583,7 @@ export function WorkspaceView() {
               : "border-transparent text-[var(--color-text-dim)] hover:text-[var(--color-text-main)]"
           }`}
         >
-          <BookOpen size={13} />
+          <DotIcon name="list" size={13} aria-hidden="true" />
           <span>PROBLEM</span>
         </button>
 
@@ -598,7 +596,7 @@ export function WorkspaceView() {
               : "border-transparent text-[var(--color-text-dim)] hover:text-[var(--color-text-main)]"
           }`}
         >
-          <FileCode size={13} />
+          <DotIcon name="file" size={13} aria-hidden="true" />
           <span>CODE</span>
           <span
             className={`w-1.5 h-1.5 rounded-full ${
@@ -616,7 +614,7 @@ export function WorkspaceView() {
               : "border-transparent text-[var(--color-text-dim)] hover:text-[var(--color-text-main)]"
           }`}
         >
-          <Terminal size={13} />
+          <DotIcon name="powershell" size={13} adaptive aria-hidden="true" />
           <span>RESULTS</span>
           {judgingResult && (
             <span
@@ -633,11 +631,12 @@ export function WorkspaceView() {
       </div>
 
       {/* Main Three-Pane Problem Lab Workspace */}
-      <div className="flex-1 min-h-0 xl:grid xl:grid-cols-[29%_minmax(0,1fr)_27%] xl:gap-3 flex flex-col overflow-hidden">
+      <div id="workspace-panes" data-editor-expanded={editorExpanded} className={`flex-1 min-h-0 xl:grid xl:gap-3 flex flex-col overflow-hidden ${editorExpanded ? "xl:grid-cols-[minmax(0,1fr)]" : "xl:grid-cols-[29%_minmax(0,1fr)_27%]"}`}>
         {/* LEFT PANE: Problem Statement */}
         <div
           className={`h-full min-h-0 ${
-            mobileActivePane === "problem" ? "flex flex-col flex-1" : "hidden xl:flex xl:flex-col"
+            mobileActivePane === "problem" ? "flex flex-col flex-1" : "hidden"
+          } ${editorExpanded ? "xl:hidden" : "xl:flex xl:flex-col"
           }`}
         >
           <ProblemPane
@@ -710,13 +709,38 @@ export function WorkspaceView() {
                 }`}
                 title="Toggle development demo utilities"
               >
-                <Sparkles size={10} />
+                <DotIcon name="stars" size={11} adaptive aria-hidden="true" />
                 <span>DEMO</span>
               </button>
             </div>
 
             {/* Right: Actions */}
             <div className="flex items-center gap-1.5 flex-wrap">
+              <button
+                type="button"
+                aria-label={editorExpanded ? "Restore problem and results panels" : "Expand code editor"}
+                aria-pressed={editorExpanded}
+                aria-controls="workspace-panes"
+                title={editorExpanded ? "Restore three-panel workspace" : "Expand the editor to use the full workspace"}
+                onClick={() => setEditorExpanded((current) => !current)}
+                className="hidden xl:inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 py-2 text-xs font-medium text-[var(--color-text-main)] hover:bg-[var(--color-elevated)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ring)]"
+              >
+                <DotIcon name={editorExpanded ? "list" : "box"} size={14} aria-hidden="true" />
+                {editorExpanded ? "Restore panels" : "Expand editor"}
+              </button>
+              {editorExpanded && (executionResult || judgingResult) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditorExpanded(false);
+                    setActiveResultsTab(judgingResult ? "results" : "console");
+                  }}
+                  className="hidden xl:inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] border border-[var(--color-border)] px-2.5 py-2 text-xs font-medium text-[var(--color-text-main)] hover:bg-[var(--color-elevated)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ring)]"
+                >
+                  <DotIcon name="circleCheck" size={14} aria-hidden="true" />
+                  View results
+                </button>
+              )}
               <PixelButton
                 variant="ghost"
                 size="sm"
@@ -745,7 +769,8 @@ export function WorkspaceView() {
                 disabled={isRunning}
                 className="text-[0.6875rem] py-1 px-2.5 font-heading"
               >
-                {isRunning ? "RUNNING..." : "RUN ▶"}
+                <DotIcon name="circlePlay" size={14} aria-hidden="true" />
+                {isRunning ? "RUNNING..." : "RUN"}
               </PixelButton>
 
               {/* Submit Solution Button */}
@@ -757,7 +782,8 @@ export function WorkspaceView() {
                   disabled={isSubmitting}
                   className="text-[0.6875rem] py-1 px-2.5 font-heading"
                 >
-                  {isSubmitting ? "JUDGING..." : "SUBMIT ✔"}
+                  <DotIcon name="circleCheck" size={14} aria-hidden="true" />
+                  {isSubmitting ? "JUDGING..." : "SUBMIT"}
                 </PixelButton>
               )}
             </div>
@@ -776,7 +802,8 @@ export function WorkspaceView() {
         {/* RIGHT PANE: Execution Console, Stdin, Test Results */}
         <div
           className={`h-full min-h-0 ${
-            mobileActivePane === "results" ? "flex flex-col flex-1" : "hidden xl:flex xl:flex-col"
+            mobileActivePane === "results" ? "flex flex-col flex-1" : "hidden"
+          } ${editorExpanded ? "xl:hidden" : "xl:flex xl:flex-col"
           }`}
         >
           <ResultsPane
