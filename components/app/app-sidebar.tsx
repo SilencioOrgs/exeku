@@ -9,6 +9,8 @@ import { PixelBadge } from "@/components/retro/pixel-badge";
 import { DotIcon, type DotIconName } from "@/components/retro/dot-icon";
 import { cn } from "@/lib/utils";
 
+import { useChallengeSession } from "@/hooks/use-challenge-session";
+
 export interface NavItem {
   id: string;
   label: string;
@@ -41,21 +43,22 @@ export function AppSidebar({
   className,
 }: AppSidebarProps) {
   const pathname = usePathname();
+  const { isTimedActive, requestNavigation, formattedTime, isWarningTime, session } = useChallengeSession();
 
   return (
     <aside
       aria-label="Application sidebar"
       className={cn(
-        "app-sidebar bg-[var(--color-surface)] border-r-2 border-[var(--color-border)] flex flex-col justify-between transition-all duration-200 select-none z-30 shrink-0",
+        "app-sidebar bg-[var(--color-surface)] border-r-2 border-[var(--color-border)] flex flex-col justify-between transition-all duration-200 select-none z-30 shrink-0 h-full",
         collapsed ? "w-16" : "w-60",
         className
       )}
     >
       {/* Top Section: User Profile Snapshot */}
-      <div>
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
         <div
           className={cn(
-            "p-3.5 border-b-2 border-[var(--color-border)] flex items-center transition-all",
+            "p-3.5 border-b-2 border-[var(--color-border)] flex items-center transition-all shrink-0",
             collapsed ? "justify-center" : "gap-3"
           )}
         >
@@ -90,8 +93,49 @@ export function AppSidebar({
           )}
         </div>
 
+        {/* Timed Challenge Active Ribbon */}
+        {isTimedActive && (
+          <div
+            className={cn(
+              "px-3 py-2 bg-[var(--color-elevated)] border-b-2 border-[var(--color-accent)] font-mono shrink-0 transition-colors",
+              isWarningTime ? "border-[var(--color-pink)] bg-[var(--color-pink)]/10" : ""
+            )}
+          >
+            <div className="flex items-center justify-between gap-1">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span
+                  className={cn(
+                    "w-2 h-2 rounded-full shrink-0",
+                    isWarningTime
+                      ? "bg-[var(--color-pink)] animate-ping"
+                      : "bg-[var(--color-mint)] animate-pulse"
+                  )}
+                />
+                {!collapsed && (
+                  <span className="text-[0.625rem] font-heading font-bold text-[var(--color-accent)] uppercase tracking-wider truncate">
+                    CHALLENGE
+                  </span>
+                )}
+              </div>
+              <span
+                className={cn(
+                  "font-mono font-bold tabular-nums text-xs",
+                  isWarningTime ? "text-[var(--color-pink)] animate-pulse" : "text-[var(--color-mint)]"
+                )}
+              >
+                {formattedTime}
+              </span>
+            </div>
+            {!collapsed && session?.problemTitle && (
+              <span className="block text-[0.625rem] text-[var(--color-text-muted)] truncate mt-0.5">
+                {session.problemTitle}
+              </span>
+            )}
+          </div>
+        )}
+
         {/* Navigation Item List */}
-        <nav className="p-2 space-y-1" aria-label="Main navigation">
+        <nav className="p-2 space-y-1 flex-1 overflow-y-auto" aria-label="Main navigation">
           {!collapsed && <p className="modern-nav-group">Workspace</p>}
           {NAV_ITEMS.map((item) => {
             const isActive =
@@ -104,7 +148,13 @@ export function AppSidebar({
                 key={item.id}
                 href={item.href}
                 aria-current={isActive ? "page" : undefined}
-                onClick={onNavigate}
+                onClick={(e) => {
+                  if (!requestNavigation(item.href)) {
+                    e.preventDefault();
+                    return;
+                  }
+                  onNavigate?.();
+                }}
                 title={collapsed ? `${item.index} ${item.label}` : undefined}
                 className={cn(
                   "appearance-nav-item min-h-11 group relative flex items-center gap-3 px-3 py-2.5 font-mono text-xs transition-colors outline-none",

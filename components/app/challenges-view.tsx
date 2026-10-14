@@ -2,11 +2,14 @@
 
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useProfile } from "@/hooks/use-profile";
+import { useChallengeSession } from "@/hooks/use-challenge-session";
 import { PixelCard } from "@/components/retro/pixel-card";
 import { PixelButton } from "@/components/retro/pixel-button";
 import { PixelBadge } from "@/components/retro/pixel-badge";
 import { DotIcon, type DotIconName } from "@/components/retro/dot-icon";
+import { Clock } from "lucide-react";
 import {
   ALL_SUPPORTED_LANGUAGES,
   LANGUAGE_DISPLAY_NAMES,
@@ -35,11 +38,18 @@ const DIFFICULTY_TABS: { id: FilterTier; label: string }[] = [
 ];
 
 export function ChallengesView() {
+  const router = useRouter();
+  const challenge = useChallengeSession();
   const { profile } = useProfile();
   const [selectedLanguage, setSelectedLanguage] = useState<PreferredLanguage | "all">("all");
   const [selectedTier, setSelectedTier] = useState<FilterTier>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [inspectProblemId, setInspectProblemId] = useState<string | null>(null);
+
+  const handleStartTimedChallenge = (problemId: string, problemTitle: string) => {
+    challenge.startChallenge(problemId, problemTitle);
+    router.push(`/app/workspace?problem=${encodeURIComponent(problemId)}`);
+  };
 
   // Filter problems based on criteria
   const problems = useMemo(() => {
@@ -73,6 +83,23 @@ export function ChallengesView() {
           </PixelBadge>
         </div>
       </div>
+
+      {/* Active Timed Challenge Banner */}
+      {challenge.isTimedActive && (
+        <div className="p-3 bg-[var(--color-canvas)] border-2 border-[var(--color-accent)] flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2 font-mono text-xs text-[var(--color-text-main)]">
+            <Clock size={16} className="text-[var(--color-accent)] animate-pulse" />
+            <span>
+              ACTIVE CHALLENGE: <strong>{challenge.session?.problemTitle}</strong> ({challenge.formattedTime} left)
+            </span>
+          </div>
+          <Link href={`/app/workspace?problem=${encodeURIComponent(challenge.session?.problemId ?? "")}`}>
+            <PixelButton variant="cyan" size="sm" className="text-xs">
+              RESUME CHALLENGE &rarr;
+            </PixelButton>
+          </Link>
+        </div>
+      )}
 
       {/* Filter and Search Bar */}
       <PixelCard variant="default" className="p-4 border-2 border-[var(--color-border)] space-y-4">
@@ -221,6 +248,16 @@ export function ChallengesView() {
                     >
                       STATEMENT 👁
                     </PixelButton>
+
+                    <button
+                      type="button"
+                      onClick={() => handleStartTimedChallenge(prob.id, prob.title)}
+                      className="px-2.5 py-1.5 border border-[var(--color-pink)] text-[var(--color-pink)] hover:bg-[var(--color-pink)]/10 font-heading text-xs cursor-pointer transition-colors flex items-center gap-1"
+                      title="Start a 15-minute timed challenge session"
+                    >
+                      <Clock size={12} />
+                      <span>TIMED ⏱</span>
+                    </button>
 
                     <Link href={`/app/workspace?problem=${encodeURIComponent(prob.id)}`}>
                       <PixelButton variant="primary" size="sm" className="text-xs">
@@ -374,6 +411,18 @@ export function ChallengesView() {
                 >
                   CLOSE
                 </PixelButton>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleStartTimedChallenge(activeProblemDetail.id, activeProblemDetail.title);
+                    setInspectProblemId(null);
+                  }}
+                  className="px-3 py-1.5 border border-[var(--color-pink)] text-[var(--color-pink)] hover:bg-[var(--color-pink)]/10 font-heading text-xs cursor-pointer transition-colors flex items-center gap-1.5"
+                >
+                  <Clock size={13} />
+                  <span>START TIMED CHALLENGE ⏱</span>
+                </button>
 
                 <Link href={`/app/workspace?problem=${encodeURIComponent(activeProblemDetail.id)}`}>
                   <PixelButton variant="primary" size="sm">

@@ -8,6 +8,8 @@ import { PixelBadge } from "@/components/retro/pixel-badge";
 import { PixelButton } from "@/components/retro/pixel-button";
 import { Menu, ArrowUpRight } from "lucide-react";
 
+import { useChallengeSession } from "@/hooks/use-challenge-session";
+
 export interface AppTopbarProps {
   profile: LocalProfile | null;
   onToggleMobileMenu: () => void;
@@ -24,6 +26,7 @@ const ROUTE_LABELS: Record<string, string> = {
 export function AppTopbar({ profile, onToggleMobileMenu }: AppTopbarProps) {
   const pathname = usePathname();
   const currentView = ROUTE_LABELS[pathname] || "DASHBOARD";
+  const { isTimedActive, formattedTime, isWarningTime, requestNavigation } = useChallengeSession();
 
   const langLabel = profile?.preferredLanguage?.toUpperCase() || "PYTHON 3";
   const levelTier =
@@ -58,6 +61,11 @@ export function AppTopbar({ profile, onToggleMobileMenu }: AppTopbarProps) {
           <Link
             href="/"
             title="Return to Landing Page"
+            onClick={(e) => {
+              if (!requestNavigation("/")) {
+                e.preventDefault();
+              }
+            }}
             className="flex items-center gap-1.5 text-[var(--color-text-main)] hover:text-[var(--color-accent)] transition-colors outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-accent)]"
           >
             <div className="w-5 h-5 bg-[var(--color-primary)] text-[var(--color-primary-foreground)] border border-[var(--color-accent)] flex items-center justify-center font-heading text-[0.625rem] font-bold [box-shadow:var(--shadow-btn)]">
@@ -76,8 +84,18 @@ export function AppTopbar({ profile, onToggleMobileMenu }: AppTopbarProps) {
         </div>
       </div>
 
-      {/* Right: Machine Telemetry & External Jump */}
+      {/* Center/Right: Timed Challenge Banner + Machine Telemetry */}
       <div className="flex items-center gap-2 sm:gap-3">
+        {isTimedActive && (
+          <PixelBadge
+            variant={isWarningTime ? "pink" : "mint"}
+            bracketed
+            className="font-mono text-xs py-1 px-2.5 animate-pulse"
+          >
+            ⏱ CHALLENGE: {formattedTime}
+          </PixelBadge>
+        )}
+
         <div className="hidden sm:flex items-center gap-2">
           <PixelBadge variant="cyan" bracketed={false} className="text-[0.625rem] py-0 px-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-pulse inline-block mr-1" />
@@ -93,7 +111,15 @@ export function AppTopbar({ profile, onToggleMobileMenu }: AppTopbarProps) {
           </PixelBadge>
         </div>
 
-        <Link href="/" title="View Marketing Landing Page">
+        <Link
+          href="/"
+          title="View Marketing Landing Page"
+          onClick={(e) => {
+            if (!requestNavigation("/")) {
+              e.preventDefault();
+            }
+          }}
+        >
           <PixelButton variant="ghost" size="sm" className="text-xs px-2.5 py-1">
             <span className="hidden sm:inline">LANDING</span>
             <ArrowUpRight className="w-3.5 h-3.5 text-[var(--color-accent)]" />

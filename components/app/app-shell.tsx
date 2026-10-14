@@ -61,7 +61,7 @@ export function AppShell({ children }: AppShellProps) {
   const blocked = isLoading || !profile;
 
   return (
-    <div className="app-shell min-h-screen bg-[var(--color-canvas)] text-[var(--color-text-main)] flex flex-col overflow-hidden relative">
+    <div className="app-shell h-screen max-h-screen bg-[var(--color-canvas)] text-[var(--color-text-main)] flex flex-col overflow-hidden relative">
       {blocked && (
       <div role="status" aria-live="polite" className="min-h-screen bg-[var(--color-canvas)] flex flex-col items-center justify-center p-4">
         <div className="flex flex-col items-center gap-4">
@@ -89,13 +89,13 @@ export function AppShell({ children }: AppShellProps) {
       />}
 
       {/* Main Workspace Frame */}
-      <div className="flex-1 flex min-w-0 overflow-hidden relative z-10">
+      <div className="flex-1 flex min-w-0 min-h-0 overflow-hidden relative z-10">
         {/* Desktop Collapsible Sidebar */}
         {!blocked && <AppSidebar
           profile={profile}
           collapsed={collapsed}
           onToggleCollapse={toggleCollapse}
-          className="hidden lg:flex"
+          className="hidden lg:flex h-full shrink-0"
         />}
 
         {/* Mobile Slide-Out Drawer with Backdrop */}
@@ -119,9 +119,9 @@ export function AppShell({ children }: AppShellProps) {
           hidden={blocked}
           inert={blocked}
           tabIndex={-1}
-          className="flex-1 min-w-0 overflow-y-auto min-h-0 focus:outline-none"
+          className="flex-1 min-w-0 h-full overflow-y-auto min-h-0 focus:outline-none"
         >
-          <div className="app-content">{children}</div>
+          <div className="app-content min-h-full">{children}</div>
         </main>
       </div>
     </div>

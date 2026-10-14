@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAppearance } from "@/hooks/use-appearance";
-import { DEFAULT_APPEARANCE_PREFERENCES, normalizeAppearancePreferences, type AppearancePreferences, type UIStyle } from "@/types/appearance";
+import { DEFAULT_APPEARANCE_PREFERENCES, normalizeAppearancePreferences, type AppearancePreferences, type UIStyle, type ColorPalette } from "@/types/appearance";
 import { selectStylePreferences, restoreStyleDefaults } from "@/lib/appearance-styles";
 
 export function useAppearanceDraft() {
@@ -24,13 +24,16 @@ export function useAppearanceDraft() {
   };
   const selectStyle = (style: UIStyle) => {
     const next = selectStylePreferences(draftPreferences, style, densityOverride);
-    setEdits(current => ({ ...current, uiStyle: next.uiStyle, density: next.density }));
+    setEdits(current => ({ ...current, uiStyle: next.uiStyle, colorPalette: next.colorPalette, density: next.density }));
+  };
+  const selectPalette = (palette: ColorPalette) => {
+    setEdits(current => ({ ...current, colorPalette: palette }));
   };
   const discard = () => { setEdits({}); setDensityOverride(false); };
   const reset = () => { setEdits({ ...DEFAULT_APPEARANCE_PREFERENCES }); setDensityOverride(false); };
   const restoreDefaults = () => {
     const defaults = restoreStyleDefaults(draftPreferences);
-    setEdits(current => ({ ...current, uiFontFamily: defaults.uiFontFamily, uiFontScale: defaults.uiFontScale, lineHeight: defaults.lineHeight, density: defaults.density }));
+    setEdits(current => ({ ...current, uiFontFamily: defaults.uiFontFamily, uiFontScale: defaults.uiFontScale, lineHeight: defaults.lineHeight, density: defaults.density, colorPalette: defaults.colorPalette }));
     setDensityOverride(false);
   };
   const apply = async () => {
@@ -42,5 +45,5 @@ export function useAppearanceDraft() {
       return saved;
     } finally { setIsApplying(false); }
   };
-  return { savedPreferences, draftPreferences, isDirty, isApplying, persistenceStatus, updateDraft, selectStyle, discard, reset, restoreDefaults, apply };
+  return { savedPreferences, draftPreferences, isDirty, isApplying, persistenceStatus, updateDraft, selectStyle, selectPalette, discard, reset, restoreDefaults, apply };
 }

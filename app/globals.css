@@ -226,6 +226,239 @@
 }
 
 /* -------------------------------------------------------------------------
+   PALETTE OVERRIDES (5 distinct palettes per style)
+   ------------------------------------------------------------------------- */
+/* 1. Pixel Arcade Palettes */
+[data-ui-style="pixel-arcade"][data-palette="neon-violet"][data-color-mode="dark"] {
+  --color-primary: #8A2BE2;
+  --color-primary-hover: #9B45F0;
+  --color-accent: #00FFCC;
+  --color-accent-hover: #33FFD6;
+  --color-ring: #00FFCC;
+}
+[data-ui-style="pixel-arcade"][data-palette="neon-violet"][data-color-mode="light"] {
+  --color-primary: #7B1FA2;
+  --color-primary-hover: #6A1B9A;
+  --color-accent: #00897B;
+  --color-accent-hover: #00796B;
+  --color-ring: #00897B;
+}
+[data-ui-style="pixel-arcade"][data-palette="pastel-dream"][data-color-mode="dark"] {
+  --color-primary: #A855F7;
+  --color-primary-hover: #9333EA;
+  --color-accent: #38BDF8;
+  --color-accent-hover: #0EA5E9;
+  --color-ring: #38BDF8;
+}
+[data-ui-style="pixel-arcade"][data-palette="pastel-dream"][data-color-mode="light"] {
+  --color-primary: #7E22CE;
+  --color-primary-hover: #6B21A8;
+  --color-accent: #0284C7;
+  --color-accent-hover: #0369A1;
+  --color-ring: #7E22CE;
+}
+[data-ui-style="pixel-arcade"][data-palette="mint-terminal"][data-color-mode="dark"] {
+  --color-primary: #00FF9D;
+  --color-primary-hover: #00CC7E;
+  --primary-foreground: #090514;
+  --color-accent: #00F0FF;
+  --color-accent-hover: #38BDF8;
+  --color-ring: #00FF9D;
+}
+[data-ui-style="pixel-arcade"][data-palette="mint-terminal"][data-color-mode="light"] {
+  --color-primary: #047857;
+  --color-primary-hover: #065F46;
+  --primary-foreground: #FFFFFF;
+  --color-accent: #0891B2;
+  --color-accent-hover: #0E7490;
+  --color-ring: #047857;
+}
+[data-ui-style="pixel-arcade"][data-palette="sunset-arcade"][data-color-mode="dark"] {
+  --color-primary: #FF6B4A;
+  --color-primary-hover: #F95738;
+  --color-accent: #FFB703;
+  --color-accent-hover: #FB8500;
+  --color-ring: #FF6B4A;
+}
+[data-ui-style="pixel-arcade"][data-palette="sunset-arcade"][data-color-mode="light"] {
+  --color-primary: #C2410C;
+  --color-primary-hover: #9A3412;
+  --color-accent: #B45309;
+  --color-accent-hover: #92400E;
+  --color-ring: #C2410C;
+}
+[data-ui-style="pixel-arcade"][data-palette="ocean-pixel"][data-color-mode="dark"] {
+  --color-primary: #3B82F6;
+  --color-primary-hover: #2563EB;
+  --color-accent: #00F0FF;
+  --color-accent-hover: #38BDF8;
+  --color-ring: #00F0FF;
+}
+[data-ui-style="pixel-arcade"][data-palette="ocean-pixel"][data-color-mode="light"] {
+  --color-primary: #1D4ED8;
+  --color-primary-hover: #1E40AF;
+  --color-accent: #0284C7;
+  --color-accent-hover: #0369A1;
+  --color-ring: #1D4ED8;
+}
+
+/* 2. Clarity Palettes */
+[data-ui-style="minimal-saas"][data-palette="sapphire"][data-color-mode="dark"] {
+  --color-primary: #3B82F6;
+  --color-primary-hover: #2563EB;
+  --color-accent: #06B6D4;
+  --color-accent-hover: #0891B2;
+  --color-ring: #3B82F6;
+}
+[data-ui-style="minimal-saas"][data-palette="sapphire"][data-color-mode="light"] {
+  --color-primary: #2563EB;
+  --color-primary-hover: #1D4ED8;
+  --color-accent: #0284C7;
+  --color-accent-hover: #0369A1;
+  --color-ring: #2563EB;
+}
+[data-ui-style="minimal-saas"][data-palette="lavender"][data-color-mode="dark"] {
+  --color-primary: #8B5CF6;
+  --color-primary-hover: #7C3AED;
+  --color-accent: #C4B5FD;
+  --color-accent-hover: #A78BFA;
+  --color-ring: #8B5CF6;
+}
+[data-ui-style="minimal-saas"][data-palette="lavender"][data-color-mode="light"] {
+  --color-primary: #6D28D9;
+  --color-primary-hover: #5B21B6;
+  --color-accent: #6D28D9;
+  --color-accent-hover: #5B21B6;
+  --color-ring: #6D28D9;
+}
+[data-ui-style="minimal-saas"][data-palette="forest"][data-color-mode="dark"] {
+  --color-primary: #059669;
+  --color-primary-hover: #047857;
+  --color-accent: #6EE7B7;
+  --color-accent-hover: #34D399;
+  --color-ring: #059669;
+}
+[data-ui-style="minimal-saas"][data-palette="forest"][data-color-mode="light"] {
+  --color-primary: #047857;
+  --color-primary-hover: #065F46;
+  --color-accent: #047857;
+  --color-accent-hover: #065F46;
+  --color-ring: #047857;
+}
+[data-ui-style="minimal-saas"][data-palette="rose"][data-color-mode="dark"] {
+  --color-primary: #E11D48;
+  --color-primary-hover: #BE123C;
+  --color-accent: #FDA4AF;
+  --color-accent-hover: #FB7185;
+  --color-ring: #E11D48;
+}
+[data-ui-style="minimal-saas"][data-palette="rose"][data-color-mode="light"] {
+  --color-primary: #BE123C;
+  --color-primary-hover: #9F1239;
+  --color-accent: #BE123C;
+  --color-accent-hover: #9F1239;
+  --color-ring: #BE123C;
+}
+[data-ui-style="minimal-saas"][data-palette="monochrome"][data-color-mode="dark"] {
+  --color-primary: #9CA3AF;
+  --color-primary-hover: #D1D5DB;
+  --primary-foreground: #0F172A;
+  --color-accent: #E5E7EB;
+  --color-accent-hover: #F3F4F6;
+  --color-ring: #9CA3AF;
+}
+[data-ui-style="minimal-saas"][data-palette="monochrome"][data-color-mode="light"] {
+  --color-primary: #1F2937;
+  --color-primary-hover: #111827;
+  --primary-foreground: #FFFFFF;
+  --color-accent: #374151;
+  --color-accent-hover: #1F2937;
+  --color-ring: #1F2937;
+}
+
+/* 3. Command Palettes */
+[data-ui-style="studio-crm"][data-palette="emerald-console"][data-color-mode="dark"] {
+  --color-primary: #10B981;
+  --color-primary-hover: #059669;
+  --primary-foreground: #022C22;
+  --color-accent: #064E3B;
+  --color-accent-hover: #065F46;
+  --color-ring: #10B981;
+}
+[data-ui-style="studio-crm"][data-palette="emerald-console"][data-color-mode="light"] {
+  --color-primary: #047857;
+  --color-primary-hover: #065F46;
+  --primary-foreground: #FFFFFF;
+  --color-accent: #064E3B;
+  --color-accent-hover: #022C22;
+  --color-ring: #047857;
+}
+[data-ui-style="studio-crm"][data-palette="amber-terminal"][data-color-mode="dark"] {
+  --color-primary: #F59E0B;
+  --color-primary-hover: #D97706;
+  --primary-foreground: #18181B;
+  --color-accent: #FCD34D;
+  --color-accent-hover: #FBBF24;
+  --color-ring: #F59E0B;
+}
+[data-ui-style="studio-crm"][data-palette="amber-terminal"][data-color-mode="light"] {
+  --color-primary: #B45309;
+  --color-primary-hover: #92400E;
+  --primary-foreground: #FFFFFF;
+  --color-accent: #B45309;
+  --color-accent-hover: #92400E;
+  --color-ring: #B45309;
+}
+[data-ui-style="studio-crm"][data-palette="steel-blue"][data-color-mode="dark"] {
+  --color-primary: #0EA5E9;
+  --color-primary-hover: #0284C7;
+  --primary-foreground: #0F172A;
+  --color-accent: #7DD3FC;
+  --color-accent-hover: #38BDF8;
+  --color-ring: #0EA5E9;
+}
+[data-ui-style="studio-crm"][data-palette="steel-blue"][data-color-mode="light"] {
+  --color-primary: #0369A1;
+  --color-primary-hover: #075985;
+  --primary-foreground: #FFFFFF;
+  --color-accent: #0369A1;
+  --color-accent-hover: #075985;
+  --color-ring: #0369A1;
+}
+[data-ui-style="studio-crm"][data-palette="graphite"][data-color-mode="dark"] {
+  --color-primary: #94A3B8;
+  --color-primary-hover: #CBD5E1;
+  --primary-foreground: #09090B;
+  --color-accent: #E2E8F0;
+  --color-accent-hover: #F1F5F9;
+  --color-ring: #94A3B8;
+}
+[data-ui-style="studio-crm"][data-palette="graphite"][data-color-mode="light"] {
+  --color-primary: #334155;
+  --color-primary-hover: #1E293B;
+  --primary-foreground: #FFFFFF;
+  --color-accent: #475569;
+  --color-accent-hover: #334155;
+  --color-ring: #334155;
+}
+[data-ui-style="studio-crm"][data-palette="crimson-control"][data-color-mode="dark"] {
+  --color-primary: #EF4444;
+  --color-primary-hover: #DC2626;
+  --primary-foreground: #FFFFFF;
+  --color-accent: #FCA5A5;
+  --color-accent-hover: #F87171;
+  --color-ring: #EF4444;
+}
+[data-ui-style="studio-crm"][data-palette="crimson-control"][data-color-mode="light"] {
+  --color-primary: #B91C1C;
+  --color-primary-hover: #991B1B;
+  --primary-foreground: #FFFFFF;
+  --color-accent: #B91C1C;
+  --color-accent-hover: #991B1B;
+  --color-ring: #B91C1C;
+}
+
+/* -------------------------------------------------------------------------
    HIGH CONTRAST MODE (measured text and control palettes)
    ------------------------------------------------------------------------- */
 [data-contrast="high"][data-color-mode="dark"] {
@@ -636,12 +869,21 @@ input::placeholder, textarea::placeholder { color: var(--color-text-muted); opac
 .theme-option { min-width: 0; cursor: pointer; }
 .theme-option-frame { display: block; height: 100%; border: 2px solid var(--studio-border); border-radius: var(--radius-card); overflow: hidden; background: var(--color-surface); }
 .theme-option input:checked + .theme-option-frame { border-color: var(--color-ring); }
-.theme-option input:focus-visible + .theme-option-frame { outline: 2px solid var(--color-ring); outline-offset: 4px; }
-.theme-option-preview { display: block; height: 13rem; overflow: hidden; pointer-events: none; border-bottom: 1px solid var(--color-border); }
-.theme-option-caption { display: grid; gap: 0.5rem; padding: 1rem; }
-.theme-option-title { display: flex; align-items: center; justify-content: space-between; font-weight: 650; font-size: 1rem; }
-.theme-option-description { color: var(--color-text-muted); font-size: 0.8125rem; line-height: 1.5; }
-.theme-option-state { color: var(--color-accent); font-size: 0.75rem; font-weight: 500; }
+.theme-option-preview { display: block; height: 6.75rem; overflow: hidden; pointer-events: none; border-bottom: 1px solid var(--color-border); }
+.theme-option-caption { display: grid; gap: 0.35rem; padding: 0.75rem; }
+.theme-option-title { display: flex; align-items: center; justify-content: space-between; font-weight: 650; font-size: 0.9375rem; }
+.theme-option-description { color: var(--color-text-muted); font-size: 0.75rem; line-height: 1.4; }
+.theme-option-state { color: var(--color-accent); font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.025em; }
+
+/* Palette selector styling */
+.palette-swatch-grid { display: grid; gap: 0.5rem; }
+.palette-swatch-card {
+  border-radius: var(--radius-btn);
+  transition: all 0.15s ease-out;
+}
+.palette-swatch-card:hover {
+  transform: translateY(-1px);
+}
 .appearance-workbench { display: grid; grid-template-columns: minmax(15rem, 0.8fr) minmax(0, 1.4fr); gap: 1.5rem; align-items: start; }
 .appearance-controls-panel, .appearance-preview-panel { min-width: 0; border: 1px solid var(--color-border); border-radius: var(--radius-card); background: var(--color-surface); overflow: hidden; }
 .appearance-control-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem; padding: 0.75rem; border-bottom: 1px solid var(--color-border); }

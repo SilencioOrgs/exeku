@@ -17,7 +17,7 @@ export function AppearancePreview({ preferences: p, miniature = false, mobile = 
   const editorDark = editor.theme.endsWith("dark");
   const contrast = editor.theme.includes("-hc-");
   return <div className={`appearance-preview ${miniature ? "preview-miniature" : ""}`} data-preview-mode={mobile ? "mobile" : "desktop"}
-    data-ui-style={p.uiStyle} data-color-mode={mode} data-contrast={p.contrastMode} data-density={p.density} data-ui-font={p.uiFontFamily} data-line-height={p.lineHeight} data-reduced-motion={String(reduced)}
+    data-ui-style={p.uiStyle} data-palette={p.colorPalette} data-color-mode={mode} data-contrast={p.contrastMode} data-density={p.density} data-ui-font={p.uiFontFamily} data-line-height={p.lineHeight} data-reduced-motion={String(reduced)}
     style={{ "--brightness-factor": p.contrastMode === "high" ? 1 : p.brightness / 100, fontSize: miniature ? "10px" : `${p.uiFontScale * 0.14}px` } as CSSProperties}>
     <aside className="preview-sidebar"><span className="preview-brand"><Code2 size="1.1em" /> exeku<span className="arcade-decoration">_</span></span><span className="preview-nav-label">Workspace</span>
       <span className="preview-nav active"><LayoutDashboard size="1em" /><span>Overview</span></span><span className="preview-nav"><ListChecks size="1em" /><span>Challenges</span></span><span className="preview-nav"><Terminal size="1em" /><span>Code editor</span></span><span className="preview-nav preview-settings"><Settings2 size="1em" /><span>Settings</span></span>

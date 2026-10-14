@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { type AppearancePreferences, type UIStyle, type ColorMode, type ContrastMode, DEFAULT_APPEARANCE_PREFERENCES, normalizeAppearancePreferences } from "@/types/appearance";
+import { type AppearancePreferences, type UIStyle, type ColorPalette, type ColorMode, type ContrastMode, DEFAULT_APPEARANCE_PREFERENCES, normalizeAppearancePreferences } from "@/types/appearance";
 import { appearanceRepository, cacheAppearanceSnapshot, APPEARANCE_STORAGE_KEY, APPEARANCE_SNAPSHOT_KEY, type PersistenceStatus } from "@/lib/storage/appearance-repository";
 import { profileRepository } from "@/lib/storage/profile-repository";
 
@@ -17,6 +17,7 @@ export interface AppearanceContextValue {
   updatePreferences: (updates: Partial<AppearancePreferences>) => Promise<boolean>;
   resetPreferences: () => Promise<boolean>;
   setStyle: (style: UIStyle) => Promise<boolean>;
+  setPalette: (palette: ColorPalette) => Promise<boolean>;
   setColorMode: (mode: ColorMode) => Promise<boolean>;
   setContrastMode: (contrast: ContrastMode) => Promise<boolean>;
 }
@@ -26,6 +27,7 @@ const AppearanceContext = createContext<AppearanceContextValue | null>(null);
 export function applyPreferencesToDom(prefs: AppearancePreferences, effectiveColorMode: "dark" | "light", systemReducedMotion: boolean) {
   const root = document.documentElement;
   root.dataset.uiStyle = prefs.uiStyle;
+  root.dataset.palette = prefs.colorPalette;
   root.dataset.colorMode = effectiveColorMode;
   root.dataset.contrast = prefs.contrastMode;
   root.dataset.uiFont = prefs.uiFontFamily;
@@ -155,6 +157,7 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
 
   const resetPreferences = useCallback(() => updatePreferences(DEFAULT_APPEARANCE_PREFERENCES), [updatePreferences]);
   const setStyle = useCallback((uiStyle: UIStyle) => updatePreferences({ uiStyle }), [updatePreferences]);
+  const setPalette = useCallback((colorPalette: ColorPalette) => updatePreferences({ colorPalette }), [updatePreferences]);
   const setColorMode = useCallback((colorMode: ColorMode) => updatePreferences({ colorMode }), [updatePreferences]);
   const setContrastMode = useCallback((contrastMode: ContrastMode) => updatePreferences({ contrastMode }), [updatePreferences]);
   const effectiveReducedMotion = preferences.reducedMotion === "system" ? systemReducedMotion : preferences.reducedMotion;
@@ -163,7 +166,7 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
     : persistenceStatus === "session" ? "Changes cannot be applied because persistent browser storage is unavailable."
     : persistenceStatus === "saving" ? "Saving appearance…"
     : persistenceStatus === "loading" ? "Loading appearance…" : "Appearance saved locally.";
-  const contextValue = useMemo<AppearanceContextValue>(() => ({ preferences, preferenceOwner, effectiveColorMode, effectiveReducedMotion, systemColorMode: systemDark ? "dark" : "light", systemReducedMotion, persistenceStatus, persistenceMessage, updatePreferences, resetPreferences, setStyle, setColorMode, setContrastMode }), [preferences, preferenceOwner, effectiveColorMode, effectiveReducedMotion, systemDark, systemReducedMotion, persistenceStatus, persistenceMessage, updatePreferences, resetPreferences, setStyle, setColorMode, setContrastMode]);
+  const contextValue = useMemo<AppearanceContextValue>(() => ({ preferences, preferenceOwner, effectiveColorMode, effectiveReducedMotion, systemColorMode: systemDark ? "dark" : "light", systemReducedMotion, persistenceStatus, persistenceMessage, updatePreferences, resetPreferences, setStyle, setPalette, setColorMode, setContrastMode }), [preferences, preferenceOwner, effectiveColorMode, effectiveReducedMotion, systemDark, systemReducedMotion, persistenceStatus, persistenceMessage, updatePreferences, resetPreferences, setStyle, setPalette, setColorMode, setContrastMode]);
   return <AppearanceContext.Provider value={contextValue}>{children}</AppearanceContext.Provider>;
 }
 

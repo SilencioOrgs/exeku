@@ -5,6 +5,7 @@ import { Monitor, Smartphone, RotateCcw, Check, Palette, Type, Code2, Accessibil
 import { useAppearance } from "@/hooks/use-appearance";
 import { useAppearanceDraft } from "@/hooks/use-appearance-draft";
 import { StyleSelector } from "@/components/appearance/style-selector";
+import { PaletteSelector } from "@/components/appearance/palette-selector";
 import { AppearancePreview } from "@/components/appearance/appearance-preview";
 import { STYLE_PRESENTATIONS } from "@/lib/appearance-styles";
 import { PixelButton } from "@/components/retro/pixel-button";
@@ -24,7 +25,7 @@ export function ColorModeChoice({ value, onChange }: { value: AppearancePreferen
 const groups = [{ id: "display", name: "Color & display", icon: Palette }, { id: "typography", name: "Typography", icon: Type }, { id: "editor", name: "Code editor", icon: Code2 }, { id: "accessibility", name: "Accessibility", icon: Accessibility }] as const;
 
 export function AppearanceStudio({ compact = false, onApplied }: { compact?: boolean; onApplied?: () => void } = {}) {
-  const { draftPreferences: p, savedPreferences, updateDraft, isDirty, isApplying, apply, discard, reset, restoreDefaults, selectStyle, persistenceStatus } = useAppearanceDraft();
+  const { draftPreferences: p, savedPreferences, updateDraft, isDirty, isApplying, apply, discard, reset, restoreDefaults, selectStyle, selectPalette, persistenceStatus } = useAppearanceDraft();
   const { persistenceMessage } = useAppearance();
   const [group, setGroup] = useState<typeof groups[number]["id"]>("display");
   const [mobilePreview, setMobilePreview] = useState(false);
@@ -36,6 +37,7 @@ export function AppearanceStudio({ compact = false, onApplied }: { compact?: boo
     {!compact && <header className="studio-header"><div><h2>Appearance Studio</h2><p>Personalize how Exeku looks and feels.</p></div><span className="studio-state">{isDirty ? "Unsaved changes" : "Saved appearance"}</span></header>}
     <fieldset disabled={busy} className="studio-fields">
       <StyleSelector preferences={p} savedStyle={savedPreferences.uiStyle} onSelect={selectStyle} />
+      <PaletteSelector uiStyle={p.uiStyle} activePalette={p.colorPalette} onSelectPalette={selectPalette} compact={compact} />
       <div className="appearance-workbench"><div className="appearance-controls-panel">
         {!compact && <nav aria-label="Appearance controls" className="appearance-control-nav">{groups.map(item => <button type="button" key={item.id} aria-pressed={group === item.id} aria-controls={panelId} onClick={() => setGroup(item.id)}><item.icon size={16} />{item.name}</button>)}</nav>}
         <div id={panelId} className="appearance-control-body">
@@ -52,7 +54,7 @@ export function AppearanceStudio({ compact = false, onApplied }: { compact?: boo
           </fieldset>}
           {!compact && group === "accessibility" && <fieldset className="appearance-control-group"><legend>Accessibility &amp; motion</legend><p>Keep focus, contrast, and motion comfortable for you.</p><Choice label="Contrast" value={p.contrastMode} onChange={contrastMode => updateDraft({ contrastMode: contrastMode as AppearancePreferences["contrastMode"] })}><option value="standard">Standard</option><option value="high">High contrast</option></Choice><Choice label="Motion" value={String(p.reducedMotion)} onChange={value => updateDraft({ reducedMotion: value === "system" ? "system" : value === "true" })}><option value="system">Follow system</option><option value="true">Reduce motion</option><option value="false">Allow standard motion</option></Choice></fieldset>}
         </div>
-      </div><div className="appearance-preview-panel"><div className="preview-panel-header"><div><h3>Live preview</h3><p>{STYLE_PRESENTATIONS[p.uiStyle].name} · {isDirty ? "Not applied" : "Current appearance"}</p></div>{!compact && <div className="preview-device-controls"><button aria-label="Desktop preview" aria-pressed={!mobilePreview} type="button" onClick={() => setMobilePreview(false)}><Monitor size={17} /></button><button aria-label="Mobile preview" aria-pressed={mobilePreview} type="button" onClick={() => setMobilePreview(true)}><Smartphone size={17} /></button></div>}</div><div className="preview-stage"><AppearancePreview preferences={p} mobile={mobilePreview} /></div></div></div>
+      </div><div className="appearance-preview-panel"><div className="preview-panel-header"><div><h3>Live preview</h3><p>{STYLE_PRESENTATIONS[p.uiStyle].name} · {p.colorPalette} · {isDirty ? "Not applied" : "Current appearance"}</p></div>{!compact && <div className="preview-device-controls"><button aria-label="Desktop preview" aria-pressed={!mobilePreview} type="button" onClick={() => setMobilePreview(false)}><Monitor size={17} /></button><button aria-label="Mobile preview" aria-pressed={mobilePreview} type="button" onClick={() => setMobilePreview(true)}><Smartphone size={17} /></button></div>}</div><div className="preview-stage"><AppearancePreview preferences={p} mobile={mobilePreview} /></div></div></div>
     </fieldset>
     <footer className="appearance-actions"><div className="appearance-action-status"><p role="status" aria-live="polite">{status}</p>{!compact && <button type="button" className="appearance-reset" onClick={reset} disabled={busy}><RotateCcw size={14} />Reset to defaults</button>}</div><div className="appearance-action-buttons"><PixelButton type="button" variant="secondary" size="sm" disabled={!isDirty || busy} onClick={() => { discard(); setApplied(false); }}>Discard changes</PixelButton><PixelButton type="button" size="sm" disabled={!isDirty || busy} onClick={async () => { if (await apply()) { setApplied(true); onApplied?.(); } }}><Check size={16} />{isApplying ? "Applying…" : "Apply changes"}</PixelButton></div></footer>
   </section>;

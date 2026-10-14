@@ -24,8 +24,32 @@ export type Density = "compact" | "comfortable" | "spacious";
 export type EditorTheme = "auto" | "dark" | "light" | "high-contrast";
 export type ReducedMotion = boolean | "system";
 
+export type PixelArcadePalette =
+  | "neon-violet"
+  | "pastel-dream"
+  | "mint-terminal"
+  | "sunset-arcade"
+  | "ocean-pixel";
+
+export type ClarityPalette =
+  | "sapphire"
+  | "lavender"
+  | "forest"
+  | "rose"
+  | "monochrome";
+
+export type CommandPalette =
+  | "emerald-console"
+  | "amber-terminal"
+  | "steel-blue"
+  | "graphite"
+  | "crimson-control";
+
+export type ColorPalette = PixelArcadePalette | ClarityPalette | CommandPalette;
+
 export interface AppearancePreferences {
   uiStyle: UIStyle;
+  colorPalette: ColorPalette;
   colorMode: ColorMode;
   contrastMode: ContrastMode;
   uiFontFamily: UIFontFamily;
@@ -46,6 +70,36 @@ export const VALID_UI_STYLES: readonly UIStyle[] = [
   "minimal-saas",
   "studio-crm",
 ] as const;
+
+export const VALID_PALETTES_BY_STYLE: Record<UIStyle, readonly ColorPalette[]> = {
+  "pixel-arcade": [
+    "neon-violet",
+    "pastel-dream",
+    "mint-terminal",
+    "sunset-arcade",
+    "ocean-pixel",
+  ],
+  "minimal-saas": [
+    "sapphire",
+    "lavender",
+    "forest",
+    "rose",
+    "monochrome",
+  ],
+  "studio-crm": [
+    "emerald-console",
+    "amber-terminal",
+    "steel-blue",
+    "graphite",
+    "crimson-control",
+  ],
+} as const;
+
+export const DEFAULT_PALETTES: Record<UIStyle, ColorPalette> = {
+  "pixel-arcade": "neon-violet",
+  "minimal-saas": "sapphire",
+  "studio-crm": "emerald-console",
+} as const;
 
 export const VALID_COLOR_MODES: readonly ColorMode[] = [
   "dark",
@@ -78,6 +132,7 @@ export const VALID_LINE_HEIGHTS: readonly LineHeightOption[] = [
 
 export const DEFAULT_APPEARANCE_PREFERENCES: AppearancePreferences = {
   uiStyle: "pixel-arcade",
+  colorPalette: "neon-violet",
   colorMode: "dark",
   contrastMode: "standard",
   uiFontFamily: "geist-sans",
@@ -164,8 +219,14 @@ export function normalizeAppearancePreferences(
       ? values.reducedMotion
       : DEFAULT_APPEARANCE_PREFERENCES.reducedMotion;
 
+  const validPalettes = VALID_PALETTES_BY_STYLE[uiStyle] || VALID_PALETTES_BY_STYLE["pixel-arcade"];
+  const colorPalette: ColorPalette = (typeof values.colorPalette === "string" && validPalettes.includes(values.colorPalette as ColorPalette))
+    ? (values.colorPalette as ColorPalette)
+    : (DEFAULT_PALETTES[uiStyle] || "neon-violet");
+
   return {
     uiStyle,
+    colorPalette,
     colorMode,
     contrastMode,
     uiFontFamily,
