@@ -1,7 +1,7 @@
 "use client";
 
 import { useId } from "react";
-import { Check } from "lucide-react";
+import { DotIcon } from "@/components/retro/dot-icon";
 import { useAppearance } from "@/hooks/use-appearance";
 import { STYLE_PRESENTATIONS } from "@/lib/appearance-styles";
 import { AppearancePreview } from "./appearance-preview";
@@ -57,7 +57,7 @@ export function StyleSelector({
                       <span className="truncate">{meta.name}</span>
                       {isSelected && (
                         <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--color-primary)] text-[var(--color-primary-foreground)] text-xs shrink-0">
-                          <Check aria-hidden="true" size={12} strokeWidth={3} />
+                          <DotIcon name="circleCheck" aria-hidden="true" size={14} />
                         </span>
                       )}
                     </span>
