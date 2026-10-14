@@ -967,9 +967,13 @@ export function WorkspaceView() {
             </div>
 
             <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
-              This will reset your current buffer for <strong>{filename}</strong> back to starter code. Any unsaved modifications in this buffer will be lost.
+              Reset <strong>{filename}</strong> to starter code, or empty an extra file. Other files stay intact unless you choose Reset all.
             </p>
 
+            <label className="flex items-center gap-2 text-xs text-[var(--color-text-main)]">
+              <input type="checkbox" checked={resetAllFiles} onChange={(e) => setResetAllFiles(e.target.checked)} />
+              Reset all files and remove companion files
+            </label>
             <div className="flex items-center justify-end gap-3 pt-2">
               <PixelButton
                 variant="ghost"
