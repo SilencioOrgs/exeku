@@ -2,7 +2,8 @@
 
 import React from "react";
 import { PixelBadge } from "@/components/retro/pixel-badge";
-import { Play, RotateCcw, CheckCircle, XCircle } from "lucide-react";
+import { RotateCcw, XCircle } from "lucide-react";
+import { DotIcon } from "@/components/retro/dot-icon";
 
 export interface DemoControlsProps {
   onLoadSolved: () => void;
@@ -44,7 +45,7 @@ export function DemoControls({
           className="px-2 py-1 bg-[var(--color-canvas)] hover:bg-[var(--color-elevated)] border border-[var(--color-mint)] text-[var(--color-mint)] text-[0.6875rem] font-bold flex items-center gap-1 cursor-pointer transition-colors"
           title="Load correct Python solution: a + b"
         >
-          <Play size={10} />
+          <DotIcon name="circlePlay" size={13} aria-hidden="true" />
           <span>LOAD SOLVED</span>
         </button>
 
@@ -64,7 +65,7 @@ export function DemoControls({
           className="px-2 py-1 bg-[var(--color-canvas)] hover:bg-[var(--color-elevated)] border border-[var(--color-border)] hover:border-[var(--color-mint)] text-[var(--color-text-main)] hover:text-[var(--color-mint)] text-[0.6875rem] flex items-center gap-1 cursor-pointer transition-colors"
           title="Preview simulated Accepted verdict modal"
         >
-          <CheckCircle size={10} />
+          <DotIcon name="circleCheck" size={13} aria-hidden="true" />
           <span>PREVIEW ACCEPTED</span>
         </button>
 
