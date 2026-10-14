@@ -12,6 +12,9 @@ export interface MonacoEditorPaneProps {
   value: string;
   onChange: (value: string) => void;
   readOnly?: boolean;
+  path?: string;
+  onRun?: () => void;
+  onSubmit?: () => void;
 }
 
 function EditorLoadingSkeleton() {
@@ -53,10 +56,16 @@ export function MonacoEditorPane({
   value,
   onChange,
   readOnly = false,
+  path,
+  onRun,
+  onSubmit,
 }: MonacoEditorPaneProps) {
   const { preferences, effectiveColorMode, effectiveReducedMotion } = useAppearance();
   const editorRef = useRef<MonacoType.editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<typeof MonacoType | null>(null);
+  const runRef = useRef(onRun);
+  const submitRef = useRef(onSubmit);
+  useEffect(() => { runRef.current = onRun; submitRef.current = onSubmit; }, [onRun, onSubmit]);
 
   // Compute active Monaco theme name and independent editor typography.
   const appearance = React.useMemo(() => resolveEditorAppearance(preferences, effectiveColorMode, effectiveReducedMotion), [preferences, effectiveColorMode, effectiveReducedMotion]);
@@ -266,6 +275,9 @@ export function MonacoEditorPane({
 
     monaco.editor.setTheme(activeMonacoTheme);
     editor.updateOptions(editorOptions);
+    // Monaco has its own keyboard handling; document shortcuts alone do not reliably reach it.
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => runRef.current?.());
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.Enter, () => submitRef.current?.());
   };
 
   // Live update options without remounting or resetting editor buffer
@@ -279,6 +291,9 @@ export function MonacoEditorPane({
   return (
     <div className="w-full h-full min-h-[380px] bg-[var(--color-canvas)] overflow-hidden">
       <DynamicEditor
+        path={path}
+        saveViewState
+        keepCurrentModel
         height="100%"
         language={language}
         value={value}
