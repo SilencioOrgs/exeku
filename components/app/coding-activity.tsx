@@ -9,13 +9,14 @@ import {
 } from "@/lib/storage/coding-activity";
 
 export function CodingActivity({ profileId }: { profileId: string }) {
-  const [today, setToday] = useState<Date | null>(null);
+  const [today] = useState(() => new Date());
   const [days, setDays] = useState<string[] | null>(null);
 
   useEffect(() => {
     const refresh = () => setDays(readCodingDays(profileId));
-    setToday(new Date());
-    refresh();
+    // Defer initialization so effects subscribe without synchronous cascading renders.
+    let cancelled = false;
+    queueMicrotask(() => { if (!cancelled) refresh(); });
     const onLocalChange = (event: Event) => {
       const detail = (event as CustomEvent<{ profileId?: string }>).detail;
       if (!detail?.profileId || detail.profileId === profileId) refresh();
@@ -23,14 +24,11 @@ export function CodingActivity({ profileId }: { profileId: string }) {
     window.addEventListener(CODING_ACTIVITY_EVENT, onLocalChange);
     window.addEventListener("storage", refresh);
     return () => {
+      cancelled = true;
       window.removeEventListener(CODING_ACTIVITY_EVENT, onLocalChange);
       window.removeEventListener("storage", refresh);
     };
   }, [profileId]);
-
-  if (!today) {
-    return <section className="coding-activity" aria-label="Coding activity"><p className="text-sm text-[var(--color-text-muted)]">Loading coding activity…</p></section>;
-  }
 
   const calendar = getActivityCalendar(today, days ?? []);
   const count = calendar.filter((day) => !day.future && day.active).length;
