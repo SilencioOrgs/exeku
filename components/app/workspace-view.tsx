@@ -538,6 +538,8 @@ export function WorkspaceView() {
   useEffect(() => {
     const shortcut = (event: KeyboardEvent) => {
       if (!(event.ctrlKey || event.metaKey) || event.key !== "Enter") return;
+      // Monaco handles the same shortcuts internally. Do not dispatch twice.
+      if (event.target instanceof Element && event.target.closest(".monaco-editor")) return;
       event.preventDefault();
       if (isRunning || isSubmitting) return;
       if (event.shiftKey) {
@@ -818,6 +820,19 @@ export function WorkspaceView() {
             >
               <DotIcon name={layout === "focus" ? "list" : "box"} size={14} aria-hidden="true" />
             </PixelButton>
+            {layout === "focus" && (
+              <button
+                type="button"
+                className="hidden h-8 shrink-0 items-center gap-1 border border-[var(--color-border)] px-2 text-xs xl:inline-flex"
+                onClick={() => setDrawerOpen((current) => !current)}
+                aria-expanded={drawerOpen}
+                title={drawerOpen ? "Collapse output drawer" : "Open output drawer"}
+                aria-label={drawerOpen ? "Collapse output drawer" : "Open output drawer"}
+              >
+                <DotIcon name="powershell" size={14} aria-hidden="true" />
+                Output
+              </button>
+            )}
             {layout === "focus" && (
               <button
                 type="button" className="hidden h-8 shrink-0 items-center gap-1 border border-[var(--color-border)] px-2 text-xs xl:inline-flex"
