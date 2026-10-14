@@ -6,5 +6,7 @@ export interface WorkspaceDraft {
   language: PreferredLanguage;
   filename: string;
   code: string;
+  /** Main source remains in code for compatibility with existing drafts. */
+  files?: { name: string; content: string }[];
   updatedAt: string;
 }
