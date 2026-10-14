@@ -1120,3 +1120,27 @@ input::placeholder, textarea::placeholder { color: var(--color-text-muted); opac
 [data-ui-style="pixel-arcade"] .profile-view h1 { font-family:var(--font-pixelify),var(--font-ui); }
 [data-ui-style="studio-crm"] .profile-panel { border-radius:5px; }
 @media(prefers-reduced-motion:reduce) { .profile-action { transition:none; } }
+
+/* Workspace-only layout: keep all three panels mounted for Monaco model persistence. */
+.workspace-panes { min-width:0; overflow:hidden; }
+.workspace-resizable-group { display:flex; min-width:0; min-height:0; }
+.workspace-resizable-group [data-panel] { min-width:0; min-height:0; }
+.workspace-resize-handle { position:relative; width:5px; flex-shrink:0; background:var(--color-border); cursor:col-resize; }
+.workspace-resize-handle:hover, .workspace-resize-handle:focus-visible { background:var(--color-accent); }
+.workspace-panes[data-layout="focus"] .workspace-resize-handle { height:5px; width:100%; cursor:row-resize; }
+.workspace-toolbar { max-height:40px; }
+[data-density="compact"] .workspace-toolbar { height:36px; }
+[data-ui-style="minimal-saas"] .workspace-toolbar, [data-ui-style="studio-crm"] .workspace-toolbar { border-width:1px; }
+[data-ui-style="minimal-saas"] .workspace-toolbar .appearance-button, [data-ui-style="studio-crm"] .workspace-toolbar .appearance-button { border-width:1px; box-shadow:none; }
+.workspace-toolbar [role="tablist"] { scrollbar-width:thin; }
+@media(max-width:1279px) {
+  .workspace-resizable-group { flex-direction:column !important; }
+  .workspace-resizable-group > [data-panel] { display:none !important; flex:0 0 0 !important; }
+  .workspace-resizable-group > [data-separator] { display:none !important; }
+  .workspace-panes[data-mobile-pane="problem"] .workspace-resizable-group > [data-panel="problem"],
+  .workspace-panes[data-mobile-pane="code"] .workspace-resizable-group > [data-panel="editor"],
+  .workspace-panes[data-mobile-pane="results"] .workspace-resizable-group > [data-panel="results"] {
+    display:flex !important; flex:1 1 auto !important; width:100% !important; min-height:0 !important;
+  }
+  .workspace-resizable-group > [data-panel] > div { flex:1 1 auto; min-width:0; min-height:0; }
+}
