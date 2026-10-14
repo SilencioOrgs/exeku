@@ -725,25 +725,57 @@ export function WorkspaceView() {
       </div>
 
       {/* Main Three-Pane Problem Lab Workspace */}
-      <div id="workspace-panes" data-editor-expanded={editorExpanded} className={`flex-1 min-h-0 xl:grid xl:gap-3 flex flex-col overflow-hidden ${editorExpanded ? "xl:grid-cols-[minmax(0,1fr)]" : "xl:grid-cols-[29%_minmax(0,1fr)_27%]"}`}>
+      <div
+        id="workspace-panes"
+        className="workspace-panes flex-1 min-h-0 min-w-0"
+        data-layout={layout}
+        data-mobile-pane={mobileActivePane}
+      >
+        <Group
+          id="exeku-workspace-resizable"
+          groupRef={resizeGroupRef}
+          orientation={layout === "focus" ? "vertical" : "horizontal"}
+          defaultLayout={{ problem: 28, editor: 48, results: 24 }}
+          onLayoutChanged={(sizes, meta) => {
+            if (layout !== "split" || !meta.isUserInteraction) return;
+            if (sizes.problem >= 20 && sizes.editor >= 35 && sizes.results >= 18) {
+              setSplitSizes(sizes);
+              try { localStorage.setItem("exeku.workspace.panes", JSON.stringify(sizes)); } catch { /* storage restricted */ }
+            }
+          }}
+          className="workspace-resizable-group h-full min-h-0 min-w-0"
+        >
         {/* LEFT PANE: Problem Statement */}
+        <Panel id="problem" defaultSize="28%" minSize={layout === "split" ? "20%" : "0%"} collapsible={layout !== "split"} collapsedSize="0%">
         <div
           className={`h-full min-h-0 ${
             mobileActivePane === "problem" ? "flex flex-col flex-1" : "hidden"
-          } ${editorExpanded ? "xl:hidden" : "xl:flex xl:flex-col"
+          } ${layout === "focus" ? "xl:hidden" : "xl:flex xl:flex-col"
           }`}
         >
-          <ProblemPane
+          {layout === "wide" ? (
+            <button
+              type="button"
+              className="hidden xl:flex h-full w-10 items-center justify-center border border-[var(--color-border)] bg-[var(--color-surface)] text-xs text-[var(--color-text-muted)]"
+              aria-label="Expand problem pane"
+              onClick={() => setLayout("split")}
+            ><span className="[writing-mode:vertical-rl]">PROBLEM ›</span></button>
+          ) :           <ProblemPane
             problem={problem}
             onUseCustomStdin={(sampleInput) => {
               setCustomStdin(sampleInput);
               setActiveResultsTab("stdin");
               setMobileActivePane("results");
             }}
-          />
+          />}
+
         </div>
 
+        </Panel>
+        <Separator className="workspace-resize-handle" />
+
         {/* CENTER PANE: Code Editor & Actions Toolbar */}
+        <Panel id="editor" defaultSize="48%" minSize={layout === "focus" ? "30%" : "35%"}>
         <div
           className={`h-full min-h-0 flex flex-col gap-1 ${
             mobileActivePane === "code" ? "flex flex-col flex-1" : "hidden xl:flex xl:flex-col"
@@ -824,11 +856,15 @@ export function WorkspaceView() {
           </div>
         </div>
 
+        </Panel>
+        <Separator className="workspace-resize-handle" />
+
         {/* RIGHT PANE: Execution Console, Stdin, Test Results */}
+        <Panel id="results" defaultSize="24%" minSize={layout === "focus" ? "0%" : "18%"} collapsible={layout === "focus"} collapsedSize="0%">
         <div
           className={`h-full min-h-0 ${
             mobileActivePane === "results" ? "flex flex-col flex-1" : "hidden"
-          } ${editorExpanded ? "xl:hidden" : "xl:flex xl:flex-col"
+          } ${layout === "focus" && !drawerOpen ? "xl:hidden" : "xl:flex xl:flex-col"
           }`}
         >
           <ResultsPane
@@ -846,7 +882,22 @@ export function WorkspaceView() {
             demoNote={demoNote}
           />
         </div>
+        </Panel>
+        </Group>
       </div>
+      {layout === "focus" && problemSlideOpen && (
+        <div className="fixed inset-0 z-40 flex bg-black/60" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget) setProblemSlideOpen(false);
+        }}>
+          <section role="dialog" aria-modal="true" aria-label="Problem statement" className="flex h-full w-full max-w-md flex-col bg-[var(--color-surface)] p-3">
+            <button type="button" className="mb-2 self-end text-sm underline" onClick={() => setProblemSlideOpen(false)}>Close problem</button>
+            <ProblemPane problem={problem} onUseCustomStdin={(sample) => {
+              setCustomStdin(sample); setActiveResultsTab("stdin"); setDrawerOpen(true); setProblemSlideOpen(false);
+            }} />
+          </section>
+        </div>
+      )}
+
 
       {/* MODAL 1: Submit Confirmation Dialog */}
       {problem && (
