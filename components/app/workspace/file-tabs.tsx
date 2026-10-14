@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, type KeyboardEvent } from "react";
-import { DotIcon } from "@/components/retro/dot-icon";
+import { FileText } from "lucide-react";
 import type { PreferredLanguage } from "@/types/profile";
 import type { WorkspaceFile } from "@/types/draft";
 
@@ -101,7 +101,7 @@ export function FileTabs({ language, files, activeName, mainName, saveStatus, on
                 onKeyDown={(e) => moveTab(e, index)}
                 className="inline-flex h-8 items-center gap-1.5 px-2 text-xs"
               >
-                <DotIcon name="file" size={13} aria-hidden="true" />
+                <FileText size={14} aria-hidden="true" />
                 <span>{file.name}</span>
                 {activeName === file.name && <span aria-label={saveStatus} title={saveStatus} className={`h-1.5 w-1.5 rounded-full ${saveStatus === "SAVED" ? "bg-[var(--color-mint)]" : "bg-[var(--color-pink)]"}`} />}
               </button>

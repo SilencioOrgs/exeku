@@ -46,6 +46,14 @@ import type { JudgingResult } from "@/lib/judge/judging-service";
 import {
   Clock,
   AlertTriangle,
+  RotateCcw,
+  Download,
+  Maximize2,
+  Minimize2,
+  Play,
+  Check,
+  Terminal,
+  FileText,
 } from "lucide-react";
 
 type MobileActivePane = "problem" | "code" | "results";
@@ -83,7 +91,7 @@ export function WorkspaceView() {
   // Layout & Tabs
   const [mobileActivePane, setMobileActivePane] = useState<MobileActivePane>("code");
   // Keeps Monaco mounted while letting students expand or restore the editor.
-  const [layout, setLayout] = useState<"split" | "wide" | "focus">("split");
+  const [layout, setLayout] = useState<"split" | "wide" | "focus">(problemIdParam ? "split" : "wide");
   const [layoutReady, setLayoutReady] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [problemSlideOpen, setProblemSlideOpen] = useState(false);
@@ -738,8 +746,9 @@ export function WorkspaceView() {
           onLayoutChanged={(sizes, meta) => {
             if (layout !== "split" || !meta.isUserInteraction) return;
             if (sizes.problem >= 20 && sizes.editor >= 35 && sizes.results >= 18) {
-              setSplitSizes(sizes);
-              try { localStorage.setItem("exeku.workspace.panes", JSON.stringify(sizes)); } catch { /* storage restricted */ }
+              const next = { problem: sizes.problem, editor: sizes.editor, results: sizes.results };
+              setSplitSizes(next);
+              try { localStorage.setItem("exeku.workspace.panes", JSON.stringify(next)); } catch { /* storage restricted */ }
             }
           }}
           className="workspace-resizable-group h-full min-h-0 min-w-0"
@@ -810,10 +819,10 @@ export function WorkspaceView() {
             >DEMO</button>
             <span className="hidden h-5 shrink-0 border-l border-[var(--color-border)] sm:inline" aria-hidden="true" />
             <PixelButton size="icon" variant="ghost" onClick={() => setIsResetOpen(true)} aria-label="Reset active file" title="Reset active file">
-              <DotIcon name="arrowRight" className="rotate-180" size={14} aria-hidden="true" />
+              <RotateCcw size={14} aria-hidden="true" />
             </PixelButton>
             <PixelButton size="icon" variant="ghost" onClick={handleDownloadFile} aria-label="Download active file" title="Download active file">
-              <DotIcon name="file" size={14} aria-hidden="true" />
+              <Download size={14} aria-hidden="true" />
             </PixelButton>
             <PixelButton
               size="icon" variant="ghost" className="hidden xl:inline-flex"
@@ -822,7 +831,7 @@ export function WorkspaceView() {
               onClick={nextLayout}
               title={`Layout: ${layout}. Click to cycle split, wide and focus`}
             >
-              <DotIcon name={layout === "focus" ? "list" : "box"} size={14} aria-hidden="true" />
+              {layout === "focus" ? <Minimize2 size={14} aria-hidden="true" /> : <Maximize2 size={14} aria-hidden="true" />}
             </PixelButton>
             {layout === "focus" && (
               <button
@@ -833,7 +842,7 @@ export function WorkspaceView() {
                 title={drawerOpen ? "Collapse output drawer" : "Open output drawer"}
                 aria-label={drawerOpen ? "Collapse output drawer" : "Open output drawer"}
               >
-                <DotIcon name="powershell" size={14} aria-hidden="true" />
+                <Terminal size={14} aria-hidden="true" />
                 Output
               </button>
             )}
@@ -842,16 +851,16 @@ export function WorkspaceView() {
                 type="button" className="hidden h-8 shrink-0 items-center gap-1 border border-[var(--color-border)] px-2 text-xs xl:inline-flex"
                 onClick={() => setProblemSlideOpen(true)}
                 aria-label="Open problem statement"
-              ><DotIcon name="list" size={14} aria-hidden="true" /> Problem</button>
+              ><FileText size={14} aria-hidden="true" /> Problem</button>
             )}
             <span className="hidden h-5 shrink-0 border-l border-[var(--color-border)] sm:inline" aria-hidden="true" />
             <PixelButton size="xs" variant="cyan" aria-label="Run code" title="Run code (Ctrl/Cmd+Enter)"
               disabled={isRunning || isSubmitting} onClick={() => void handleRunCode()} className="shrink-0">
-              <DotIcon name="circlePlay" size={14} aria-hidden="true" /><span className="hidden sm:inline">{isRunning ? "RUNNING" : "RUN"}</span>
+              <Play size={14} aria-hidden="true" /><span className="hidden sm:inline">{isRunning ? "RUNNING" : "RUN"}</span>
             </PixelButton>
             <PixelButton size="xs" variant="primary" aria-label="Submit solution" title="Submit solution (Ctrl/Cmd+Shift+Enter)"
               disabled={!problem || isRunning || isSubmitting} onClick={handleOpenSubmitModal} className="shrink-0">
-              <DotIcon name="circleCheck" size={14} aria-hidden="true" /><span className="hidden sm:inline">{isSubmitting ? "JUDGING" : "SUBMIT"}</span>
+              <Check size={14} aria-hidden="true" /><span className="hidden sm:inline">{isSubmitting ? "JUDGING" : "SUBMIT"}</span>
             </PixelButton>
           </div>
 

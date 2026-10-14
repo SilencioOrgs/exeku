@@ -73,9 +73,9 @@ test("workspace multi-file: legacy free drafts load as main file and problem-spe
   await draftRepository.deleteProfileDrafts(profile);
 });
 
-test("workspace multi-file: toolbar uses compact button sizes and a mounted Monaco path", () => {
+test("workspace multi-file: toolbar avoids unlayered touch minimums and keeps a mounted Monaco path", () => {
   const view = read("components/app/workspace-view.tsx");
-  const button = read("components/retro/pixel-button.tsx");
+  const css = read("app/globals.css").replace(/\/\*[\s\S]*?\*\//g, "");
   const editor = read("components/app/monaco-editor-pane.tsx");
   assert.match(view, /className="workspace-toolbar/);
   assert.match(view, /<FileTabs/);
@@ -83,9 +83,20 @@ test("workspace multi-file: toolbar uses compact button sizes and a mounted Mona
   assert.match(view, /<Panel id="editor"/);
   assert.match(view, /sourceCode: mainCode/);
   assert.match(view, /files,/);
-  assert.match(button, /xs: "h-8 min-h-8/);
-  assert.match(button, /icon: "h-8 w-8 min-h-8/);
-  assert.doesNotMatch(button, /appearance-button min-h-11/);
+  const blocks = [];
+  for (const match of css.matchAll(/([^{}]*)([{}])/g)) {
+    if (match[2] === "{") {
+      blocks.push(match[1].trim());
+    } else {
+      if (/min-height:\s*2\.75rem\b/.test(match[1]) && /button|select|appearance-checkbox|appearance-reset/.test(blocks.at(-1))) {
+        assert.ok(
+          blocks.some(block => /^@layer\b/.test(block) || /^@media\s*\(pointer:\s*coarse\)/.test(block)),
+          "44px control minimum must be layered or limited to coarse pointers: " + blocks.at(-1)
+        );
+      }
+      blocks.pop();
+    }
+  }
   assert.match(editor, /keepCurrentModel/);
   assert.match(editor, /path=\{path\}/);
 });

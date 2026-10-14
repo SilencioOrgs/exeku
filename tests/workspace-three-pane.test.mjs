@@ -85,11 +85,11 @@ test("workspace-three-pane - components implement responsive classes without hor
   );
 
   // Resizable desktop panes, with three persisted layout modes.
-  assert.match(workspaceViewCode, /<Group[\\s\\S]*?<Panel id="problem"/);
+  assert.match(workspaceViewCode, /<Group[\s\S]*?<Panel id="problem"/);
   assert.match(workspaceViewCode, /<Panel id="editor"/);
   assert.match(workspaceViewCode, /<Panel id="results"/);
-  assert.match(workspaceViewCode, /"split" \\| "wide" \\| "focus"/);
-  assert.match(workspaceViewCode, /exeku\\.workspace\\.layout/);
+  assert.match(workspaceViewCode, /"split" \| "wide" \| "focus"/);
+  assert.match(workspaceViewCode, /exeku\.workspace\.layout/);
 
   // Mobile / tablet switcher
   assert.ok(

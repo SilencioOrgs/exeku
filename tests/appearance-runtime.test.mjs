@@ -26,8 +26,8 @@ test('Monaco updates independent syntax, ligatures, and typography without repla
   } });
   const changes = [];
   const themes = new Map();
-  const editor = { buffer: 'print("keep me")', updateOptions(options) { this.options = options; } };
-  const monaco = { editor: { defineTheme: (name, theme) => themes.set(name, theme), setTheme: theme => changes.push(theme) } };
+  const editor = { addCommand: () => {}, buffer: 'print("keep me")', updateOptions(options) { this.options = options; } };
+  const monaco = { KeyMod: { CtrlCmd: 2048, Shift: 1024 }, KeyCode: { Enter: 3 }, editor: { defineTheme: (name, theme) => themes.set(name, theme), setTheme: theme => changes.push(theme) } };
   const render = () => { index = 0; return compiledModule.exports.MonacoEditorPane({ language: 'python', value: editor.buffer, onChange: () => assert.fail('appearance must not change code') }).props.children; };
   const first = render();
   first.props.onMount(editor, monaco);
