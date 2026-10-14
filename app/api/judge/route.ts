@@ -5,7 +5,7 @@ import {
   type ExecutionLanguage,
   SUPPORTED_EXECUTION_LANGUAGES,
 } from "@/types/execution";
-import { MAX_SOURCE_LENGTH } from "@/lib/execution/validation";
+import { validateExecutionRequest } from "@/lib/execution/validation";
 import { QueueFullError } from "@/lib/execution/queue";
 
 export async function POST(req: Request) {
@@ -19,10 +19,11 @@ export async function POST(req: Request) {
       );
     }
 
-    const { problemId, language, sourceCode } = body as {
+    const { problemId, language, sourceCode, files } = body as {
       problemId?: string;
       language?: string;
       sourceCode?: string;
+      files?: unknown;
     };
 
     if (!problemId || typeof problemId !== "string") {
@@ -66,27 +67,18 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!sourceCode || typeof sourceCode !== "string" || sourceCode.trim().length === 0) {
-      return NextResponse.json(
-        { error: "Source code cannot be empty." },
-        { status: 400 }
-      );
-    }
-
-    if (sourceCode.length > MAX_SOURCE_LENGTH) {
-      return NextResponse.json(
-        {
-          error: `Source code length (${sourceCode.length} bytes) exceeds maximum allowed length of ${MAX_SOURCE_LENGTH} bytes.`,
-        },
-        { status: 400 }
-      );
+    // Share execution validation, including total source size and companion files.
+    const validation = validateExecutionRequest({ language: execLang, sourceCode, files });
+    if (!validation.valid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
     const judgingResult = await defaultJudgingService.judgeSubmission(
       problem.id,
       {
         language: execLang,
-        sourceCode,
+        sourceCode: validation.request.sourceCode,
+        files: validation.request.files,
       }
     );
 
