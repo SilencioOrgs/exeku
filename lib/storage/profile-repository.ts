@@ -1,4 +1,5 @@
 import { appearanceRepository } from "./appearance-repository";
+import { clearCodingDays } from "./coding-activity";
 import { normalizeAppearancePreferences, type AppearancePreferences } from "@/types/appearance";
 import type { LocalProfile, ProfileInput } from "@/types/profile";
 import { validateDisplayName } from "@/lib/profile-validation";
@@ -158,6 +159,7 @@ export class ProfileRepository {
   async deleteProfile(id: string): Promise<void> {
     try {
       await idbDelete(PROFILE_STORE, id);
+      clearCodingDays(id);
     } catch (err) {
       throw new ProfileRepositoryError(
         `Failed to delete profile '${id}' from local storage`,
