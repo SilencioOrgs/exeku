@@ -47,13 +47,13 @@ export function ResultsPane({
       className={`results-pane flex flex-col h-full bg-[var(--color-surface)] border-2 border-[var(--color-border)] select-text overflow-hidden ${className}`}
     >
       {/* Tab Header Strip */}
-      <div className="workspace-output-header p-2 bg-[var(--color-elevated)] border-b-2 border-[var(--color-border)] flex items-center justify-between gap-1 shrink-0 overflow-x-auto">
+      <div className="workspace-output-header p-1 bg-[var(--color-elevated)] border-b-2 border-[var(--color-border)] flex items-center justify-between gap-1 shrink-0 overflow-x-auto">
         <div className="flex items-center gap-1">
           {/* Tab 1: Console Execution Output */}
           <button
             type="button"
             onClick={() => onTabChange("console")}
-            className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-heading cursor-pointer border transition-colors ${
+            className={`flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-heading cursor-pointer border transition-colors ${
               activeTab === "console"
                 ? "bg-[var(--color-canvas)] border-[var(--color-accent)] text-[var(--color-accent)] [box-shadow:var(--shadow-btn)]"
                 : "border-transparent text-[var(--color-text-dim)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-canvas)]/50"
@@ -67,7 +67,7 @@ export function ResultsPane({
           <button
             type="button"
             onClick={() => onTabChange("stdin")}
-            className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-heading cursor-pointer border transition-colors ${
+            className={`flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-heading cursor-pointer border transition-colors ${
               activeTab === "stdin"
                 ? "bg-[var(--color-canvas)] border-[var(--color-accent)] text-[var(--color-accent)] [box-shadow:var(--shadow-btn)]"
                 : "border-transparent text-[var(--color-text-dim)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-canvas)]/50"
@@ -86,7 +86,7 @@ export function ResultsPane({
           <button
             type="button"
             onClick={() => onTabChange("results")}
-            className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-heading cursor-pointer border transition-colors ${
+            className={`flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-heading cursor-pointer border transition-colors ${
               activeTab === "results"
                 ? "bg-[var(--color-canvas)] border-[var(--color-mint)] text-[var(--color-mint)] [box-shadow:var(--shadow-btn)]"
                 : "border-transparent text-[var(--color-text-dim)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-canvas)]/50"
