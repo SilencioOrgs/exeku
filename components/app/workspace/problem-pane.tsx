@@ -5,7 +5,8 @@ import Link from "next/link";
 import { PixelCard } from "@/components/retro/pixel-card";
 import { PixelBadge } from "@/components/retro/pixel-badge";
 import { PixelButton } from "@/components/retro/pixel-button";
-import { Copy, Check, Clock, Cpu, ExternalLink } from "lucide-react";
+import { Copy, Clock, Cpu, ExternalLink } from "lucide-react";
+import { DotIcon } from "@/components/retro/dot-icon";
 import type { VisibleProblem } from "@/types/problem";
 
 export interface ProblemPaneProps {
@@ -176,7 +177,7 @@ export function ProblemPane({
                   >
                     {copiedIdx === idx ? (
                       <>
-                        <Check size={10} className="text-[var(--color-mint)]" />
+                        <DotIcon name="circleCheck" size={13} aria-hidden="true" className="text-[var(--color-mint)]" />
                         <span className="text-[var(--color-mint)] font-bold">COPIED</span>
                       </>
                     ) : (
