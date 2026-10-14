@@ -84,11 +84,12 @@ test("workspace-three-pane - components implement responsive classes without hor
     "utf8"
   );
 
-  // Desktop three-pane grid layout
-  assert.ok(
-    workspaceViewCode.includes("xl:grid-cols-[29%_minmax(0,1fr)_27%]"),
-    "Expected xl:grid-cols 3-pane layout for desktop viewports"
-  );
+  // Resizable desktop panes, with three persisted layout modes.
+  assert.match(workspaceViewCode, /<Group[\\s\\S]*?<Panel id="problem"/);
+  assert.match(workspaceViewCode, /<Panel id="editor"/);
+  assert.match(workspaceViewCode, /<Panel id="results"/);
+  assert.match(workspaceViewCode, /"split" \\| "wide" \\| "focus"/);
+  assert.match(workspaceViewCode, /exeku\\.workspace\\.layout/);
 
   // Mobile / tablet switcher
   assert.ok(
