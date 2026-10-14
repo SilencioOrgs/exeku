@@ -79,6 +79,7 @@ export class JudgingService {
     submission: {
       language: ExecutionLanguage;
       sourceCode: string;
+      files?: { name: string; content: string }[];
     }
   ): Promise<JudgingResult> {
     const problem = getProblemById(problemId);
@@ -106,6 +107,7 @@ export class JudgingService {
       const execRequest: ExecutionRequest = {
         language: submission.language,
         sourceCode: submission.sourceCode,
+        files: submission.files,
         stdin: testCase.input,
         timeLimitMs: problem.timeLimitMs,
         memoryLimitKb: problem.memoryLimitKb,
