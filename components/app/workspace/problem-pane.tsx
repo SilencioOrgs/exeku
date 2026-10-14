@@ -4,8 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { PixelCard } from "@/components/retro/pixel-card";
 import { PixelBadge } from "@/components/retro/pixel-badge";
-import { PixelButton } from "@/components/retro/pixel-button";
-import { Copy, Clock, Cpu, ExternalLink } from "lucide-react";
+import { Copy, Clock, Cpu } from "lucide-react";
 import { DotIcon } from "@/components/retro/dot-icon";
 import type { VisibleProblem } from "@/types/problem";
 
@@ -34,18 +33,9 @@ export function ProblemPane({
 
   if (!problem) {
     return (
-      <div className={`p-4 h-full flex flex-col items-center justify-center text-center font-mono text-xs text-[var(--color-text-dim)] bg-[var(--color-surface)] border-2 border-[var(--color-border)] ${className}`}>
-        <span className="font-heading text-sm text-[var(--color-text-main)] mb-1">
-          NO PROBLEM SELECTED_
-        </span>
-        <p className="max-w-xs text-[var(--color-text-muted)] mb-3">
-          Choose a programming exercise from the catalog to view requirements, constraints, and test cases.
-        </p>
-        <Link href="/app/challenges">
-          <PixelButton variant="primary" size="sm" className="text-xs">
-            BROWSE CHALLENGES &rarr;
-          </PixelButton>
-        </Link>
+      <div className={`flex h-full min-h-0 items-start gap-2 border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-xs text-[var(--color-text-muted)] ${className}`}>
+        <DotIcon name="file" size={14} aria-hidden="true" />
+        <span>Free coding — select a <Link className="underline underline-offset-2" href="/app/challenges">problem</Link> when you are ready to submit.</span>
       </div>
     );
   }
@@ -75,14 +65,12 @@ export function ProblemPane({
           </PixelBadge>
         </div>
 
-        <Link href="/app/challenges" title="Pick a different problem">
-          <button
-            type="button"
-            className="text-[0.625rem] font-mono text-[var(--color-text-muted)] hover:text-[var(--color-accent)] flex items-center gap-1 cursor-pointer transition-colors"
-          >
-            <span>CATALOG</span>
-            <ExternalLink size={11} />
-          </button>
+        <Link
+          href="/app/challenges"
+          title="Pick a different problem"
+          className="inline-flex items-center gap-1 text-[0.625rem] font-mono text-[var(--color-text-muted)] hover:text-[var(--color-accent)]"
+        >
+          CATALOG <DotIcon name="arrowUp" size={12} aria-hidden="true" />
         </Link>
       </div>
 
