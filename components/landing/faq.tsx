@@ -35,7 +35,7 @@ export function FAQ() {
   };
 
   return (
-    <section id="faq" className="py-20 md:py-28 bg-[var(--color-canvas)] border-t-2 border-b-2 border-[var(--color-border)] relative">
+    <section id="faq" className="py-20 md:py-28 bg-[var(--color-canvas)] border-t border-b border-[var(--color-border)] relative">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-14">
@@ -43,7 +43,7 @@ export function FAQ() {
             <PixelBadge variant="purple">KNOWLEDGE BASE</PixelBadge>
           </div>
           <h2
-            className="text-3xl sm:text-4xl md:text-5xl font-bold text-[var(--color-text-main)] mb-4 uppercase tracking-tight"
+            className="text-3xl sm:text-4xl md:text-5xl font-bold text-[var(--color-text-main)] mb-4 tracking-tight"
             style={{ fontFamily: "var(--font-heading-active)" }}
           >
             Frequently Asked Questions.
@@ -60,7 +60,7 @@ export function FAQ() {
             return (
               <div
                 key={idx}
-                className="border-2 border-[var(--color-border)] bg-[var(--color-surface)] transition-colors"
+                className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] transition-colors"
               >
                 <button
                   type="button"
@@ -69,15 +69,15 @@ export function FAQ() {
                   aria-expanded={isOpen}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-[var(--color-accent)] font-mono text-xs font-bold shrink-0 flex items-center gap-1.5">
-                      <DotIcon name="chat" size={14} className="text-[var(--color-accent)]" />
+                    <span className="text-[var(--color-text-muted)] text-xs font-medium shrink-0 flex items-center gap-1.5">
+                      <DotIcon name="chat" size={14} className="text-[var(--color-text-muted)]" />
                       [Q-0{idx + 1}]
                     </span>
-                    <span className="text-base sm:text-lg font-bold text-[var(--color-text-main)] font-mono">
+                    <span className="text-base sm:text-lg font-bold text-[var(--color-text-main)] font-sans">
                       {faq.q}
                     </span>
                   </div>
-                  <div className="p-1 bg-[var(--color-elevated)] border border-[var(--color-border)] text-[var(--color-accent)] shrink-0">
+                  <div className="rounded-lg p-1 bg-[var(--color-elevated)] border border-[var(--color-border)] text-[var(--color-text-muted)] shrink-0">
                     {isOpen ? <DotIcon name="arrowUp" className="w-4 h-4" /> : <DotIcon name="arrowDown" className="w-4 h-4" />}
                   </div>
                 </button>
