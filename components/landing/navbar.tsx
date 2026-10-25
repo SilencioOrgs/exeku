@@ -22,7 +22,7 @@ export function Navbar() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-[var(--color-canvas)]/95 backdrop-blur-sm border-b-2 border-[var(--color-border)] shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
+    <header className="sticky top-0 z-50 w-full bg-[var(--color-canvas)]/95 backdrop-blur-sm border-b-2 border-[var(--color-border)] shadow-none">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-16 py-3 flex gap-3 flex-wrap items-center justify-between">
         {/* Brand Wordmark */}
         <div className="flex items-center gap-3">
@@ -30,11 +30,11 @@ export function Navbar() {
             href="#hero"
             className="flex items-center gap-2 group outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
           >
-            <div className="w-8 h-8 bg-[var(--color-elevated)] border-2 border-[var(--color-primary)] flex items-center justify-center text-[var(--color-accent)] group-hover:border-[var(--color-accent)] transition-colors shadow-[2px_2px_0px_#000000]">
-              <DotIcon name="powershell" size={16} className="text-[var(--color-accent)]" />
+            <div className="w-8 h-8 rounded-lg bg-[var(--color-elevated)] border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-main)]">
+              <DotIcon name="powershell" size={16} />
             </div>
-            <span className="font-heading text-2xl font-bold tracking-wider text-foreground group-hover:text-[var(--color-accent)] transition-colors">
-              exeku<span className="text-[var(--color-accent)] animate-terminal-blink">_</span>
+            <span className="font-heading text-xl font-semibold tracking-tight text-foreground transition-colors">
+              exeku
             </span>
           </a>
 
