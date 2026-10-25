@@ -33,8 +33,6 @@ export function AppTopbar({ profile }: AppTopbarProps) {
   const profileMenu = useRef<HTMLDetailsElement>(null);
   const { isTimedActive, formattedTime, requestNavigation } = useChallengeSession();
 
-  useEffect(() => { setMobileOpen(false); if (profileMenu.current) profileMenu.current.open = false; }, [pathname]);
-
   useEffect(() => {
     const closeOnOutside = (event: PointerEvent) => {
       if (profileMenu.current && !profileMenu.current.contains(event.target as Node)) {
