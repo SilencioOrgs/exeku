@@ -3,7 +3,7 @@ import {
   Activity, AlarmClock, AlertCircle, ArrowDown, ArrowLeft, ArrowRight, ArrowUp,
   BadgeCheck, BookOpen, Box, Braces, Calendar, CheckCircle2, ChevronDown,
   CircleHelp, CirclePlay, Clipboard, Clock3, Code2, Cog, Copy, Database,
-  Download, FileCode2, FileText, Folder, Github, Info, List, LoaderCircle,
+  Download, FileCode2, FileText, Folder, GitBranch, Info, List, LoaderCircle,
   Lock, Maximize2, Menu, Minus, Monitor, Pencil, Play, Plus, Search,
   Settings, Shield, Smartphone, Sparkles, Star, Terminal, User, Wrench, X,
   XCircle, type LucideIcon
@@ -30,7 +30,7 @@ const ICONS: Record<string, LucideIcon> = {
   sparkles: Sparkles, user: User, activity: Activity, check: BadgeCheck, plus: Plus,
   minus: Minus, search: Search, code: Braces, info: Info, help: CircleHelp,
   book: BookOpen, play: Play, clipboard: Clipboard, loader: LoaderCircle,
-  lock: Lock, maximize: Maximize2, tools: Wrench, github: Github,
+  lock: Lock, maximize: Maximize2, tools: Wrench, github: GitBranch,
   chevronDown: ChevronDown, xCircle: XCircle,
 };
 export function DotIcon({ name, adaptive: _adaptive, grid: _grid, size = 16, className, "aria-label": label, ...props }: DotIconProps) {
