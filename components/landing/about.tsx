@@ -14,7 +14,7 @@ export function About() {
   }> = [
     {
       iconName: "shield",
-      iconColor: "text-[var(--color-pink)]",
+      iconColor: "text-[var(--color-text-muted)]",
       title: "Isolated Sandboxing",
       tag: "SECURE RUNTIME",
       badgeVariant: "pink",
@@ -23,7 +23,7 @@ export function About() {
     },
     {
       iconName: "circlePlay",
-      iconColor: "text-[var(--color-accent)]",
+      iconColor: "text-[var(--color-text-main)]",
       title: "Automated Assessment",
       tag: "CODECHUM MODEL",
       badgeVariant: "cyan",
@@ -32,7 +32,7 @@ export function About() {
     },
     {
       iconName: "windows",
-      iconColor: "text-[var(--color-mint)]",
+      iconColor: "text-[var(--color-text-muted)]",
       title: "Local Developer Preview",
       tag: "ZERO LOCK-IN",
       badgeVariant: "mint",
@@ -42,7 +42,7 @@ export function About() {
   ];
 
   return (
-    <section id="about" className="py-20 md:py-28 bg-[var(--color-canvas)] border-t-2 border-b-2 border-[var(--color-border)] relative">
+    <section id="about" className="py-20 md:py-28 bg-[var(--color-canvas)] border-t border-b border-[var(--color-border)] relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="max-w-3xl mb-14">
@@ -50,7 +50,7 @@ export function About() {
             <PixelBadge variant="purple">ABOUT EXEKU</PixelBadge>
           </div>
           <h2
-            className="text-3xl sm:text-4xl md:text-5xl font-bold text-[var(--color-text-main)] mb-6 uppercase tracking-tight"
+            className="text-3xl sm:text-4xl md:text-5xl font-bold text-[var(--color-text-main)] mb-6 tracking-tight"
             style={{ fontFamily: "var(--font-heading-active)" }}
           >
             Code. Practice. Compete.
@@ -58,7 +58,7 @@ export function About() {
           <p className="text-base sm:text-lg text-[var(--color-text-muted)] font-sans leading-relaxed">
             Exeku is an online programming practice and assessment platform inspired by CodeChum,
             currently in local developer preview. We combine instant automated judging, multi-language sandboxes,
-            and competitive programming workflows with a distinct retro developer aesthetic.
+            and competitive programming workflows with a clean, accessible developer interface.
           </p>
         </div>
 
@@ -71,7 +71,7 @@ export function About() {
               className="bg-[var(--color-surface)] hover:border-[var(--color-primary)] transition-all group"
             >
               <div className="flex items-center justify-between mb-6">
-                <div className="w-12 h-12 bg-[var(--color-elevated)] border-2 border-[var(--color-border)] group-hover:border-[var(--color-accent)] flex items-center justify-center transition-colors [box-shadow:var(--shadow-btn)]">
+                <div className="w-12 h-12 bg-[var(--color-elevated)] rounded-xl border border-[var(--color-border)] group-hover:border-[var(--color-accent)] flex items-center justify-center transition-colors shadow-none">
                   <DotIcon name={pillar.iconName} size={24} className={pillar.iconColor} />
                 </div>
                 <PixelBadge variant={pillar.badgeVariant}>{pillar.tag}</PixelBadge>
@@ -92,9 +92,9 @@ export function About() {
         </div>
 
         {/* Tactical Callout Box */}
-        <div className="mt-12 p-6 bg-[var(--color-elevated)] border-2 border-[var(--color-primary)]/50 pixel-box flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="mt-12 p-6 bg-[var(--color-elevated)] rounded-xl border border-[var(--color-border)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <DotIcon name="shield" size={24} className="text-[var(--color-accent)] shrink-0" />
+            <DotIcon name="shield" size={24} className="text-[var(--color-text-main)] shrink-0" />
             <div>
               <h4 className="text-[var(--color-text-main)] font-mono font-bold text-sm uppercase">
                 Local Developer Preview Architecture
