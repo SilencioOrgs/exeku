@@ -1,9 +1,7 @@
 "use client";
 
-import React from "react";
+import { Check, Code2 } from "lucide-react";
 import type { ExperienceLevel, PreferredLanguage } from "@/types/profile";
-import { PixelBadge } from "@/components/retro/pixel-badge";
-import { DotIcon, type DotIconName } from "@/components/retro/dot-icon";
 import { PixelAvatar } from "@/components/retro/pixel-avatar";
 import { cn } from "@/lib/utils";
 
@@ -16,262 +14,76 @@ export interface StepLoadoutProps {
   onChangeLanguage: (lang: PreferredLanguage) => void;
 }
 
-interface LanguageOption {
-  id: PreferredLanguage;
-  label: string;
-  iconName: DotIconName;
-  tag: string;
-  accent: string;
-  description: string;
-}
-
-const LANGUAGES: LanguageOption[] = [
-  {
-    id: "python",
-    label: "Python 3",
-    iconName: "python",
-    tag: "SCRIPTING",
-    accent: "var(--color-accent)",
-    description: "Readable, dynamic, and powerful. Great for algorithms and rapid experimentation.",
-  },
-  {
-    id: "java",
-    label: "Java",
-    iconName: "java",
-    tag: "OBJECT-ORIENTED",
-    accent: "var(--color-pink)",
-    description: "Robust, strictly typed, structured enterprise and academic standard.",
-  },
-  {
-    id: "cpp",
-    label: "C++",
-    iconName: "cplusplus",
-    tag: "SYSTEMS",
-    accent: "var(--color-primary-text)",
-    description: "High-performance systems programming with templates, RAII, and manual control.",
-  },
-  {
-    id: "c",
-    label: "C",
-    iconName: "file",
-    tag: "LOW-LEVEL",
-    accent: "var(--color-mint)",
-    description: "Direct memory management, pointers, and foundational computer architecture.",
-  },
+const LANGUAGES: { id: PreferredLanguage; label: string; detail: string }[] = [
+  { id: "python", label: "Python 3", detail: "Great for learning fundamentals" },
+  { id: "java", label: "Java", detail: "Object-oriented programming" },
+  { id: "cpp", label: "C++", detail: "Algorithms and systems" },
+  { id: "c", label: "C", detail: "Low-level fundamentals" },
 ];
-
-interface LevelOption {
-  id: ExperienceLevel;
-  label: string;
-  tag: string;
-  description: string;
-}
-
-const LEVELS: LevelOption[] = [
-  {
-    id: "beginner",
-    label: "Beginner",
-    tag: "LVL 01",
-    description: "Fresh to coding. Building fundamentals and syntax confidence.",
-  },
-  {
-    id: "intermediate",
-    label: "Intermediate",
-    tag: "LVL 02",
-    description: "Comfortable with variables, loops, functions, and standard data structures.",
-  },
-  {
-    id: "advanced",
-    label: "Advanced",
-    tag: "LVL 03",
-    description: "Experienced with algorithms, complexity analysis, and systems memory.",
-  },
+const LEVELS: { id: ExperienceLevel; label: string; detail: string }[] = [
+  { id: "beginner", label: "Beginner", detail: "I'm new to programming" },
+  { id: "intermediate", label: "Intermediate", detail: "I know the basics" },
+  { id: "advanced", label: "Advanced", detail: "I'm comfortable with algorithms" },
 ];
 
 export function StepLoadout({
-  displayName,
-  avatarId,
-  experienceLevel,
-  preferredLanguage,
-  onChangeExperience,
-  onChangeLanguage,
+  displayName, avatarId, experienceLevel, preferredLanguage, onChangeExperience, onChangeLanguage,
 }: StepLoadoutProps) {
-  const selectedLangObj = LANGUAGES.find((l) => l.id === preferredLanguage) ?? LANGUAGES[0];
-  const selectedLevelObj = LEVELS.find((l) => l.id === experienceLevel) ?? LEVELS[0];
-
+  const languageName = LANGUAGES.find((language) => language.id === preferredLanguage)?.label ?? "Python 3";
+  const levelName = LEVELS.find((level) => level.id === experienceLevel)?.label ?? "Beginner";
   return (
-    <div className="appearance-stack space-y-6">
-      {/* Header */}
-      <div>
-        <div className="flex items-center gap-2 mb-2">
-          <PixelBadge variant="mint">STEP 03</PixelBadge>
-          <span className="text-xs font-mono text-[var(--color-text-muted)] uppercase tracking-wider">
-            PREFERENCES
-          </span>
-        </div>
-        <h2 className="font-heading text-2xl sm:text-3xl text-[var(--color-text-main)] tracking-wide">
-          CONFIGURE YOUR LOADOUT_
-        </h2>
-        <p className="text-sm text-[var(--color-text-muted)] mt-1">
-          Select your initial language focus and starting skill bracket. You can adjust this anytime.
-        </p>
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <p className="text-xs font-medium text-[var(--color-text-muted)]">Step 3 of 3 · Preferences</p>
+        <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">Personalize your workspace</h2>
+        <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">Pick a language and experience level. These preferences can be edited anytime.</p>
       </div>
 
-      {/* Preferred Programming Language */}
-      <div className="space-y-3">
-        <label className="block text-xs font-mono uppercase tracking-wider text-[var(--color-text-main)]">
-          Primary Language <span className="text-[var(--color-pink)]">*</span>
-        </label>
-        <div
-          role="radiogroup"
-          aria-label="Preferred programming language"
-          className="grid grid-cols-1 sm:grid-cols-2 gap-3"
-        >
-          {LANGUAGES.map((lang) => {
-            const isSelected = lang.id === preferredLanguage;
-
-            return (
-              <div
-                key={lang.id}
-                role="radio"
-                aria-checked={isSelected}
-                tabIndex={0}
-                onClick={() => onChangeLanguage(lang.id)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    onChangeLanguage(lang.id);
-                  }
-                }}
-                className={cn(
-                  "p-3.5 border-2 cursor-pointer transition-all duration-100 outline-none select-none relative",
-                  "bg-[var(--color-surface)] hover:bg-[var(--color-elevated)] focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]",
-                  isSelected
-                    ? "border-[var(--color-accent)] [box-shadow:var(--shadow-btn)]"
-                    : "border-[var(--color-border)] hover:border-[var(--color-primary)] [box-shadow:var(--shadow-btn)]"
-                )}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2.5">
-                    <div
-                      style={{ color: lang.accent }}
-                      className="p-1.5 bg-[var(--color-canvas)] border border-[var(--color-border)]"
-                    >
-                      <DotIcon name={lang.iconName} size={20} />
-                    </div>
-                    <div>
-                      <span className="font-mono text-sm font-bold text-[var(--color-text-main)] block">
-                        {lang.label}
-                      </span>
-                      <span className="text-[0.625rem] font-mono text-[var(--color-text-dim)] uppercase tracking-wider">
-                        {lang.tag}
-                      </span>
-                    </div>
-                  </div>
-                  {isSelected && (
-                    <span className="text-xs font-mono text-[var(--color-accent)] font-bold">
-                      [●]
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-[var(--color-text-muted)] mt-2 line-clamp-2">
-                  {lang.description}
-                </p>
-              </div>
-            );
+      <fieldset className="space-y-3">
+        <legend className="text-sm font-medium">Preferred language</legend>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {LANGUAGES.map((language) => {
+            const selected = language.id === preferredLanguage;
+            return <label key={language.id} className={cn(
+              "relative flex min-w-0 cursor-pointer items-center gap-3 rounded-xl border p-3 transition-colors focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--color-ring)]",
+              selected ? "border-[var(--color-text-main)] bg-[var(--color-elevated)]" : "border-[var(--color-border)] hover:bg-[var(--color-elevated)]",
+            )}>
+              <input type="radio" name="preferred-language" className="sr-only"
+                checked={selected} onChange={() => onChangeLanguage(language.id)} />
+              <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-[var(--color-border)]"><Code2 size={17} aria-hidden="true" /></span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold">{language.label}</span>
+                <span className="block text-xs text-[var(--color-text-muted)]">{language.detail}</span>
+              </span>
+              {selected && <Check size={16} aria-hidden="true" className="shrink-0" />}
+            </label>;
           })}
         </div>
-      </div>
+      </fieldset>
 
-      {/* Experience Level */}
-      <div className="space-y-3">
-        <label className="block text-xs font-mono uppercase tracking-wider text-[var(--color-text-main)]">
-          Experience Level <span className="text-[var(--color-pink)]">*</span>
-        </label>
-        <div
-          role="radiogroup"
-          aria-label="Experience level"
-          className="grid grid-cols-1 sm:grid-cols-3 gap-3"
-        >
-          {LEVELS.map((lvl) => {
-            const isSelected = lvl.id === experienceLevel;
-
-            return (
-              <div
-                key={lvl.id}
-                role="radio"
-                aria-checked={isSelected}
-                tabIndex={0}
-                onClick={() => onChangeExperience(lvl.id)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    onChangeExperience(lvl.id);
-                  }
-                }}
-                className={cn(
-                  "p-3.5 border-2 cursor-pointer transition-all duration-100 outline-none select-none relative",
-                  "bg-[var(--color-surface)] hover:bg-[var(--color-elevated)] focus-visible:ring-2 focus-visible:ring-[var(--color-mint)]",
-                  isSelected
-                    ? "border-[var(--color-mint)] [box-shadow:var(--shadow-btn)]"
-                    : "border-[var(--color-border)] hover:border-[var(--color-primary)] [box-shadow:var(--shadow-btn)]"
-                )}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[0.625rem] font-mono text-[var(--color-mint)] font-bold">
-                    {lvl.tag}
-                  </span>
-                  {isSelected && (
-                    <span className="text-xs font-mono text-[var(--color-mint)] font-bold">
-                      [●]
-                    </span>
-                  )}
-                </div>
-                <span className="font-mono text-sm font-bold text-[var(--color-text-main)] block">
-                  {lvl.label}
-                </span>
-                <p className="text-[0.6875rem] text-[var(--color-text-dim)] mt-1 line-clamp-2">
-                  {lvl.description}
-                </p>
-              </div>
-            );
+      <fieldset className="space-y-3">
+        <legend className="text-sm font-medium">Experience level</legend>
+        <div className="grid gap-3 sm:grid-cols-3">
+          {LEVELS.map((level) => {
+            const selected = level.id === experienceLevel;
+            return <label key={level.id} className={cn(
+              "relative flex cursor-pointer flex-col gap-1 rounded-xl border p-3 transition-colors focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--color-ring)]",
+              selected ? "border-[var(--color-text-main)] bg-[var(--color-elevated)]" : "border-[var(--color-border)] hover:bg-[var(--color-elevated)]",
+            )}>
+              <input type="radio" name="experience-level" className="sr-only"
+                checked={selected} onChange={() => onChangeExperience(level.id)} />
+              <span className="flex items-center justify-between gap-2 text-sm font-semibold">{level.label}{selected && <Check size={16} aria-hidden="true" />}</span>
+              <span className="text-xs text-[var(--color-text-muted)]">{level.detail}</span>
+            </label>;
           })}
         </div>
-      </div>
+      </fieldset>
 
-      {/* Loadout Review Summary Card */}
-      <div className="p-4 bg-[var(--color-canvas)] border-2 border-[var(--color-border)] [box-shadow:var(--shadow-btn)]">
-        <div className="flex items-center justify-between mb-3 border-b border-[var(--color-border)] pb-2">
-          <span className="text-xs font-mono text-[var(--color-primary-text)] uppercase tracking-wider font-bold">
-            PROFILE REVIEW SUMMARY
-          </span>
-          <PixelBadge variant="purple" bracketed={false} className="text-[0.625rem] py-0 px-1">
-            LOCAL TARGET
-          </PixelBadge>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <PixelAvatar avatarId={avatarId} size={48} className="border-2" />
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 text-xs font-mono flex-1">
-            <div>
-              <span className="text-[var(--color-text-dim)] block">CODER:</span>
-              <span className="text-[var(--color-text-main)] font-bold truncate block">
-                {displayName || "Unnamed"}
-              </span>
-            </div>
-            <div>
-              <span className="text-[var(--color-text-dim)] block">LANGUAGE:</span>
-              <span className="text-[var(--color-accent)] font-bold">
-                {selectedLangObj.label}
-              </span>
-            </div>
-            <div>
-              <span className="text-[var(--color-text-dim)] block">EXPERIENCE:</span>
-              <span className="text-[var(--color-mint)] font-bold">
-                {selectedLevelObj.label}
-              </span>
-            </div>
-          </div>
+      <div className="flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-elevated)] p-4">
+        <PixelAvatar avatarId={avatarId} size={44} />
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold">{displayName || "Your profile"}</p>
+          <p className="text-xs text-[var(--color-text-muted)]">{languageName} · {levelName}</p>
         </div>
       </div>
     </div>
