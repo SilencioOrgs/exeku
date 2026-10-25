@@ -39,7 +39,7 @@ test('Monaco updates independent syntax, ligatures, and typography without repla
   const first = render();
   first.props.onMount(editor, monaco);
   effects.splice(0).forEach(callback => callback());
-  assert.equal(changes.at(-1), 'exeku-pixel-light');
+  assert.equal(changes.at(-1), 'exeku-minimal-light');
   assert.equal(editor.options.fontLigatures, true);
   preferences = normalizeAppearancePreferences({ uiStyle: 'studio-crm', editorTheme: 'high-contrast', editorFontSize: 20, editorLineHeight: 32 });
   const next = render();
