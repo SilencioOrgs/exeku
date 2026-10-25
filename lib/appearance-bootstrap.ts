@@ -23,7 +23,8 @@ function initialize(config: { defaults: typeof DEFAULT_APPEARANCE_PREFERENCES; c
   const dark = prefs.colorMode === "dark" || (prefs.colorMode === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
   const reduced = prefs.reducedMotion === "system" ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : prefs.reducedMotion;
   const root = document.documentElement;
-  Object.assign(root.dataset, { uiStyle: prefs.uiStyle, colorMode: dark ? "dark" : "light", contrast: prefs.contrastMode, uiFont: prefs.uiFontFamily, editorFont: prefs.editorFontFamily, lineHeight: prefs.lineHeight, density: prefs.density, reducedMotion: String(reduced) });
+  // Legacy theme IDs remain readable in storage, but the interface is now a single neutral design.
+  Object.assign(root.dataset, { uiStyle: "minimal-saas", palette: "monochrome", colorMode: dark ? "dark" : "light", contrast: prefs.contrastMode, uiFont: prefs.uiFontFamily === "pixelify-sans" ? "geist-sans" : prefs.uiFontFamily, editorFont: prefs.editorFontFamily, lineHeight: prefs.lineHeight, density: prefs.density, reducedMotion: String(reduced) });
   root.classList.toggle("dark", dark);
   const brightness = prefs.contrastMode === "high" ? 100 : prefs.brightness;
   root.style.setProperty("--ui-font-scale", prefs.uiFontScale + "%");
