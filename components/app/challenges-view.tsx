@@ -112,11 +112,7 @@ export function ChallengesView() {
               ACTIVE CHALLENGE: <strong>{challenge.session?.problemTitle}</strong> ({challenge.formattedTime} left)
             </span>
           </div>
-          <Link href={`/app/workspace?problem=${encodeURIComponent(challenge.session?.problemId ?? "")}`}>
-            <PixelButton variant="cyan" size="sm" className="text-xs">
-              RESUME CHALLENGE <DotIcon name="arrowRight" size={14} aria-hidden="true" />
-            </PixelButton>
-          </Link>
+          <Link href={`/app/workspace?problem=${encodeURIComponent(challenge.session?.problemId ?? "")}`} className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] px-3 text-xs font-medium text-[var(--color-primary-foreground)] transition-colors hover:bg-[var(--color-primary-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ring)]"><DotIcon name="arrowRight" size={14} aria-hidden="true" /> Resume Challenge</Link>
         </div>
       )}
 
@@ -265,7 +261,7 @@ export function ChallengesView() {
                       onClick={() => setInspectProblemId(prob.id)}
                       className="text-xs"
                     >
-                      STATEMENT 👁
+                      <DotIcon name="book" size={14} aria-hidden="true" /> Statement
                     </PixelButton>
 
                     <button
@@ -274,15 +270,11 @@ export function ChallengesView() {
                       className="px-2.5 py-1.5 border border-[var(--color-pink)] text-[var(--color-pink)] hover:bg-[var(--color-pink)]/10 font-heading text-xs cursor-pointer transition-colors flex items-center gap-1"
                       title="Start a 15-minute timed challenge session"
                     >
-                      <DotIcon name="alarm" size={12} />
-                      <span>TIMED <DotIcon name="alarm" size={14} aria-hidden="true" /></span>
+                      <DotIcon name="alarm" size={14} aria-hidden="true" />
+                      <span>Timed</span>
                     </button>
 
-                    <Link href={`/app/workspace?problem=${encodeURIComponent(prob.id)}`}>
-                      <PixelButton variant="primary" size="sm" className="text-xs">
-                        SOLVE <DotIcon name="circlePlay" size={14} aria-hidden="true" />
-                      </PixelButton>
-                    </Link>
+                    <Link href={`/app/workspace?problem=${encodeURIComponent(prob.id)}`} className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] px-3 text-xs font-medium text-[var(--color-primary-foreground)] transition-colors hover:bg-[var(--color-primary-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ring)]"><DotIcon name="circlePlay" size={14} aria-hidden="true" /> Solve</Link>
                   </div>
                 </div>
 
@@ -443,11 +435,7 @@ export function ChallengesView() {
                   <span>START TIMED CHALLENGE <DotIcon name="alarm" size={14} aria-hidden="true" /></span>
                 </button>
 
-                <Link href={`/app/workspace?problem=${encodeURIComponent(activeProblemDetail.id)}`}>
-                  <PixelButton variant="primary" size="sm">
-                    SOLVE IN WORKSPACE <DotIcon name="circlePlay" size={14} aria-hidden="true" />
-                  </PixelButton>
-                </Link>
+                <Link href={`/app/workspace?problem=${encodeURIComponent(activeProblemDetail.id)}`} className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] px-3 text-xs font-medium text-[var(--color-primary-foreground)] transition-colors hover:bg-[var(--color-primary-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ring)]"><DotIcon name="circlePlay" size={14} aria-hidden="true" /> Solve In Workspace</Link>
               </div>
             </div>
           </PixelCard>
