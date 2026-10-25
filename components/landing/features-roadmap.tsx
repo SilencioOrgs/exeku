@@ -112,7 +112,7 @@ export function FeaturesRoadmap() {
           {/* Column 1: Current Foundation */}
           <div className="appearance-stack space-y-6">
             <div className="flex items-center gap-2 pb-3 border-b border-[var(--color-border)]">
-              <span className="w-2.5 h-2.5 bg-[var(--color-mint)] inline-block" />
+              <span className="w-2.5 h-2.5 bg-[var(--color-text-muted)] rounded-full inline-block" />
               <h3
                 className="text-xl sm:text-2xl font-bold text-[var(--color-text-main)] tracking-wider"
                 style={{ fontFamily: "var(--font-heading-active)" }}
@@ -128,7 +128,7 @@ export function FeaturesRoadmap() {
                   key={item.title}
                   variant="default"
                   cornerMarks={false}
-                  className="p-5 bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] hover:border-[var(--color-mint)]/50 transition-colors"
+                  className="p-5 bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] hover:border-[var(--color-text-muted)] transition-colors"
                 >
                   <div className="flex items-start gap-3">
                     <div className="p-2 bg-[var(--color-elevated)] border border-[var(--color-border)] text-[var(--color-text-muted)] shrink-0 mt-0.5">
@@ -151,7 +151,7 @@ export function FeaturesRoadmap() {
           {/* Column 2: Development Roadmap */}
           <div className="appearance-stack space-y-6">
             <div className="flex items-center gap-2 pb-3 border-b border-[var(--color-border)]">
-              <span className="w-2.5 h-2.5 bg-[var(--color-pink)] inline-block" />
+              <span className="w-2.5 h-2.5 bg-[var(--color-text-muted)] rounded-full inline-block" />
               <h3
                 className="text-xl sm:text-2xl font-bold text-[var(--color-text-main)] tracking-wider"
                 style={{ fontFamily: "var(--font-heading-active)" }}
@@ -167,7 +167,7 @@ export function FeaturesRoadmap() {
                   key={item.title}
                   variant="default"
                   cornerMarks={false}
-                  className="p-5 bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] hover:border-[var(--color-pink)]/50 transition-colors"
+                  className="p-5 bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] hover:border-[var(--color-text-muted)] transition-colors"
                 >
                   <div className="flex items-start gap-3">
                     <div className="p-2 bg-[var(--color-elevated)] border border-[var(--color-border)] text-[var(--color-text-muted)] shrink-0 mt-0.5">
@@ -178,7 +178,7 @@ export function FeaturesRoadmap() {
                         <h4 className="text-base font-bold text-[var(--color-text-main)] font-mono tracking-wide">
                           {item.title}
                         </h4>
-                        <span className="text-[0.625rem] font-mono px-1.5 py-0.2 bg-[var(--color-elevated)] text-[var(--color-text-muted)] border border-[var(--color-pink)]/40 flex items-center gap-1">
+                        <span className="text-[0.625rem] font-mono px-1.5 py-0.2 bg-[var(--color-elevated)] text-[var(--color-text-muted)] border border-[var(--color-border)] flex items-center gap-1">
                           <DotIcon name="alarm" className="w-2.5 h-2.5" /> Planned
                         </span>
                       </div>
