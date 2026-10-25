@@ -1,6 +1,6 @@
 "use client";
 
-import { AppearanceModal } from "./appearance-modal";
+import { ThemeToggle } from "@/components/appearance/theme-toggle";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useProfile } from "@/hooks/use-profile";
@@ -22,7 +22,7 @@ export function Navbar() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-[var(--color-canvas)]/95 backdrop-blur-sm border-b-2 border-[var(--color-border)] shadow-none">
+    <header className="sticky top-0 z-50 w-full bg-[var(--color-canvas)]/95 backdrop-blur-sm border-b border-[var(--color-border)] shadow-none">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-16 py-3 flex gap-3 flex-wrap items-center justify-between">
         {/* Brand Wordmark */}
         <div className="flex items-center gap-3">
@@ -47,7 +47,7 @@ export function Navbar() {
         </div>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden xl:flex items-center gap-4 text-sm font-mono tracking-wide">
+        <nav className="hidden xl:flex items-center gap-4 text-sm font-sans tracking-normal">
           {navLinks.map((link) => (
             <a
               key={link.label}
@@ -64,7 +64,7 @@ export function Navbar() {
 
         {/* Action Button & Mobile Menu Toggle */}
         <div className="flex items-center gap-3">
-          <AppearanceModal />
+          <ThemeToggle />
           <div className="hidden sm:block">
             <PixelButton
               variant="cyan"
@@ -78,7 +78,7 @@ export function Navbar() {
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="xl:hidden min-h-11 min-w-11 p-2 text-[var(--color-text-muted)] hover:text-foreground bg-[var(--color-elevated)] border border-[var(--color-border)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+            className="xl:hidden inline-flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:bg-[var(--color-elevated)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ring)]"
             aria-label="Toggle navigation menu"
             aria-expanded={mobileMenuOpen}
           >
@@ -89,7 +89,7 @@ export function Navbar() {
 
       {/* Mobile Menu Drawer */}
       {mobileMenuOpen && (
-        <div className="xl:hidden bg-[var(--color-surface)] border-b-2 border-[var(--color-border)] px-4 pt-3 pb-6 flex flex-col gap-4">
+        <div className="xl:hidden bg-[var(--color-surface)] border-b border-[var(--color-border)] px-4 pt-3 pb-6 flex flex-col gap-4">
           <div className="flex items-center justify-between pb-2 border-b border-[var(--color-border)]">
             <PixelBadge variant="cyan">
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-pulse mr-1" />
@@ -104,7 +104,7 @@ export function Navbar() {
                 key={link.label}
                 href={link.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-[var(--color-text-main)] hover:text-[var(--color-accent)] font-mono text-base py-1.5 border-b border-[var(--color-elevated)] flex items-center justify-between"
+                className="text-[var(--color-text-main)] hover:text-[var(--color-accent)] font-sans text-sm py-2.5 border-b border-[var(--color-elevated)] flex items-center justify-between"
               >
                 <span>{link.label}</span>
                 <span className="text-[var(--color-accent)] text-sm"><DotIcon name="circlePlay" size={14} aria-hidden="true" /></span>

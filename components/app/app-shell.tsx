@@ -64,24 +64,9 @@ export function AppShell({ children }: AppShellProps) {
     <div className="app-shell h-screen max-h-screen bg-[var(--color-canvas)] text-[var(--color-text-main)] flex flex-col overflow-hidden relative">
       {blocked && (
       <div role="status" aria-live="polite" className="min-h-screen bg-[var(--color-canvas)] flex flex-col items-center justify-center p-4">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-[var(--color-accent)] border-t-transparent animate-spin" />
-          <span className="font-mono text-xs text-[var(--color-accent)] uppercase tracking-widest animate-pulse">
-            LOADING LOCAL WORKSPACE...
-          </span>
-        </div>
+        <div className="flex items-center gap-3 text-sm text-[var(--color-text-muted)]"><span className="size-4 animate-spin rounded-full border-2 border-[var(--color-border)] border-t-[var(--color-text-main)]" aria-hidden="true" /> Loading workspace…</div>
       </div>
       )}
-      {/* Background Pixel Grid Pattern */}
-      <div
-        className="arcade-decoration absolute inset-0 pointer-events-none opacity-20 z-0"
-        style={{
-          backgroundImage:
-            "linear-gradient(to right, var(--color-border) 1px, transparent 1px), linear-gradient(to bottom, var(--color-border) 1px, transparent 1px)",
-          backgroundSize: "32px 32px",
-        }}
-      />
-
       {/* Top Application Bar */}
       {!blocked && <AppTopbar
         profile={profile}

@@ -8,7 +8,6 @@ import { PixelButton } from "@/components/retro/pixel-button";
 import { DotIcon } from "@/components/retro/dot-icon";
 import { PixelTerminal } from "./pixel-terminal";
 
-import { StyleText } from "@/components/appearance/style-text";
 
 export function Hero() {
   const router = useRouter();
@@ -32,9 +31,9 @@ export function Hero() {
             className="text-4xl sm:text-6xl md:text-7xl font-semibold tracking-tight text-[var(--color-text-main)] mb-6 leading-[1.1]"
             style={{ fontFamily: "var(--font-heading-active)" }}
           >
-            <StyleText arcade="YOUR CODE." clarity="Your code." /> <br className="hidden sm:inline" />
+            Your code. <br className="hidden sm:inline" />
             <span className="text-[var(--color-accent)]">
-              <StyleText arcade="YOUR MACHINE." clarity="Your machine." />
+              Your machine.
             </span>
           </h1>
 
@@ -67,7 +66,7 @@ export function Hero() {
           </div>
 
           {/* Core Trust Badges */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-8 mt-10 pt-8 border-t border-[var(--color-border)]/60 w-full max-w-2xl font-mono text-xs text-[var(--color-text-muted)]">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-8 mt-10 pt-8 border-t border-[var(--color-border)]/60 w-full max-w-2xl text-xs text-[var(--color-text-muted)]">
             <div className="flex items-center justify-center gap-2">
               <DotIcon name="shield" size={16} className="text-[var(--color-mint)]" />
               <span>Container Sandboxing</span>

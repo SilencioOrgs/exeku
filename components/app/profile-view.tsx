@@ -45,7 +45,7 @@ export function ProfileView() {
           <p className="text-xs text-[var(--color-text-muted)]">Coding locally since {joined}</p>
         </div>
         <Link href="/app/settings" className="profile-action">
-          <DotIcon name="cog" size={16} aria-hidden="true" /> Appearance
+          <DotIcon name="cog" size={16} aria-hidden="true" /> Settings
         </Link>
       </section>
       <div className="grid gap-3 sm:grid-cols-2">

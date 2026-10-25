@@ -21,7 +21,7 @@ export function Languages() {
       name: "Python 3",
       role: "Fundamentals & Logic",
       accentBorder: "border-[var(--color-accent)]/50",
-      accentText: "text-[var(--color-accent)]",
+      accentText: "text-[var(--color-text-main)]",
       badgeVariant: "cyan",
       iconName: "python",
       runtimeNote: "Interpreted • Python 3 Runtime Target",
@@ -33,7 +33,7 @@ export function Languages() {
       name: "Java",
       role: "Object-Oriented Architecture",
       accentBorder: "border-[var(--color-warning)]/50",
-      accentText: "text-[var(--color-warning)]",
+      accentText: "text-[var(--color-text-muted)]",
       badgeVariant: "default",
       iconName: "java",
       runtimeNote: "Bytecode • OpenJDK Target",
@@ -45,7 +45,7 @@ export function Languages() {
       name: "C++",
       role: "Systems & Performance",
       accentBorder: "border-[var(--color-primary)]/50",
-      accentText: "text-[var(--color-primary-text)]",
+      accentText: "text-[var(--color-text-main)]",
       badgeVariant: "purple",
       iconName: "cplusplus",
       runtimeNote: "Compiled • GCC / Clang Target",
@@ -57,7 +57,7 @@ export function Languages() {
       name: "C",
       role: "Bare Metal & Foundations",
       accentBorder: "border-[var(--color-pink)]/50",
-      accentText: "text-[var(--color-pink)]",
+      accentText: "text-[var(--color-text-muted)]",
       badgeVariant: "pink",
       iconName: "file",
       runtimeNote: "Native • C11 / C17 Target",
@@ -75,7 +75,7 @@ export function Languages() {
             <PixelBadge variant="cyan">CORE CURRICULUM</PixelBadge>
           </div>
           <h2
-            className="text-3xl sm:text-4xl md:text-5xl font-bold text-[var(--color-text-main)] mb-6 uppercase tracking-tight"
+            className="text-3xl sm:text-4xl md:text-5xl font-bold text-[var(--color-text-main)] mb-6 tracking-tight"
             style={{ fontFamily: "var(--font-heading-active)" }}
           >
             Four Foundational Languages.
@@ -93,12 +93,12 @@ export function Languages() {
             <PixelCard
               key={lang.id}
               variant="default"
-              className={`bg-[var(--color-surface)] border-2 ${lang.accentBorder} transition-all`}
+              className={`bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl transition-all`}
             >
               <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-[var(--color-elevated)] border border-[var(--color-border)] flex items-center justify-center">
-                    <DotIcon name={lang.iconName} size={22} className={lang.accentText} />
+                  <div className="w-10 h-10 bg-[var(--color-elevated)] rounded-lg border border-[var(--color-border)] flex items-center justify-center">
+                    <DotIcon name={lang.iconName} size={22} className="text-[var(--color-text-muted)]" />
                   </div>
                   <div>
                     <h3

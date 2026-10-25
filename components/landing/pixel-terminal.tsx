@@ -112,7 +112,7 @@ export function PixelTerminal() {
   };
 
   return (
-    <div className="relative w-full rounded-none border-2 border-[var(--color-primary)] bg-[var(--color-surface)] pixel-box-purple overflow-hidden">
+    <div className="relative w-full overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
       {/* Decorative corner tabs */}
       <div className="pixel-corner-mark absolute top-0 left-0 w-3 h-3 bg-[var(--color-accent)] z-20" />
       <div className="pixel-corner-mark absolute top-0 right-0 w-3 h-3 bg-[var(--color-accent)] z-20" />
@@ -120,7 +120,7 @@ export function PixelTerminal() {
       <div className="pixel-corner-mark absolute bottom-0 right-0 w-3 h-3 bg-[var(--color-pink)] z-20" />
 
       {/* Terminal Title Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 px-3 sm:px-4 py-2.5 bg-[var(--color-elevated)] border-b-2 border-[var(--color-border)] font-mono text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-3 sm:px-4 py-2.5 bg-[var(--color-elevated)] border-b border-[var(--color-border)] font-mono text-xs">
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 bg-[var(--color-pink)] inline-block border border-black/60" />
@@ -128,21 +128,21 @@ export function PixelTerminal() {
             <span className="w-2.5 h-2.5 bg-[var(--color-mint)] inline-block border border-black/60" />
           </div>
           <span className="text-[var(--color-text-main)] font-bold ml-1 tracking-wider">
-            exeku-terminal<span className="text-[var(--color-accent)]">_mock</span>
+            Example editor
           </span>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-[var(--color-text-muted)] hidden sm:inline">[HOST: 127.0.0.1]</span>
+          
           <PixelBadge variant="cyan">DEV PREVIEW</PixelBadge>
         </div>
       </div>
 
       {/* Disclaimer Banner: Strictly labeled as demo */}
-      <div className="px-3 sm:px-4 py-1.5 bg-[var(--color-elevated)] border-b border-[var(--color-pink)]/40 flex items-center justify-between gap-2 text-[0.6875rem] font-mono text-[var(--color-pink)]">
+      <div className="flex items-center justify-between gap-2 border-b border-[var(--color-border)] bg-[var(--color-elevated)] px-3 py-2 text-xs text-[var(--color-text-muted)] sm:px-4">
         <div className="flex items-center gap-1.5">
           <DotIcon name="circleBlock" className="w-3.5 h-3.5 text-[var(--color-pink)] shrink-0" />
-          <span>DEMO SIMULATION ONLY — Local execution engine is in active development on the roadmap.</span>
+          <span>Interactive preview only — code is not executed here.</span>
         </div>
         <span className="hidden md:inline text-[0.625rem] uppercase opacity-75">Not a live compiler</span>
       </div>
@@ -181,7 +181,7 @@ export function PixelTerminal() {
       {/* Code Editor Body Viewport */}
       <div className="relative p-3 sm:p-5 bg-[var(--color-canvas)] font-mono text-xs sm:text-sm overflow-x-auto min-h-[220px]">
         {/* Subtle Scanlines Overlay */}
-        <div className="absolute inset-0 scanlines pointer-events-none opacity-40" />
+        <div className="hidden" />
 
         <div className="relative z-10 flex">
           {/* Line Numbers */}
@@ -206,13 +206,13 @@ export function PixelTerminal() {
                 )}
               </div>
             ))}
-            <div className="text-[var(--color-accent)] inline-block animate-terminal-blink">█</div>
+            
           </div>
         </div>
       </div>
 
       {/* Action Strip & Simulated Terminal Output */}
-      <div className="p-3 sm:p-4 bg-[var(--color-surface)] border-t-2 border-[var(--color-border)]">
+      <div className="p-3 sm:p-4 bg-[var(--color-surface)] border-t border-[var(--color-border)]">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
           <div className="flex items-center gap-2">
             <button

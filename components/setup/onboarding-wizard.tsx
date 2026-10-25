@@ -1,277 +1,145 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, ArrowRight, Check, LoaderCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/appearance/theme-toggle";
 import { useProfile } from "@/hooks/use-profile";
 import { validateDisplayName } from "@/lib/profile-validation";
 import { DEFAULT_AVATAR_ID } from "@/lib/avatars";
 import type { ExperienceLevel, PreferredLanguage } from "@/types/profile";
-import { PixelCard } from "@/components/retro/pixel-card";
-import { PixelButton } from "@/components/retro/pixel-button";
-import { PixelBadge } from "@/components/retro/pixel-badge";
-import { DotIcon } from "@/components/retro/dot-icon";
 import { StepIdentity } from "./step-identity";
 import { StepAvatar } from "./step-avatar";
 import { StepLoadout } from "./step-loadout";
 import { cn } from "@/lib/utils";
 
+const STEPS = ["Identity", "Avatar", "Preferences"] as const;
+
 export function OnboardingWizard() {
   const router = useRouter();
   const { profile, isLoading, saveProfile } = useProfile();
-
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [displayName, setDisplayName] = useState<string>("");
-  const [bio, setBio] = useState<string>("");
-  const [avatarId, setAvatarId] = useState<string>(DEFAULT_AVATAR_ID);
+  const [displayName, setDisplayName] = useState("");
+  const [bio, setBio] = useState("");
+  const [avatarId, setAvatarId] = useState(DEFAULT_AVATAR_ID);
   const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel>("beginner");
   const [preferredLanguage, setPreferredLanguage] = useState<PreferredLanguage>("python");
-
-  const [touched, setTouched] = useState<boolean>(false);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [touched, setTouched] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const validation = validateDisplayName(displayName);
 
   const handleNextFromIdentity = () => {
     setTouched(true);
-    if (!validation.isValid) {
-      return;
-    }
-    setStep(2);
+    if (validation.isValid) setStep(2);
   };
 
   const handleFinalSubmit = async () => {
     setTouched(true);
-    if (!validation.isValid) {
-      setStep(1);
-      return;
-    }
-
+    if (!validation.isValid) { setStep(1); return; }
     setIsSubmitting(true);
     setSubmitError(null);
-
     try {
       await saveProfile({
-        displayName: displayName.trim(),
-        bio: bio.trim() || undefined,
-        avatarId,
-        experienceLevel,
-        preferredLanguage,
+        displayName: displayName.trim(), bio: bio.trim() || undefined,
+        avatarId, experienceLevel, preferredLanguage,
       });
       router.push("/app");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to save profile";
-      setSubmitError(message);
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Unable to save your profile");
       setIsSubmitting(false);
     }
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[var(--color-canvas)] flex flex-col items-center justify-center p-4">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-[var(--color-accent)] border-t-transparent animate-spin" />
-          <span className="font-mono text-xs text-[var(--color-accent)] uppercase tracking-widest animate-pulse">
-            INITIALIZING SECURE LOCAL STORAGE...
-          </span>
-        </div>
-      </div>
-    );
+    return <main className="grid min-h-dvh place-items-center bg-[var(--color-canvas)] p-5">
+      <p role="status" className="flex items-center gap-3 text-sm text-[var(--color-text-muted)]">
+        <LoaderCircle size={18} aria-hidden="true" className="animate-spin" /> Loading local profile…
+      </p>
+    </main>;
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-canvas)] text-[var(--color-text-main)] flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden">
-      {/* Background Pixel Grid Texture */}
-      <div
-        className="absolute inset-0 pointer-events-none opacity-20"
-        style={{
-          backgroundImage:
-            "linear-gradient(to right, var(--color-border) 1px, transparent 1px), linear-gradient(to bottom, var(--color-border) 1px, transparent 1px)",
-          backgroundSize: "32px 32px",
-        }}
-      />
-
-      <div className="w-full max-w-2xl relative z-10 space-y-6">
-        {/* Top Header & Branding */}
-        <div className="flex items-center justify-between">
-          <Link
-            href="/"
-            className="flex items-center gap-2.5 text-[var(--color-text-main)] hover:text-[var(--color-accent)] transition-colors group"
-          >
-            <div className="w-8 h-8 bg-[var(--color-primary)] text-[var(--color-primary-foreground)] border border-[var(--color-accent)] flex items-center justify-center font-heading text-base font-bold [box-shadow:var(--shadow-btn)]">
-              E
-            </div>
-            <span className="font-heading text-xl tracking-wider text-[var(--color-text-main)] group-hover:text-[var(--color-accent)]">
-              EXE<span className="text-[var(--color-accent)]">KU</span>
-            </span>
+    <main className="min-h-dvh bg-[var(--color-canvas)] px-4 py-6 text-[var(--color-text-main)] sm:px-6 sm:py-10">
+      <div className="mx-auto w-full max-w-2xl space-y-6">
+        <header className="flex items-center justify-between gap-4">
+          <Link href="/" className="inline-flex items-center gap-2 text-base font-semibold tracking-tight hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ring)]">
+            <span className="grid size-9 place-items-center rounded-lg border border-[var(--color-border)] bg-[var(--color-elevated)] text-sm font-semibold">E</span>
+            exeku
           </Link>
+          <ThemeToggle />
+        </header>
 
-          <PixelBadge variant="muted" bracketed>
-            OFFLINE PROFILE V1
-          </PixelBadge>
-        </div>
-
-        {/* Existing Profile Warning Banner */}
         {profile && (
-          <div className="p-4 bg-[var(--color-elevated)] border-2 border-[var(--color-primary)] [box-shadow:var(--shadow-btn)] space-y-3">
-            <div className="flex items-center gap-2">
-              <DotIcon name="stars" size={18} className="text-[var(--color-accent)]" />
-              <span className="font-mono text-xs font-bold text-[var(--color-text-main)] uppercase tracking-wider">
-                EXISTING LOCAL PROFILE DETECTED
-              </span>
+          <section aria-label="Existing profile" className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+            <div className="min-w-0">
+              <h2 className="text-sm font-semibold">Welcome back, {profile.displayName}</h2>
+              <p className="mt-1 text-xs text-[var(--color-text-muted)]">Continue with your saved local profile, or update its details.</p>
             </div>
-            <p className="text-xs font-mono text-[var(--color-text-muted)]">
-              A profile for <strong className="text-[var(--color-text-main)]">{profile.displayName}</strong> already exists on this machine. You can jump directly to the workspace or re-configure this profile.
-            </p>
-            <div className="flex flex-wrap items-center gap-3 pt-1">
-              <PixelButton
-                variant="cyan"
-                size="sm"
-                onClick={() => router.push("/app")}
-              >
-                CONTINUE TO APP <DotIcon name="circlePlay" size={14} aria-hidden="true" />
-              </PixelButton>
-              <PixelButton
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setDisplayName(profile.displayName);
-                  setBio(profile.bio || "");
-                  setAvatarId(profile.avatarId);
-                  setExperienceLevel(profile.experienceLevel);
-                  setPreferredLanguage(profile.preferredLanguage);
-                }}
-              >
-                LOAD EXISTING DATA
-              </PixelButton>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" type="button" onClick={() => {
+                setDisplayName(profile.displayName); setBio(profile.bio || "");
+                setAvatarId(profile.avatarId); setExperienceLevel(profile.experienceLevel);
+                setPreferredLanguage(profile.preferredLanguage);
+              }}>Use saved details</Button>
+              <Button type="button" onClick={() => router.push("/app")}>Open workspace <ArrowRight size={16} aria-hidden="true" /></Button>
             </div>
-          </div>
+          </section>
         )}
 
-        {/* Wizard Main Card */}
-        <PixelCard variant="elevated" className="border-2 border-[var(--color-border)]">
-          {/* Step Breadcrumbs Progress */}
-          <div className="flex items-center justify-between border-b-2 border-[var(--color-border)] pb-4 mb-6 text-xs font-mono select-none">
-            <div className="flex items-center gap-1 sm:gap-2">
-              <span
-                className={cn(
-                  "px-2 py-1 border transition-colors",
-                  step === 1
-                    ? "bg-[var(--color-accent)] text-[var(--color-accent-foreground)] font-bold border-white"
-                    : "bg-[var(--color-canvas)] text-[var(--color-text-muted)] border-[var(--color-border)]"
-                )}
-              >
-                01 IDENTITY
-              </span>
-              <span className="text-[var(--color-text-dim)]"><DotIcon name="circlePlay" size={14} aria-hidden="true" /></span>
-              <span
-                className={cn(
-                  "px-2 py-1 border transition-colors",
-                  step === 2
-                    ? "bg-[var(--color-pink)] text-[var(--color-danger-foreground)] font-bold border-[var(--color-pink)]"
-                    : "bg-[var(--color-canvas)] text-[var(--color-text-muted)] border-[var(--color-border)]"
-                )}
-              >
-                02 AVATAR
-              </span>
-              <span className="text-[var(--color-text-dim)]"><DotIcon name="circlePlay" size={14} aria-hidden="true" /></span>
-              <span
-                className={cn(
-                  "px-2 py-1 border transition-colors",
-                  step === 3
-                    ? "bg-[var(--color-mint)] text-[var(--color-accent-foreground)] font-bold border-white"
-                    : "bg-[var(--color-canvas)] text-[var(--color-text-muted)] border-[var(--color-border)]"
-                )}
-              >
-                03 LOADOUT
-              </span>
-            </div>
-
-            <span className="text-[var(--color-text-muted)] hidden sm:inline">
-              STEP {step}/3
-            </span>
+        <section className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
+          <div className="border-b border-[var(--color-border)] px-5 py-5 sm:px-7">
+            <p className="mb-3 text-sm font-semibold">Set up Exeku</p>
+            <ol aria-label="Profile setup progress" className="grid grid-cols-3 gap-2">
+              {STEPS.map((label, index) => {
+                const number = index + 1;
+                const current = step === number;
+                const complete = step > number;
+                return <li key={label} aria-current={current ? "step" : undefined}
+                  className={cn("flex min-w-0 items-center gap-2 rounded-lg border px-2 py-2 text-xs sm:px-3",
+                    current ? "border-[var(--color-text-main)] bg-[var(--color-elevated)] font-semibold" :
+                      "border-[var(--color-border)] text-[var(--color-text-muted)]")}>
+                  <span className={cn("grid size-5 shrink-0 place-items-center rounded-full border text-[10px]",
+                    current || complete ? "border-[var(--color-text-main)]" : "border-[var(--color-border)]")}>
+                    {complete ? <Check size={12} aria-hidden="true" /> : number}
+                  </span>
+                  <span className="truncate">{label}</span>
+                </li>;
+              })}
+            </ol>
           </div>
 
-          {/* Submission Error Banner */}
-          {submitError && (
-            <div
-              role="alert"
-              className="p-3 mb-6 bg-[var(--color-elevated)] border-2 border-[var(--color-pink)] text-[var(--color-pink)] font-mono text-xs flex items-center gap-2"
-            >
-              <span className="font-bold">[ERROR]</span>
-              <span>{submitError}</span>
-            </div>
-          )}
+          <div className="space-y-6 px-5 py-6 sm:px-7 sm:py-8">
+            {submitError && <div role="alert" className="rounded-lg border border-[var(--color-pink)] bg-[var(--color-elevated)] p-3 text-sm text-[var(--color-pink)]">{submitError}</div>}
 
-          {/* Wizard Steps */}
-          {step === 1 && (
-            <StepIdentity
-              displayName={displayName}
-              bio={bio}
-              onChangeName={setDisplayName}
-              onChangeBio={setBio}
-              error={validation.error}
-              touched={touched}
-              onBlurName={() => setTouched(true)}
-            />
-          )}
-
-          {step === 2 && (
-            <StepAvatar
-              selectedAvatarId={avatarId}
-              onSelectAvatar={setAvatarId}
-            />
-          )}
-
-          {step === 3 && (
-            <StepLoadout
-              displayName={displayName}
-              avatarId={avatarId}
-              experienceLevel={experienceLevel}
-              preferredLanguage={preferredLanguage}
-              onChangeExperience={setExperienceLevel}
-              onChangeLanguage={setPreferredLanguage}
-            />
-          )}
-
-          {/* Wizard Navigation Footer */}
-          <div className="flex items-center justify-between pt-6 mt-8 border-t-2 border-[var(--color-border)]">
-            {step > 1 ? (
-              <PixelButton
-                variant="secondary"
-                size="md"
-                onClick={() => setStep((s) => (s - 1) as 1 | 2)}
-                disabled={isSubmitting}
-              >
-                <DotIcon name="arrowLeft" size={14} aria-hidden="true" /> BACK
-              </PixelButton>
-            ) : (
-              <div />
-            )}
-
-            {step < 3 ? (
-              <PixelButton
-                variant="cyan"
-                size="md"
-                onClick={step === 1 ? handleNextFromIdentity : () => setStep(3)}
-              >
-                NEXT STEP <DotIcon name="circlePlay" size={14} aria-hidden="true" />
-              </PixelButton>
-            ) : (
-              <PixelButton
-                variant="primary"
-                size="md"
-                onClick={handleFinalSubmit}
-                disabled={isSubmitting}
-                className="bg-[var(--color-mint)] text-[var(--color-accent-foreground)] border-[var(--color-border)] hover:bg-[var(--color-mint)] font-bold"
-              >
-                {isSubmitting ? "STORING PROFILE..." : "CREATE PROFILE"}
-              </PixelButton>
-            )}
+            {step === 1 && <StepIdentity displayName={displayName} bio={bio} onChangeName={setDisplayName}
+              onChangeBio={setBio} error={validation.error} touched={touched} onBlurName={() => setTouched(true)} />}
+            {step === 2 && <StepAvatar selectedAvatarId={avatarId} onSelectAvatar={setAvatarId} />}
+            {step === 3 && <StepLoadout displayName={displayName} avatarId={avatarId}
+              experienceLevel={experienceLevel} preferredLanguage={preferredLanguage}
+              onChangeExperience={setExperienceLevel} onChangeLanguage={setPreferredLanguage} />}
           </div>
-        </PixelCard>
+
+          <footer className="flex items-center justify-between gap-3 border-t border-[var(--color-border)] px-5 py-4 sm:px-7">
+            {step > 1
+              ? <Button type="button" variant="outline" disabled={isSubmitting} onClick={() => setStep((current) => (current - 1) as 1 | 2)}>
+                  <ArrowLeft size={16} aria-hidden="true" /> Back
+                </Button>
+              : <span className="text-xs text-[var(--color-text-muted)]">Step 1 of 3</span>}
+            {step < 3
+              ? <Button type="button" onClick={step === 1 ? handleNextFromIdentity : () => setStep(3)}>
+                  Continue <ArrowRight size={16} aria-hidden="true" />
+                </Button>
+              : <Button type="button" onClick={() => void handleFinalSubmit()} disabled={isSubmitting}>
+                  {isSubmitting ? "Saving…" : "Create profile"} {!isSubmitting && <Check size={16} aria-hidden="true" />}
+                </Button>}
+          </footer>
+        </section>
+        <p className="text-center text-xs text-[var(--color-text-muted)]">Your Exeku profile is saved to this browser. No account registration is required.</p>
       </div>
-    </div>
+    </main>
   );
 }

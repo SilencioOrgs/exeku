@@ -18,7 +18,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Current Development Status**: Local Development / Developer Preview (no public deployment to Vercel/Render)
 - **Supported Languages**: Python 3, Java, C++, C
 - **Primary Workflows**: Problem solving, code execution, automated test judging, programming contests, student telemetry
-- **Future Roadmap**: Online-hosted multi-tenant web deployment, server-authoritative contest identities, multi-theme Appearance Studio (Phase 2C), instructor-managed lessons, offline AI tutor
+- **Future Roadmap**: Online-hosted multi-tenant web deployment, server-authoritative contest identities, minimalist Light/Dark UI, instructor-managed lessons, offline AI tutor
 
 ---
 
@@ -28,7 +28,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Language**: TypeScript (`tsconfig.json`)
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/turbopack`, `tw-animate-css`, `app/globals.css`)
 - **UI Components**: shadcn/ui configured with Base UI primitives (`@base-ui/react`), Nova preset (`style: "base-nova"`), and Lucide React icons (`components.json`)
-- **Icons**: Official Doticons pixel icon system (`components/retro/dot-icon.tsx`)
+- **Icons**: Lucide stroke icons via the existing compatibility wrapper (`components/retro/dot-icon.tsx`)
 - **Editor**: Monaco Editor (`monaco-editor`, `@monaco-editor/react`)
 - **Storage**: IndexedDB local profiles and draft persistence (v2 schema)
 - **Execution Sandbox Target**: Piston API (`POST /api/v2/execute`) via isolated container sandbox
@@ -48,7 +48,7 @@ Exeku is built with clean ownership boundaries between collaborative modules:
 - Programming problems library and problem schemas
 - Timed contest and assessment infrastructure
 - Deployment architecture and execution queues
-- Appearance Studio & theme customization (Phase 2C)
+- Shared Light/Dark appearance and minimalist UI
 
 ### Teammate Owns:
 - Lessons, tutorials, and curriculum explanations
@@ -79,20 +79,15 @@ Student code is strictly untrusted:
 
 ## 5. Design System & Aesthetics
 
-Exeku balances retro nostalgic craft with modern accessibility:
+Exeku uses **one minimalist SaaS design system**, not multiple visual themes.
 
-- **Theme & Vibe**: Retro pixel-art developer aesthetic with high functional clarity.
-- **Color Palette**:
-  - Canvas: `#090514`
-  - Surface: `#120A24`
-  - Elevated: `#1B0F36`
-  - Border: `#2E1A57`
-  - Accents: Neon Purple (`#9E00FF`), Neon Cyan (`#00F0FF`), Neon Pink (`#FF007A`), Mint Green (`#00FF9D`).
-- **Typography**:
-  - Headings & Badges: Pixelify Sans (`font-pixel`).
-  - Interface & Body: Geist Sans.
-  - Code & Telemetry: Geist Mono (`font-mono`).
-- **Component Style**: Tactile pixel buttons, cards, borders, badges, and Doticons icons.
+- **Theme:** Light and Dark only, selected using the shared header toggle. The previous Style/Palette/Appearance Studio selectors must not return.
+- **Colors:** Neutral zinc/black/white surfaces with accessible contrast and reserved semantic colors for success, warning and errors.
+- **Typography:** Geist Sans for the interface, Geist Mono for code. Do not introduce pixel fonts, arcade borders or neon effects.
+- **Surfaces:** Rounded cards and controls (8–12px radii), subtle 1px borders, generous spacing, restrained motion.
+- **Components:** Reuse shadcn/ui, Base UI, Tailwind v4 and existing shared primitives. Old `Pixel*` component names are only compatibility aliases; their visuals must remain modern.
+- **Persistence:** Keep reading old saved appearance IDs safely, but expose only the Light/Dark toggle. Never delete profiles or editor drafts when changing the UI.
+- **Accessibility:** Keyboard, focus-visible, responsive layout, reduced motion and sensible color contrast are required.
 
 ---
 
