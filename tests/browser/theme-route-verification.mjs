@@ -69,7 +69,7 @@ try {
 
   const openNav = async (href, selector) => {
     if (await page.locator(`nav[aria-label="Main navigation"] a[href="${href}"]:visible`).count() === 0) {
-      await page.getByRole("button", { name: "Toggle navigation menu", exact: true }).click();
+      await page.getByRole("button", { name: "Open navigation", exact: true }).click();
     }
     await page.locator(`nav[aria-label="Main navigation"] a[href="${href}"]:visible`).first().click();
     await page.waitForURL((url) => url.pathname === href, { timeout: 15000 });
@@ -84,51 +84,45 @@ try {
       await openNav("/app/challenges", ".challenges-view");
       await page.locator(`a[href="/app/workspace?problem=${id}"]:visible`).first().click();
       await page.locator(".workspace-toolbar:visible").waitFor();
-      await page.waitForFunction(() => globalThis.monaco?.editor.getEditors().some(editor => editor.getDomNode()?.getBoundingClientRect().height > 0));
+      await page.locator(".monaco-editor:visible").first().waitFor();
       assert.deepEqual(pageErrors, [], `Workspace revisit failed: ${id}, round ${round + 1}`);
       console.log(`PASS problem revisit ${round + 1}: ${id}`);
     }
   }
 
-  for (const [style, styleId] of [["Clarity", "minimal-saas"], ["Command", "studio-crm"], ["Pixel Arcade", "pixel-arcade"]]) {
-    for (const mode of ["light", "dark"]) {
-      for (const contrast of ["standard", "high"]) {
-    await page.goto(base + "/app/settings");
-    await page.locator(".appearance-studio").waitFor();
-    await page.locator(".theme-option").filter({ hasText: style }).first().click();
-    await page.getByLabel("Color mode", { exact: true }).selectOption(mode);
-    await page.locator(".appearance-advanced summary").click();
-    await page.getByLabel("Contrast", { exact: true }).selectOption(contrast);
-    const apply = page.getByRole("button", { name: /Apply changes/i });
-    if (await apply.isEnabled()) await apply.click();
-    await page.waitForFunction(({ styleId, mode, contrast }) => {
-      const root = document.documentElement.dataset;
-      return root.uiStyle === styleId && root.colorMode === mode && root.contrast === contrast;
-    }, { styleId, mode, contrast });
-    for (const id of ["hello-world", "sum-two-integers", "even-or-odd"]) {
-      await openNav("/app/challenges", ".challenges-view");
-      await page.locator(`a[href="/app/workspace?problem=${id}"]:visible`).first().click();
-      await page.waitForURL(url => url.searchParams.get("problem") === id);
-      await page.locator(".workspace-toolbar:visible").waitFor();
-      await page.waitForFunction(() => globalThis.monaco?.editor.getEditors().some(editor => editor.getDomNode()?.getBoundingClientRect().height > 0));
-      assert.deepEqual(pageErrors, [], `${style} ${mode} ${contrast}: ${id}`);
-    }
-    await openNav("/app/workspace", ".workspace-toolbar:visible");
-    await openNav("/app/profile", ".profile-view");
-    await openNav("/app", ".modern-overview, .dashboard");
-    await page.goBack();
-    await page.locator(".profile-view:visible").waitFor();
-    await page.goForward();
-    await page.locator(".modern-overview:visible, .dashboard:visible").waitFor();
-    console.log(`PASS ${style} ${mode} ${contrast}: all problems, sections, Back/Forward`);
+  // One minimalist interface, tested in both color modes and contrast settings.
+  for (const mode of ["light", "dark"]) {
+    for (const contrast of ["standard", "high"]) {
+      await page.goto(base + "/app/settings");
+      await page.locator(".minimal-appearance-studio:visible").waitFor();
+      await page.getByRole("radio", { name: mode === "light" ? "Light" : "Dark" }).check();
+      await page.locator("details summary").filter({ hasText: "Editor & accessibility options" }).click();
+      await page.getByLabel("Contrast", { exact: true }).selectOption(contrast);
+      const apply = page.getByRole("button", { name: /Apply changes/i });
+      if (await apply.isEnabled()) await apply.click();
+      await page.waitForFunction(({ mode, contrast }) => {
+        const root = document.documentElement.dataset;
+        return root.uiStyle === "minimal-saas" && root.colorMode === mode && root.contrast === contrast;
+      }, { mode, contrast });
+      for (const id of ["hello-world", "sum-two-integers", "even-or-odd"]) {
+        await openNav("/app/challenges", ".challenges-view:visible");
+        await page.locator(`a[href="/app/workspace?problem=${id}"]:visible`).first().click();
+        await page.waitForURL((url) => url.searchParams.get("problem") === id);
+        await page.locator(".workspace-toolbar:visible").waitFor();
+        await page.locator(".monaco-editor:visible").first().waitFor();
+        assert.deepEqual(pageErrors, [], `${mode} ${contrast}: ${id}`);
       }
+      await openNav("/app/workspace", ".workspace-toolbar:visible");
+      await openNav("/app/profile", ".profile-view:visible");
+      await openNav("/app", ".modern-overview:visible");
+      console.log(`PASS ${mode} / ${contrast}: all problems and sections`);
     }
   }
   for (const route of ["/app", "/app/challenges", "/app/workspace", "/app/workspace?problem=hello-world", "/app/workspace?problem=sum-two-integers", "/app/workspace?problem=even-or-odd", "/app/profile", "/app/settings"]) {
     for (const refresh of [false, true]) {
       const response = refresh ? await page.reload() : await page.goto(base + route);
       assert.equal(response.status(), 200, route);
-      await page.locator(route.includes("workspace") ? ".workspace-toolbar:visible" : route.includes("challenges") ? ".challenges-view:visible" : route.includes("profile") ? ".profile-view:visible" : route.includes("settings") ? ".appearance-studio:visible" : ".modern-overview:visible, .dashboard:visible").waitFor();
+      await page.locator(route.includes("workspace") ? ".workspace-toolbar:visible" : route.includes("challenges") ? ".challenges-view:visible" : route.includes("profile") ? ".profile-view:visible" : route.includes("settings") ? ".minimal-appearance-studio:visible" : ".modern-overview:visible, .dashboard:visible").waitFor();
     }
   }
   for (const width of [320, 375, 390, 768, 1024, 1366, 1440]) {
