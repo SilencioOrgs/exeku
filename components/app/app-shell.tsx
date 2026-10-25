@@ -1,114 +1,44 @@
 "use client";
 
-import React, { useState, useEffect, useSyncExternalStore } from "react";
+import { useEffect, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useProfile } from "@/hooks/use-profile";
-import { AppSidebar } from "./app-sidebar";
 import { AppTopbar } from "./app-topbar";
-import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 
 export interface AppShellProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
-function subscribeSidebar(callback: () => void) {
-  if (typeof window === "undefined") return () => {};
-  window.addEventListener("storage", callback);
-  return () => window.removeEventListener("storage", callback);
-}
-
-function getSidebarSnapshot(): boolean {
-  if (typeof window === "undefined") return false;
-  try { return localStorage.getItem("exeku:sidebar-collapsed") === "true"; }
-  catch { return false; }
-}
-
-function getServerSidebarSnapshot(): boolean {
-  return false;
-}
-
+/** Full-width application canvas. Search and mobile navigation live in AppTopbar. */
 export function AppShell({ children }: AppShellProps) {
   const router = useRouter();
   const { profile, isLoading } = useProfile();
 
-  const persistedCollapsed = useSyncExternalStore(
-    subscribeSidebar,
-    getSidebarSnapshot,
-    getServerSidebarSnapshot
-  );
-
-  const [collapsedOverride, setCollapsedOverride] = useState<boolean | null>(null);
-  const collapsed = collapsedOverride ?? persistedCollapsed;
-  const [mobileOpen, setMobileOpen] = useState(false);
-
   useEffect(() => {
-    if (!isLoading && !profile) {
-      router.replace("/setup");
-    }
+    if (!isLoading && !profile) router.replace("/setup");
   }, [isLoading, profile, router]);
-
-  const toggleCollapse = () => {
-    const next = !collapsed;
-    setCollapsedOverride(next);
-    if (typeof window !== "undefined") {
-      try {
-        localStorage.setItem("exeku:sidebar-collapsed", String(next));
-        window.dispatchEvent(new Event("storage"));
-      } catch { /* Keep the sidebar usable when browser storage is denied. */ }
-    }
-  };
 
   const blocked = isLoading || !profile;
 
   return (
-    <div className="app-shell h-screen max-h-screen bg-[var(--color-canvas)] text-[var(--color-text-main)] flex flex-col overflow-hidden relative">
-      {blocked && (
-      <div role="status" aria-live="polite" className="min-h-screen bg-[var(--color-canvas)] flex flex-col items-center justify-center p-4">
-        <div className="flex items-center gap-3 text-sm text-[var(--color-text-muted)]"><span className="size-4 animate-spin rounded-full border-2 border-[var(--color-border)] border-t-[var(--color-text-main)]" aria-hidden="true" /> Loading workspace…</div>
-      </div>
+    <div className="app-shell flex h-dvh min-h-0 flex-col overflow-hidden bg-[var(--color-canvas)] text-[var(--color-text-main)]">
+      {blocked ? (
+        <div role="status" aria-live="polite" className="flex min-h-14 shrink-0 items-center gap-3 border-b border-[var(--color-border)] px-4 text-sm text-[var(--color-text-muted)]">
+          <span className="size-4 animate-spin rounded-full border-2 border-[var(--color-border)] border-t-[var(--color-primary)]" aria-hidden="true" />
+          Loading workspace…
+        </div>
+      ) : (
+        <AppTopbar profile={profile} />
       )}
-      {/* Top Application Bar */}
-      {!blocked && <AppTopbar
-        profile={profile}
-        onToggleMobileMenu={() => setMobileOpen((o) => !o)}
-      />}
-
-      {/* Main Workspace Frame */}
-      <div className="flex-1 flex min-w-0 min-h-0 overflow-hidden relative z-10">
-        {/* Desktop Collapsible Sidebar */}
-        {!blocked && <AppSidebar
-          profile={profile}
-          collapsed={collapsed}
-          onToggleCollapse={toggleCollapse}
-          className="hidden lg:flex h-full shrink-0"
-        />}
-
-        {/* Mobile Slide-Out Drawer with Backdrop */}
-        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-          <SheetContent side="left" showCloseButton={false} style={{ width: "16rem", maxWidth: "80vw" }}>
-            <SheetTitle className="sr-only">Mobile navigation</SheetTitle>
-            <SheetDescription className="sr-only">Choose a workspace page. Press Escape to close navigation.</SheetDescription>
-              <AppSidebar
-                profile={profile}
-                collapsed={false}
-                onToggleCollapse={() => setMobileOpen(false)}
-                onNavigate={() => setMobileOpen(false)}
-                className="w-full h-full [box-shadow:var(--shadow-btn)]"
-              />
-          </SheetContent>
-        </Sheet>
-
-        {/* Dynamic Page Content Canvas */}
-        <main
-          id="main-content"
-          hidden={blocked}
-          inert={blocked}
-          tabIndex={-1}
-          className="flex-1 min-w-0 h-full overflow-y-auto min-h-0 focus:outline-none"
-        >
-          <div className="app-content min-h-full">{children}</div>
-        </main>
-      </div>
+      <main
+        id="main-content"
+        hidden={blocked}
+        inert={blocked}
+        tabIndex={-1}
+        className="min-h-0 min-w-0 flex-1 overflow-y-auto focus:outline-none"
+      >
+        <div className="app-content min-h-full">{children}</div>
+      </main>
     </div>
   );
 }
