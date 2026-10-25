@@ -1275,3 +1275,68 @@ input::placeholder, textarea::placeholder { color: var(--color-text-muted); opac
 @media (prefers-reduced-motion: reduce) {
   .minimal-appearance-studio * { transition-duration: 0ms !important; }
 }
+
+
+/* SaaS UI foundation — single visual language, with only light and dark controls exposed. */
+:root[data-ui-style="minimal-saas"] {
+  --radius: 0.75rem;
+  --radius-card: 0.75rem;
+  --radius-btn: 0.625rem;
+  --shadow-card: none;
+  --shadow-btn: none;
+}
+:root[data-ui-style="minimal-saas"] body {
+  background: var(--color-canvas);
+  color: var(--color-text-main);
+  font-family: var(--font-geist-sans), Arial, sans-serif;
+}
+:root[data-ui-style="minimal-saas"] :is(.app-shell,.app-content,.workspace-view,.challenges-view,.settings-page,.profile-view) {
+  font-family: var(--font-geist-sans), Arial, sans-serif;
+  letter-spacing: normal;
+}
+:root[data-ui-style="minimal-saas"] :is(.app-shell,.app-content,.challenges-view,.settings-page) :is(h1,h2,h3,h4) {
+  font-family: var(--font-geist-sans), Arial, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  text-transform: none;
+}
+:root[data-ui-style="minimal-saas"] :is(.appearance-card,.appearance-button,.appearance-badge,.profile-panel,.profile-action,.modern-feature-card,.modern-problem-row) {
+  border-width: 1px;
+  box-shadow: none;
+}
+:root[data-ui-style="minimal-saas"] :is(.appearance-card,.modern-feature-card,.modern-problem-row,.profile-panel) {
+  border-radius: var(--radius-card);
+}
+:root[data-ui-style="minimal-saas"] :is(.appearance-button,.profile-action) {
+  border-radius: var(--radius-btn);
+  text-transform: none;
+  letter-spacing: normal;
+}
+:root[data-ui-style="minimal-saas"] .workspace-view :is(.workspace-toolbar,.workspace-output-header,.workspace-resizable-group) {
+  border-color: var(--color-border);
+}
+:root[data-ui-style="minimal-saas"] .app-topbar,
+:root[data-ui-style="minimal-saas"] .app-sidebar {
+  background: var(--color-surface);
+  box-shadow: none;
+}
+:root[data-ui-style="minimal-saas"] :is(.scanlines,.pixel-corner-mark,.arcade-decoration) {
+  display: none !important;
+}
+:root[data-ui-style="minimal-saas"] .modern-card-icon,
+:root[data-ui-style="minimal-saas"] .modern-problem-icon {
+  border-radius: 0.625rem;
+}
+:root[data-ui-style="minimal-saas"] :is(button,[role="button"],a,select,input) {
+  -webkit-tap-highlight-color: transparent;
+}
+:root[data-ui-style="minimal-saas"] :is(button,[role="button"],a,input,select,summary):focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion:reduce) {
+  :root[data-ui-style="minimal-saas"] :is(.appearance-button,.appearance-card,.modern-problem-row) {
+    animation: none;
+    transition: none;
+  }
+}
