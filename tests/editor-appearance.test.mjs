@@ -3,12 +3,12 @@ import assert from "node:assert/strict";
 import { resolveEditorAppearance } from "../lib/editor-appearance.ts";
 import { DEFAULT_APPEARANCE_PREFERENCES as defaults } from "../types/appearance.ts";
 
-test("editor follows all six styles and modes",()=>{
- for(const [style,name] of [["pixel-arcade","pixel"],["minimal-saas","minimal"],["studio-crm","studio"]]) for(const mode of ["light","dark"]) assert.equal(resolveEditorAppearance({...defaults,uiStyle:style},mode,false).theme,"exeku-"+name+"-"+mode);
+test("editor uses the same minimal skin for legacy styles in light and dark modes",()=>{
+ for(const style of ["pixel-arcade","minimal-saas","studio-crm"]) for(const mode of ["light","dark"]) assert.equal(resolveEditorAppearance({...defaults,uiStyle:style},mode,false).theme,"exeku-minimal-"+mode);
 });
 test("editor overrides remain independent with global high contrast taking precedence",()=>{
- assert.equal(resolveEditorAppearance({...defaults,editorTheme:"light"},"dark",false).theme,"exeku-pixel-light");
- assert.equal(resolveEditorAppearance({...defaults,editorTheme:"dark"},"light",false).theme,"exeku-pixel-dark");
+ assert.equal(resolveEditorAppearance({...defaults,editorTheme:"light"},"dark",false).theme,"exeku-minimal-light");
+ assert.equal(resolveEditorAppearance({...defaults,editorTheme:"dark"},"light",false).theme,"exeku-minimal-dark");
  assert.equal(resolveEditorAppearance({...defaults,editorTheme:"high-contrast"},"light",false).theme,"exeku-hc-light");
  assert.equal(resolveEditorAppearance({...defaults,editorTheme:"light",contrastMode:"high"},"dark",false).theme,"exeku-hc-dark");
 });
