@@ -1,14 +1,12 @@
 "use client";
 
-import React from "react";
 import Link from "next/link";
+import { Menu, Moon, Sun, ArrowUpRight } from "lucide-react";
 import { usePathname } from "next/navigation";
-import type { LocalProfile } from "@/types/profile";
-import { PixelBadge } from "@/components/retro/pixel-badge";
-import { PixelButton } from "@/components/retro/pixel-button";
-import { DotIcon } from "@/components/retro/dot-icon";
-
+import { Button } from "@/components/ui/button";
+import { useAppearance } from "@/hooks/use-appearance";
 import { useChallengeSession } from "@/hooks/use-challenge-session";
+import type { LocalProfile } from "@/types/profile";
 
 export interface AppTopbarProps {
   profile: LocalProfile | null;
@@ -16,116 +14,28 @@ export interface AppTopbarProps {
 }
 
 const ROUTE_LABELS: Record<string, string> = {
-  "/app": "Overview",
-  "/app/challenges": "Challenges",
-  "/app/workspace": "Workspace",
-  "/app/profile": "Profile",
-  "/app/settings": "Settings",
+  "/app": "Overview", "/app/challenges": "Challenges", "/app/workspace": "Workspace",
+  "/app/profile": "Profile", "/app/settings": "Settings",
 };
 
-export function AppTopbar({ profile, onToggleMobileMenu }: AppTopbarProps) {
+export function AppTopbar({ onToggleMobileMenu }: AppTopbarProps) {
   const pathname = usePathname();
-  const currentView = ROUTE_LABELS[pathname] || "DASHBOARD";
-  const { isTimedActive, formattedTime, isWarningTime, requestNavigation } = useChallengeSession();
+  const { effectiveColorMode, setColorMode } = useAppearance();
+  const { isTimedActive, formattedTime, requestNavigation } = useChallengeSession();
+  const isDark = effectiveColorMode === "dark";
 
-  const langLabel = profile?.preferredLanguage?.toUpperCase() || "PYTHON 3";
-  const levelTier =
-    profile?.experienceLevel === "beginner"
-      ? "LVL 01"
-      : profile?.experienceLevel === "intermediate"
-      ? "LVL 02"
-      : "LVL 03";
-
-  return (
-    <header className="app-topbar min-h-13 py-2 bg-[var(--color-canvas)] border-b-2 border-[var(--color-border)] px-4 flex flex-wrap gap-2 items-center justify-between z-20 shrink-0 select-none">
-      {/* Skip to Main Content Link for A11y */}
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-3 focus:py-1 focus:bg-[var(--color-accent)] focus:text-[var(--color-accent-foreground)] focus:font-mono focus:text-xs focus:font-bold"
-      >
-        SKIP TO CONTENT
-      </a>
-
-      {/* Left: Mobile Drawer Trigger + Brand Breadcrumb */}
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={onToggleMobileMenu}
-          aria-label="Toggle navigation menu"
-          className="lg:hidden p-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] bg-[var(--color-elevated)] border border-[var(--color-border)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-        >
-          <DotIcon name="list" size={16} aria-hidden="true" />
-        </button>
-
-        <div className="flex items-center gap-2 font-mono text-xs">
-          <Link
-            href="/"
-            title="Return to Landing Page"
-            onClick={(e) => {
-              if (!requestNavigation("/")) {
-                e.preventDefault();
-              }
-            }}
-            className="flex items-center gap-1.5 text-[var(--color-text-main)] hover:text-[var(--color-accent)] transition-colors outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-accent)]"
-          >
-            <div className="w-5 h-5 bg-[var(--color-primary)] text-[var(--color-primary-foreground)] border border-[var(--color-accent)] flex items-center justify-center font-heading text-[0.625rem] font-bold [box-shadow:var(--shadow-btn)]">
-              E
-            </div>
-            <span className="font-heading text-sm tracking-wider text-[var(--color-text-main)]">
-              EXE<span className="text-[var(--color-accent)]">KU</span>
-            </span>
-          </Link>
-
-          <span className="text-[var(--color-text-dim)]"><DotIcon name="circlePlay" size={14} aria-hidden="true" /></span>
-
-          <span className="text-[var(--color-accent)] font-bold tracking-wider">
-            {currentView}
-          </span>
-        </div>
-      </div>
-
-      {/* Center/Right: Timed Challenge Banner + Machine Telemetry */}
-      <div className="flex items-center gap-2 sm:gap-3">
-        {isTimedActive && (
-          <PixelBadge
-            variant={isWarningTime ? "pink" : "mint"}
-            bracketed
-            className="font-mono text-xs py-1 px-2.5 animate-pulse"
-          >
-            <DotIcon name="alarm" size={14} aria-hidden="true" /> CHALLENGE: {formattedTime}
-          </PixelBadge>
-        )}
-
-        <div className="hidden sm:flex items-center gap-2">
-          <PixelBadge variant="cyan" bracketed={false} className="text-[0.625rem] py-0 px-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-pulse inline-block mr-1" />
-            ONLINE PREVIEW
-          </PixelBadge>
-
-          <PixelBadge variant="cyan" bracketed className="text-[0.625rem] py-0 px-1 font-mono">
-            {langLabel}
-          </PixelBadge>
-
-          <PixelBadge variant="purple" bracketed={false} className="text-[0.625rem] py-0 px-1.5 font-mono">
-            {levelTier}
-          </PixelBadge>
-        </div>
-
-        <Link
-          href="/"
-          title="View Marketing Landing Page"
-          onClick={(e) => {
-            if (!requestNavigation("/")) {
-              e.preventDefault();
-            }
-          }}
-        >
-          <PixelButton variant="ghost" size="sm" className="text-xs px-2.5 py-1">
-            <span className="hidden sm:inline">LANDING</span>
-            <DotIcon name="arrowUp" size={14} aria-hidden="true" />
-          </PixelButton>
-        </Link>
-      </div>
-    </header>
-  );
+  return <header className="app-topbar flex min-h-14 shrink-0 items-center justify-between gap-3 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4 sm:px-6">
+    <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 rounded-md bg-[var(--color-surface)] px-3 py-2">Skip to content</a>
+    <div className="flex min-w-0 items-center gap-3">
+      <Button type="button" variant="ghost" size="icon" className="lg:hidden" aria-label="Open navigation" onClick={onToggleMobileMenu}><Menu size={18} /></Button>
+      <Link href="/" onClick={(event) => { if (!requestNavigation("/")) event.preventDefault(); }} className="font-semibold tracking-tight text-[var(--color-text-main)]">exeku</Link>
+      <span aria-hidden="true" className="text-[var(--color-text-dim)]">/</span>
+      <span className="truncate text-sm text-[var(--color-text-muted)]">{ROUTE_LABELS[pathname] || "Workspace"}</span>
+    </div>
+    <div className="flex items-center gap-2">
+      {isTimedActive && <span className="rounded-md border border-[var(--color-border)] px-2 py-1 text-xs tabular-nums">Challenge {formattedTime}</span>}
+      <Button type="button" variant="ghost" size="icon" title={isDark ? "Switch to light mode" : "Switch to dark mode"} aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"} onClick={() => void setColorMode(isDark ? "light" : "dark")}>{isDark ? <Sun size={17}/> : <Moon size={17}/>}</Button>
+      <Link href="/" onClick={(event) => { if (!requestNavigation("/")) event.preventDefault(); }} className="hidden items-center gap-1 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] sm:inline-flex">Website <ArrowUpRight size={14} /></Link>
+    </div>
+  </header>;
 }
