@@ -51,39 +51,39 @@ export function ProfileResetDialog({
         if (e.key === "Escape" && !isDeleting) onClose();
       }}
     >
-      <div className="w-full max-w-md bg-[var(--color-surface)] border-2 border-[var(--color-pink)] [box-shadow:var(--shadow-card)] [border-radius:var(--radius-card)] p-6 space-y-5 text-foreground">
+      <div className="w-full max-w-md bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] shadow-none p-6 space-y-5 text-foreground">
         {/* Header */}
-        <div className="flex items-center justify-between border-b-2 border-[var(--color-border)] pb-3">
+        <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-3">
           <div className="flex items-center gap-2">
             <PixelBadge variant="pink">DANGER</PixelBadge>
             <h3 id="reset-dialog-title" className="font-heading text-lg sm:text-xl text-[var(--color-pink)]">
-              RESET LOCAL PROFILE_
+              Reset local profile
             </h3>
           </div>
           <button
             onClick={onClose}
             disabled={isDeleting}
             aria-label="Close dialog"
-            className="text-[var(--color-text-muted)] hover:text-[var(--color-pink)] font-mono text-sm px-2 py-1 transition-colors"
+            className="text-[var(--color-text-muted)] hover:text-[var(--color-pink)] font-sans text-sm px-2 py-1 transition-colors"
           >
             <DotIcon name="close" size={14} aria-hidden="true" />
           </button>
         </div>
 
         {error && (
-          <div role="alert" className="p-2.5 bg-[var(--color-elevated)] border border-[var(--color-pink)] text-[var(--color-pink)] font-mono text-xs">
-            [ERROR] {error}
+          <div role="alert" className="rounded-lg p-2.5 bg-[var(--color-elevated)] border border-[var(--color-pink)] text-[var(--color-pink)] font-sans text-xs">
+            {error}
           </div>
         )}
 
         {/* Warning text */}
-        <div className="space-y-3 text-xs font-mono text-[var(--color-text-muted)]">
+        <div className="space-y-3 text-xs font-sans text-[var(--color-text-muted)]">
           <p>
             You are about to permanently delete the local profile for{" "}
             <strong className="text-foreground underline">{profileName}</strong> from this browser&apos;s IndexedDB.
           </p>
-          <div className="p-3 bg-[var(--color-elevated)] border border-[var(--color-pink)]/50 text-[var(--color-pink)] space-y-1">
-            <span className="font-bold block">[!] PERMANENT CONSEQUENCE</span>
+          <div className="rounded-lg p-3 bg-[var(--color-elevated)] border border-[var(--color-pink)]/50 text-[var(--color-pink)] space-y-1">
+            <span className="font-bold block">This cannot be undone</span>
             <p className="text-[11px] leading-relaxed">
               This action cannot be undone. All local progress, preferences, and identity records on this device will be erased. Unrelated browser databases will not be touched.
             </p>
@@ -102,7 +102,7 @@ export function ProfileResetDialog({
             placeholder="Type RESET to confirm"
             autoFocus
             disabled={isDeleting}
-            className="w-full px-3 py-2 bg-[var(--color-canvas)] border-2 border-[var(--color-pink)]/60 focus:border-[var(--color-pink)] text-foreground font-mono text-sm outline-none transition-colors uppercase tracking-wider"
+            className="w-full rounded-lg px-3 py-2 bg-[var(--color-canvas)] border border-[var(--color-pink)]/60 focus:border-[var(--color-pink)] text-foreground font-sans text-sm outline-none transition-colors uppercase tracking-wider"
           />
         </div>
 
@@ -114,7 +114,7 @@ export function ProfileResetDialog({
             onClick={onClose}
             disabled={isDeleting}
           >
-            CANCEL
+            Cancel
           </PixelButton>
           <PixelButton
             variant="pink"
@@ -122,7 +122,7 @@ export function ProfileResetDialog({
             onClick={handleReset}
             disabled={!isConfirmed || isDeleting}
           >
-            {isDeleting ? "DELETING..." : "CONFIRM DELETION"}
+            {isDeleting ? "Deleting…" : "Delete profile"}
           </PixelButton>
         </div>
       </div>
