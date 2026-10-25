@@ -1,12 +1,12 @@
 "use client";
 
+import { AppearanceModal } from "./appearance-modal";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useProfile } from "@/hooks/use-profile";
 import { PixelBadge } from "@/components/retro/pixel-badge";
 import { PixelButton } from "@/components/retro/pixel-button";
 import { DotIcon } from "@/components/retro/dot-icon";
-import { Menu, X, ArrowUpRight } from "lucide-react";
 
 export function Navbar() {
   const router = useRouter();
@@ -22,40 +22,40 @@ export function Navbar() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-[#090514]/95 backdrop-blur-sm border-b-2 border-[#2E1A57] shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <header className="sticky top-0 z-50 w-full bg-[var(--color-canvas)]/95 backdrop-blur-sm border-b-2 border-[var(--color-border)] shadow-none">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-16 py-3 flex gap-3 flex-wrap items-center justify-between">
         {/* Brand Wordmark */}
         <div className="flex items-center gap-3">
           <a
             href="#hero"
-            className="flex items-center gap-2 group outline-none focus-visible:ring-2 focus-visible:ring-[#00F0FF]"
+            className="flex items-center gap-2 group outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
           >
-            <div className="w-8 h-8 bg-[#1B0F36] border-2 border-[#9E00FF] flex items-center justify-center text-[#00F0FF] group-hover:border-[#00F0FF] transition-colors shadow-[2px_2px_0px_#000000]">
-              <DotIcon name="powershell" size={16} className="text-[#00F0FF]" />
+            <div className="w-8 h-8 rounded-lg bg-[var(--color-elevated)] border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-main)]">
+              <DotIcon name="powershell" size={16} />
             </div>
-            <span className="font-mono text-2xl font-bold tracking-wider text-white group-hover:text-[#00F0FF] transition-colors" style={{ fontFamily: "var(--font-pixelify)" }}>
-              exeku<span className="text-[#00F0FF] animate-terminal-blink">_</span>
+            <span className="font-heading text-xl font-semibold tracking-tight text-foreground transition-colors">
+              exeku
             </span>
           </a>
 
           <div className="hidden sm:flex items-center ml-2">
             <PixelBadge variant="cyan">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#00F0FF] animate-pulse mr-1" />
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-pulse mr-1" />
               ONLINE PREVIEW
             </PixelBadge>
           </div>
         </div>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden md:flex items-center gap-8 text-sm font-mono tracking-wide">
+        <nav className="hidden xl:flex items-center gap-4 text-sm font-mono tracking-wide">
           {navLinks.map((link) => (
             <a
               key={link.label}
               href={link.href}
-              className="text-[#A79EC4] hover:text-[#00F0FF] transition-colors flex items-center gap-1 group outline-none focus-visible:ring-1 focus-visible:ring-[#00F0FF]"
+              className="text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors flex items-center gap-1 group outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-accent)]"
             >
-              <span className="text-[#9E00FF] opacity-0 group-hover:opacity-100 transition-opacity">
-                ▶
+              <span className="text-[var(--color-primary)] opacity-0 group-hover:opacity-100 transition-opacity">
+                <DotIcon name="circlePlay" size={14} aria-hidden="true" />
               </span>
               {link.label}
             </a>
@@ -64,37 +64,38 @@ export function Navbar() {
 
         {/* Action Button & Mobile Menu Toggle */}
         <div className="flex items-center gap-3">
+          <AppearanceModal />
           <div className="hidden sm:block">
             <PixelButton
               variant="cyan"
               size="sm"
               onClick={() => router.push(profile ? "/app" : "/setup")}
             >
-              {profile ? "Workspace ▶" : "Get Started"} <ArrowUpRight className="w-3.5 h-3.5" />
+              {profile ? "Workspace" : "Get Started"} <DotIcon name="arrowUp" className="w-3.5 h-3.5" />
             </PixelButton>
           </div>
 
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 text-[#A79EC4] hover:text-white bg-[#1B0F36] border border-[#2E1A57] outline-none focus-visible:ring-2 focus-visible:ring-[#00F0FF]"
+            className="xl:hidden min-h-11 min-w-11 p-2 text-[var(--color-text-muted)] hover:text-foreground bg-[var(--color-elevated)] border border-[var(--color-border)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
             aria-label="Toggle navigation menu"
             aria-expanded={mobileMenuOpen}
           >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {mobileMenuOpen ? <DotIcon name="close" className="w-5 h-5" /> : <DotIcon name="burger" className="w-5 h-5" />}
           </button>
         </div>
       </div>
 
       {/* Mobile Menu Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-[#120A24] border-b-2 border-[#2E1A57] px-4 pt-3 pb-6 flex flex-col gap-4">
-          <div className="flex items-center justify-between pb-2 border-b border-[#2E1A57]">
+        <div className="xl:hidden bg-[var(--color-surface)] border-b-2 border-[var(--color-border)] px-4 pt-3 pb-6 flex flex-col gap-4">
+          <div className="flex items-center justify-between pb-2 border-b border-[var(--color-border)]">
             <PixelBadge variant="cyan">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#00F0FF] animate-pulse mr-1" />
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-pulse mr-1" />
               ONLINE PREVIEW
             </PixelBadge>
-            <span className="text-xs font-mono text-[#A79EC4]">LOCAL DEV PREVIEW</span>
+            <span className="text-xs font-mono text-[var(--color-text-muted)]">LOCAL DEV PREVIEW</span>
           </div>
 
           <nav className="flex flex-col gap-3">
@@ -103,10 +104,10 @@ export function Navbar() {
                 key={link.label}
                 href={link.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-[#F5F3FF] hover:text-[#00F0FF] font-mono text-base py-1.5 border-b border-[#1B0F36] flex items-center justify-between"
+                className="text-[var(--color-text-main)] hover:text-[var(--color-accent)] font-mono text-base py-1.5 border-b border-[var(--color-elevated)] flex items-center justify-between"
               >
                 <span>{link.label}</span>
-                <span className="text-[#00F0FF] text-sm">▶</span>
+                <span className="text-[var(--color-accent)] text-sm"><DotIcon name="circlePlay" size={14} aria-hidden="true" /></span>
               </a>
             ))}
           </nav>
@@ -121,7 +122,7 @@ export function Navbar() {
               }}
               className="w-full"
             >
-              {profile ? "Open Workspace ▶" : "Get Started (Setup Profile)"}
+              {profile ? "Open Workspace" : "Get Started (Setup Profile)"}
             </PixelButton>
           </div>
         </div>

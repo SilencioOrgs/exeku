@@ -20,8 +20,8 @@ export function Languages() {
       id: "python",
       name: "Python 3",
       role: "Fundamentals & Logic",
-      accentBorder: "border-[#00F0FF]/50",
-      accentText: "text-[#00F0FF]",
+      accentBorder: "border-[var(--color-accent)]/50",
+      accentText: "text-[var(--color-accent)]",
       badgeVariant: "cyan",
       iconName: "python",
       runtimeNote: "Interpreted • Python 3 Runtime Target",
@@ -32,8 +32,8 @@ export function Languages() {
       id: "java",
       name: "Java",
       role: "Object-Oriented Architecture",
-      accentBorder: "border-[#FFAA00]/50",
-      accentText: "text-[#FFAA00]",
+      accentBorder: "border-[var(--color-warning)]/50",
+      accentText: "text-[var(--color-warning)]",
       badgeVariant: "default",
       iconName: "java",
       runtimeNote: "Bytecode • OpenJDK Target",
@@ -44,8 +44,8 @@ export function Languages() {
       id: "cpp",
       name: "C++",
       role: "Systems & Performance",
-      accentBorder: "border-[#9E00FF]/50",
-      accentText: "text-[#C084FC]",
+      accentBorder: "border-[var(--color-primary)]/50",
+      accentText: "text-[var(--color-primary-text)]",
       badgeVariant: "purple",
       iconName: "cplusplus",
       runtimeNote: "Compiled • GCC / Clang Target",
@@ -56,8 +56,8 @@ export function Languages() {
       id: "c",
       name: "C",
       role: "Bare Metal & Foundations",
-      accentBorder: "border-[#FF007A]/50",
-      accentText: "text-[#FF007A]",
+      accentBorder: "border-[var(--color-pink)]/50",
+      accentText: "text-[var(--color-pink)]",
       badgeVariant: "pink",
       iconName: "file",
       runtimeNote: "Native • C11 / C17 Target",
@@ -67,7 +67,7 @@ export function Languages() {
   ];
 
   return (
-    <section id="languages" className="py-20 md:py-28 bg-[#090514] relative">
+    <section id="languages" className="py-20 md:py-28 bg-[var(--color-canvas)] relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="max-w-3xl mb-14">
@@ -75,12 +75,12 @@ export function Languages() {
             <PixelBadge variant="cyan">CORE CURRICULUM</PixelBadge>
           </div>
           <h2
-            className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-6 uppercase tracking-tight"
-            style={{ fontFamily: "var(--font-pixelify)" }}
+            className="text-3xl sm:text-4xl md:text-5xl font-bold text-[var(--color-text-main)] mb-6 uppercase tracking-tight"
+            style={{ fontFamily: "var(--font-heading-active)" }}
           >
             Four Foundational Languages.
           </h2>
-          <p className="text-base sm:text-lg text-[#A79EC4] font-sans leading-relaxed">
+          <p className="text-base sm:text-lg text-[var(--color-text-muted)] font-sans leading-relaxed">
             Exeku focuses deeply on the languages that form the backbone of computer
             science education. From high-level algorithmic logic to bare-metal memory
             allocation, students build real fluency across the software stack.
@@ -93,36 +93,36 @@ export function Languages() {
             <PixelCard
               key={lang.id}
               variant="default"
-              className={`bg-[#120A24] border-2 ${lang.accentBorder} transition-all`}
+              className={`bg-[var(--color-surface)] border-2 ${lang.accentBorder} transition-all`}
             >
               <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-[#1B0F36] border border-[#2E1A57] flex items-center justify-center">
+                  <div className="w-10 h-10 bg-[var(--color-elevated)] border border-[var(--color-border)] flex items-center justify-center">
                     <DotIcon name={lang.iconName} size={22} className={lang.accentText} />
                   </div>
                   <div>
                     <h3
-                      className="text-2xl font-bold text-white tracking-wider"
-                      style={{ fontFamily: "var(--font-pixelify)" }}
+                      className="text-2xl font-bold text-[var(--color-text-main)] tracking-wider"
+                      style={{ fontFamily: "var(--font-heading-active)" }}
                     >
                       {lang.name}
                     </h3>
-                    <span className="text-xs font-mono text-[#A79EC4]">{lang.role}</span>
+                    <span className="text-xs font-mono text-[var(--color-text-muted)]">{lang.role}</span>
                   </div>
                 </div>
                 <PixelBadge variant={lang.badgeVariant}>{lang.runtimeNote}</PixelBadge>
               </div>
 
               {/* Planned Curriculum Tracks */}
-              <div className="mb-4 pt-3 border-t border-[#2E1A57]">
-                <span className="text-xs font-mono text-[#A79EC4] uppercase tracking-wider block mb-2">
+              <div className="mb-4 pt-3 border-t border-[var(--color-border)]">
+                <span className="text-xs font-mono text-[var(--color-text-muted)] uppercase tracking-wider block mb-2">
                   Planned Curriculum Modules:
                 </span>
                 <div className="flex flex-wrap gap-2">
                   {lang.curriculum.map((item, idx) => (
                     <span
                       key={idx}
-                      className="px-2 py-1 text-xs font-mono bg-[#1B0F36] border border-[#2E1A57] text-[#E4DBFF]"
+                      className="px-2 py-1 text-xs font-mono bg-[var(--color-elevated)] border border-[var(--color-border)] text-[var(--color-text-main)]"
                     >
                       {item}
                     </span>
@@ -131,8 +131,8 @@ export function Languages() {
               </div>
 
               {/* Code Snippet Box */}
-              <div className="p-3 bg-[#090514] border border-[#2E1A57] font-mono text-xs text-[#A79EC4] overflow-x-auto">
-                <pre className="text-[12px] leading-5 text-[#E4DBFF] whitespace-pre">
+              <div className="p-3 bg-[var(--color-canvas)] border border-[var(--color-border)] font-mono text-xs text-[var(--color-text-muted)] overflow-x-auto">
+                <pre className="text-[0.75rem] leading-5 text-[var(--color-text-main)] whitespace-pre">
                   {lang.sample}
                 </pre>
               </div>

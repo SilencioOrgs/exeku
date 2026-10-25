@@ -31,7 +31,7 @@ const LANGUAGES: LanguageOption[] = [
     label: "Python 3",
     iconName: "python",
     tag: "SCRIPTING",
-    accent: "#00F0FF",
+    accent: "var(--color-accent)",
     description: "Readable, dynamic, and powerful. Great for algorithms and rapid experimentation.",
   },
   {
@@ -39,7 +39,7 @@ const LANGUAGES: LanguageOption[] = [
     label: "Java",
     iconName: "java",
     tag: "OBJECT-ORIENTED",
-    accent: "#FF007A",
+    accent: "var(--color-pink)",
     description: "Robust, strictly typed, structured enterprise and academic standard.",
   },
   {
@@ -47,7 +47,7 @@ const LANGUAGES: LanguageOption[] = [
     label: "C++",
     iconName: "cplusplus",
     tag: "SYSTEMS",
-    accent: "#9E00FF",
+    accent: "var(--color-primary-text)",
     description: "High-performance systems programming with templates, RAII, and manual control.",
   },
   {
@@ -55,7 +55,7 @@ const LANGUAGES: LanguageOption[] = [
     label: "C",
     iconName: "file",
     tag: "LOW-LEVEL",
-    accent: "#00FF9D",
+    accent: "var(--color-mint)",
     description: "Direct memory management, pointers, and foundational computer architecture.",
   },
 ];
@@ -100,27 +100,27 @@ export function StepLoadout({
   const selectedLevelObj = LEVELS.find((l) => l.id === experienceLevel) ?? LEVELS[0];
 
   return (
-    <div className="space-y-6">
+    <div className="appearance-stack space-y-6">
       {/* Header */}
       <div>
         <div className="flex items-center gap-2 mb-2">
           <PixelBadge variant="mint">STEP 03</PixelBadge>
-          <span className="text-xs font-mono text-[#A79EC4] uppercase tracking-wider">
+          <span className="text-xs font-mono text-[var(--color-text-muted)] uppercase tracking-wider">
             PREFERENCES
           </span>
         </div>
-        <h2 className="font-pixel text-2xl sm:text-3xl text-white tracking-wide">
+        <h2 className="font-heading text-2xl sm:text-3xl text-[var(--color-text-main)] tracking-wide">
           CONFIGURE YOUR LOADOUT_
         </h2>
-        <p className="text-sm text-[#A79EC4] mt-1">
+        <p className="text-sm text-[var(--color-text-muted)] mt-1">
           Select your initial language focus and starting skill bracket. You can adjust this anytime.
         </p>
       </div>
 
       {/* Preferred Programming Language */}
       <div className="space-y-3">
-        <label className="block text-xs font-mono uppercase tracking-wider text-[#F5F3FF]">
-          Primary Language <span className="text-[#FF007A]">*</span>
+        <label className="block text-xs font-mono uppercase tracking-wider text-[var(--color-text-main)]">
+          Primary Language <span className="text-[var(--color-pink)]">*</span>
         </label>
         <div
           role="radiogroup"
@@ -145,36 +145,36 @@ export function StepLoadout({
                 }}
                 className={cn(
                   "p-3.5 border-2 cursor-pointer transition-all duration-100 outline-none select-none relative",
-                  "bg-[#120A24] hover:bg-[#1B0F36] focus-visible:ring-2 focus-visible:ring-[#00F0FF]",
+                  "bg-[var(--color-surface)] hover:bg-[var(--color-elevated)] focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]",
                   isSelected
-                    ? "border-[#00F0FF] shadow-[0_0_12px_rgba(0,240,255,0.2),3px_3px_0px_#000000]"
-                    : "border-[#2E1A57] hover:border-[#9E00FF] shadow-[2px_2px_0px_#000000]"
+                    ? "border-[var(--color-accent)] [box-shadow:var(--shadow-btn)]"
+                    : "border-[var(--color-border)] hover:border-[var(--color-primary)] [box-shadow:var(--shadow-btn)]"
                 )}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2.5">
                     <div
                       style={{ color: lang.accent }}
-                      className="p-1.5 bg-[#090514] border border-[#2E1A57]"
+                      className="p-1.5 bg-[var(--color-canvas)] border border-[var(--color-border)]"
                     >
                       <DotIcon name={lang.iconName} size={20} />
                     </div>
                     <div>
-                      <span className="font-mono text-sm font-bold text-white block">
+                      <span className="font-mono text-sm font-bold text-[var(--color-text-main)] block">
                         {lang.label}
                       </span>
-                      <span className="text-[10px] font-mono text-[#84789E] uppercase tracking-wider">
+                      <span className="text-[0.625rem] font-mono text-[var(--color-text-dim)] uppercase tracking-wider">
                         {lang.tag}
                       </span>
                     </div>
                   </div>
                   {isSelected && (
-                    <span className="text-xs font-mono text-[#00F0FF] font-bold">
+                    <span className="text-xs font-mono text-[var(--color-accent)] font-bold">
                       [●]
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-[#9E93B5] mt-2 line-clamp-2">
+                <p className="text-xs text-[var(--color-text-muted)] mt-2 line-clamp-2">
                   {lang.description}
                 </p>
               </div>
@@ -185,8 +185,8 @@ export function StepLoadout({
 
       {/* Experience Level */}
       <div className="space-y-3">
-        <label className="block text-xs font-mono uppercase tracking-wider text-[#F5F3FF]">
-          Experience Level <span className="text-[#FF007A]">*</span>
+        <label className="block text-xs font-mono uppercase tracking-wider text-[var(--color-text-main)]">
+          Experience Level <span className="text-[var(--color-pink)]">*</span>
         </label>
         <div
           role="radiogroup"
@@ -211,26 +211,26 @@ export function StepLoadout({
                 }}
                 className={cn(
                   "p-3.5 border-2 cursor-pointer transition-all duration-100 outline-none select-none relative",
-                  "bg-[#120A24] hover:bg-[#1B0F36] focus-visible:ring-2 focus-visible:ring-[#00FF9D]",
+                  "bg-[var(--color-surface)] hover:bg-[var(--color-elevated)] focus-visible:ring-2 focus-visible:ring-[var(--color-mint)]",
                   isSelected
-                    ? "border-[#00FF9D] shadow-[0_0_12px_rgba(0,255,157,0.2),3px_3px_0px_#000000]"
-                    : "border-[#2E1A57] hover:border-[#9E00FF] shadow-[2px_2px_0px_#000000]"
+                    ? "border-[var(--color-mint)] [box-shadow:var(--shadow-btn)]"
+                    : "border-[var(--color-border)] hover:border-[var(--color-primary)] [box-shadow:var(--shadow-btn)]"
                 )}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-[10px] font-mono text-[#00FF9D] font-bold">
+                  <span className="text-[0.625rem] font-mono text-[var(--color-mint)] font-bold">
                     {lvl.tag}
                   </span>
                   {isSelected && (
-                    <span className="text-xs font-mono text-[#00FF9D] font-bold">
+                    <span className="text-xs font-mono text-[var(--color-mint)] font-bold">
                       [●]
                     </span>
                   )}
                 </div>
-                <span className="font-mono text-sm font-bold text-white block">
+                <span className="font-mono text-sm font-bold text-[var(--color-text-main)] block">
                   {lvl.label}
                 </span>
-                <p className="text-[11px] text-[#84789E] mt-1 line-clamp-2">
+                <p className="text-[0.6875rem] text-[var(--color-text-dim)] mt-1 line-clamp-2">
                   {lvl.description}
                 </p>
               </div>
@@ -240,12 +240,12 @@ export function StepLoadout({
       </div>
 
       {/* Loadout Review Summary Card */}
-      <div className="p-4 bg-[#0E071D] border-2 border-[#3D2275] shadow-[3px_3px_0px_#000000]">
-        <div className="flex items-center justify-between mb-3 border-b border-[#2E1A57] pb-2">
-          <span className="text-xs font-mono text-[#C084FC] uppercase tracking-wider font-bold">
+      <div className="p-4 bg-[var(--color-canvas)] border-2 border-[var(--color-border)] [box-shadow:var(--shadow-btn)]">
+        <div className="flex items-center justify-between mb-3 border-b border-[var(--color-border)] pb-2">
+          <span className="text-xs font-mono text-[var(--color-primary-text)] uppercase tracking-wider font-bold">
             PROFILE REVIEW SUMMARY
           </span>
-          <PixelBadge variant="purple" bracketed={false} className="text-[10px] py-0 px-1">
+          <PixelBadge variant="purple" bracketed={false} className="text-[0.625rem] py-0 px-1">
             LOCAL TARGET
           </PixelBadge>
         </div>
@@ -254,20 +254,20 @@ export function StepLoadout({
           <PixelAvatar avatarId={avatarId} size={48} className="border-2" />
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 text-xs font-mono flex-1">
             <div>
-              <span className="text-[#6B5A8A] block">CODER:</span>
-              <span className="text-white font-bold truncate block">
+              <span className="text-[var(--color-text-dim)] block">CODER:</span>
+              <span className="text-[var(--color-text-main)] font-bold truncate block">
                 {displayName || "Unnamed"}
               </span>
             </div>
             <div>
-              <span className="text-[#6B5A8A] block">LANGUAGE:</span>
-              <span className="text-[#00F0FF] font-bold">
+              <span className="text-[var(--color-text-dim)] block">LANGUAGE:</span>
+              <span className="text-[var(--color-accent)] font-bold">
                 {selectedLangObj.label}
               </span>
             </div>
             <div>
-              <span className="text-[#6B5A8A] block">EXPERIENCE:</span>
-              <span className="text-[#00FF9D] font-bold">
+              <span className="text-[var(--color-text-dim)] block">EXPERIENCE:</span>
+              <span className="text-[var(--color-mint)] font-bold">
                 {selectedLevelObj.label}
               </span>
             </div>

@@ -1,3 +1,5 @@
+import type { AppearancePreferences } from "./appearance";
+
 export type ExperienceLevel = "beginner" | "intermediate" | "advanced";
 
 export type PreferredLanguage = "python" | "java" | "cpp" | "c";
@@ -9,6 +11,7 @@ export interface LocalProfile {
   avatarId: string;
   experienceLevel: ExperienceLevel;
   preferredLanguage: PreferredLanguage;
+  appearancePreferences?: AppearancePreferences;
   createdAt: string;
   updatedAt: string;
 }

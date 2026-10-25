@@ -14,7 +14,7 @@ export function About() {
   }> = [
     {
       iconName: "shield",
-      iconColor: "text-[#FF007A]",
+      iconColor: "text-[var(--color-pink)]",
       title: "Isolated Sandboxing",
       tag: "SECURE RUNTIME",
       badgeVariant: "pink",
@@ -23,7 +23,7 @@ export function About() {
     },
     {
       iconName: "circlePlay",
-      iconColor: "text-[#00F0FF]",
+      iconColor: "text-[var(--color-accent)]",
       title: "Automated Assessment",
       tag: "CODECHUM MODEL",
       badgeVariant: "cyan",
@@ -32,7 +32,7 @@ export function About() {
     },
     {
       iconName: "windows",
-      iconColor: "text-[#00FF9D]",
+      iconColor: "text-[var(--color-mint)]",
       title: "Local Developer Preview",
       tag: "ZERO LOCK-IN",
       badgeVariant: "mint",
@@ -42,7 +42,7 @@ export function About() {
   ];
 
   return (
-    <section id="about" className="py-20 md:py-28 bg-[#0B0617] border-t-2 border-b-2 border-[#2E1A57] relative">
+    <section id="about" className="py-20 md:py-28 bg-[var(--color-canvas)] border-t-2 border-b-2 border-[var(--color-border)] relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="max-w-3xl mb-14">
@@ -50,12 +50,12 @@ export function About() {
             <PixelBadge variant="purple">ABOUT EXEKU</PixelBadge>
           </div>
           <h2
-            className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-6 uppercase tracking-tight"
-            style={{ fontFamily: "var(--font-pixelify)" }}
+            className="text-3xl sm:text-4xl md:text-5xl font-bold text-[var(--color-text-main)] mb-6 uppercase tracking-tight"
+            style={{ fontFamily: "var(--font-heading-active)" }}
           >
             Code. Practice. Compete.
           </h2>
-          <p className="text-base sm:text-lg text-[#A79EC4] font-sans leading-relaxed">
+          <p className="text-base sm:text-lg text-[var(--color-text-muted)] font-sans leading-relaxed">
             Exeku is an online programming practice and assessment platform inspired by CodeChum,
             currently in local developer preview. We combine instant automated judging, multi-language sandboxes,
             and competitive programming workflows with a distinct retro developer aesthetic.
@@ -68,23 +68,23 @@ export function About() {
             <PixelCard
               key={pillar.title}
               variant="default"
-              className="bg-[#120A24] hover:border-[#9E00FF] transition-all group"
+              className="bg-[var(--color-surface)] hover:border-[var(--color-primary)] transition-all group"
             >
               <div className="flex items-center justify-between mb-6">
-                <div className="w-12 h-12 bg-[#1B0F36] border-2 border-[#2E1A57] group-hover:border-[#00F0FF] flex items-center justify-center transition-colors shadow-[2px_2px_0px_#000000]">
+                <div className="w-12 h-12 bg-[var(--color-elevated)] border-2 border-[var(--color-border)] group-hover:border-[var(--color-accent)] flex items-center justify-center transition-colors [box-shadow:var(--shadow-btn)]">
                   <DotIcon name={pillar.iconName} size={24} className={pillar.iconColor} />
                 </div>
                 <PixelBadge variant={pillar.badgeVariant}>{pillar.tag}</PixelBadge>
               </div>
 
               <h3
-                className="text-xl sm:text-2xl font-bold text-white mb-3 tracking-wide"
-                style={{ fontFamily: "var(--font-pixelify)" }}
+                className="text-xl sm:text-2xl font-bold text-[var(--color-text-main)] mb-3 tracking-wide"
+                style={{ fontFamily: "var(--font-heading-active)" }}
               >
                 {pillar.title}
               </h3>
 
-              <p className="text-sm sm:text-base text-[#A79EC4] leading-relaxed">
+              <p className="text-sm sm:text-base text-[var(--color-text-muted)] leading-relaxed">
                 {pillar.description}
               </p>
             </PixelCard>
@@ -92,14 +92,14 @@ export function About() {
         </div>
 
         {/* Tactical Callout Box */}
-        <div className="mt-12 p-6 bg-[#160B2E] border-2 border-[#9E00FF]/50 pixel-box flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="mt-12 p-6 bg-[var(--color-elevated)] border-2 border-[var(--color-primary)]/50 pixel-box flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <DotIcon name="shield" size={24} className="text-[#00F0FF] shrink-0" />
+            <DotIcon name="shield" size={24} className="text-[var(--color-accent)] shrink-0" />
             <div>
-              <h4 className="text-white font-mono font-bold text-sm uppercase">
+              <h4 className="text-[var(--color-text-main)] font-mono font-bold text-sm uppercase">
                 Local Developer Preview Architecture
               </h4>
-              <p className="text-xs sm:text-sm text-[#A79EC4] font-sans">
+              <p className="text-xs sm:text-sm text-[var(--color-text-muted)] font-sans">
                 Zero external cloud dependencies or telemetry tracking during local development. Run the full platform locally with modular sandbox adapters.
               </p>
             </div>

@@ -22,8 +22,9 @@ export class DraftRepositoryError extends Error {
   }
 }
 
-function makeDraftId(profileId: string, lang: PreferredLanguage): string {
-  return `${profileId}_${lang}`;
+function makeDraftId(profileId: string, lang: PreferredLanguage, problemId?: string | null): string {
+  // Existing free-coding keys remain readable; new problem keys are separate.
+  return problemId ? `${profileId}_${problemId}_${lang}` : `${profileId}_${lang}`;
 }
 
 export class DraftRepository {
@@ -32,11 +33,14 @@ export class DraftRepository {
    */
   async getDraft(
     profileId: string,
-    lang: PreferredLanguage
+    lang: PreferredLanguage,
+    problemId?: string | null
   ): Promise<WorkspaceDraft | null> {
     try {
-      const id = makeDraftId(profileId, lang);
-      return await idbGet<WorkspaceDraft>(DRAFT_STORE, id);
+      const id = makeDraftId(profileId, lang, problemId);
+      const draft = await idbGet<WorkspaceDraft>(DRAFT_STORE, id);
+      if (!draft) return null;
+      return { ...draft, files: draft.files?.length ? draft.files : [{ name: getFilenameForLanguage(lang), content: draft.code }] };
     } catch (err) {
       throw new DraftRepositoryError("Failed to retrieve workspace draft", err);
     }
@@ -48,15 +52,18 @@ export class DraftRepository {
   async saveDraft(
     profileId: string,
     lang: PreferredLanguage,
-    code: string
+    code: string,
+    files?: { name: string; content: string }[],
+    problemId?: string | null
   ): Promise<WorkspaceDraft> {
-    const id = makeDraftId(profileId, lang);
+    const id = makeDraftId(profileId, lang, problemId);
     const draft: WorkspaceDraft = {
       id,
       profileId,
       language: lang,
       filename: getFilenameForLanguage(lang),
       code,
+      files: files?.length ? files.map((file) => ({ ...file })) : [{ name: getFilenameForLanguage(lang), content: code }],
       updatedAt: new Date().toISOString(),
     };
 
@@ -73,10 +80,11 @@ export class DraftRepository {
    */
   async resetDraft(
     profileId: string,
-    lang: PreferredLanguage
+    lang: PreferredLanguage,
+    problemId?: string | null
   ): Promise<WorkspaceDraft> {
     const starterCode = getStarterCode(lang);
-    return await this.saveDraft(profileId, lang, starterCode);
+    return await this.saveDraft(profileId, lang, starterCode, undefined, problemId);
   }
 
   /**

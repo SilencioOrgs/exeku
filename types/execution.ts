@@ -23,6 +23,8 @@ export type ExecutionStatus =
 export interface ExecutionRequest {
   language: ExecutionLanguage;
   sourceCode: string;
+  /** Main file first, optional companion files after it. */
+  files?: { name: string; content: string }[];
   stdin?: string;
   timeLimitMs?: number; // default 3000ms
   memoryLimitKb?: number; // default 128000KB

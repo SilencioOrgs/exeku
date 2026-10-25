@@ -87,26 +87,26 @@ function ProfileEditModalContent({
         if (e.key === "Escape") onClose();
       }}
     >
-      <div className="w-full max-w-lg bg-[#120A24] border-2 border-[#9E00FF] shadow-[6px_6px_0px_#000000,0_0_24px_rgba(158,0,255,0.2)] p-6 space-y-5 text-white max-h-[90vh] overflow-y-auto">
+      <div className="w-full max-w-lg bg-[var(--color-surface)] border-2 border-[var(--color-primary)] [box-shadow:var(--shadow-card)] [border-radius:var(--radius-card)] p-6 space-y-5 text-foreground max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between border-b-2 border-[#2E1A57] pb-3">
+        <div className="flex items-center justify-between border-b-2 border-[var(--color-border)] pb-3">
           <div className="flex items-center gap-2">
             <PixelBadge variant="purple">EDIT</PixelBadge>
-            <h3 id="edit-dialog-title" className="font-pixel text-lg sm:text-xl text-white">
+            <h3 id="edit-dialog-title" className="font-heading text-lg sm:text-xl text-foreground">
               EDIT LOCAL PROFILE_
             </h3>
           </div>
           <button
             onClick={onClose}
             aria-label="Close dialog"
-            className="text-[#A79EC4] hover:text-[#FF007A] font-mono text-sm px-2 py-1 border border-transparent hover:border-[#FF007A] transition-colors"
+            className="text-[var(--color-text-muted)] hover:text-[var(--color-pink)] font-mono text-sm px-2 py-1 border border-transparent hover:border-[var(--color-pink)] transition-colors"
           >
-            ✕
+            <DotIcon name="close" size={14} aria-hidden="true" />
           </button>
         </div>
 
         {error && (
-          <div role="alert" className="p-2.5 bg-[#290B1E] border border-[#FF007A] text-[#FF007A] font-mono text-xs">
+          <div role="alert" className="p-2.5 bg-[var(--color-elevated)] border border-[var(--color-pink)] text-[var(--color-pink)] font-mono text-xs">
             [ERROR] {error}
           </div>
         )}
@@ -114,10 +114,10 @@ function ProfileEditModalContent({
         {/* Display Name */}
         <div className="space-y-1.5">
           <div className="flex justify-between text-xs font-mono">
-            <label htmlFor="edit-name" className="text-[#F5F3FF] uppercase tracking-wide">
+            <label htmlFor="edit-name" className="text-[var(--color-text-main)] uppercase tracking-wide">
               Display Name
             </label>
-            <span className={validation.isValid ? "text-[#00FF9D]" : "text-[#FF007A]"}>
+            <span className={validation.isValid ? "text-[var(--color-mint)]" : "text-[var(--color-pink)]"}>
               {displayName.length}/32
             </span>
           </div>
@@ -127,13 +127,13 @@ function ProfileEditModalContent({
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             maxLength={32}
-            className="w-full px-3 py-2 bg-[#090514] border-2 border-[#2E1A57] focus:border-[#00F0FF] text-white font-mono text-sm outline-none transition-colors"
+            className="w-full px-3 py-2 bg-[var(--color-canvas)] border-2 border-[var(--color-border)] focus:border-[var(--color-accent)] text-foreground font-mono text-sm outline-none transition-colors"
           />
         </div>
 
         {/* Tagline / Bio */}
         <div className="space-y-1.5">
-          <label htmlFor="edit-bio" className="block text-xs font-mono text-[#A79EC4] uppercase tracking-wide">
+          <label htmlFor="edit-bio" className="block text-xs font-mono text-[var(--color-text-muted)] uppercase tracking-wide">
             Tagline / Bio (optional)
           </label>
           <input
@@ -142,13 +142,13 @@ function ProfileEditModalContent({
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             maxLength={100}
-            className="w-full px-3 py-2 bg-[#090514] border-2 border-[#2E1A57] focus:border-[#9E00FF] text-white font-mono text-sm outline-none transition-colors"
+            className="w-full px-3 py-2 bg-[var(--color-canvas)] border-2 border-[var(--color-border)] focus:border-[var(--color-primary)] text-foreground font-mono text-sm outline-none transition-colors"
           />
         </div>
 
         {/* Avatar Selection Grid */}
         <div className="space-y-1.5">
-          <span className="block text-xs font-mono text-[#F5F3FF] uppercase tracking-wide">
+          <span className="block text-xs font-mono text-[var(--color-text-main)] uppercase tracking-wide">
             Avatar Selection
           </span>
           <div className="grid grid-cols-4 gap-2">
@@ -167,14 +167,14 @@ function ProfileEditModalContent({
                     }
                   }}
                   className={cn(
-                    "p-2 border-2 cursor-pointer flex flex-col items-center gap-1 bg-[#090514] transition-all select-none",
+                    "p-2 border-2 cursor-pointer flex flex-col items-center gap-1 bg-[var(--color-canvas)] transition-all select-none",
                     isSelected
-                      ? "border-[#00F0FF] shadow-[0_0_8px_rgba(0,240,255,0.3)]"
-                      : "border-[#2E1A57] hover:border-[#9E00FF]"
+                      ? "border-[var(--color-accent)] [box-shadow:var(--shadow-card)] [border-radius:var(--radius-card)]"
+                      : "border-[var(--color-border)] hover:border-[var(--color-primary)]"
                   )}
                 >
                   <PixelAvatar avatarId={av.id} size={36} />
-                  <span className="text-[10px] font-mono text-center truncate w-full text-[#A79EC4]">
+                  <span className="text-[10px] font-mono text-center truncate w-full text-[var(--color-text-muted)]">
                     {av.name}
                   </span>
                 </div>
@@ -185,7 +185,7 @@ function ProfileEditModalContent({
 
         {/* Primary Language */}
         <div className="space-y-1.5">
-          <span className="block text-xs font-mono text-[#F5F3FF] uppercase tracking-wide">
+          <span className="block text-xs font-mono text-[var(--color-text-main)] uppercase tracking-wide">
             Primary Language
           </span>
           <div className="grid grid-cols-2 gap-2">
@@ -204,10 +204,10 @@ function ProfileEditModalContent({
                     }
                   }}
                   className={cn(
-                    "p-2 border-2 cursor-pointer flex items-center gap-2 bg-[#090514] select-none",
+                    "p-2 border-2 cursor-pointer flex items-center gap-2 bg-[var(--color-canvas)] select-none",
                     isSelected
-                      ? "border-[#00F0FF] text-[#00F0FF]"
-                      : "border-[#2E1A57] text-[#A79EC4] hover:border-[#9E00FF]"
+                      ? "border-[var(--color-accent)] text-[var(--color-accent)]"
+                      : "border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-primary)]"
                   )}
                 >
                   <DotIcon name={lang.icon} size={16} />
@@ -220,7 +220,7 @@ function ProfileEditModalContent({
 
         {/* Experience Level */}
         <div className="space-y-1.5">
-          <span className="block text-xs font-mono text-[#F5F3FF] uppercase tracking-wide">
+          <span className="block text-xs font-mono text-[var(--color-text-main)] uppercase tracking-wide">
             Experience Level
           </span>
           <div className="grid grid-cols-3 gap-2">
@@ -234,8 +234,8 @@ function ProfileEditModalContent({
                   className={cn(
                     "py-2 px-1 text-xs font-mono border-2 transition-colors select-none",
                     isSelected
-                      ? "bg-[#092418] border-[#00FF9D] text-[#00FF9D]"
-                      : "bg-[#090514] border-[#2E1A57] text-[#A79EC4] hover:border-[#9E00FF]"
+                      ? "bg-[var(--color-elevated)] border-[var(--color-mint)] text-[var(--color-mint)]"
+                      : "bg-[var(--color-canvas)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-primary)]"
                   )}
                 >
                   {lvl.label}
@@ -246,7 +246,7 @@ function ProfileEditModalContent({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-3 pt-3 border-t-2 border-[#2E1A57]">
+        <div className="flex items-center justify-end gap-3 pt-3 border-t-2 border-[var(--color-border)]">
           <PixelButton variant="ghost" size="sm" onClick={onClose} disabled={isSaving}>
             CANCEL
           </PixelButton>
@@ -256,7 +256,7 @@ function ProfileEditModalContent({
             onClick={handleSave}
             disabled={isSaving}
           >
-            {isSaving ? "SAVING..." : "SAVE CHANGES ▶"}
+            {isSaving ? "SAVING..." : "SAVE CHANGES"}
           </PixelButton>
         </div>
       </div>

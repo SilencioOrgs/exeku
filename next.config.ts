@@ -6,7 +6,10 @@ const nextConfig: NextConfig = {
     agentFeedback: true,
   },
   cacheComponents: true,
-  partialPrefetching: true,
+  // Temporarily disabled while diagnosing the Next.js 16.4 client-navigation crash.
+  // Direct /app/workspace?problem=... reloads succeed but client transitions fail.
+  // Re-enable only after an actual browser regression test confirms route stability.
+  partialPrefetching: false,
   images: {
     unoptimized: true,
     remotePatterns: [],

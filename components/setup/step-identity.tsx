@@ -28,19 +28,19 @@ export function StepIdentity({
   const charCount = displayName.length;
 
   return (
-    <div className="space-y-6">
+    <div className="appearance-stack space-y-6">
       {/* Header */}
       <div>
         <div className="flex items-center gap-2 mb-2">
           <PixelBadge variant="cyan">STEP 01</PixelBadge>
-          <span className="text-xs font-mono text-[#A79EC4] uppercase tracking-wider">
+          <span className="text-xs font-mono text-[var(--color-text-muted)] uppercase tracking-wider">
             LOCAL IDENTITY
           </span>
         </div>
-        <h2 className="font-pixel text-2xl sm:text-3xl text-white tracking-wide">
+        <h2 className="font-heading text-2xl sm:text-3xl text-[var(--color-text-main)] tracking-wide">
           WELCOME, CODER_
         </h2>
-        <p className="text-sm text-[#A79EC4] mt-1">
+        <p className="text-sm text-[var(--color-text-muted)] mt-1">
           Let&apos;s set up your local coding profile. No cloud accounts, no email, no surveillance.
         </p>
       </div>
@@ -50,18 +50,18 @@ export function StepIdentity({
         <div className="flex items-center justify-between">
           <label
             htmlFor="display-name"
-            className="block text-xs font-mono uppercase tracking-wider text-[#F5F3FF]"
+            className="block text-xs font-mono uppercase tracking-wider text-[var(--color-text-main)]"
           >
-            Display Name <span className="text-[#FF007A]">*</span>
+            Display Name <span className="text-[var(--color-pink)]">*</span>
           </label>
           <span
             className={cn(
               "text-xs font-mono",
               charCount > 32
-                ? "text-[#FF007A]"
+                ? "text-[var(--color-pink)]"
                 : charCount >= 2
-                ? "text-[#00FF9D]"
-                : "text-[#6B5A8A]"
+                ? "text-[var(--color-mint)]"
+                : "text-[var(--color-text-dim)]"
             )}
             aria-live="polite"
           >
@@ -83,11 +83,11 @@ export function StepIdentity({
             aria-describedby={isInvalid ? "name-error" : "name-hint"}
             placeholder="e.g. ByteHacker42"
             className={cn(
-              "w-full px-4 py-3 bg-[#090514] text-white font-mono text-sm border-2 transition-all outline-none",
+              "w-full px-4 py-3 bg-[var(--color-canvas)] text-[var(--color-text-main)] font-mono text-sm border-2 transition-all outline-none",
               isInvalid
-                ? "border-[#FF007A] shadow-[0_0_12px_rgba(255,0,122,0.25)] focus:border-[#FF007A]"
-                : "border-[#2E1A57] focus:border-[#00F0FF] focus:shadow-[0_0_12px_rgba(0,240,255,0.2)]",
-              "placeholder:text-[#523A7D]"
+                ? "border-[var(--color-pink)] [box-shadow:var(--shadow-btn)] focus:border-[var(--color-pink)]"
+                : "border-[var(--color-border)] focus:border-[var(--color-accent)] focus:[box-shadow:var(--shadow-btn)]",
+              "placeholder:text-[var(--color-text-dim)]"
             )}
           />
         </div>
@@ -96,13 +96,13 @@ export function StepIdentity({
           <p
             id="name-error"
             role="alert"
-            className="flex items-center gap-1.5 text-xs font-mono text-[#FF007A] mt-1.5"
+            className="flex items-center gap-1.5 text-xs font-mono text-[var(--color-pink)] mt-1.5"
           >
             <span className="font-bold">[!]</span>
             <span>{error}</span>
           </p>
         ) : (
-          <p id="name-hint" className="text-xs text-[#6B5A8A] font-mono">
+          <p id="name-hint" className="text-xs text-[var(--color-text-dim)] font-mono">
             Accepts 2–32 characters: letters, numbers, spaces, underscores, and dashes.
           </p>
         )}
@@ -113,11 +113,11 @@ export function StepIdentity({
         <div className="flex items-center justify-between">
           <label
             htmlFor="profile-bio"
-            className="block text-xs font-mono uppercase tracking-wider text-[#A79EC4]"
+            className="block text-xs font-mono uppercase tracking-wider text-[var(--color-text-muted)]"
           >
-            Tagline or Bio <span className="text-[#6B5A8A]">(optional)</span>
+            Tagline or Bio <span className="text-[var(--color-text-dim)]">(optional)</span>
           </label>
-          <span className="text-xs font-mono text-[#6B5A8A]">
+          <span className="text-xs font-mono text-[var(--color-text-dim)]">
             {bio.length}/100
           </span>
         </div>
@@ -129,18 +129,18 @@ export function StepIdentity({
           onChange={(e) => onChangeBio(e.target.value)}
           maxLength={100}
           placeholder="e.g. Systems enthusiast, mastering pointers and algorithms"
-          className="w-full px-4 py-3 bg-[#090514] text-white font-mono text-sm border-2 border-[#2E1A57] focus:border-[#9E00FF] focus:shadow-[0_0_12px_rgba(158,0,255,0.2)] transition-all outline-none placeholder:text-[#523A7D]"
+          className="w-full px-4 py-3 bg-[var(--color-canvas)] text-[var(--color-text-main)] font-mono text-sm border-2 border-[var(--color-border)] focus:border-[var(--color-primary)] focus:[box-shadow:var(--shadow-btn)] transition-all outline-none placeholder:text-[var(--color-text-dim)]"
         />
       </div>
 
       {/* Offline Assurance Callout */}
-      <div className="flex items-start gap-3 p-3.5 bg-[#0E071D] border border-[#2E1A57] text-[#A79EC4]">
-        <DotIcon name="shield" size={18} className="text-[#00FF9D] mt-0.5" />
+      <div className="flex items-start gap-3 p-3.5 bg-[var(--color-canvas)] border border-[var(--color-border)] text-[var(--color-text-muted)]">
+        <DotIcon name="shield" size={18} className="text-[var(--color-mint)] mt-0.5" />
         <div className="text-xs font-mono space-y-0.5">
-          <span className="text-[#00FF9D] font-bold block">
+          <span className="text-[var(--color-mint)] font-bold block">
             100% OFFLINE PERSISTENCE
           </span>
-          <p className="text-[#84789E]">
+          <p className="text-[var(--color-text-dim)]">
             Profile data is written strictly into local IndexedDB on this machine. Never sent to any cloud server or telemetry endpoint.
           </p>
         </div>

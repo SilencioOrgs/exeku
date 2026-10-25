@@ -1,51 +1,41 @@
-import React from "react";
-import { cn } from "@/lib/utils";
+import type { SVGAttributes } from "react";
 import {
-  DOT_ICONS_16,
-  DOT_ICONS_32,
-  type DotIconName,
-} from "./dot-icon-paths";
+  Activity, AlarmClock, AlertCircle, ArrowDown, ArrowLeft, ArrowRight, ArrowUp,
+  BadgeCheck, BookOpen, Box, Braces, Calendar, CheckCircle2, ChevronDown,
+  CircleHelp, CirclePlay, Clipboard, Clock3, Code2, Cog, Copy, Database,
+  Download, FileCode2, FileText, Folder, GitBranch, Info, List, LoaderCircle,
+  Lock, Maximize2, Menu, Minus, Monitor, Pencil, Play, Plus, Search,
+  Settings, Shield, Smartphone, Sparkles, Star, Terminal, User, Wrench, X,
+  XCircle, type LucideIcon
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
-export interface DotIconProps extends React.SVGAttributes<SVGSVGElement> {
+/** Transitional compatibility API. Renders modern stroke icons in the single neutral UI. */
+export type DotIconName = string;
+export interface DotIconProps extends SVGAttributes<SVGSVGElement> {
   name: DotIconName;
+  adaptive?: boolean;
   grid?: 16 | 32;
   size?: number;
   "aria-label"?: string;
 }
-
-export function DotIcon({
-  name,
-  grid,
-  size = 16,
-  className,
-  style,
-  "aria-label": ariaLabel,
-  ...props
-}: DotIconProps) {
-  // Select 16x16 or 32x32 dot grid variant
-  const resolvedGrid = grid ?? (size > 20 ? 32 : 16);
-  const path = resolvedGrid === 32 ? DOT_ICONS_32[name] : DOT_ICONS_16[name];
-
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 512 512"
-      width={size}
-      height={size}
-      fill="currentColor"
-      aria-hidden={ariaLabel ? undefined : "true"}
-      aria-label={ariaLabel}
-      role={ariaLabel ? "img" : "presentation"}
-      className={cn("inline-block shrink-0 select-none", className)}
-      style={{
-        imageRendering: "pixelated",
-        ...style,
-      }}
-      {...props}
-    >
-      <path d={path} />
-    </svg>
-  );
+const ICONS: Record<string, LucideIcon> = {
+  powershell: Terminal, vscode: Code2, cplusplus: Code2, python: Code2, java: Code2,
+  file: FileCode2, folder: Folder, document: FileText, box: Box, list: List, burger: Menu,
+  windows: Monitor, phone: Smartphone, cog: Settings, settings: Cog, database: Database,
+  shield: Shield, arrowRight: ArrowRight, arrowLeft: ArrowLeft, arrowUp: ArrowUp, arrowDown: ArrowDown,
+  circlePlay: CirclePlay, circleCheck: CheckCircle2, circleBlock: AlertCircle,
+  alarm: AlarmClock, calendar: Calendar, clock: Clock3, copy: Copy, download: Download,
+  close: X, x: X, cross: X, pencil: Pencil, stars: Star, star: Star,
+  sparkles: Sparkles, user: User, activity: Activity, check: BadgeCheck, plus: Plus,
+  minus: Minus, search: Search, code: Braces, info: Info, help: CircleHelp,
+  book: BookOpen, play: Play, clipboard: Clipboard, loader: LoaderCircle,
+  lock: Lock, maximize: Maximize2, tools: Wrench, github: GitBranch,
+  chevronDown: ChevronDown, xCircle: XCircle,
+};
+export function DotIcon({ name, adaptive: _adaptive, grid: _grid, size = 16, className, "aria-label": label, ...props }: DotIconProps) {
+  void _adaptive; void _grid;
+  const Icon = ICONS[name] ?? FileCode2;
+  return <Icon size={size} strokeWidth={1.8} aria-hidden={label ? undefined : true} aria-label={label}
+    role={label ? "img" : "presentation"} className={cn("inline-block shrink-0", className)} {...props} />;
 }
-
-export type { DotIconName };

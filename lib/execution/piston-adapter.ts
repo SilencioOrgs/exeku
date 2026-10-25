@@ -71,10 +71,8 @@ export class PistonAdapter implements IExecutionAdapter {
       language: meta.pistonLang,
       version: meta.defaultVersion,
       files: [
-        {
-          name: meta.filename,
-          content: request.sourceCode,
-        },
+        { name: meta.filename, content: request.sourceCode },
+        ...(request.files ?? []).filter((file) => file.name !== meta.filename),
       ],
       stdin: request.stdin || "",
       args: [],
