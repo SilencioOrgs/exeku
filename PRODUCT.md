@@ -46,23 +46,23 @@ Exeku provides a high-craft developer aesthetic paired with robust automated cod
   - Automatic judging engine with deterministic verdict calculation (AC, WA, CE, RE, TLE, MLE, IE).
   - Server-authoritative test case evaluation with hidden test input/output redaction.
   - Local profile and code draft persistence via IndexedDB (safe hydration without cloud lock-in during developer preview).
-  - Retro pixel-art visual design system with Doticons integration.
+  - Minimalist, rounded SaaS-style design with neutral light/dark modes and Lucide icons.
 - **Technical Constraints:**
   - **No Unsafe Execution:** Student code is strictly untrusted. Code execution must run inside an isolated sandbox (Piston/`isolate` container) with enforced CPU limits, memory limits, wall-clock timeouts, restricted filesystem access, and disabled outbound networking. Arbitrary unsandboxed host process execution is strictly prohibited.
   - **Local Development Boundaries:** No public cloud infrastructure (Vercel, Render, Oracle Cloud) or cloud databases are provisioned during this stage. Everything runs and verifies locally.
   - **Data Truth Guarantee:** Only display verified, real execution outputs and stored records. Never fabricate test passes or execution statistics.
   - **Modular Boundaries:** Frontend and execution engine are completely decoupled via standard JSON REST contracts (`POST /api/execute`, `POST /api/judge`).
 - **Team Ownership Boundaries:**
-  - **Primary Developer Owns:** Monaco workspace, code execution service, automatic judging engine, programming problems engine, contest infrastructure, deployment architecture, and Appearance Studio (Phase 2C).
+  - **Primary Developer Owns:** Monaco workspace, code execution service, automatic judging engine, programming problems engine, contest infrastructure, deployment architecture, and Light/Dark presentation.
   - **Teammate Owns:** Lessons, tutorials, curriculum explanations, and educational content modules.
 
 ## Brand Commitments
 
 - **Name:** Exeku
 - **Tagline:** "Your Code. Your Machine."
-- **Aesthetic Direction:** Retro pixel-art developer aesthetic paired with modern functional clarity and accessibility.
-- **Visual Identity Foundation:** Dark violet and neon-purple foundation accented with restrained pink and cyan highlights. High-contrast typography, pixel-inspired decorative elements and borders, clean interactive states.
-- **Planned Appearance System (Phase 2C):** Future multi-theme engine supporting Pixel Arcade, Minimal SaaS, and Studio/CRM styles with configurable typography, font scaling, and high-contrast modes.
+- **Aesthetic Direction:** Clean, understated developer SaaS aesthetics with clear navigation, accessible controls, and soft radii.
+- **Visual Identity Foundation:** Neutral light and dark surfaces, Geist typography, restrained semantic accents, subtle borders, and 8–12px rounded controls.
+- **Appearance:** A single minimalist interface with a persistent Light/Dark toggle. Legacy preference records are preserved for compatibility; no user-facing style/palette studio.
 
 ## Product Principles
 
