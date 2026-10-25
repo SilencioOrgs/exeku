@@ -1,72 +1,35 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 
-export interface PixelButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+/** Backwards-compatible wrapper, now styled as a neutral shadcn-style button. */
+export interface PixelButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "cyan" | "pink" | "ghost";
   size?: "xs" | "icon" | "sm" | "md" | "lg";
   href?: string;
 }
 
 export const PixelButton = React.forwardRef<HTMLButtonElement, PixelButtonProps>(
-  (
-    {
-      children,
-      variant = "primary",
-      size = "md",
-      className,
-      href,
-      onClick,
-      ...props
-    },
-    ref
-  ) => {
-    const sizeStyles = {
-      xs: "h-8 min-h-8 px-2.5 text-xs font-mono gap-1.5 border-2",
-      icon: "h-8 w-8 min-h-8 p-0 text-xs border-2",
-      sm: "min-h-11 px-3 py-1.5 text-xs font-mono",
-      md: "min-h-11 px-5 py-2.5 text-sm font-mono tracking-wider",
-      lg: "min-h-11 px-7 py-3.5 text-base font-mono tracking-wider",
+  ({ children, variant = "primary", size = "md", className, href, onClick, ...props }, ref) => {
+    const sizes = {
+      xs: "h-8 min-h-8 gap-1.5 px-2.5 text-xs",
+      icon: "h-8 w-8 min-h-8 p-0",
+      sm: "h-9 min-h-9 gap-1.5 px-3 text-xs",
+      md: "h-10 min-h-10 gap-2 px-4 text-sm",
+      lg: "h-11 min-h-11 gap-2 px-5 text-sm",
     };
-
-    const variantStyles = {
-      primary:
-        "bg-[var(--color-primary)] text-[var(--color-primary-foreground)] border-2 border-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] [box-shadow:var(--shadow-btn)]",
-      secondary:
-        "bg-[var(--color-elevated)] text-[var(--color-text-main)] border-2 border-[var(--color-border)] hover:border-[var(--color-primary)] hover:text-[var(--color-text-main)] [box-shadow:var(--shadow-btn)]",
-      cyan:
-        "bg-[var(--color-accent)] text-[var(--color-accent-foreground)] font-bold border-2 border-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] [box-shadow:var(--shadow-btn)]",
-      pink:
-        "bg-[var(--color-pink)] text-[var(--color-danger-foreground)] font-bold border-2 border-[var(--color-pink)] hover:opacity-90 [box-shadow:var(--shadow-btn)]",
-      ghost:
-        "bg-transparent text-[var(--color-text-muted)] border-2 border-transparent hover:border-[var(--color-border)] hover:text-[var(--color-text-main)]",
+    const variants = {
+      primary: "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-primary-foreground)] hover:bg-[var(--color-primary-hover)]",
+      cyan: "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-primary-foreground)] hover:bg-[var(--color-primary-hover)]",
+      secondary: "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-main)] hover:bg-[var(--color-elevated)]",
+      ghost: "border-transparent bg-transparent text-[var(--color-text-muted)] hover:bg-[var(--color-elevated)] hover:text-[var(--color-text-main)]",
+      pink: "border-[var(--color-pink)] bg-[var(--color-pink)] text-white hover:opacity-90",
     };
-
-    const baseStyles =
-      "appearance-button inline-flex items-center justify-center gap-2 uppercase select-none transition-all duration-75 cursor-pointer outline-none [border-radius:var(--radius-btn)] focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-canvas)] active:translate-x-[1px] active:translate-y-[1px] disabled:opacity-50 disabled:pointer-events-none";
-
-    if (href) {
-      return (
-        <a
-          href={href}
-          className={cn(baseStyles, sizeStyles[size], variantStyles[variant], className)}
-        >
-          {children}
-        </a>
-      );
-    }
-
-    return (
-      <button
-        ref={ref}
-        className={cn(baseStyles, sizeStyles[size], variantStyles[variant], className)}
-        onClick={onClick}
-        {...props}
-      >
-        {children}
-      </button>
+    const styles = cn(
+      "appearance-button inline-flex shrink-0 cursor-pointer items-center justify-center whitespace-nowrap rounded-lg border font-medium normal-case shadow-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ring)] disabled:pointer-events-none disabled:opacity-50",
+      sizes[size], variants[variant], className,
     );
+    if (href) return <a href={href} className={styles}>{children}</a>;
+    return <button ref={ref} className={styles} onClick={onClick} {...props}>{children}</button>;
   }
 );
-
 PixelButton.displayName = "PixelButton";
