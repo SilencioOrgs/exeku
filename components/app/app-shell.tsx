@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useSyncExternalStore } from "react";
-import { LoaderCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useProfile } from "@/hooks/use-profile";
 import { AppSidebar } from "./app-sidebar";
@@ -65,7 +64,7 @@ export function AppShell({ children }: AppShellProps) {
     <div className="app-shell h-screen max-h-screen bg-[var(--color-canvas)] text-[var(--color-text-main)] flex flex-col overflow-hidden relative">
       {blocked && (
       <div role="status" aria-live="polite" className="min-h-screen bg-[var(--color-canvas)] flex flex-col items-center justify-center p-4">
-        <div className="flex items-center gap-3 text-sm text-[var(--color-text-muted)]"><LoaderCircle size={18} className="animate-spin" aria-hidden="true" /> Loading workspace…</div>
+        <div className="flex items-center gap-3 text-sm text-[var(--color-text-muted)]"><span className="size-4 animate-spin rounded-full border-2 border-[var(--color-border)] border-t-[var(--color-text-main)]" aria-hidden="true" /> Loading workspace…</div>
       </div>
       )}
       {/* Top Application Bar */}
