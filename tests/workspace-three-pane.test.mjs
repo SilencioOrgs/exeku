@@ -45,37 +45,12 @@ test("workspace-three-pane - catalog problems satisfy three-pane data contract",
   });
 });
 
-test("workspace-three-pane - globals.css contains palette overrides for all 15 palette variations", () => {
+test("workspace-three-pane - global CSS provides one green light/dark theme", () => {
   const css = fs.readFileSync(globalsCssPath, "utf8");
-
-  const expectedPalettes = [
-    // Pixel Arcade
-    "neon-violet",
-    "pastel-dream",
-    "mint-terminal",
-    "sunset-arcade",
-    "ocean-pixel",
-    // Clarity
-    "sapphire",
-    "lavender",
-    "forest",
-    "rose",
-    "monochrome",
-    // Command
-    "emerald-console",
-    "amber-terminal",
-    "steel-blue",
-    "graphite",
-    "crimson-control",
-  ];
-
-  expectedPalettes.forEach((palette) => {
-    const pattern = `[data-palette="${palette}"]`;
-    assert.ok(
-      css.includes(pattern),
-      `Expected globals.css to define CSS token overrides for palette: ${palette}`
-    );
-  });
+  assert.match(css, /:root\[data-color-mode="dark"\]/);
+  assert.match(css, /--color-primary:\s*#087F44/);
+  assert.match(css, /--color-primary:\s*#2FD27A/);
+  assert.doesNotMatch(css, /\[data-palette=/);
 });
 
 test("workspace-three-pane - components implement responsive classes without horizontal document scroll", () => {
