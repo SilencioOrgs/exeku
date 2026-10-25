@@ -1158,3 +1158,120 @@ input::placeholder, textarea::placeholder { color: var(--color-text-muted); opac
   }
   .workspace-resizable-group > [data-panel] > div { flex:1 1 auto; min-width:0; min-height:0; }
 }
+
+
+/* 2026 minimalist interface consolidation: one shadcn-compatible visual language.
+   Legacy style/palette selectors remain in preference storage for safe migration. */
+:root:not([data-ui-style]),
+:root[data-ui-style="minimal-saas"] {
+  --font-heading-active: var(--font-geist-sans), sans-serif;
+  --font-ui: var(--font-geist-sans), sans-serif;
+  --radius-card: 12px;
+  --radius-btn: 8px;
+  --shadow-card: none;
+  --shadow-btn: none;
+  --panel-padding: 1rem;
+  --color-primary-text: var(--color-text-main);
+}
+:root[data-ui-style="minimal-saas"][data-color-mode="light"],
+:root:not([data-ui-style]) {
+  color-scheme: light;
+  --base-canvas: #fafafa;
+  --base-surface: #ffffff;
+  --base-elevated: #f4f4f5;
+  --color-border: #e4e4e7;
+  --color-border-subtle: #f4f4f5;
+  --color-primary: #18181b;
+  --color-primary-hover: #3f3f46;
+  --primary-foreground: #ffffff;
+  --color-primary-foreground: #ffffff;
+  --color-accent: #27272a;
+  --color-accent-hover: #3f3f46;
+  --accent-foreground: #ffffff;
+  --color-accent-foreground: #ffffff;
+  --color-pink: #b91c1c;
+  --color-mint: #047857;
+  --color-text-main: #18181b;
+  --color-text-muted: #52525b;
+  --color-text-dim: #71717a;
+  --color-ring: #52525b;
+}
+:root[data-ui-style="minimal-saas"][data-color-mode="dark"] {
+  color-scheme: dark;
+  --base-canvas: #09090b;
+  --base-surface: #111113;
+  --base-elevated: #27272a;
+  --color-border: #343438;
+  --color-border-subtle: #27272a;
+  --color-primary: #fafafa;
+  --color-primary-hover: #e4e4e7;
+  --primary-foreground: #18181b;
+  --color-primary-foreground: #18181b;
+  --color-accent: #fafafa;
+  --color-accent-hover: #e4e4e7;
+  --accent-foreground: #18181b;
+  --color-accent-foreground: #18181b;
+  --color-pink: #f87171;
+  --color-mint: #34d399;
+  --color-text-main: #fafafa;
+  --color-text-muted: #a1a1aa;
+  --color-text-dim: #a1a1aa;
+  --color-ring: #a1a1aa;
+}
+:root[data-ui-style="minimal-saas"][data-contrast="high"] {
+  --color-border: var(--color-text-main);
+  --color-ring: var(--color-text-main);
+}
+:root[data-ui-style="minimal-saas"] :is(h1,h2,h3,h4,.font-heading) {
+  font-family: var(--font-geist-sans), sans-serif;
+  letter-spacing: -.025em;
+}
+:root[data-ui-style="minimal-saas"] .font-pixel,
+:root[data-ui-style="minimal-saas"] .font-mono:not(pre):not(code):not(.monaco-editor *) {
+  font-family: var(--font-geist-sans), sans-serif;
+  letter-spacing: normal;
+}
+:root[data-ui-style="minimal-saas"] :is(.appearance-card,.pixel-box-purple,.profile-panel,.modern-feature-card) {
+  border-width: 1px;
+  border-radius: 12px;
+  box-shadow: none;
+}
+:root[data-ui-style="minimal-saas"] :is(.appearance-button,.appearance-badge) {
+  border-width: 1px;
+  box-shadow: none;
+  text-transform: none;
+  font-family: var(--font-geist-sans), sans-serif;
+  letter-spacing: normal;
+}
+:root[data-ui-style="minimal-saas"] :is(.app-sidebar,.app-topbar) { border-color: var(--color-border); }
+:root[data-ui-style="minimal-saas"] .appearance-nav-item { border: 0; box-shadow: none; }
+:root[data-ui-style="minimal-saas"] :is(.arcade-decoration,.pixel-corner-mark) { display: none !important; }
+:root[data-ui-style="minimal-saas"] .arcade-copy,
+:root[data-ui-style="minimal-saas"] .command-copy { display: none !important; }
+:root[data-ui-style="minimal-saas"] .clarity-copy { display: contents; }
+:root[data-ui-style="minimal-saas"] .pixel-box-purple { background: var(--color-surface); }
+:root[data-ui-style="minimal-saas"] .landing-hero-layout { max-width: 80rem; }
+:root[data-ui-style="minimal-saas"] :is(.landing-hero-demo,.app-content) { min-width: 0; }
+:root[data-ui-style="minimal-saas"] .coding-activity-cell { border-radius: 3px; }
+:root[data-ui-style="minimal-saas"] .modern-page-header { max-width: 100%; }
+:root[data-ui-style="minimal-saas"] .dashboard-heading { letter-spacing: -.025em; }
+
+/* New Appearance panel: compact, no competing galleries or sticky overlay. */
+.minimal-appearance-studio .minimal-settings-field { display: grid; align-content: start; gap: .45rem; min-width: 0; font-size: .875rem; }
+.minimal-appearance-studio .minimal-settings-field label { font-weight: 500; }
+.minimal-appearance-studio .minimal-settings-select {
+  min-width: 0; width: 100%; min-height: 2.5rem; padding: .5rem .75rem;
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: 8px; color: var(--color-text-main); font-size: .875rem;
+}
+.minimal-appearance-studio input[type="range"] { min-height: 1.5rem; }
+.minimal-appearance-studio button:focus-visible,
+.minimal-appearance-studio select:focus-visible { outline: 2px solid var(--color-ring); outline-offset: 2px; }
+.minimal-appearance-studio .is-compact { max-width: 100%; }
+@media (max-width: 640px) {
+  .minimal-appearance-studio [role="radiogroup"] { grid-template-columns: repeat(3, minmax(0,1fr)); }
+  .minimal-appearance-studio [role="radiogroup"] label { padding-inline: .4rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .minimal-appearance-studio * { transition-duration: 0ms !important; }
+}
