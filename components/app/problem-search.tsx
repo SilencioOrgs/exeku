@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -12,7 +12,6 @@ import type { ProblemSummary } from "@/types/problem";
 
 export function ProblemSearch() {
   const router = useRouter();
-  const pathname = usePathname();
   const { requestNavigation } = useChallengeSession();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -23,6 +22,8 @@ export function ProblemSearch() {
     const shortcut = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
+        setQuery("");
+        setStatus("loading");
         setOpen((previous) => !previous);
       }
     };
@@ -30,13 +31,9 @@ export function ProblemSearch() {
     return () => window.removeEventListener("keydown", shortcut);
   }, []);
 
-  // Hide an already-open search if some other navigation succeeds.
-  useEffect(() => { setOpen(false); }, [pathname]);
-
   useEffect(() => {
     if (!open) return;
     const controller = new AbortController();
-    setStatus("loading");
     fetch("/api/problems", { signal: controller.signal })
       .then((response) => {
         if (!response.ok) throw new Error("Catalog unavailable");
@@ -71,7 +68,7 @@ export function ProblemSearch() {
 
   return <>
     <Button type="button" variant="outline" size="icon" aria-label="Search problems"
-      title="Search problems (Ctrl/Cmd+K)" onClick={() => { setQuery(""); setOpen(true); }}
+      title="Search problems (Ctrl/Cmd+K)" onClick={() => { setQuery(""); setStatus("loading"); setOpen(true); }}
       className="size-9 border-[var(--color-border)] bg-[var(--color-surface)]">
       <Search size={17} aria-hidden="true" />
     </Button>
