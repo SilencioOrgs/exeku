@@ -35,7 +35,7 @@ test("Neutral design is forced without deleting old profile theme records", () =
   const css = read("app/globals.css");
   assert.match(provider, /root\.dataset\.uiStyle = "minimal-saas"/);
   assert.match(css, /SaaS UI foundation/);
-  assert.match(css, /--radius-card: 0\.75rem/);
+  assert.match(css, /--radius-card: 8px/);
   assert.match(css, /scanlines/);
   const setting = read("components/app/settings-view.tsx");
   assert.doesNotMatch(setting, /Profile UUID|Appearance Studio|Theme Color Palette/);
