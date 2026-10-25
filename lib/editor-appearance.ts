@@ -8,7 +8,8 @@ const FONTS = {
 
 export function resolveEditorAppearance(preferences: AppearancePreferences, effectiveMode: "dark" | "light", reducedMotion: boolean) {
   const mode = preferences.contrastMode === "high" || preferences.editorTheme === "auto" || preferences.editorTheme === "high-contrast" ? effectiveMode : preferences.editorTheme;
-  const style = preferences.uiStyle === "minimal-saas" ? "minimal" : preferences.uiStyle === "studio-crm" ? "studio" : "pixel";
+  // Legacy appearance IDs may remain in local storage, but the editor uses one modern syntax skin.
+  const style = "minimal";
   const highContrast = preferences.contrastMode === "high" || preferences.editorTheme === "high-contrast";
   return {
     theme: "exeku-" + (highContrast ? "hc" : style) + "-" + mode,
