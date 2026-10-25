@@ -14,7 +14,7 @@ test("profile route exists and displays activity without trusting online submiss
   assert.match(read("app/app/profile/page.tsx"), /<ProfileView\s*\/>/);
   assert.match(read("components/app/profile-view.tsx"), /<CodingActivity profileId=\{profile\.id\}/);
   assert.match(read("components/app/app-sidebar.tsx"), /href: "\/app\/profile"/);
-  assert.match(read("components/app/app-topbar.tsx"), /"\/app\/profile": "Profile"/);
+  assert.match(read("components/app/app-topbar.tsx"), /href: "\/app\/profile", label: "Profile"/);
 });
 
 test("application icons use modern stroke icons with legacy DotIcon API retained", () => {
