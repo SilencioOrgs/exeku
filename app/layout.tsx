@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Pixelify_Sans } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { appearanceBootstrap } from "@/lib/appearance-bootstrap";
 import { AppearanceProvider } from "@/hooks/use-appearance";
@@ -14,13 +14,8 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const pixelifySans = Pixelify_Sans({
-  variable: "--font-pixelify",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-  title: "exeku_ — Your Code. Your Machine.",
+  title: "Exeku — Your Code. Your Machine.",
   description:
     "Online programming practice, assessment, and competition platform inspired by CodeChum (Developer Preview). Master Python 3, Java, C++, and C with isolated sandbox execution and deterministic automated judging.",
   icons: {
@@ -38,7 +33,7 @@ export default function RootLayout({
       lang="en"
       data-scroll-behavior="smooth"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} ${pixelifySans.variable} h-full antialiased dark scroll-smooth`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark scroll-smooth`}
     >
       <head>
         <script
