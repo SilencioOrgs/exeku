@@ -4,7 +4,7 @@ import {
   BadgeCheck, BookOpen, Box, Braces, Calendar, CheckCircle2, ChevronDown,
   CircleHelp, CirclePlay, Clipboard, Clock3, Code2, Cog, Copy, Database,
   Download, FileCode2, FileText, Folder, Github, Info, List, LoaderCircle,
-  Lock, Maximize2, Menu, Minus, Monitor, Moon, Pencil, Play, Plus, Search,
+  Lock, Maximize2, Menu, Minus, Monitor, Pencil, Play, Plus, Search,
   Settings, Shield, Smartphone, Sparkles, Star, Terminal, User, Wrench, X,
   XCircle, type LucideIcon
 } from "lucide-react";
