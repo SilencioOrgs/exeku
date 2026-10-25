@@ -26,11 +26,12 @@ const AppearanceContext = createContext<AppearanceContextValue | null>(null);
 
 export function applyPreferencesToDom(prefs: AppearancePreferences, effectiveColorMode: "dark" | "light", systemReducedMotion: boolean) {
   const root = document.documentElement;
-  root.dataset.uiStyle = prefs.uiStyle;
-  root.dataset.palette = prefs.colorPalette;
+  // Keep legacy saved preferences intact; only the supported neutral interface is rendered.
+  root.dataset.uiStyle = "minimal-saas";
+  root.dataset.palette = "monochrome";
   root.dataset.colorMode = effectiveColorMode;
   root.dataset.contrast = prefs.contrastMode;
-  root.dataset.uiFont = prefs.uiFontFamily;
+  root.dataset.uiFont = prefs.uiFontFamily === "pixelify-sans" ? "geist-sans" : prefs.uiFontFamily;
   root.dataset.editorFont = prefs.editorFontFamily;
   root.dataset.lineHeight = prefs.lineHeight;
   root.dataset.density = prefs.density;
