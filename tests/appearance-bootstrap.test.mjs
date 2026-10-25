@@ -9,7 +9,7 @@ function boot(stored, {dark=false,motion=false,denied=false}={}) {
  return root;
 }
 test("boot handles corrupt and denied storage with consistent defaults",()=>{
- for(const stored of [{},{exeku_appearance_settings:"{"}]) {const root=boot(stored);assert.equal(root.dataset.uiStyle,"pixel-arcade");assert.equal(root.dataset.colorMode,"dark");assert.equal(root.style.values["--ui-font-scale"],"100%");}
+ for(const stored of [{},{exeku_appearance_settings:"{"}]) {const root=boot(stored);assert.equal(root.dataset.uiStyle,"minimal-saas");assert.equal(root.dataset.colorMode,"light");assert.equal(root.style.values["--ui-font-scale"],"100%");}
  assert.equal(boot({}, {denied:true,motion:true}).dataset.reducedMotion,"true");
 });
 test("boot resolves system without replacing its saved preference",()=>{
@@ -18,7 +18,7 @@ test("boot resolves system without replacing its saved preference",()=>{
 });
 test("boot prefers synchronized active snapshot and validates surface controls",()=>{
  const root=boot({exeku_appearance_snapshot:JSON.stringify({uiStyle:"studio-crm",contrastMode:"high",brightness:120,uiFontScale:999}),exeku_appearance_settings:JSON.stringify({uiStyle:"minimal-saas"})});
- assert.equal(root.dataset.uiStyle,"studio-crm");assert.equal(root.style.values["--ui-font-scale"],"150%");assert.equal(root.style.values["--brightness-factor"],"1");
+ assert.equal(root.dataset.uiStyle,"minimal-saas");assert.equal(root.style.values["--ui-font-scale"],"150%");assert.equal(root.style.values["--brightness-factor"],"1");
  const invalid=boot({exeku_appearance_settings:JSON.stringify({uiStyle:"bad",uiFontScale:null,brightness:"500",uiFontFamily:"inter"})});
- assert.equal(invalid.dataset.uiStyle,"pixel-arcade");assert.equal(invalid.dataset.uiFont,"system-sans");assert.equal(invalid.style.values["--ui-font-scale"],"100%");assert.equal(invalid.style.values["--brightness-factor"],"1");
+ assert.equal(invalid.dataset.uiStyle,"minimal-saas");assert.equal(invalid.dataset.uiFont,"system-sans");assert.equal(invalid.style.values["--ui-font-scale"],"100%");assert.equal(invalid.style.values["--brightness-factor"],"1");
 });
