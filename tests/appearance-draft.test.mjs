@@ -7,7 +7,7 @@ import * as types from '../types/appearance.ts';
 import * as styles from '../lib/appearance-styles.ts';
 
 function harness(fail = false) {
-  let saved = types.normalizeAppearancePreferences({ colorMode: 'light' });
+  let saved = types.normalizeAppearancePreferences({ uiStyle: 'pixel-arcade', colorMode: 'light' });
   let owner = 'profile-a';
   const writes = [];
   const slots = [];
@@ -37,7 +37,7 @@ test('draft selection, reset, and discard never write or change saved appearance
   state.render().discard();
   assert.equal(state.render().isDirty, false);
   state.render().reset();
-  assert.equal(state.render().draftPreferences.colorMode, 'dark');
+  assert.equal(state.render().draftPreferences.colorMode, 'system');
   assert.equal(state.saved().colorMode, 'light');
   state.render().discard();
   assert.equal(state.render().draftPreferences.colorMode, 'light');
@@ -66,7 +66,7 @@ test('public style names, defaults, and override policy preserve stored IDs', ()
   const selected = styles.selectStylePreferences(original, 'minimal-saas');
   assert.equal(selected.uiFontFamily, 'system-sans');
   assert.equal(selected.uiFontScale, 125);
-  assert.equal(selected.density, 'spacious');
+  assert.equal(selected.density, 'comfortable');
   assert.equal(styles.selectStylePreferences({ ...original, density: 'compact' }, 'minimal-saas').density, 'compact');
   assert.equal(styles.selectStylePreferences(original, 'studio-crm').colorMode, original.colorMode);
   assert.equal(types.normalizeAppearancePreferences({ uiStyle: 'studio-crm' }).uiStyle, 'studio-crm');
