@@ -22,15 +22,14 @@ export function Hero() {
 
       <div className="landing-hero-layout max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="landing-hero-copy flex flex-col items-center text-center max-w-4xl mx-auto mb-12 sm:mb-16">
-          {/* Section Kicker */}
+          {/* Developer-preview status, not a fake metric */}
           <div className="mb-6 flex flex-wrap items-center justify-center gap-2">
-            <PixelBadge variant="pink">LOCAL DEVELOPER PREVIEW</PixelBadge>
-            <PixelBadge variant="cyan">ONLINE JUDGE ARCHITECTURE</PixelBadge>
+            <PixelBadge variant="muted">Developer preview</PixelBadge>
           </div>
 
           {/* Headline */}
           <h1
-            className="text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-[var(--color-text-main)] mb-6 uppercase leading-[1.1]"
+            className="text-4xl sm:text-6xl md:text-7xl font-semibold tracking-tight text-[var(--color-text-main)] mb-6 leading-[1.1]"
             style={{ fontFamily: "var(--font-heading-active)" }}
           >
             <StyleText arcade="YOUR CODE." clarity="Your code." /> <br className="hidden sm:inline" />
@@ -86,10 +85,7 @@ export function Hero() {
 
         {/* Centerpiece Pixel Terminal */}
         <div className="landing-hero-demo max-w-5xl mx-auto">
-          <div className="arcade-decoration mb-2 flex items-center justify-between text-xs font-mono text-[var(--color-text-muted)] px-1">
-            <span>[CENTERPIECE: INTERACTIVE PREVIEW]</span>
-            <span className="text-[var(--color-accent)]">LOCAL_CONSOLE</span>
-          </div>
+
           <PixelTerminal />
         </div>
       </div>
