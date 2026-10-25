@@ -73,7 +73,7 @@ export function AppearanceStudio({ compact = false, onApplied }: { compact?: boo
           <div className="rounded-xl border p-4 transition-colors" style={{ backgroundColor: preview.canvas, borderColor: preview.border, color: preview.text }} aria-label={`${mode} mode preview`}>
             <div className="space-y-3 rounded-lg border p-4" style={{ backgroundColor: preview.surface, borderColor: preview.border }}>
               <div className="flex items-center justify-between gap-3"><span className="text-sm font-semibold">Your workspace</span><span className="text-xs" style={{ color: preview.muted }}>Exeku</span></div>
-              <div className="rounded-md border px-3 py-2 font-mono text-xs" style={{ borderColor: preview.border, backgroundColor: preview.canvas }}>print("Hello, world!")</div>
+              <div className="rounded-md border px-3 py-2 font-mono text-xs" style={{ borderColor: preview.border, backgroundColor: preview.canvas }}>{'print("Hello, world!")'}</div>
               <div className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-xs font-medium" style={{ backgroundColor: preview.button, color: preview.buttonText }}><Check size={13} aria-hidden="true" /> Run code</div>
             </div>
           </div>
