@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
-export function StyleText({ arcade, clarity, command = clarity }: { arcade: ReactNode; clarity: ReactNode; command?: ReactNode }) {
-  return <><span className="arcade-copy">{arcade}</span><span className="clarity-copy">{clarity}</span><span className="command-copy">{command}</span></>;
+/** Legacy copy variants remain accepted for backwards compatibility. */
+export function StyleText({ clarity }: { arcade: ReactNode; clarity: ReactNode; command?: ReactNode }) {
+  return <>{clarity}</>;
 }
