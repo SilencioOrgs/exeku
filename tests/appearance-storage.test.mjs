@@ -14,8 +14,8 @@ test('transactional Apply does not replace canonical preferences when storage fa
 });
 
 test("DEFAULT_APPEARANCE_PREFERENCES - has expected default values", () => {
-  assert.equal(DEFAULT_APPEARANCE_PREFERENCES.uiStyle, "pixel-arcade");
-  assert.equal(DEFAULT_APPEARANCE_PREFERENCES.colorMode, "dark");
+  assert.equal(DEFAULT_APPEARANCE_PREFERENCES.uiStyle, "minimal-saas");
+  assert.equal(DEFAULT_APPEARANCE_PREFERENCES.colorMode, "system");
   assert.equal(DEFAULT_APPEARANCE_PREFERENCES.contrastMode, "standard");
   assert.equal(DEFAULT_APPEARANCE_PREFERENCES.uiFontFamily, "geist-sans");
   assert.equal(DEFAULT_APPEARANCE_PREFERENCES.uiFontScale, 100);
@@ -38,8 +38,8 @@ test("normalizeAppearancePreferences - validates and clamps preferences", () => 
     editorLineHeight: 10, // min 18
   });
 
-  assert.equal(normalized.uiStyle, "pixel-arcade");
-  assert.equal(normalized.colorMode, "dark");
+  assert.equal(normalized.uiStyle, "minimal-saas");
+  assert.equal(normalized.colorMode, "system");
   assert.equal(normalized.uiFontScale, 150);
   assert.equal(normalized.brightness, 80);
   assert.equal(normalized.editorFontSize, 20);
@@ -92,7 +92,7 @@ test("AppearanceRepository - in-memory storage fallback works", () => {
 
   const reset = repo.resetPreferences();
   assert.deepEqual(reset, DEFAULT_APPEARANCE_PREFERENCES);
-  assert.equal(repo.getPreferences().uiStyle, "pixel-arcade");
+  assert.equal(repo.getPreferences().uiStyle, "minimal-saas");
 });
 
 test("AppearanceRepository - resolveEffectiveColorMode resolves system preference correctly", () => {
