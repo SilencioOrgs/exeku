@@ -5,9 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import ts from "typescript";
 import { DotIcon } from "../components/retro/dot-icon.tsx";
-import { DOT_ICONS_16, DOT_ICONS_32 } from "../components/retro/dot-icon-paths.ts";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (name) => fs.readFileSync(path.join(root, name), "utf8");
@@ -19,31 +17,22 @@ test("profile route exists and displays activity without trusting online submiss
   assert.match(read("components/app/app-topbar.tsx"), /"\/app\/profile": "Profile"/);
 });
 
-test("DotIcon always renders official bundled Doticons for every UI style", () => {
+test("application icons use modern stroke icons with legacy DotIcon API retained", () => {
   const icon = read("components/retro/dot-icon.tsx");
-  assert.match(icon, /DOT_ICONS_16/);
-  assert.match(icon, /DOT_ICONS_32/);
-  assert.doesNotMatch(icon, /MODERN_ICONS|<ModernIcon/);
+  assert.match(icon, /lucide-react/);
+  assert.doesNotMatch(icon, /imageRendering: "pixelated"/);
+  assert.match(icon, /aria-label/);
   assert.match(read("components/app/profile-view.tsx"), /<DotIcon/);
-  for (const [grid, icons] of [[16, DOT_ICONS_16], [32, DOT_ICONS_32]]) {
-    for (const [name, iconPath] of Object.entries(icons)) {
-      const official = read(`public/icons/doticons/${grid}/${name}.svg`);
-      assert.ok(official.includes(`d="${iconPath}"`), `${name} must match bundled official artwork`);
-      const markup = renderToStaticMarkup(React.createElement(DotIcon, { name, grid, "aria-label": name }));
-      assert.ok(markup.includes(`d="${iconPath}"`));
-      assert.ok(markup.includes(`aria-label="${name}"`));
-      assert.ok(markup.includes('fill="currentColor"'));
-    }
-  }
+  const markup = renderToStaticMarkup(React.createElement(DotIcon, { name: "cog", "aria-label": "Settings" }));
+  assert.match(markup, /aria-label="Settings"/);
+  assert.match(markup, /stroke=/);
 });
 
-test("application icon imports use Doticons, including shared controls and landing pages", () => {
-  for (const filename of fs.readdirSync(path.join(root, "components"), { recursive: true }).filter(name => name.endsWith(".tsx"))) {
-    const source = ts.createSourceFile(filename, read(path.join("components", filename)), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
-    for (const statement of source.statements) {
-      if (ts.isImportDeclaration(statement)) assert.notEqual(statement.moduleSpecifier.text, "lucide-react", filename);
-    }
-  }
+test("application uses one modern layout while preserving old appearance records", () => {
+  assert.match(read("hooks/use-appearance.tsx"), /root.dataset.uiStyle = "minimal-saas"/);
+  assert.match(read("components/app/appearance-studio.tsx"), /ColorModeChoice/);
+  assert.doesNotMatch(read("components/app/appearance-studio.tsx"), /<StyleSelector|<PaletteSelector/);
+  assert.doesNotMatch(read("components/app/command-station.tsx"), /pixel-arcade/);
 });
 
 test("theme navigation routes and public problems API have route modules", () => {
