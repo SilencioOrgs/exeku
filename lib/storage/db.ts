@@ -30,6 +30,7 @@ function isIndexedDBAvailable(): boolean {
 
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
+    let blocked = false;
     if (!isIndexedDBAvailable()) {
       return reject(new Error("IndexedDB is not available in this environment."));
     }
@@ -61,10 +62,15 @@ function openDB(): Promise<IDBDatabase> {
       const db = (event.target as IDBOpenDBRequest).result;
       // Let another tab upgrade the schema instead of keeping an old connection open.
       db.onversionchange = () => db.close();
+      if (blocked) {
+        db.close();
+        return;
+      }
       resolve(db);
     };
 
     request.onblocked = () => {
+      blocked = true;
       reject(new Error("Local storage upgrade is blocked. Close or refresh other Exeku tabs, then retry."));
     };
 
