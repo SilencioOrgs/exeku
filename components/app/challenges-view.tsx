@@ -26,6 +26,7 @@ import type { ProblemSummary } from "@/types/problem";
 import type { LocalSubmissionRecord, ProblemProgressStatus } from "@/types/submission";
 
 const PAGE_SIZE = 10;
+const EMPTY_SUBMISSIONS: LocalSubmissionRecord[] = [];
 
 const DEFAULT_FILTERS: ProblemFilterValues = {
   status: "all",
@@ -82,7 +83,7 @@ export function ChallengesView() {
   const profileId = profile?.id;
   const history = submissionState.profileId === profileId ? submissionState : null;
   const historyState: SubmissionHistoryState = history?.status ?? "loading";
-  const submissions = history?.submissions ?? [];
+  const submissions = history?.submissions ?? EMPTY_SUBMISSIONS;
 
   useEffect(() => {
     const controller = new AbortController();
