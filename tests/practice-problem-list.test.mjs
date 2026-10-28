@@ -15,7 +15,8 @@ test("practice list uses shared semantic table and responsive filter controls", 
   assert.match(view, /<Sheet/);
   assert.match(view, /paginateProblems/);
   assert.doesNotMatch(view, /PixelCard|PixelButton|PixelBadge|DotIcon/);
-  for (const label of ["Problem search", "Status filter", "Difficulty filter", "Category filter", "Language filter", "Tag filter"]) {
+  assert.ok(view.includes("Problem search"), "missing accessible problem search label");
+  for (const label of ["Status filter", "Difficulty filter", "Category filter", "Language filter", "Tag filter"]) {
     assert.ok(filters.includes(label), `missing accessible label: ${label}`);
   }
   assert.match(filters, /Solved/);
