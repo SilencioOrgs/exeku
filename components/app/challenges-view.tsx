@@ -187,6 +187,7 @@ export function ChallengesView() {
     tags,
     statusCounts,
     historyState,
+    hasSearch: searchQuery.trim().length > 0,
     onClear: clearFilters,
   };
 
@@ -219,7 +220,7 @@ export function ChallengesView() {
       <div className="grid min-w-0 gap-6 lg:grid-cols-[15rem_minmax(0,1fr)]">
         <aside className="hidden lg:block">
           <Card className="sticky top-5 p-4">
-            <ProblemFilters {...filterProps} />
+            <ProblemFilters {...filterProps} idPrefix="desktop" />
           </Card>
         </aside>
 
@@ -347,7 +348,7 @@ export function ChallengesView() {
         <SheetContent side="left" className="w-[min(20rem,90vw)] max-w-none gap-5 overflow-y-auto border-r border-[var(--color-border)] bg-[var(--color-surface)] p-4">
           <SheetTitle className="text-base font-semibold">Problem filters</SheetTitle>
           <SheetDescription>Refine the list by status, topic, difficulty, language, or tag.</SheetDescription>
-          <ProblemFilters {...filterProps} />
+          <ProblemFilters {...filterProps} idPrefix="mobile" />
         </SheetContent>
       </Sheet>
 
