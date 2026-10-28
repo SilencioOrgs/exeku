@@ -1,4 +1,5 @@
 import { appearanceRepository } from "./appearance-repository";
+import { submissionRepository } from "./submission-repository";
 import { clearCodingDays } from "./coding-activity";
 import { normalizeAppearancePreferences, type AppearancePreferences } from "@/types/appearance";
 import type { LocalProfile, ProfileInput } from "@/types/profile";
@@ -159,6 +160,7 @@ export class ProfileRepository {
   async deleteProfile(id: string): Promise<void> {
     try {
       await idbDelete(PROFILE_STORE, id);
+      await submissionRepository.deleteForProfile(id);
       clearCodingDays(id);
     } catch (err) {
       throw new ProfileRepositoryError(
@@ -174,6 +176,7 @@ export class ProfileRepository {
   async clearAll(): Promise<void> {
     try {
       await idbClear(PROFILE_STORE);
+      await submissionRepository.clearAll();
     } catch (err) {
       throw new ProfileRepositoryError(
         "Failed to clear profile database",
