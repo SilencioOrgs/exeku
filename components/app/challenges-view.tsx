@@ -20,7 +20,7 @@ import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/
 import { ProblemFilters, type ProblemFilterValues, type SubmissionHistoryState } from "./problem-filters";
 import { ProblemPreviewSheet } from "./problem-preview-sheet";
 import { filterProblemSummaries, paginateProblems } from "@/lib/problems/problem-list";
-import { SUBMISSION_HISTORY_EVENT, getProblemStatus, submissionRepository } from "@/lib/storage/submission-repository";
+import { SUBMISSION_HISTORY_EVENT, getProblemStatuses, submissionRepository } from "@/lib/storage/submission-repository";
 import { LANGUAGE_DISPLAY_NAMES } from "@/lib/workspace-defaults";
 import type { ProblemSummary } from "@/types/problem";
 import type { LocalSubmissionRecord, ProblemProgressStatus } from "@/types/submission";
@@ -126,9 +126,10 @@ export function ChallengesView() {
     };
   }, [profileId]);
 
-  const statuses = useMemo(() => new Map(
-    problems.map((problem) => [problem.id, getProblemStatus(problem.id, submissions)] as const),
-  ), [problems, submissions]);
+  const statuses = useMemo(
+    () => getProblemStatuses(problems.map((problem) => problem.id), submissions),
+    [problems, submissions],
+  );
 
   const effectiveFilters = useMemo(() => historyState === "ready" ? filters : { ...filters, status: "all" as const }, [historyState, filters]);
   const filteredProblems = useMemo(() => filterProblemSummaries(problems, {
@@ -143,10 +144,10 @@ export function ChallengesView() {
   const statusCounts = useMemo(() => {
     const counts = { all: problems.length, solved: 0, attempted: 0, unsolved: 0 };
     if (historyState === "ready") {
-      for (const problem of problems) counts[getProblemStatus(problem.id, submissions)] += 1;
+      for (const status of statuses.values()) counts[status] += 1;
     }
     return counts;
-  }, [problems, submissions, historyState]);
+  }, [problems, statuses, historyState]);
 
   const updateFilter = <K extends keyof ProblemFilterValues>(key: K, value: ProblemFilterValues[K]) => {
     setFilters((current) => ({ ...current, [key]: value }));
@@ -288,7 +289,7 @@ export function ChallengesView() {
                 </TableHeader>
                 <TableBody>
                   {pageData.items.map((problem) => {
-                    const status: ProblemProgressStatus | "unknown" = historyState === "ready" ? getProblemStatus(problem.id, submissions) : "unknown";
+                    const status: ProblemProgressStatus | "unknown" = historyState === "ready" ? (statuses.get(problem.id) ?? "unsolved") : "unknown";
                     return (
                       <TableRow key={problem.id}>
                         <TableCell className="px-2 sm:px-4">
