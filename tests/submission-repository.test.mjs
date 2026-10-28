@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { submissionRepository, getProblemStatus } from "../lib/storage/submission-repository.ts";
+import { profileRepository } from "../lib/storage/profile-repository.ts";
 
 const result = (overrides = {}) => ({
   problemId: "sum-two-integers",
@@ -50,4 +51,17 @@ test("submission history is isolated by profile and sorted newest first", async 
   assert.equal(all.length, 2);
   assert.equal(all[0].id, second.id);
   assert.equal(all[1].id, first.id);
+});
+
+test("deleting a local profile removes that profile's submission history", async () => {
+  const profile = await profileRepository.saveProfile({
+    displayName: "History Cleanup",
+    avatarId: "default",
+    experienceLevel: "beginner",
+    preferredLanguage: "python",
+  });
+  await submissionRepository.recordSubmission(profile.id, result());
+  assert.equal((await submissionRepository.getAllForProfile(profile.id)).length, 1);
+  await profileRepository.deleteProfile(profile.id);
+  assert.deepEqual(await submissionRepository.getAllForProfile(profile.id), []);
 });
