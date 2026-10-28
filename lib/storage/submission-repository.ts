@@ -117,4 +117,21 @@ export function getProblemStatus(problemId: string, submissions: readonly LocalS
   return matching.length > 0 ? "attempted" : "unsolved";
 }
 
+/** Derive statuses in one pass over local history, avoiding a full history scan per problem row. */
+export function getProblemStatuses(
+  problemIds: readonly string[],
+  submissions: readonly LocalSubmissionRecord[],
+): Map<string, ProblemProgressStatus> {
+  const statuses = new Map<string, ProblemProgressStatus>(problemIds.map((id) => [id, "unsolved"]));
+  for (const record of submissions) {
+    if (!statuses.has(record.problemId)) continue;
+    if (record.verdict === "ACCEPTED") {
+      statuses.set(record.problemId, "solved");
+    } else if (statuses.get(record.problemId) !== "solved") {
+      statuses.set(record.problemId, "attempted");
+    }
+  }
+  return statuses;
+}
+
 export const submissionRepository = new SubmissionRepository();
