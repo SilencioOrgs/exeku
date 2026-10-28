@@ -1,446 +1,359 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { AlertCircle, CheckCircle2, Circle, CircleHelp, Clock3, Filter, Play, Search } from "lucide-react";
 import { useProfile } from "@/hooks/use-profile";
 import { useChallengeSession } from "@/hooks/use-challenge-session";
-import { PixelCard } from "@/components/retro/pixel-card";
-import { PixelButton } from "@/components/retro/pixel-button";
-import { PixelBadge } from "@/components/retro/pixel-badge";
-import { DotIcon, type DotIconName } from "@/components/retro/dot-icon";
-
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
-  ALL_SUPPORTED_LANGUAGES,
-  LANGUAGE_DISPLAY_NAMES,
-} from "@/lib/workspace-defaults";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
+import { ProblemFilters, type ProblemFilterValues, type SubmissionHistoryState } from "./problem-filters";
+import { ProblemPreviewSheet } from "./problem-preview-sheet";
+import { filterProblemSummaries, paginateProblems } from "@/lib/problems/problem-list";
+import { SUBMISSION_HISTORY_EVENT, getProblemStatus, submissionRepository } from "@/lib/storage/submission-repository";
+import { ALL_SUPPORTED_LANGUAGES, LANGUAGE_DISPLAY_NAMES } from "@/lib/workspace-defaults";
+import type { ProblemSummary } from "@/types/problem";
+import type { LocalSubmissionRecord, ProblemProgressStatus } from "@/types/submission";
 
-import type { PreferredLanguage } from "@/types/profile";
-import type { ProblemDifficulty, ProblemSummary, VisibleProblem } from "@/types/problem";
+const PAGE_SIZE = 10;
 
-type FilterTier = "all" | ProblemDifficulty;
-
-const LANGUAGE_ICONS: Record<PreferredLanguage, DotIconName> = {
-  python: "python",
-  java: "java",
-  cpp: "cplusplus",
-  c: "file",
+const DEFAULT_FILTERS: ProblemFilterValues = {
+  status: "all",
+  difficulty: "all",
+  category: "all",
+  language: "all",
+  tag: "all",
 };
 
-const DIFFICULTY_TABS: { id: FilterTier; label: string }[] = [
-  { id: "all", label: "ALL TIERS" },
-  { id: "beginner", label: "BEGINNER" },
-  { id: "intermediate", label: "INTERMEDIATE" },
-  { id: "advanced", label: "ADVANCED" },
-];
+type CatalogState =
+  | { status: "loading"; problems: ProblemSummary[] }
+  | { status: "ready"; problems: ProblemSummary[] }
+  | { status: "error"; problems: ProblemSummary[] };
+
+interface SubmissionState {
+  profileId: string;
+  status: SubmissionHistoryState;
+  submissions: LocalSubmissionRecord[];
+}
+
+function difficultyVariant(difficulty: ProblemSummary["difficulty"]) {
+  if (difficulty === "beginner") return "success" as const;
+  if (difficulty === "intermediate") return "warning" as const;
+  return "destructive" as const;
+}
+
+function StatusIndicator({ status }: { status: ProblemProgressStatus | "unknown" }) {
+  if (status === "solved") {
+    return <span className="inline-flex items-center gap-1.5 text-xs text-[var(--color-mint)]" title="Solved" aria-label="Solved"><CheckCircle2 size={16} aria-hidden="true" /><span className="hidden xl:inline">Solved</span></span>;
+  }
+  if (status === "attempted") {
+    return <span className="inline-flex items-center gap-1.5 text-xs text-[var(--color-warning)]" title="Attempted" aria-label="Attempted"><Clock3 size={16} aria-hidden="true" /><span className="hidden xl:inline">Attempted</span></span>;
+  }
+  if (status === "unsolved") {
+    return <span className="inline-flex items-center gap-1.5 text-xs text-[var(--color-text-muted)]" title="Unsolved" aria-label="Unsolved"><Circle size={16} aria-hidden="true" /><span className="hidden xl:inline">Unsolved</span></span>;
+  }
+  return <span className="inline-flex items-center text-[var(--color-text-muted)]" title="Submission status unavailable" aria-label="Submission status unavailable"><CircleHelp size={16} aria-hidden="true" /></span>;
+}
 
 export function ChallengesView() {
   const router = useRouter();
   const challenge = useChallengeSession();
   const { profile } = useProfile();
-  const [selectedLanguage, setSelectedLanguage] = useState<PreferredLanguage | "all">("all");
-  const [selectedTier, setSelectedTier] = useState<FilterTier>("all");
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [inspectProblemId, setInspectProblemId] = useState<string | null>(null);
-  const [problems, setProblems] = useState<ProblemSummary[]>([]);
-  const [loadedProblem, setLoadedProblem] = useState<{ id: string; detail: VisibleProblem } | null>(null);
-  const activeProblemDetail = loadedProblem?.id === inspectProblemId ? loadedProblem.detail : null;
+  const [filters, setFilters] = useState<ProblemFilterValues>(DEFAULT_FILTERS);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [previewProblem, setPreviewProblem] = useState<ProblemSummary | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
+  const [catalogState, setCatalogState] = useState<CatalogState>({ status: "loading", problems: [] });
+  const [submissionState, setSubmissionState] = useState<SubmissionState>({ profileId: "", status: "loading", submissions: [] });
 
-  const handleStartTimedChallenge = (problemId: string, problemTitle: string) => {
-    challenge.startChallenge(problemId, problemTitle);
-    router.push(`/app/workspace?problem=${encodeURIComponent(problemId)}`);
+  const problems = catalogState.problems;
+  const history = submissionState.profileId === profile?.id ? submissionState : null;
+  const historyState: SubmissionHistoryState = history?.status ?? "loading";
+  const submissions = history?.submissions ?? [];
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let active = true;
+    fetch("/api/problems", { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error("Unable to load the problem catalog.");
+        return response.json() as Promise<{ problems?: ProblemSummary[] }>;
+      })
+      .then((data) => {
+        if (!active) return;
+        setCatalogState({ status: "ready", problems: Array.isArray(data.problems) ? data.problems : [] });
+      })
+      .catch(() => {
+        if (active && !controller.signal.aborted) setCatalogState({ status: "error", problems: [] });
+      });
+    return () => { active = false; controller.abort(); };
+  }, [reloadToken]);
+
+  useEffect(() => {
+    if (!profile?.id) return;
+    let active = true;
+    const loadHistory = () => {
+      submissionRepository.getAllForProfile(profile.id)
+        .then((records) => {
+          if (active) setSubmissionState({ profileId: profile.id, status: "ready", submissions: records });
+        })
+        .catch(() => {
+          if (active) setSubmissionState({ profileId: profile.id, status: "unavailable", submissions: [] });
+        });
+    };
+    loadHistory();
+    const handleHistoryChange = (event: Event) => {
+      const changedProfileId = (event as CustomEvent<{ profileId?: string }>).detail?.profileId;
+      if (changedProfileId === profile.id) loadHistory();
+    };
+    window.addEventListener(SUBMISSION_HISTORY_EVENT, handleHistoryChange);
+    return () => {
+      active = false;
+      window.removeEventListener(SUBMISSION_HISTORY_EVENT, handleHistoryChange);
+    };
+  }, [profile?.id]);
+
+  const statuses = useMemo(() => new Map(
+    problems.map((problem) => [problem.id, getProblemStatus(problem.id, submissions)] as const),
+  ), [problems, submissions]);
+
+  const effectiveFilters = historyState === "ready" ? filters : { ...filters, status: "all" as const };
+  const filteredProblems = useMemo(() => filterProblemSummaries(problems, {
+    ...effectiveFilters,
+    query: searchQuery,
+    statuses,
+  }), [problems, effectiveFilters, searchQuery, statuses]);
+  const pageData = useMemo(() => paginateProblems(filteredProblems, page, PAGE_SIZE), [filteredProblems, page]);
+  const categories = useMemo(() => [...new Set(problems.map((problem) => problem.category))].sort((a, b) => a.localeCompare(b)), [problems]);
+  const tags = useMemo(() => [...new Set(problems.flatMap((problem) => problem.tags))].sort((a, b) => a.localeCompare(b)), [problems]);
+
+  const statusCounts = useMemo(() => {
+    const counts = { all: problems.length, solved: 0, attempted: 0, unsolved: 0 };
+    if (historyState === "ready") {
+      for (const problem of problems) counts[getProblemStatus(problem.id, submissions)] += 1;
+    }
+    return counts;
+  }, [problems, submissions, historyState]);
+
+  const updateFilter = <K extends keyof ProblemFilterValues>(key: K, value: ProblemFilterValues[K]) => {
+    setFilters((current) => ({ ...current, [key]: value }));
+    setPage(1);
   };
 
-  // Always load public, redacted metadata through the API. Never ship server test cases.
-  useEffect(() => {
-    let active = true;
-    const query = new URLSearchParams();
-    if (selectedTier !== "all") query.set("difficulty", selectedTier);
-    if (selectedLanguage !== "all") query.set("language", selectedLanguage);
-    if (searchQuery.trim()) query.set("search", searchQuery.trim());
-    fetch(`/api/problems?${query.toString()}`)
-      .then((response) => {
-        if (!response.ok) throw new Error("Unable to load problems");
-        return response.json();
-      })
-      .then((data: { problems?: ProblemSummary[] }) => {
-        if (active) setProblems(data.problems ?? []);
-      })
-      .catch(() => { if (active) setProblems([]); });
-    return () => { active = false; };
-  }, [selectedTier, selectedLanguage, searchQuery]);
+  const clearFilters = () => {
+    setFilters(DEFAULT_FILTERS);
+    setSearchQuery("");
+    setPage(1);
+  };
 
-  useEffect(() => {
-    let active = true;
-    if (inspectProblemId) {
-      fetch(`/api/problems/${encodeURIComponent(inspectProblemId)}`)
-        .then((response) => {
-          if (!response.ok) throw new Error("Unable to load problem");
-          return response.json();
-        })
-        .then((data: VisibleProblem) => { if (active) setLoadedProblem({ id: inspectProblemId!, detail: data }); })
-        .catch(() => { if (active) setLoadedProblem(null); });
+  const activeFilterCount = Number(searchQuery.trim().length > 0)
+    + Number(effectiveFilters.status !== "all")
+    + Number(effectiveFilters.difficulty !== "all")
+    + Number(effectiveFilters.category !== "all")
+    + Number(effectiveFilters.language !== "all")
+    + Number(effectiveFilters.tag !== "all");
+
+  const navigateToProblem = (problem: ProblemSummary) => {
+    const href = `/app/workspace?problem=${encodeURIComponent(problem.id)}`;
+    if (challenge.requestNavigation(href)) {
+      setPreviewProblem(null);
+      setFiltersOpen(false);
+      router.push(href);
     }
-    return () => { active = false; };
-  }, [inspectProblemId]);
+  };
+
+  const startTimedChallenge = (problem: ProblemSummary) => {
+    challenge.startChallenge(problem.id, problem.title);
+    router.push(`/app/workspace?problem=${encodeURIComponent(problem.id)}`);
+  };
+
+  const filterProps = {
+    value: effectiveFilters,
+    onChange: updateFilter,
+    categories,
+    tags,
+    statusCounts,
+    historyState,
+    onClear: clearFilters,
+  };
 
   return (
-    <div className="challenges-view appearance-stack space-y-6">
-      {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-[var(--color-border)] pb-4">
-        <div>
-          <h1 className="font-heading text-2xl text-[var(--color-text-main)] tracking-wide">
-            PROGRAMMING PROBLEMS &amp; ASSESSMENTS_
-          </h1>
-          <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-            Choose a problem, write code, and test your solution in the workspace.
-          </p>
+    <div className="challenges-view mx-auto w-full max-w-[1440px] space-y-6 p-4 sm:p-6 lg:p-8">
+      <header className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-text-main)] sm:text-3xl">Practice</h1>
+          <p className="max-w-2xl text-sm leading-6 text-[var(--color-text-muted)]">Find a coding problem by topic, difficulty, or language. Open the statement to preview it, or solve it in the workspace.</p>
         </div>
-        <div className="flex items-center gap-2">
-          <PixelBadge variant="mint" bracketed>
-            Sandbox needed to run code
-          </PixelBadge>
-        </div>
-      </div>
+        {catalogState.status === "ready" && <Badge variant="secondary" className="self-start sm:self-auto">{problems.length} {problems.length === 1 ? "problem" : "problems"}</Badge>}
+      </header>
 
-      {/* Active Timed Challenge Banner */}
       {challenge.isTimedActive && (
-        <div className="p-3 bg-[var(--color-canvas)] border-2 border-[var(--color-accent)] flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-2 font-mono text-xs text-[var(--color-text-main)]">
-            <DotIcon name="alarm" size={16} className="text-[var(--color-accent)] animate-pulse" />
-            <span>
-              ACTIVE CHALLENGE: <strong>{challenge.session?.problemTitle}</strong> ({challenge.formattedTime} left)
-            </span>
+        <Card className="flex flex-col justify-between gap-3 border-[var(--color-primary)]/30 bg-[var(--color-elevated)] p-4 sm:flex-row sm:items-center">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)]"><Clock3 size={17} aria-hidden="true" /></span>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold">Timed challenge in progress</p>
+              <p className="truncate text-sm text-[var(--color-text-muted)]">{challenge.session?.problemTitle} · {challenge.formattedTime} remaining</p>
+            </div>
           </div>
-          <Link href={`/app/workspace?problem=${encodeURIComponent(challenge.session?.problemId ?? "")}`} className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] px-3 text-xs font-medium text-[var(--color-primary-foreground)] transition-colors hover:bg-[var(--color-primary-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ring)]"><DotIcon name="arrowRight" size={14} aria-hidden="true" /> Resume Challenge</Link>
-        </div>
+          <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={() => {
+            const href = `/app/workspace?problem=${encodeURIComponent(challenge.session?.problemId ?? "")}`;
+            if (challenge.requestNavigation(href)) router.push(href);
+          }}>Resume challenge</Button>
+        </Card>
       )}
 
-      {/* Filter and Search Bar */}
-      <PixelCard variant="default" className="p-4 border-2 border-[var(--color-border)] space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          {/* Language Selector */}
-          <div className="space-y-1.5">
-            <span className="font-mono text-[0.625rem] text-[var(--color-text-dim)] uppercase tracking-wider block">
-              LANGUAGE FILTER:
-            </span>
-            <div className="flex flex-wrap items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => setSelectedLanguage("all")}
-                className={`px-3 py-1.5 border font-mono text-xs transition-colors cursor-pointer ${
-                  selectedLanguage === "all"
-                    ? "bg-[var(--color-elevated)] border-[var(--color-accent)] text-[var(--color-accent)] [box-shadow:var(--shadow-btn)]"
-                    : "bg-[var(--color-canvas)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]"
-                }`}
-              >
-                ALL LANGUAGES
-              </button>
-              {ALL_SUPPORTED_LANGUAGES.map((lang) => {
-                const isSelected = selectedLanguage === lang;
-                return (
-                  <button
-                    key={lang}
-                    type="button"
-                    onClick={() => setSelectedLanguage(lang)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 border font-mono text-xs transition-colors cursor-pointer ${
-                      isSelected
-                        ? "bg-[var(--color-elevated)] border-[var(--color-accent)] text-[var(--color-accent)] [box-shadow:var(--shadow-btn)]"
-                        : "bg-[var(--color-canvas)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]"
-                    }`}
-                  >
-                    <DotIcon
-                      name={LANGUAGE_ICONS[lang]}
-                      size={14}
-                      color={isSelected ? "var(--color-accent)" : "var(--color-text-muted)"}
-                    />
-                    <span>{LANGUAGE_DISPLAY_NAMES[lang]}</span>
-                  </button>
-                );
-              })}
-            </div>
+      <div className="grid min-w-0 gap-6 lg:grid-cols-[15rem_minmax(0,1fr)]">
+        <aside className="hidden lg:block">
+          <Card className="sticky top-5 p-4">
+            <ProblemFilters {...filterProps} />
+          </Card>
+        </aside>
+
+        <section aria-label="Problem results" className="min-w-0 space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <label className="relative flex min-w-0 flex-1 items-center">
+              <Search size={17} aria-hidden="true" className="pointer-events-none absolute left-3 text-[var(--color-text-muted)]" />
+              <input
+                id="problem-search"
+                type="search"
+                value={searchQuery}
+                onChange={(event) => { setSearchQuery(event.target.value); setPage(1); }}
+                aria-label="Problem search"
+                placeholder="Search problems, topics, or tags"
+                className="h-10 w-full min-w-0 rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface)] py-2 pl-9 pr-3 text-sm text-[var(--color-text-main)] outline-none placeholder:text-[var(--color-text-muted)] focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+              />
+            </label>
+            <Button type="button" variant="outline" size="default" className="shrink-0 lg:hidden" onClick={() => setFiltersOpen(true)}>
+              <Filter size={16} aria-hidden="true" /> Filters
+              {activeFilterCount > 0 && <span className="ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--color-elevated)] px-1.5 py-0.5 text-xs tabular-nums">{activeFilterCount}</span>}
+            </Button>
           </div>
 
-          {/* Difficulty Tier Filters */}
-          <div className="space-y-1.5">
-            <span className="font-mono text-[0.625rem] text-[var(--color-text-dim)] uppercase tracking-wider block">
-              DIFFICULTY FILTER:
-            </span>
-            <div className="flex flex-wrap items-center gap-1.5">
-              {DIFFICULTY_TABS.map((tier) => {
-                const isSelected = selectedTier === tier.id;
-                return (
-                  <button
-                    key={tier.id}
-                    type="button"
-                    onClick={() => setSelectedTier(tier.id)}
-                    className={`px-2.5 py-1.5 border font-mono text-[0.6875rem] transition-colors cursor-pointer ${
-                      isSelected
-                        ? "bg-[var(--color-primary)]/20 border-[var(--color-primary)] text-[var(--color-text-main)] [box-shadow:var(--shadow-btn)]"
-                        : "bg-[var(--color-canvas)] border-[var(--color-border)] text-[var(--color-text-dim)] hover:text-[var(--color-text-muted)]"
-                    }`}
-                  >
-                    {tier.label}
-                  </button>
-                );
-              })}
-            </div>
+          <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-[var(--color-text-muted)]">
+            <p aria-live="polite">{catalogState.status === "ready" ? `${filteredProblems.length} matching ${filteredProblems.length === 1 ? "problem" : "problems"}` : "Problem catalog"}</p>
+            {activeFilterCount > 0 && <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={clearFilters}>Clear filters</Button>}
           </div>
-        </div>
 
-        {/* Search Input Box */}
-        <div className="pt-2 border-t border-[var(--color-border)]/60 flex items-center gap-2">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search problems by title, category, or tag (e.g. arithmetic, hello)..."
-            className="flex-1 bg-[var(--color-canvas)] border border-[var(--color-border)] px-3 py-2 text-[var(--color-text-main)] font-mono text-xs focus:outline-none focus:border-[var(--color-accent)]"
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery("")}
-              className="text-xs font-mono text-[var(--color-text-dim)] hover:text-[var(--color-text-main)] px-2 py-1"
-            >
-              Clear
-            </button>
+          {catalogState.status === "loading" && (
+            <Card role="status" className="flex min-h-48 items-center justify-center gap-3 p-8 text-sm text-[var(--color-text-muted)]">
+              <span className="size-4 animate-spin rounded-full border-2 border-[var(--color-border)] border-t-[var(--color-primary)]" aria-hidden="true" /> Loading problems…
+            </Card>
           )}
-        </div>
-      </PixelCard>
 
-      {/* Problem Cards Listing */}
-      <div className="space-y-3">
-        {problems.length === 0 ? (
-          <PixelCard variant="default" className="p-8 text-center border-2 border-[var(--color-border)] space-y-2">
-            <span className="font-heading text-lg text-[var(--color-text-main)]">NO PROBLEMS FOUND_</span>
-            <p className="text-xs text-[var(--color-text-dim)] font-mono">
-              Try adjusting your difficulty or search filters to find available practice problems.
-            </p>
-          </PixelCard>
-        ) : (
-          problems.map((prob) => {
-            const diffVariant =
-              prob.difficulty === "beginner"
-                ? "mint"
-                : prob.difficulty === "intermediate"
-                ? "cyan"
-                : "pink";
+          {catalogState.status === "error" && (
+            <Card className="flex min-h-48 flex-col items-center justify-center gap-3 p-8 text-center">
+              <AlertCircle size={22} className="text-[var(--color-text-muted)]" aria-hidden="true" />
+              <h2 className="text-base font-semibold">Couldn’t load problems</h2>
+              <p className="max-w-sm text-sm text-[var(--color-text-muted)]">The problem catalog is unavailable right now. Your local drafts are unchanged.</p>
+              <Button type="button" variant="outline" onClick={() => setReloadToken((token) => token + 1)}>Try again</Button>
+            </Card>
+          )}
 
-            return (
-              <PixelCard
-                key={prob.id}
-                variant="elevated"
-                className="p-4 sm:p-5 border-2 border-[var(--color-border)] hover:border-[var(--color-primary)]/80 transition-colors bg-[var(--color-surface)] space-y-3"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2.5 flex-wrap">
-                      <h2 className="font-heading text-lg text-[var(--color-text-main)]">
-                        {prob.title}_
-                      </h2>
-                      <PixelBadge variant={diffVariant} bracketed>
-                        {prob.difficulty.toUpperCase()}
-                      </PixelBadge>
-                      <span className="font-mono text-xs text-[var(--color-text-dim)]">
-                        [{prob.category}]
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs font-mono text-[var(--color-text-muted)]">
-                      <span>{prob.totalTestsCount} test cases</span>
-                      <span>&bull;</span>
-                      <span>{prob.sampleCount} visible sample{prob.sampleCount === 1 ? "" : "s"}</span>
-                    </div>
-                  </div>
+          {catalogState.status === "ready" && filteredProblems.length === 0 && (
+            <Card className="flex min-h-52 flex-col items-center justify-center gap-3 p-8 text-center">
+              <span className="grid size-10 place-items-center rounded-full bg-[var(--color-elevated)] text-[var(--color-text-muted)]"><Search size={18} aria-hidden="true" /></span>
+              <h2 className="text-base font-semibold">{problems.length === 0 ? "No problems available yet" : "No matching problems"}</h2>
+              <p className="max-w-sm text-sm leading-6 text-[var(--color-text-muted)]">{problems.length === 0 ? "The catalog has no published problems yet." : "Try a different search or clear one or more filters."}</p>
+              {problems.length > 0 && <Button type="button" variant="outline" size="sm" onClick={clearFilters}>Clear filters</Button>}
+            </Card>
+          )}
 
-                  {/* Actions */}
-                  <div className="flex items-center gap-2">
-                    <PixelButton
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setInspectProblemId(prob.id)}
-                      className="text-xs"
-                    >
-                      <DotIcon name="book" size={14} aria-hidden="true" /> Statement
-                    </PixelButton>
+          {catalogState.status === "ready" && filteredProblems.length > 0 && (
+            <Card className="overflow-hidden p-0">
+              <Table className="min-w-[590px]">
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="w-14">Status</TableHead>
+                    <TableHead>Problem</TableHead>
+                    <TableHead className="hidden md:table-cell">Category</TableHead>
+                    <TableHead>Difficulty</TableHead>
+                    <TableHead className="hidden xl:table-cell">Languages</TableHead>
+                    <TableHead className="w-32 text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pageData.items.map((problem) => {
+                    const status: ProblemProgressStatus | "unknown" = historyState === "ready" ? getProblemStatus(problem.id, submissions) : "unknown";
+                    return (
+                      <TableRow key={problem.id}>
+                        <TableCell className="px-3 sm:px-4">
+                          <StatusIndicator status={status} />
+                        </TableCell>
+                        <TableCell className="min-w-44">
+                          <Button type="button" variant="link" size="sm" onClick={() => setPreviewProblem(problem)} className="h-auto max-w-full justify-start whitespace-normal px-0 py-0 text-left text-sm font-semibold text-[var(--color-text-main)]">
+                            {problem.title}
+                          </Button>
+                          <div className="mt-1 flex flex-wrap gap-x-2 gap-y-1">
+                            {problem.tags.map((tag) => <button key={tag} type="button" onClick={() => updateFilter("tag", tag)} className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-primary)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]">#{tag}</button>)}
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden max-w-40 text-sm text-[var(--color-text-muted)] md:table-cell">{problem.category}</TableCell>
+                        <TableCell><Badge variant={difficultyVariant(problem.difficulty)} className="capitalize">{problem.difficulty}</Badge></TableCell>
+                        <TableCell className="hidden xl:table-cell">
+                          <div className="flex flex-wrap gap-1">
+                            {problem.supportedLanguages.map((language) => (
+                              <Badge key={language} variant="outline" className={profile?.preferredLanguage === language ? "border-[var(--color-primary)]/50 text-[var(--color-primary)]" : ""}>
+                                {LANGUAGE_DISPLAY_NAMES[language]}
+                              </Badge>
+                            ))}
+                          </div>
+                        </TableCell>
+                        <TableCell className="px-2 text-right sm:px-4">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button type="button" variant="outline" size="icon-xs" className="sm:hidden" aria-label={`Start timed challenge for ${problem.title}`} title="Start a timed challenge" onClick={() => startTimedChallenge(problem)}><Clock3 size={13} aria-hidden="true" /></Button>
+                            <Button type="button" variant="outline" size="sm" className="hidden h-8 px-2 sm:inline-flex" onClick={() => startTimedChallenge(problem)} title="Start a timed challenge"><Clock3 size={14} aria-hidden="true" /><span className="hidden md:inline">Timed</span></Button>
+                            <Button type="button" size="sm" className="h-8 px-2.5" onClick={() => navigateToProblem(problem)}><Play size={14} aria-hidden="true" /> Solve</Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
 
-                    <button
-                      type="button"
-                      onClick={() => handleStartTimedChallenge(prob.id, prob.title)}
-                      className="px-2.5 py-1.5 border border-[var(--color-pink)] text-[var(--color-pink)] hover:bg-[var(--color-pink)]/10 font-heading text-xs cursor-pointer transition-colors flex items-center gap-1"
-                      title="Start a 15-minute timed challenge session"
-                    >
-                      <DotIcon name="alarm" size={14} aria-hidden="true" />
-                      <span>Timed</span>
-                    </button>
-
-                    <Link href={`/app/workspace?problem=${encodeURIComponent(prob.id)}`} className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] px-3 text-xs font-medium text-[var(--color-primary-foreground)] transition-colors hover:bg-[var(--color-primary-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ring)]"><DotIcon name="circlePlay" size={14} aria-hidden="true" /> Solve</Link>
-                  </div>
-                </div>
-
-                {/* Tags & Languages */}
-                <div className="pt-2 border-t border-[var(--color-border)]/60 flex items-center justify-between flex-wrap gap-2 text-[0.6875rem] font-mono">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[var(--color-text-dim)]">Supported:</span>
-                    {prob.supportedLanguages.map((l) => (
-                      <span
-                        key={l}
-                        className={`px-1.5 py-0.5 border text-[0.625rem] ${
-                          profile?.preferredLanguage === l
-                            ? "border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10 font-bold"
-                            : "border-[var(--color-border)] text-[var(--color-text-muted)] bg-[var(--color-canvas)]"
-                        }`}
-                      >
-                        {LANGUAGE_DISPLAY_NAMES[l]}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className="flex items-center gap-1 text-[var(--color-text-dim)]">
-                    {prob.tags.map((t) => (
-                      <span key={t}>#{t}</span>
-                    ))}
+              <div className="flex flex-col gap-3 border-t border-[var(--color-border)] px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
+                <p className="text-xs text-[var(--color-text-muted)]">
+                  {pageData.total === 0 ? "No problems to show" : `Showing ${(pageData.page - 1) * PAGE_SIZE + 1}–${Math.min(pageData.page * PAGE_SIZE, pageData.total)} of ${pageData.total}`}
+                </p>
+                <div className="flex items-center justify-between gap-3 sm:justify-end">
+                  <span className="text-xs text-[var(--color-text-muted)]">Page {pageData.page} of {Math.max(pageData.pageCount, 1)}</span>
+                  <div className="flex gap-1.5">
+                    <Button type="button" variant="outline" size="sm" className="h-8 px-2.5" disabled={pageData.page <= 1} onClick={() => setPage(pageData.page - 1)}>Previous</Button>
+                    <Button type="button" variant="outline" size="sm" className="h-8 px-2.5" disabled={pageData.pageCount === 0 || pageData.page >= pageData.pageCount} onClick={() => setPage(pageData.page + 1)}>Next</Button>
                   </div>
                 </div>
-              </PixelCard>
-            );
-          })
-        )}
+              </div>
+            </Card>
+          )}
+        </section>
       </div>
 
-      {/* Problem Statement Modal / Drawer */}
-      {activeProblemDetail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs">
-          <PixelCard
-            variant="elevated"
-            className="w-full max-w-2xl border-2 border-[var(--color-accent)] p-6 bg-[var(--color-surface)] [box-shadow:var(--shadow-btn)] space-y-4 max-h-[85vh] flex flex-col"
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-3 shrink-0">
-              <div className="flex items-center gap-2.5">
-                <h3 className="font-heading text-xl text-[var(--color-text-main)]">
-                  {activeProblemDetail.title}_
-                </h3>
-                <PixelBadge
-                  variant={
-                    activeProblemDetail.difficulty === "beginner"
-                      ? "mint"
-                      : activeProblemDetail.difficulty === "intermediate"
-                      ? "cyan"
-                      : "pink"
-                  }
-                  bracketed
-                >
-                  {activeProblemDetail.difficulty.toUpperCase()}
-                </PixelBadge>
-              </div>
+      <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+        <SheetContent side="left" className="w-[min(20rem,90vw)] max-w-none gap-5 overflow-y-auto border-r border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+          <SheetTitle className="text-base font-semibold">Problem filters</SheetTitle>
+          <SheetDescription>Refine the list by status, topic, difficulty, language, or tag.</SheetDescription>
+          <ProblemFilters {...filterProps} />
+        </SheetContent>
+      </Sheet>
 
-              <button
-                type="button"
-                onClick={() => setInspectProblemId(null)}
-                className="text-[var(--color-text-dim)] hover:text-[var(--color-text-main)] font-mono text-sm cursor-pointer"
-              >
-                <DotIcon name="close" size={14} aria-hidden="true" /> CLOSE
-              </button>
-            </div>
-
-            {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto space-y-4 text-xs font-mono pr-2">
-              <div className="space-y-1">
-                <span className="text-[var(--color-accent)] font-heading text-sm block">PROBLEM DESCRIPTION</span>
-                <p className="text-[var(--color-text-main)] leading-relaxed font-sans text-sm">
-                  {activeProblemDetail.description}
-                </p>
-              </div>
-
-              <div className="space-y-1">
-                <span className="text-[var(--color-accent)] font-heading text-sm block">INPUT SPECIFICATION</span>
-                <p className="text-[var(--color-text-muted)] bg-[var(--color-canvas)] p-2.5 border border-[var(--color-border)]">
-                  {activeProblemDetail.inputSpec}
-                </p>
-              </div>
-
-              <div className="space-y-1">
-                <span className="text-[var(--color-accent)] font-heading text-sm block">OUTPUT SPECIFICATION</span>
-                <p className="text-[var(--color-text-muted)] bg-[var(--color-canvas)] p-2.5 border border-[var(--color-border)]">
-                  {activeProblemDetail.outputSpec}
-                </p>
-              </div>
-
-              <div className="space-y-1">
-                <span className="text-[var(--color-accent)] font-heading text-sm block">CONSTRAINTS</span>
-                <ul className="list-disc list-inside text-[var(--color-text-muted)] space-y-0.5">
-                  {activeProblemDetail.constraints.map((c, idx) => (
-                    <li key={idx}>{c}</li>
-                  ))}
-                  <li>Time Limit: {activeProblemDetail.timeLimitMs}ms</li>
-                  <li>Memory Limit: {Math.round(activeProblemDetail.memoryLimitKb / 1000)}MB</li>
-                </ul>
-              </div>
-
-              {/* Sample Test Cases */}
-              <div className="space-y-2">
-                <span className="text-[var(--color-accent)] font-heading text-sm block">SAMPLE TEST CASES</span>
-                {activeProblemDetail.sampleTestCases.map((s, idx) => (
-                  <div key={idx} className="p-3 bg-[var(--color-canvas)] border border-[var(--color-border)] space-y-1">
-                    <span className="text-[var(--color-text-main)] font-bold block">Sample #{idx + 1}</span>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[0.6875rem]">
-                      <div>
-                        <span className="text-[var(--color-text-dim)] block">Input:</span>
-                        <pre className="text-[var(--color-text-main)] bg-[var(--color-surface)] p-1.5 border border-[var(--color-border)]">
-                          {s.input || "(empty)"}
-                        </pre>
-                      </div>
-                      <div>
-                        <span className="text-[var(--color-text-dim)] block">Output:</span>
-                        <pre className="text-[var(--color-mint)] bg-[var(--color-surface)] p-1.5 border border-[var(--color-border)]">
-                          {s.output.trim()}
-                        </pre>
-                      </div>
-                    </div>
-                    {s.explanation && (
-                      <p className="text-[0.625rem] text-[var(--color-text-dim)] pt-1">
-                        Explanation: {s.explanation}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="pt-3 border-t border-[var(--color-border)] flex items-center justify-between shrink-0">
-              <span className="text-[0.6875rem] font-mono text-[var(--color-text-dim)]">
-                {activeProblemDetail.visibleTestCases.length} visible test cases ready
-              </span>
-
-              <div className="flex items-center gap-2">
-                <PixelButton
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setInspectProblemId(null)}
-                >
-                  CLOSE
-                </PixelButton>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleStartTimedChallenge(activeProblemDetail.id, activeProblemDetail.title);
-                    setInspectProblemId(null);
-                  }}
-                  className="px-3 py-1.5 border border-[var(--color-pink)] text-[var(--color-pink)] hover:bg-[var(--color-pink)]/10 font-heading text-xs cursor-pointer transition-colors flex items-center gap-1.5"
-                >
-                  <DotIcon name="alarm" size={13} />
-                  <span>START TIMED CHALLENGE <DotIcon name="alarm" size={14} aria-hidden="true" /></span>
-                </button>
-
-                <Link href={`/app/workspace?problem=${encodeURIComponent(activeProblemDetail.id)}`} className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] px-3 text-xs font-medium text-[var(--color-primary-foreground)] transition-colors hover:bg-[var(--color-primary-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ring)]"><DotIcon name="circlePlay" size={14} aria-hidden="true" /> Solve In Workspace</Link>
-              </div>
-            </div>
-          </PixelCard>
-        </div>
-      )}
+      <ProblemPreviewSheet
+        problem={previewProblem}
+        onClose={() => setPreviewProblem(null)}
+        onSolve={navigateToProblem}
+      />
     </div>
   );
 }
