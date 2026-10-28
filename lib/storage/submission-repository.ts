@@ -34,6 +34,8 @@ function nextSubmittedAt(): string {
   return new Date(lastSubmissionTimestamp).toISOString();
 }
 
+const LANGUAGES = new Set(["python", "java", "cpp", "c"]);
+
 const VERDICTS = new Set([
   "ACCEPTED",
   "WRONG_ANSWER",
@@ -52,6 +54,7 @@ export class SubmissionRepository {
   async recordSubmission(profileId: string, result: SubmissionResultMetadata): Promise<LocalSubmissionRecord> {
     if (!profileId.trim()) throw new SubmissionRepositoryError("A profile is required to save submission history.");
     if (!result.problemId?.trim()) throw new SubmissionRepositoryError("A problem ID is required to save submission history.");
+    if (!LANGUAGES.has(result.language)) throw new SubmissionRepositoryError("The judge returned an unknown language.");
     if (!VERDICTS.has(result.overallVerdict)) throw new SubmissionRepositoryError("The judge returned an unknown verdict.");
 
     const record: LocalSubmissionRecord = {
