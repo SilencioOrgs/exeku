@@ -127,9 +127,9 @@ function FilterSelect({
 }) {
   return (
     <div className="space-y-2">
-      <label htmlFor={`problem-filter-${label.replace(/\s+/g, "-")}`} className="block text-xs font-medium text-[var(--color-text-muted)]">{title}</label>
+      <label htmlFor={`${idPrefix}-problem-filter-${label.replace(/\s+/g, "-")}`} className="block text-xs font-medium text-[var(--color-text-muted)]">{title}</label>
       <select
-        id={`problem-filter-${label.replace(/\s+/g, "-")}`}
+        id={`${idPrefix}-problem-filter-${label.replace(/\s+/g, "-")}`}
         aria-label={label}
         value={value}
         onChange={(event) => onChange(event.target.value)}
