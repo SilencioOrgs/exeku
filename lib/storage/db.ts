@@ -5,9 +5,10 @@
  */
 
 const DB_NAME = "exeku_local_v1";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 export const PROFILE_STORE = "profiles";
 export const DRAFT_STORE = "drafts";
+export const SUBMISSION_STORE = "submissions";
 
 // In-memory fallback map for non-browser / test environments
 const inMemoryStores = new Map<string, Map<string, unknown>>();
@@ -47,6 +48,12 @@ function openDB(): Promise<IDBDatabase> {
         draftStore.createIndex("profileId", "profileId", { unique: false });
         draftStore.createIndex("language", "language", { unique: false });
         draftStore.createIndex("updatedAt", "updatedAt", { unique: false });
+      }
+      if (!db.objectStoreNames.contains(SUBMISSION_STORE)) {
+        const submissionStore = db.createObjectStore(SUBMISSION_STORE, { keyPath: "id" });
+        submissionStore.createIndex("profileId", "profileId", { unique: false });
+        submissionStore.createIndex("problemId", "problemId", { unique: false });
+        submissionStore.createIndex("submittedAt", "submittedAt", { unique: false });
       }
     };
 
