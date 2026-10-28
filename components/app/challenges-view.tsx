@@ -21,7 +21,7 @@ import { ProblemFilters, type ProblemFilterValues, type SubmissionHistoryState }
 import { ProblemPreviewSheet } from "./problem-preview-sheet";
 import { filterProblemSummaries, paginateProblems } from "@/lib/problems/problem-list";
 import { SUBMISSION_HISTORY_EVENT, getProblemStatus, submissionRepository } from "@/lib/storage/submission-repository";
-import { ALL_SUPPORTED_LANGUAGES, LANGUAGE_DISPLAY_NAMES } from "@/lib/workspace-defaults";
+import { LANGUAGE_DISPLAY_NAMES } from "@/lib/workspace-defaults";
 import type { ProblemSummary } from "@/types/problem";
 import type { LocalSubmissionRecord, ProblemProgressStatus } from "@/types/submission";
 
