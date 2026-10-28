@@ -81,6 +81,12 @@
 - [ ] Run all required checks: `npx tsx --test tests/*.test.mjs`, `npm run lint`, `npx tsc --noEmit`, `npm run build`.
 - [ ] Review diff for scope, data truth, hidden-test safety, and responsive/accessibility gaps; stop for owner review.
 
+## Execution Ledger
+
+- [x] Plan committed before implementation.
+- [x] Regression tests committed before implementation.
+- [ ] Confirm the red CI result before adding production code.
+
 ## Ruling
 
 Ruling: Add a minimal profile-scoped local submission metadata store — required because status filters cannot be truthful or functional with the current app, which only stores the latest timed challenge and never persists ordinary judge results. This stores only actual verdict metadata, not source code, test inputs, expected outputs, or hidden test details; API contracts and judge calculations remain untouched.
