@@ -79,7 +79,8 @@ export function ChallengesView() {
   const [submissionState, setSubmissionState] = useState<SubmissionState>({ profileId: "", status: "loading", submissions: [] });
 
   const problems = catalogState.problems;
-  const history = submissionState.profileId === profile?.id ? submissionState : null;
+  const profileId = profile?.id;
+  const history = submissionState.profileId === profileId ? submissionState : null;
   const historyState: SubmissionHistoryState = history?.status ?? "loading";
   const submissions = history?.submissions ?? [];
 
@@ -102,34 +103,34 @@ export function ChallengesView() {
   }, [reloadToken]);
 
   useEffect(() => {
-    if (!profile?.id) return;
+    if (!profileId) return;
     let active = true;
     const loadHistory = () => {
-      submissionRepository.getAllForProfile(profile.id)
+      submissionRepository.getAllForProfile(profileId)
         .then((records) => {
-          if (active) setSubmissionState({ profileId: profile.id, status: "ready", submissions: records });
+          if (active) setSubmissionState({ profileId, status: "ready", submissions: records });
         })
         .catch(() => {
-          if (active) setSubmissionState({ profileId: profile.id, status: "unavailable", submissions: [] });
+          if (active) setSubmissionState({ profileId, status: "unavailable", submissions: [] });
         });
     };
     loadHistory();
     const handleHistoryChange = (event: Event) => {
       const changedProfileId = (event as CustomEvent<{ profileId?: string }>).detail?.profileId;
-      if (changedProfileId === profile.id) loadHistory();
+      if (changedProfileId === profileId) loadHistory();
     };
     window.addEventListener(SUBMISSION_HISTORY_EVENT, handleHistoryChange);
     return () => {
       active = false;
       window.removeEventListener(SUBMISSION_HISTORY_EVENT, handleHistoryChange);
     };
-  }, [profile?.id]);
+  }, [profileId]);
 
   const statuses = useMemo(() => new Map(
     problems.map((problem) => [problem.id, getProblemStatus(problem.id, submissions)] as const),
   ), [problems, submissions]);
 
-  const effectiveFilters = historyState === "ready" ? filters : { ...filters, status: "all" as const };
+  const effectiveFilters = useMemo(() => historyState === "ready" ? filters : { ...filters, status: "all" as const }, [historyState, filters]);
   const filteredProblems = useMemo(() => filterProblemSummaries(problems, {
     ...effectiveFilters,
     query: searchQuery,
