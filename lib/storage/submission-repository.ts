@@ -10,6 +10,8 @@ import {
 export const SUBMISSION_HISTORY_EVENT = "exeku:submission-history-changed";
 
 export class SubmissionRepositoryError extends Error {
+  cause?: unknown;
+
   constructor(message: string, cause?: unknown) {
     super(message);
     this.name = "SubmissionRepositoryError";
