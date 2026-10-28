@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { submissionRepository, getProblemStatus } from "../lib/storage/submission-repository.ts";
+import { submissionRepository, getProblemStatus, getProblemStatuses } from "../lib/storage/submission-repository.ts";
 import { profileRepository } from "../lib/storage/profile-repository.ts";
 
 const result = (overrides = {}) => ({
@@ -64,4 +64,14 @@ test("deleting a local profile removes that profile's submission history", async
   assert.equal((await submissionRepository.getAllForProfile(profile.id)).length, 1);
   await profileRepository.deleteProfile(profile.id);
   assert.deepEqual(await submissionRepository.getAllForProfile(profile.id), []);
+});
+
+test("bulk status derivation scans actual history with Accepted taking precedence", async () => {
+  const wrong = await submissionRepository.recordSubmission("profile-history-e", result({ problemId: "p1" }));
+  const accepted = await submissionRepository.recordSubmission("profile-history-e", result({ problemId: "p1", overallVerdict: "ACCEPTED" }));
+  const attempted = await submissionRepository.recordSubmission("profile-history-e", result({ problemId: "p2" }));
+  const statuses = getProblemStatuses(["p1", "p2", "p3"], [wrong, accepted, attempted]);
+  assert.equal(statuses.get("p1"), "solved");
+  assert.equal(statuses.get("p2"), "attempted");
+  assert.equal(statuses.get("p3"), "unsolved");
 });
