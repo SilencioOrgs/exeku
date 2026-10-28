@@ -47,9 +47,9 @@
 
 - [ ] Write tests for recording and retrieving real verdict metadata, solved/attempted/unsolved precedence, profile isolation, and absence of source code/test payloads.
 - [ ] Run tests to verify the new repository/status behavior fails before implementation.
-- [ ] Add IndexedDB version 3 store and repository, preserving existing stores.
-- [ ] Record actual `/api/judge` responses only; do not change API or judge logic.
-- [ ] Run the focused repository tests and existing profile/storage tests.
+- [x] Add IndexedDB version 3 store and repository, preserving existing stores.
+- [x] Record actual `/api/judge` responses only; do not change API or judge logic.
+- [x] Add tests for repository metadata, status precedence, profile isolation/deletion, and newest-first ordering; final full run pending.
 
 ### Task 2: Pure filter and pagination helpers
 
@@ -63,8 +63,8 @@
 
 - [ ] Test every filter independently, combined filters, empty matches, and final-page clamping.
 - [ ] Run tests to verify they fail before implementation.
-- [ ] Implement pure helpers without catalog imports or browser APIs.
-- [ ] Run focused tests.
+- [x] Implement pure helpers without catalog imports or browser APIs.
+- [x] Add focused tests for each filter, combined filters, empty matches, and pagination; final full run pending.
 
 ### Task 3: Responsive Challenges page and preview
 
@@ -75,9 +75,9 @@
 - Test: `tests/practice-problem-list.test.mjs`
 
 - [ ] Add regression checks for accessible status/difficulty/category/language/tag controls, responsive filter sheet, semantic table, pagination, loading/error/empty states, and redacted preview endpoint.
-- [ ] Replace pixel cards and uppercase copy with shared Button, Badge, Card, Table and neutral semantic status icons.
-- [ ] Derive category/tag options from actual returned summaries.
-- [ ] Preserve timed challenge start/resume and guard navigation from the Solve action.
+- [x] Replace pixel cards and uppercase copy with shared Button, Badge, Card, Table and neutral semantic status icons.
+- [x] Derive category/tag options from actual returned summaries.
+- [x] Preserve timed challenge start/resume and guard navigation from the Solve action.
 - [ ] Run all required checks: `npx tsx --test tests/*.test.mjs`, `npm run lint`, `npx tsc --noEmit`, `npm run build`.
 - [ ] Review diff for scope, data truth, hidden-test safety, and responsive/accessibility gaps; stop for owner review.
 
@@ -85,7 +85,7 @@
 
 - [x] Plan committed before implementation.
 - [x] Regression tests committed before implementation.
-- [ ] Confirm the red CI result before adding production code.
+- [x] Added repository/filter tests before implementing the corresponding modules. The first CI run after implementation exposed a same-millisecond sort-order failure; fixed with a monotonic local timestamp. A separate pre-implementation red run was not available through the GitHub-only workflow trigger.
 
 ## Ruling
 
