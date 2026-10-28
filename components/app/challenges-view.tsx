@@ -54,15 +54,15 @@ function difficultyVariant(difficulty: ProblemSummary["difficulty"]) {
 
 function StatusIndicator({ status }: { status: ProblemProgressStatus | "unknown" }) {
   if (status === "solved") {
-    return <span className="inline-flex items-center gap-1.5 text-xs text-[var(--color-mint)]" title="Solved" aria-label="Solved"><CheckCircle2 size={16} aria-hidden="true" /><span className="hidden xl:inline">Solved</span></span>;
+    return <span role="img" className="inline-flex items-center gap-1.5 text-xs text-[var(--color-mint)]" title="Solved" aria-label="Solved"><CheckCircle2 size={16} aria-hidden="true" /><span className="hidden xl:inline">Solved</span></span>;
   }
   if (status === "attempted") {
-    return <span className="inline-flex items-center gap-1.5 text-xs text-[var(--color-warning)]" title="Attempted" aria-label="Attempted"><Clock3 size={16} aria-hidden="true" /><span className="hidden xl:inline">Attempted</span></span>;
+    return <span role="img" className="inline-flex items-center gap-1.5 text-xs text-[var(--color-warning)]" title="Attempted" aria-label="Attempted"><Clock3 size={16} aria-hidden="true" /><span className="hidden xl:inline">Attempted</span></span>;
   }
   if (status === "unsolved") {
-    return <span className="inline-flex items-center gap-1.5 text-xs text-[var(--color-text-muted)]" title="Unsolved" aria-label="Unsolved"><Circle size={16} aria-hidden="true" /><span className="hidden xl:inline">Unsolved</span></span>;
+    return <span role="img" className="inline-flex items-center gap-1.5 text-xs text-[var(--color-text-muted)]" title="Unsolved" aria-label="Unsolved"><Circle size={16} aria-hidden="true" /><span className="hidden xl:inline">Unsolved</span></span>;
   }
-  return <span className="inline-flex items-center text-[var(--color-text-muted)]" title="Submission status unavailable" aria-label="Submission status unavailable"><CircleHelp size={16} aria-hidden="true" /></span>;
+  return <span role="img" className="inline-flex items-center text-[var(--color-text-muted)]" title="Submission status unavailable" aria-label="Submission status unavailable"><CircleHelp size={16} aria-hidden="true" /></span>;
 }
 
 export function ChallengesView() {
@@ -274,15 +274,15 @@ export function ChallengesView() {
 
           {catalogState.status === "ready" && filteredProblems.length > 0 && (
             <Card className="overflow-hidden p-0">
-              <Table className="min-w-[590px]">
+              <Table className="min-w-[320px] sm:min-w-[520px]">
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
-                    <TableHead className="w-14">Status</TableHead>
+                    <TableHead className="w-12 px-2 sm:w-14 sm:px-4">Status</TableHead>
                     <TableHead>Problem</TableHead>
                     <TableHead className="hidden md:table-cell">Category</TableHead>
-                    <TableHead>Difficulty</TableHead>
+                    <TableHead className="hidden sm:table-cell">Difficulty</TableHead>
                     <TableHead className="hidden xl:table-cell">Languages</TableHead>
-                    <TableHead className="w-32 text-right">Actions</TableHead>
+                    <TableHead className="w-28 text-right sm:w-32">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -290,19 +290,20 @@ export function ChallengesView() {
                     const status: ProblemProgressStatus | "unknown" = historyState === "ready" ? getProblemStatus(problem.id, submissions) : "unknown";
                     return (
                       <TableRow key={problem.id}>
-                        <TableCell className="px-3 sm:px-4">
+                        <TableCell className="px-2 sm:px-4">
                           <StatusIndicator status={status} />
                         </TableCell>
                         <TableCell className="min-w-44">
                           <Button type="button" variant="link" size="sm" onClick={() => setPreviewProblem(problem)} className="h-auto max-w-full justify-start whitespace-normal px-0 py-0 text-left text-sm font-semibold text-[var(--color-text-main)]">
                             {problem.title}
                           </Button>
-                          <div className="mt-1 flex flex-wrap gap-x-2 gap-y-1">
+                          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <Badge variant={difficultyVariant(problem.difficulty)} className="capitalize sm:hidden">{problem.difficulty}</Badge>
                             {problem.tags.map((tag) => <button key={tag} type="button" onClick={() => updateFilter("tag", tag)} className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-primary)] focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]">#{tag}</button>)}
                           </div>
                         </TableCell>
                         <TableCell className="hidden max-w-40 text-sm text-[var(--color-text-muted)] md:table-cell">{problem.category}</TableCell>
-                        <TableCell><Badge variant={difficultyVariant(problem.difficulty)} className="capitalize">{problem.difficulty}</Badge></TableCell>
+                        <TableCell className="hidden sm:table-cell"><Badge variant={difficultyVariant(problem.difficulty)} className="capitalize">{problem.difficulty}</Badge></TableCell>
                         <TableCell className="hidden xl:table-cell">
                           <div className="flex flex-wrap gap-1">
                             {problem.supportedLanguages.map((language) => (
@@ -312,7 +313,7 @@ export function ChallengesView() {
                             ))}
                           </div>
                         </TableCell>
-                        <TableCell className="px-2 text-right sm:px-4">
+                        <TableCell className="px-1 text-right sm:px-4">
                           <div className="flex items-center justify-end gap-1">
                             <Button type="button" variant="outline" size="icon-xs" className="sm:hidden" aria-label={`Start timed challenge for ${problem.title}`} title="Start a timed challenge" onClick={() => startTimedChallenge(problem)}><Clock3 size={13} aria-hidden="true" /></Button>
                             <Button type="button" variant="outline" size="sm" className="hidden h-8 px-2 sm:inline-flex" onClick={() => startTimedChallenge(problem)} title="Start a timed challenge"><Clock3 size={14} aria-hidden="true" /><span className="hidden md:inline">Timed</span></Button>
