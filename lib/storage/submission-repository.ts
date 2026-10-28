@@ -122,7 +122,7 @@ export function getProblemStatuses(
   problemIds: readonly string[],
   submissions: readonly LocalSubmissionRecord[],
 ): Map<string, ProblemProgressStatus> {
-  const statuses = new Map<string, ProblemProgressStatus>(problemIds.map((id) => [id, "unsolved"]));
+  const statuses = new Map<string, ProblemProgressStatus>(problemIds.map((id) => [id, "unsolved"] as const));
   for (const record of submissions) {
     if (!statuses.has(record.problemId)) continue;
     if (record.verdict === "ACCEPTED") {
