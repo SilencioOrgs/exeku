@@ -5,9 +5,10 @@
  */
 
 const DB_NAME = "exeku_local_v1";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 export const PROFILE_STORE = "profiles";
 export const DRAFT_STORE = "drafts";
+export const SUBMISSION_STORE = "submissions";
 
 // In-memory fallback map for non-browser / test environments
 const inMemoryStores = new Map<string, Map<string, unknown>>();
@@ -29,6 +30,7 @@ function isIndexedDBAvailable(): boolean {
 
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
+    let blocked = false;
     if (!isIndexedDBAvailable()) {
       return reject(new Error("IndexedDB is not available in this environment."));
     }
@@ -48,10 +50,28 @@ function openDB(): Promise<IDBDatabase> {
         draftStore.createIndex("language", "language", { unique: false });
         draftStore.createIndex("updatedAt", "updatedAt", { unique: false });
       }
+      if (!db.objectStoreNames.contains(SUBMISSION_STORE)) {
+        const submissionStore = db.createObjectStore(SUBMISSION_STORE, { keyPath: "id" });
+        submissionStore.createIndex("profileId", "profileId", { unique: false });
+        submissionStore.createIndex("problemId", "problemId", { unique: false });
+        submissionStore.createIndex("submittedAt", "submittedAt", { unique: false });
+      }
     };
 
     request.onsuccess = (event) => {
-      resolve((event.target as IDBOpenDBRequest).result);
+      const db = (event.target as IDBOpenDBRequest).result;
+      // Let another tab upgrade the schema instead of keeping an old connection open.
+      db.onversionchange = () => db.close();
+      if (blocked) {
+        db.close();
+        return;
+      }
+      resolve(db);
+    };
+
+    request.onblocked = () => {
+      blocked = true;
+      reject(new Error("Local storage upgrade is blocked. Close or refresh other Exeku tabs, then retry."));
     };
 
     request.onerror = (event) => {

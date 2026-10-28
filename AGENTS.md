@@ -30,7 +30,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **UI Components**: shadcn/ui configured with Base UI primitives (`@base-ui/react`), Nova preset (`style: "base-nova"`), and Lucide React icons (`components.json`)
 - **Icons**: Lucide stroke icons via the existing compatibility wrapper (`components/retro/dot-icon.tsx`)
 - **Editor**: Monaco Editor (`monaco-editor`, `@monaco-editor/react`)
-- **Storage**: IndexedDB local profiles and draft persistence (v2 schema)
+- **Storage**: IndexedDB local profiles, drafts, and profile-scoped submission metadata (v3 schema)
 - **Execution Sandbox Target**: Piston API (`POST /api/v2/execute`) via isolated container sandbox
 - **Package Manager**: npm (use `npm.cmd` / `npx.cmd` in Windows PowerShell if execution policies restrict script loading)
 - **Rule**: Preserve existing configuration and dependencies. Never recreate or reinitialize the Next.js project.
