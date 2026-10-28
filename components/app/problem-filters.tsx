@@ -26,6 +26,8 @@ interface ProblemFiltersProps {
   statusCounts: Record<"all" | ProblemProgressStatus, number>;
   historyState: SubmissionHistoryState;
   onClear: () => void;
+  hasSearch?: boolean;
+  idPrefix: "desktop" | "mobile";
 }
 
 const STATUS_OPTIONS: { value: ProblemStatusFilter; label: string }[] = [
@@ -45,8 +47,10 @@ export function ProblemFilters({
   statusCounts,
   historyState,
   onClear,
+  hasSearch = false,
+  idPrefix,
 }: ProblemFiltersProps) {
-  const activeCount = Number(value.status !== "all")
+  const activeCount = Number(hasSearch) + Number(value.status !== "all")
     + Number(value.difficulty !== "all")
     + Number(value.category !== "all")
     + Number(value.language !== "all")
@@ -91,15 +95,15 @@ export function ProblemFilters({
         onChange={(next) => onChange("difficulty", next as ProblemFilterValues["difficulty"])}
         options={[["all", "All difficulties"], ["beginner", "Beginner"], ["intermediate", "Intermediate"], ["advanced", "Advanced"]]} />
 
-      <FilterSelect label="Category filter" title="Category" value={value.category}
+      <FilterSelect idPrefix={idPrefix} label="Category filter" title="Category" value={value.category}
         onChange={(next) => onChange("category", next)}
         options={[["all", "All categories"], ...categories.map((category) => [category, category] as [string, string])]} />
 
-      <FilterSelect label="Language filter" title="Language" value={value.language}
+      <FilterSelect idPrefix={idPrefix} label="Language filter" title="Language" value={value.language}
         onChange={(next) => onChange("language", next as ProblemFilterValues["language"])}
         options={[["all", "All languages"], ...ALL_SUPPORTED_LANGUAGES.map((language) => [language, LANGUAGE_DISPLAY_NAMES[language]] as [string, string])]} />
 
-      <FilterSelect label="Tag filter" title="Tag" value={value.tag}
+      <FilterSelect idPrefix={idPrefix} label="Tag filter" title="Tag" value={value.tag}
         onChange={(next) => onChange("tag", next)}
         options={[["all", "All tags"], ...tags.map((tag) => [tag, `#${tag}`] as [string, string])]} />
     </div>
@@ -107,12 +111,14 @@ export function ProblemFilters({
 }
 
 function FilterSelect({
+  idPrefix,
   label,
   title,
   value,
   onChange,
   options,
 }: {
+  idPrefix: "desktop" | "mobile";
   label: string;
   title: string;
   value: string;
