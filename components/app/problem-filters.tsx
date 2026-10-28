@@ -91,7 +91,7 @@ export function ProblemFilters({
         {historyState === "unavailable" && <p className="text-xs leading-5 text-[var(--color-text-muted)]">Submission status is unavailable. Other filters still work.</p>}
       </fieldset>
 
-      <FilterSelect label="Difficulty filter" title="Difficulty" value={value.difficulty}
+      <FilterSelect idPrefix={idPrefix} label="Difficulty filter" title="Difficulty" value={value.difficulty}
         onChange={(next) => onChange("difficulty", next as ProblemFilterValues["difficulty"])}
         options={[["all", "All difficulties"], ["beginner", "Beginner"], ["intermediate", "Intermediate"], ["advanced", "Advanced"]]} />
 
