@@ -73,30 +73,30 @@ export function ProblemPreviewSheet({ problem, onClose, onSolve }: ProblemPrevie
           <div className="space-y-6 px-5 py-5 pb-24">
             <section className="space-y-2">
               <h3 className="text-sm font-semibold">Description</h3>
-              <p className="whitespace-pre-line text-sm leading-6 text-[var(--color-text-muted)]">{detail.description}</p>
+              <p className="whitespace-pre-line text-sm leading-6 text-[var(--color-text-muted)]">{currentState.detail.description}</p>
             </section>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <section className="space-y-2">
                 <h3 className="text-sm font-semibold">Input format</h3>
-                <p className="rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-elevated)] p-3 text-sm leading-5 text-[var(--color-text-muted)]">{detail.inputSpec}</p>
+                <p className="rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-elevated)] p-3 text-sm leading-5 text-[var(--color-text-muted)]">{currentState.detail.inputSpec}</p>
               </section>
               <section className="space-y-2">
                 <h3 className="text-sm font-semibold">Output format</h3>
-                <p className="rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-elevated)] p-3 text-sm leading-5 text-[var(--color-text-muted)]">{detail.outputSpec}</p>
+                <p className="rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-elevated)] p-3 text-sm leading-5 text-[var(--color-text-muted)]">{currentState.detail.outputSpec}</p>
               </section>
             </div>
 
             <section className="space-y-2">
               <h3 className="text-sm font-semibold">Constraints</h3>
-              {detail.constraints.length > 0
-                ? <ul className="list-disc space-y-1 pl-5 text-sm text-[var(--color-text-muted)]">{detail.constraints.map((constraint) => <li key={constraint}>{constraint}</li>)}</ul>
+              {currentState.detail.constraints.length > 0
+                ? <ul className="list-disc space-y-1 pl-5 text-sm text-[var(--color-text-muted)]">{currentState.detail.constraints.map((constraint) => <li key={constraint}>{constraint}</li>)}</ul>
                 : <p className="text-sm text-[var(--color-text-muted)]">No additional constraints.</p>}
             </section>
 
             <section className="space-y-3">
               <h3 className="text-sm font-semibold">Sample test cases</h3>
-              {detail.sampleTestCases.map((sample, index) => (
+              {currentState.detail.sampleTestCases.map((sample, index) => (
                 <div key={`${problem.id}-sample-${index}`} className="overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)]">
                   <div className="border-b border-[var(--color-border)] bg-[var(--color-elevated)] px-3 py-2 text-xs font-medium">Sample {index + 1}</div>
                   <div className="grid gap-3 p-3 sm:grid-cols-2">
@@ -116,7 +116,7 @@ export function ProblemPreviewSheet({ problem, onClose, onSolve }: ProblemPrevie
 
             <section className="space-y-2">
               <h3 className="text-sm font-semibold">Supported languages</h3>
-              <div className="flex flex-wrap gap-2">{detail.supportedLanguages.map((language) => <Badge key={language} variant="outline">{language === "cpp" ? "C++" : language === "c" ? "C" : language === "java" ? "Java" : "Python 3"}</Badge>)}</div>
+              <div className="flex flex-wrap gap-2">{currentState.detail.supportedLanguages.map((language) => <Badge key={language} variant="outline">{language === "cpp" ? "C++" : language === "c" ? "C" : language === "java" ? "Java" : "Python 3"}</Badge>)}</div>
             </section>
           </div>
         )}
