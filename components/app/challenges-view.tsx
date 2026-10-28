@@ -252,7 +252,7 @@ export function ChallengesView() {
 
           {catalogState.status === "loading" && (
             <Card role="status" className="flex min-h-48 items-center justify-center gap-3 p-8 text-sm text-[var(--color-text-muted)]">
-              <span className="size-4 animate-spin rounded-full border-2 border-[var(--color-border)] border-t-[var(--color-primary)]" aria-hidden="true" /> Loading problems…
+              <span className="size-4 animate-spin motion-reduce:animate-none rounded-full border-2 border-[var(--color-border)] border-t-[var(--color-primary)]" aria-hidden="true" /> Loading problems…
             </Card>
           )}
 
