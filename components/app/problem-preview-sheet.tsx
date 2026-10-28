@@ -26,25 +26,26 @@ function difficultyVariant(difficulty: ProblemSummary["difficulty"]) {
 export function ProblemPreviewSheet({ problem, onClose, onSolve }: ProblemPreviewSheetProps) {
   const [previewState, setPreviewState] = useState<PreviewState | null>(null);
   const [retryToken, setRetryToken] = useState(0);
-  const currentState = problem && previewState?.problemId === problem.id ? previewState : null;
+  const problemId = problem?.id;
+  const currentState = problemId && previewState?.problemId === problemId ? previewState : null;
   const detail = currentState?.status === "ready" ? currentState.detail : null;
 
   useEffect(() => {
-    if (!problem) return;
+    if (!problemId) return;
     const controller = new AbortController();
-    fetch(`/api/problems/${encodeURIComponent(problem.id)}`, { signal: controller.signal })
+    fetch(`/api/problems/${encodeURIComponent(problemId)}`, { signal: controller.signal })
       .then((response) => {
         if (!response.ok) throw new Error("Problem details are unavailable.");
         return response.json() as Promise<VisibleProblem>;
       })
       .then((data) => {
-        if (!controller.signal.aborted) setPreviewState({ problemId: problem.id, status: "ready", detail: data });
+        if (!controller.signal.aborted) setPreviewState({ problemId, status: "ready", detail: data });
       })
       .catch(() => {
-        if (!controller.signal.aborted) setPreviewState({ problemId: problem.id, status: "error" });
+        if (!controller.signal.aborted) setPreviewState({ problemId, status: "error" });
       });
     return () => controller.abort();
-  }, [problem?.id, retryToken]);
+  }, [problemId, retryToken]);
 
   return (
     <Sheet open={Boolean(problem)} onOpenChange={(open) => { if (!open) onClose(); }}>
