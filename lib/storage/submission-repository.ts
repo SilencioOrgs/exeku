@@ -26,6 +26,14 @@ function makeId(): string {
   return `submission_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
+let lastSubmissionTimestamp = 0;
+
+function nextSubmittedAt(): string {
+  // Preserve insertion order when two local results are recorded in the same millisecond.
+  lastSubmissionTimestamp = Math.max(Date.now(), lastSubmissionTimestamp + 1);
+  return new Date(lastSubmissionTimestamp).toISOString();
+}
+
 const VERDICTS = new Set([
   "ACCEPTED",
   "WRONG_ANSWER",
@@ -56,7 +64,7 @@ export class SubmissionRepository {
       totalTests: safeCount(result.totalTests),
       scorePercentage: Math.min(100, safeCount(result.scorePercentage)),
       maxDurationMs: safeCount(result.maxDurationMs),
-      submittedAt: new Date().toISOString(),
+      submittedAt: nextSubmittedAt(),
     };
 
     try {
