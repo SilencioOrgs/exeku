@@ -19,6 +19,7 @@ import {
 } from "./workspace/submission-modals";
 import { draftRepository } from "@/lib/storage/draft-repository";
 import { recordCodingDay } from "@/lib/storage/coding-activity";
+import { submissionRepository } from "@/lib/storage/submission-repository";
 import { FileTabs } from "./workspace/file-tabs";
 import { Group, Panel, Separator, useGroupRef } from "react-resizable-panels";
 import type { WorkspaceFile } from "@/types/draft";
@@ -450,6 +451,15 @@ export function WorkspaceView() {
 
       const data = (await res.json()) as JudgingResult;
       setJudgingResult(data);
+      // Persist actual judge metadata for the Practice status filter. Storage failure
+      // must never hide the verdict or block the workspace.
+      if (profile?.id && data.problemId && data.overallVerdict) {
+        try {
+          await submissionRepository.recordSubmission(profile.id, data);
+        } catch {
+          // Keep the judging result visible when local storage is unavailable.
+        }
+      }
       if (challenge.isTimedActive) {
         challenge.recordSubmissionAttempt(data.overallVerdict);
       }
