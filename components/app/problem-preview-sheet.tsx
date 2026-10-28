@@ -61,7 +61,7 @@ export function ProblemPreviewSheet({ problem, onClose, onSolve }: ProblemPrevie
 
         {!problem ? null : !currentState ? (
           <div role="status" className="flex min-h-44 items-center justify-center gap-2 px-5 text-sm text-[var(--color-text-muted)]">
-            <LoaderCircle size={16} className="animate-spin" aria-hidden="true" /> Loading problem statement…
+            <LoaderCircle size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> Loading problem statement…
           </div>
         ) : currentState.status === "error" ? (
           <div className="flex min-h-44 flex-col items-center justify-center gap-3 px-5 text-center">
