@@ -64,6 +64,10 @@ function openDB(): Promise<IDBDatabase> {
       resolve(db);
     };
 
+    request.onblocked = () => {
+      reject(new Error("Local storage upgrade is blocked. Close or refresh other Exeku tabs, then retry."));
+    };
+
     request.onerror = (event) => {
       reject((event.target as IDBOpenDBRequest).error || new Error("Failed to open IndexedDB"));
     };
