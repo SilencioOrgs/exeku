@@ -47,7 +47,7 @@ export function About() {
         {/* Section Header */}
         <div className="max-w-3xl mb-14">
           <div className="mb-3">
-            <PixelBadge variant="purple">About Exeku</PixelBadge>
+            <p className="font-code text-xs font-medium text-[var(--color-primary-text)]">About</p>
           </div>
           <h2
             className="text-3xl sm:text-4xl md:text-5xl font-bold text-[var(--color-text-main)] mb-6 tracking-tight"
@@ -58,7 +58,7 @@ export function About() {
           <p className="text-base sm:text-lg text-[var(--color-text-muted)] font-sans leading-relaxed">
             Exeku is an online programming practice and assessment platform inspired by CodeChum,
             currently in local developer preview. We combine instant automated judging, multi-language sandboxes,
-            and competitive programming workflows, plus a Hardware Lab for Arduino projects.
+            and competitive programming workflows.
           </p>
         </div>
 
@@ -104,7 +104,6 @@ export function About() {
               </p>
             </div>
           </div>
-          <PixelBadge variant="mint">Dev preview</PixelBadge>
         </div>
       </div>
     </section>

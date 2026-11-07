@@ -1,24 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
+import Link from "next/link";
 import { useProfile } from "@/hooks/use-profile";
-import { PixelBadge } from "@/components/retro/pixel-badge";
-import { PixelButton } from "@/components/retro/pixel-button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { DotIcon } from "@/components/retro/dot-icon";
 
 export function Navbar() {
-  const router = useRouter();
   const { profile } = useProfile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
     { label: "Practice", href: "#practice" },
-    { label: "Lab tour", href: "#tour" },
     { label: "About", href: "#about" },
     { label: "Languages", href: "#languages" },
-    { label: "Roadmap", href: "#features" },
-    { label: "Installation", href: "#install" },
+    { label: "Exeku Lab", href: "#lab-app" },
     { label: "FAQ", href: "#faq" },
   ];
 
@@ -39,12 +35,6 @@ export function Navbar() {
             </span>
           </a>
 
-          <div className="hidden sm:flex items-center ml-2">
-            <PixelBadge variant="cyan">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-pulse mr-1" />
-              Online preview
-            </PixelBadge>
-          </div>
         </div>
 
         {/* Desktop Navigation Links */}
@@ -62,38 +52,27 @@ export function Navbar() {
 
         {/* Action Button & Mobile Menu Toggle */}
         <div className="flex items-center gap-3">
-          <div className="hidden sm:block">
-            <PixelButton
-              variant="cyan"
-              size="sm"
-              onClick={() => router.push(profile ? "/app" : "/setup")}
-            >
-              {profile ? "Workspace" : "Get Started"} <DotIcon name="arrowUp" className="w-3.5 h-3.5" />
-            </PixelButton>
-          </div>
+          <Link href={profile ? "/app" : "/setup"} className={buttonVariants({ className: "hidden sm:inline-flex" })}>
+            {profile ? "Open app" : "Get started"}<DotIcon name="arrowRight" size={14} aria-hidden="true" />
+          </Link>
 
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="icon"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden rounded-lg min-h-11 min-w-11 p-2 text-[var(--color-text-muted)] hover:text-foreground bg-[var(--color-elevated)] border border-[var(--color-border)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+            className="lg:hidden"
             aria-label="Toggle navigation menu"
             aria-expanded={mobileMenuOpen}
           >
-            {mobileMenuOpen ? <DotIcon name="close" className="w-5 h-5" /> : <DotIcon name="burger" className="w-5 h-5" />}
-          </button>
+            <DotIcon name={mobileMenuOpen ? "close" : "burger"} size={18} aria-hidden="true" />
+          </Button>
         </div>
       </div>
 
       {/* Mobile Menu Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-[var(--color-surface)] border-b border-[var(--color-border)] px-4 pt-3 pb-6 flex flex-col gap-4">
-          <div className="flex items-center justify-between pb-2 border-b border-[var(--color-border)]">
-            <PixelBadge variant="cyan">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-pulse mr-1" />
-              Online preview
-            </PixelBadge>
-            <span className="text-xs font-mono text-[var(--color-text-muted)]">Local dev preview</span>
-          </div>
+        <div className="lg:hidden bg-[var(--color-surface)] border-b border-[var(--color-border)] px-4 pt-2 pb-6 flex flex-col gap-4">
 
           <nav className="flex flex-col gap-3">
             {navLinks.map((link) => (
@@ -101,27 +80,16 @@ export function Navbar() {
                 key={link.label}
                 href={link.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-[var(--color-text-main)] hover:text-[var(--color-accent)] font-mono text-base py-1.5 border-b border-[var(--color-elevated)] flex items-center justify-between"
+                className="border-b border-[var(--color-border-subtle)] py-2 text-base text-[var(--color-text-main)] hover:text-[var(--color-primary-text)]"
               >
-                <span>{link.label}</span>
-                <span className="text-[var(--color-accent)] text-sm"><DotIcon name="circlePlay" size={14} aria-hidden="true" /></span>
+                {link.label}
               </a>
             ))}
           </nav>
 
-          <div className="pt-2">
-            <PixelButton
-              variant="cyan"
-              size="md"
-              onClick={() => {
-                setMobileMenuOpen(false);
-                router.push(profile ? "/app" : "/setup");
-              }}
-              className="w-full"
-            >
-              {profile ? "Open Workspace" : "Get Started (Setup Profile)"}
-            </PixelButton>
-          </div>
+          <Link href={profile ? "/app" : "/setup"} onClick={() => setMobileMenuOpen(false)} className={buttonVariants({ size: "lg", className: "w-full" })}>
+            {profile ? "Open app" : "Get started"}
+          </Link>
         </div>
       )}
     </header>

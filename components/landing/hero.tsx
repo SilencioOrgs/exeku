@@ -25,11 +25,7 @@ export function Hero() {
 
       <div className="pointer-events-none relative mx-auto flex min-h-[calc(100svh-4rem)] max-w-7xl items-end px-4 pt-[50vh] pb-14 sm:px-6 md:items-center md:pt-16 lg:px-8">
         <div className="pointer-events-auto max-w-xl">
-          <span className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/80 px-3 py-1 text-xs font-medium text-[var(--color-text-muted)] backdrop-blur">
-            <span className="size-1.5 animate-pulse rounded-full bg-[var(--color-primary)] shadow-[0_0_8px_var(--color-primary)]" aria-hidden="true" />
-            Live practice arena · Developer preview
-          </span>
-          <h1 className="mt-6 text-5xl leading-[1.02] font-semibold tracking-tight text-[var(--color-text-main)] sm:text-6xl xl:text-7xl">
+          <h1 className="text-5xl leading-[1.02] font-semibold tracking-tight text-[var(--color-text-main)] sm:text-6xl xl:text-7xl">
             Out-code<br />your <span className="text-gradient-orange">rival.</span>
           </h1>
           <p className="mt-6 max-w-md text-lg leading-relaxed text-[var(--color-text-muted)]">

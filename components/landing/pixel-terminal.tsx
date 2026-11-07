@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { PixelBadge } from "@/components/retro/pixel-badge";
 import { DotIcon, type DotIconName } from "@/components/retro/dot-icon";
 
 type LanguageKey = "python" | "cpp" | "java";
@@ -129,7 +128,6 @@ export function PixelTerminal() {
 
         <div className="flex items-center gap-2">
           <span className="text-[var(--color-text-muted)] hidden sm:inline">Host: 127.0.0.1</span>
-          <PixelBadge variant="cyan">Dev preview</PixelBadge>
         </div>
       </div>
 

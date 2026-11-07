@@ -6,9 +6,7 @@ export function Footer() {
   const navLinks = [
     { label: "About", href: "#about" },
     { label: "Languages", href: "#languages" },
-    { label: "Lab tour", href: "#tour" },
-    { label: "Roadmap", href: "#features" },
-    { label: "Installation", href: "#install" },
+    { label: "Exeku Lab", href: "#lab-app" },
     { label: "FAQ", href: "#faq" },
   ];
 

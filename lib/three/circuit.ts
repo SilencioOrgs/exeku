@@ -1,11 +1,10 @@
 /**
- * Realistic, procedurally modeled parts for the Hardware Lab, in millimetres:
+ * Realistic, procedurally modeled parts for the Exeku Lab promo, in millimetres:
  * Arduino Uno R3, 400-point half breadboard, 5 mm red LED, 220 Ω resistor and jumper wires.
  * Load this module with `await import()` so three.js stays out of the first page load.
  *
  * Coordinates: X to the right, Y up, Z toward the viewer. A board's "far" edge is -Z.
  * GrabCAD or other CAD models can replace a part: see public/models/README.md.
- * The finished product (desk clock in a printed case) lives in ./clock.ts.
  */
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";

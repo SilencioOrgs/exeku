@@ -72,7 +72,7 @@ export function Languages() {
         {/* Section Header */}
         <div className="max-w-3xl mb-14">
           <div className="mb-3">
-            <PixelBadge variant="cyan">Core curriculum</PixelBadge>
+            <p className="font-code text-xs font-medium text-[var(--color-primary-text)]">Languages</p>
           </div>
           <h2
             className="text-3xl sm:text-4xl md:text-5xl font-bold text-[var(--color-text-main)] mb-6 tracking-tight"
