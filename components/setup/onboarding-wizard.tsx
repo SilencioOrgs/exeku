@@ -72,8 +72,8 @@ export function OnboardingWizard() {
       <div className="min-h-screen bg-[var(--color-canvas)] flex flex-col items-center justify-center p-4">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-[var(--color-accent)] border-t-transparent animate-spin" />
-          <span className="font-mono text-xs text-[var(--color-accent)] uppercase tracking-widest animate-pulse">
-            INITIALIZING SECURE LOCAL STORAGE...
+          <span className="font-mono text-xs text-[var(--color-accent)] animate-pulse">
+            Initializing secure local storage...
           </span>
         </div>
       </div>
@@ -82,16 +82,6 @@ export function OnboardingWizard() {
 
   return (
     <div className="min-h-screen bg-[var(--color-canvas)] text-[var(--color-text-main)] flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden">
-      {/* Background Pixel Grid Texture */}
-      <div
-        className="absolute inset-0 pointer-events-none opacity-20"
-        style={{
-          backgroundImage:
-            "linear-gradient(to right, var(--color-border) 1px, transparent 1px), linear-gradient(to bottom, var(--color-border) 1px, transparent 1px)",
-          backgroundSize: "32px 32px",
-        }}
-      />
-
       <div className="w-full max-w-2xl relative z-10 space-y-6">
         {/* Top Header & Branding */}
         <div className="flex items-center justify-between">
@@ -99,26 +89,26 @@ export function OnboardingWizard() {
             href="/"
             className="flex items-center gap-2.5 text-[var(--color-text-main)] hover:text-[var(--color-accent)] transition-colors group"
           >
-            <div className="w-8 h-8 bg-[var(--color-primary)] text-[var(--color-primary-foreground)] border border-[var(--color-accent)] flex items-center justify-center font-heading text-base font-bold [box-shadow:var(--shadow-btn)]">
+            <div className="w-8 h-8 bg-[var(--color-primary)] text-[var(--color-primary-foreground)] border border-[var(--color-accent)] flex items-center justify-center font-heading text-base font-bold">
               E
             </div>
-            <span className="font-heading text-xl tracking-wider text-[var(--color-text-main)] group-hover:text-[var(--color-accent)]">
-              EXE<span className="text-[var(--color-accent)]">KU</span>
+            <span className="font-heading text-xl text-[var(--color-text-main)] group-hover:text-[var(--color-accent)]">
+              exeku
             </span>
           </Link>
 
           <PixelBadge variant="muted" bracketed>
-            OFFLINE PROFILE V1
+            Offline profile V1
           </PixelBadge>
         </div>
 
         {/* Existing Profile Warning Banner */}
         {profile && (
-          <div className="p-4 bg-[var(--color-elevated)] border-2 border-[var(--color-primary)] [box-shadow:var(--shadow-btn)] space-y-3">
+          <div className="p-4 bg-[var(--color-elevated)] border border-[var(--color-primary)] space-y-3">
             <div className="flex items-center gap-2">
               <DotIcon name="stars" size={18} className="text-[var(--color-accent)]" />
-              <span className="font-mono text-xs font-bold text-[var(--color-text-main)] uppercase tracking-wider">
-                EXISTING LOCAL PROFILE DETECTED
+              <span className="font-mono text-xs font-bold text-[var(--color-text-main)]">
+                Existing local profile detected
               </span>
             </div>
             <p className="text-xs font-mono text-[var(--color-text-muted)]">
@@ -130,7 +120,7 @@ export function OnboardingWizard() {
                 size="sm"
                 onClick={() => router.push("/app")}
               >
-                CONTINUE TO APP <DotIcon name="circlePlay" size={14} aria-hidden="true" />
+                Continue to app <DotIcon name="circlePlay" size={14} aria-hidden="true" />
               </PixelButton>
               <PixelButton
                 variant="ghost"
@@ -143,16 +133,16 @@ export function OnboardingWizard() {
                   setPreferredLanguage(profile.preferredLanguage);
                 }}
               >
-                LOAD EXISTING DATA
+                Load existing data
               </PixelButton>
             </div>
           </div>
         )}
 
         {/* Wizard Main Card */}
-        <PixelCard variant="elevated" className="border-2 border-[var(--color-border)]">
+        <PixelCard variant="elevated" className="border border-[var(--color-border)]">
           {/* Step Breadcrumbs Progress */}
-          <div className="flex items-center justify-between border-b-2 border-[var(--color-border)] pb-4 mb-6 text-xs font-mono select-none">
+          <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-4 mb-6 text-xs font-mono select-none">
             <div className="flex items-center gap-1 sm:gap-2">
               <span
                 className={cn(
@@ -162,7 +152,7 @@ export function OnboardingWizard() {
                     : "bg-[var(--color-canvas)] text-[var(--color-text-muted)] border-[var(--color-border)]"
                 )}
               >
-                01 IDENTITY
+                01 Identity
               </span>
               <span className="text-[var(--color-text-dim)]"><DotIcon name="circlePlay" size={14} aria-hidden="true" /></span>
               <span
@@ -173,7 +163,7 @@ export function OnboardingWizard() {
                     : "bg-[var(--color-canvas)] text-[var(--color-text-muted)] border-[var(--color-border)]"
                 )}
               >
-                02 AVATAR
+                02 Avatar
               </span>
               <span className="text-[var(--color-text-dim)]"><DotIcon name="circlePlay" size={14} aria-hidden="true" /></span>
               <span
@@ -184,12 +174,12 @@ export function OnboardingWizard() {
                     : "bg-[var(--color-canvas)] text-[var(--color-text-muted)] border-[var(--color-border)]"
                 )}
               >
-                03 LOADOUT
+                03 Preferences
               </span>
             </div>
 
             <span className="text-[var(--color-text-muted)] hidden sm:inline">
-              STEP {step}/3
+              Step {step} of 3
             </span>
           </div>
 
@@ -197,9 +187,9 @@ export function OnboardingWizard() {
           {submitError && (
             <div
               role="alert"
-              className="p-3 mb-6 bg-[var(--color-elevated)] border-2 border-[var(--color-pink)] text-[var(--color-pink)] font-mono text-xs flex items-center gap-2"
+              className="p-3 mb-6 bg-[var(--color-elevated)] border border-[var(--color-pink)] text-[var(--color-pink)] font-mono text-xs flex items-center gap-2"
             >
-              <span className="font-bold">[ERROR]</span>
+              <span className="font-bold">Error</span>
               <span>{submitError}</span>
             </div>
           )}
@@ -236,7 +226,7 @@ export function OnboardingWizard() {
           )}
 
           {/* Wizard Navigation Footer */}
-          <div className="flex items-center justify-between pt-6 mt-8 border-t-2 border-[var(--color-border)]">
+          <div className="flex items-center justify-between pt-6 mt-8 border-t border-[var(--color-border)]">
             {step > 1 ? (
               <PixelButton
                 variant="secondary"
@@ -244,7 +234,7 @@ export function OnboardingWizard() {
                 onClick={() => setStep((s) => (s - 1) as 1 | 2)}
                 disabled={isSubmitting}
               >
-                <DotIcon name="arrowLeft" size={14} aria-hidden="true" /> BACK
+                <DotIcon name="arrowLeft" size={14} aria-hidden="true" /> Back
               </PixelButton>
             ) : (
               <div />
@@ -256,7 +246,7 @@ export function OnboardingWizard() {
                 size="md"
                 onClick={step === 1 ? handleNextFromIdentity : () => setStep(3)}
               >
-                NEXT STEP <DotIcon name="circlePlay" size={14} aria-hidden="true" />
+                Next step <DotIcon name="circlePlay" size={14} aria-hidden="true" />
               </PixelButton>
             ) : (
               <PixelButton
@@ -266,7 +256,7 @@ export function OnboardingWizard() {
                 disabled={isSubmitting}
                 className="bg-[var(--color-mint)] text-[var(--color-accent-foreground)] border-[var(--color-border)] hover:bg-[var(--color-mint)] font-bold"
               >
-                {isSubmitting ? "STORING PROFILE..." : "CREATE PROFILE"}
+                {isSubmitting ? "Creating profile…" : "Create profile"}
               </PixelButton>
             )}
           </div>

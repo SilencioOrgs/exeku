@@ -46,7 +46,7 @@ Exeku provides a high-craft developer aesthetic paired with robust automated cod
   - Automatic judging engine with deterministic verdict calculation (AC, WA, CE, RE, TLE, MLE, IE).
   - Server-authoritative test case evaluation with hidden test input/output redaction.
   - Local profile and code draft persistence via IndexedDB (safe hydration without cloud lock-in during developer preview).
-  - Black-and-white shadcn/ui design system with Doticons icons (see `DESIGN.md`).
+  - Black-and-white shadcn/ui design system with lucide-react icons (see `DESIGN.md`).
 - **Technical Constraints:**
   - **No Unsafe Execution:** Student code is strictly untrusted. Code execution must run inside an isolated sandbox (Piston/`isolate` container) with enforced CPU limits, memory limits, wall-clock timeouts, restricted filesystem access, and disabled outbound networking. Arbitrary unsandboxed host process execution is strictly prohibited.
   - **Local Development Boundaries:** No public cloud infrastructure (Vercel, Render, Oracle Cloud) or cloud databases are provisioned during this stage. Everything runs and verifies locally.

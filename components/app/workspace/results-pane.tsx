@@ -44,10 +44,10 @@ export function ResultsPane({
 }: ResultsPaneProps) {
   return (
     <div
-      className={`results-pane flex flex-col h-full bg-[var(--color-surface)] border-2 border-[var(--color-border)] select-text overflow-hidden ${className}`}
+      className={`results-pane flex flex-col h-full bg-[var(--color-surface)] border border-[var(--color-border)] select-text overflow-hidden ${className}`}
     >
       {/* Tab Header Strip */}
-      <div className="workspace-output-header p-1 bg-[var(--color-elevated)] border-b-2 border-[var(--color-border)] flex items-center justify-between gap-1 shrink-0 overflow-x-auto">
+      <div className="workspace-output-header p-1 bg-[var(--color-elevated)] border-b border-[var(--color-border)] flex items-center justify-between gap-1 shrink-0 overflow-x-auto">
         <div className="flex items-center gap-1">
           {/* Tab 1: Console Execution Output */}
           <button
@@ -55,12 +55,12 @@ export function ResultsPane({
             onClick={() => onTabChange("console")}
             className={`flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-heading cursor-pointer border transition-colors ${
               activeTab === "console"
-                ? "bg-[var(--color-canvas)] border-[var(--color-accent)] text-[var(--color-accent)] [box-shadow:var(--shadow-btn)]"
+                ? "bg-[var(--color-canvas)] border-[var(--color-accent)] text-[var(--color-accent)]"
                 : "border-transparent text-[var(--color-text-dim)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-canvas)]/50"
             }`}
           >
             <DotIcon name="powershell" adaptive size={13} aria-hidden="true" />
-            <span>CONSOLE</span>
+            <span>Console</span>
           </button>
 
           {/* Tab 2: Custom Stdin */}
@@ -69,14 +69,14 @@ export function ResultsPane({
             onClick={() => onTabChange("stdin")}
             className={`flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-heading cursor-pointer border transition-colors ${
               activeTab === "stdin"
-                ? "bg-[var(--color-canvas)] border-[var(--color-accent)] text-[var(--color-accent)] [box-shadow:var(--shadow-btn)]"
+                ? "bg-[var(--color-canvas)] border-[var(--color-accent)] text-[var(--color-accent)]"
                 : "border-transparent text-[var(--color-text-dim)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-canvas)]/50"
             }`}
           >
             <DotIcon name="database" size={13} aria-hidden="true" />
-            <span>STDIN</span>
+            <span>Stdin</span>
             {customStdin.length > 0 && (
-              <span className="text-[0.625rem] opacity-75 font-mono">
+              <span className="text-xs opacity-75 font-mono">
                 ({customStdin.length}B)
               </span>
             )}
@@ -88,15 +88,15 @@ export function ResultsPane({
             onClick={() => onTabChange("results")}
             className={`flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-heading cursor-pointer border transition-colors ${
               activeTab === "results"
-                ? "bg-[var(--color-canvas)] border-[var(--color-mint)] text-[var(--color-mint)] [box-shadow:var(--shadow-btn)]"
+                ? "bg-[var(--color-canvas)] border-[var(--color-mint)] text-[var(--color-mint)]"
                 : "border-transparent text-[var(--color-text-dim)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-canvas)]/50"
             }`}
           >
             <DotIcon name="circleCheck" size={13} aria-hidden="true" />
-            <span>RESULTS</span>
+            <span>Results</span>
             {judgingResult && (
               <span
-                className={`text-[0.625rem] font-mono font-bold px-1 py-0.5 border ${
+                className={`text-xs font-mono font-bold px-1 py-0.5 border ${
                   judgingResult.overallVerdict === "ACCEPTED"
                     ? "border-[var(--color-mint)] text-[var(--color-mint)]"
                     : "border-[var(--color-pink)] text-[var(--color-pink)]"
@@ -110,15 +110,15 @@ export function ResultsPane({
 
         {/* Demo Mode Notice Badge */}
         {isDemoMode && (
-          <PixelBadge variant="purple" bracketed className="text-[0.625rem] py-0 px-1 font-mono shrink-0">
-            DEMO
+          <PixelBadge variant="purple" bracketed className="text-xs py-0 px-1 font-mono shrink-0">
+            Demo
           </PixelBadge>
         )}
       </div>
 
       {/* Demo Warning Banner if Custom Code is Not Evaluated */}
       {isDemoMode && demoNote && (
-        <div className="px-3 py-1.5 bg-[var(--color-elevated)] border-b border-[var(--color-accent)] text-[0.6875rem] font-mono text-[var(--color-accent)] flex items-center gap-1.5 shrink-0">
+        <div className="px-3 py-1.5 bg-[var(--color-elevated)] border-b border-[var(--color-accent)] text-xs font-mono text-[var(--color-accent)] flex items-center gap-1.5 shrink-0">
           <DotIcon name="circleBlock" size={12} />
           <span>{demoNote}</span>
         </div>
@@ -132,11 +132,11 @@ export function ResultsPane({
             {!executionResult && !isRunning && (
               <div className="text-[var(--color-text-dim)] space-y-2 py-4">
                 <p>&gt; Execution console ready.</p>
-                <p className="text-[0.6875rem] text-[var(--color-text-muted)]">
+                <p className="text-xs text-[var(--color-text-muted)]">
                   Click &quot;RUN CODE <DotIcon name="circlePlay" size={14} aria-hidden="true" />&quot; to execute {filename} with standard input.
                 </p>
-                <div className="p-2.5 bg-[var(--color-surface)] border border-[var(--color-border)] text-[0.625rem] space-y-1 mt-2">
-                  <div className="text-[var(--color-accent)] font-bold">[ENVIRONMENT TELEMETRY]</div>
+                <div className="p-2.5 bg-[var(--color-surface)] border border-[var(--color-border)] text-xs space-y-1 mt-2">
+                  <div className="text-[var(--color-accent)] font-bold">Environment telemetry</div>
                   <div>Compiler / Runner: {LANGUAGE_DISPLAY_NAMES[activeLanguage]}</div>
                   <div>Stdin Buffer: {customStdin ? `${customStdin.length} bytes loaded` : "Empty (0 bytes)"}</div>
                 </div>
@@ -153,7 +153,7 @@ export function ResultsPane({
             {executionResult && (
               <div className="space-y-2.5">
                 {/* Result Status Strip */}
-                <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-2 flex-wrap gap-2 text-[0.6875rem]">
+                <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-2 flex-wrap gap-2 text-xs">
                   <span
                     className={`font-heading text-xs px-2 py-0.5 border ${
                       executionResult.status === "SUCCESS"
@@ -173,8 +173,8 @@ export function ResultsPane({
                 {/* Compiler Output */}
                 {executionResult.compilerOutput && (
                   <div className="space-y-1">
-                    <span className="text-[var(--color-pink)] font-bold text-[0.6875rem] block">
-                      [COMPILER OUTPUT]
+                    <span className="text-[var(--color-pink)] font-bold text-xs block">
+                      Compiler output
                     </span>
                     <pre className="text-[var(--color-pink)] whitespace-pre-wrap bg-[var(--color-surface)] p-2.5 border border-[var(--color-pink)]/40 text-xs">
                       {executionResult.compilerOutput}
@@ -185,8 +185,8 @@ export function ResultsPane({
                 {/* Standard Output */}
                 {executionResult.stdout && (
                   <div className="space-y-1">
-                    <span className="text-[var(--color-mint)] font-bold text-[0.6875rem] block">
-                      [STANDARD OUTPUT]
+                    <span className="text-[var(--color-mint)] font-bold text-xs block">
+                      Standard output
                     </span>
                     <pre className="text-[var(--color-text-main)] whitespace-pre-wrap bg-[var(--color-surface)] p-2.5 border border-[var(--color-border)] text-xs">
                       {executionResult.stdout}
@@ -197,8 +197,8 @@ export function ResultsPane({
                 {/* Standard Error */}
                 {executionResult.stderr && (
                   <div className="space-y-1">
-                    <span className="text-[var(--color-pink)] font-bold text-[0.6875rem] block">
-                      [STANDARD ERROR]
+                    <span className="text-[var(--color-pink)] font-bold text-xs block">
+                      Standard error
                     </span>
                     <pre className="text-[var(--color-pink)] whitespace-pre-wrap bg-[var(--color-surface)] p-2.5 border border-[var(--color-border)] text-xs">
                       {executionResult.stderr}
@@ -213,7 +213,7 @@ export function ResultsPane({
         {/* TAB 2: CUSTOM STDIN */}
         {activeTab === "stdin" && (
           <div className="space-y-2 h-full flex flex-col">
-            <div className="flex items-center justify-between text-[0.6875rem] text-[var(--color-text-dim)] shrink-0">
+            <div className="flex items-center justify-between text-xs text-[var(--color-text-dim)] shrink-0">
               <span>Standard Input passed into program during execution:</span>
               <button
                 type="button"
@@ -229,7 +229,7 @@ export function ResultsPane({
               placeholder="Enter standard input here (e.g. 10 20)..."
               className="flex-1 w-full bg-[var(--color-surface)] border border-[var(--color-border)] p-2.5 text-[var(--color-text-main)] font-mono text-xs resize-none focus:outline-none focus:border-[var(--color-accent)]"
             />
-            <div className="text-[0.625rem] text-[var(--color-text-dim)] shrink-0">
+            <div className="text-xs text-[var(--color-text-dim)] shrink-0">
               Tip: You can click &quot;USE IN STDIN&quot; on any sample test case in the Problem panel to load it here.
             </div>
           </div>
@@ -241,7 +241,7 @@ export function ResultsPane({
             {!judgingResult && !isSubmitting && (
               <div className="text-[var(--color-text-dim)] space-y-2 py-4">
                 <p>&gt; Test evaluator ready.</p>
-                <p className="text-[0.6875rem] text-[var(--color-text-muted)]">
+                <p className="text-xs text-[var(--color-text-muted)]">
                   Click &quot;SUBMIT SOLUTION <DotIcon name="circleCheck" size={14} aria-hidden="true" />&quot; to test your code against the full evaluation suite.
                 </p>
               </div>
@@ -257,7 +257,7 @@ export function ResultsPane({
             {judgingResult && (
               <div className="space-y-3">
                 {/* Overall Verdict Banner */}
-                <div className="p-3 bg-[var(--color-surface)] border-2 border-[var(--color-border)] space-y-1.5">
+                <div className="p-3 bg-[var(--color-surface)] border border-[var(--color-border)] space-y-1.5">
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <span
                       className={`font-heading text-sm px-2 py-0.5 border ${
@@ -274,14 +274,14 @@ export function ResultsPane({
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between text-[0.6875rem] text-[var(--color-text-dim)] pt-1 border-t border-[var(--color-border)]/50">
+                  <div className="flex items-center justify-between text-xs text-[var(--color-text-dim)] pt-1 border-t border-[var(--color-border)]/50">
                     <div className="flex items-center gap-1">
                       <DotIcon name="alarm" size={11} />
                       <span>Max Runtime: {judgingResult.maxDurationMs}ms</span>
                     </div>
                     {isDemoMode && (
                       <span className="text-[var(--color-accent)] font-bold">
-                        [DEMO SIMULATION]
+                        Demo simulation
                       </span>
                     )}
                   </div>
@@ -290,8 +290,8 @@ export function ResultsPane({
                 {/* Compiler Output */}
                 {judgingResult.compilerOutput && (
                   <div className="space-y-1">
-                    <span className="text-[var(--color-pink)] font-bold text-[0.6875rem] block">
-                      [COMPILATION ERROR]
+                    <span className="text-[var(--color-pink)] font-bold text-xs block">
+                      Compilation error
                     </span>
                     <pre className="text-[var(--color-pink)] whitespace-pre-wrap bg-[var(--color-surface)] p-2.5 border border-[var(--color-pink)]/40 text-xs">
                       {judgingResult.compilerOutput}
@@ -321,14 +321,14 @@ export function ResultsPane({
                             Test Case #{idx + 1}
                           </span>
                           {tc.isHidden && (
-                            <span className="text-[0.5625rem] px-1 bg-[var(--color-elevated)] text-[var(--color-text-muted)] border border-[var(--color-border)]">
-                              HIDDEN
+                            <span className="text-xs px-1 bg-[var(--color-elevated)] text-[var(--color-text-muted)] border border-[var(--color-border)]">
+                              Hidden
                             </span>
                           )}
                         </div>
 
                         <span
-                          className={`text-[0.6875rem] font-bold ${
+                          className={`text-xs font-bold ${
                             tc.passed ? "text-[var(--color-mint)]" : "text-[var(--color-pink)]"
                           }`}
                         >
@@ -337,7 +337,7 @@ export function ResultsPane({
                       </div>
 
                       {!tc.isHidden && (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 pt-1 text-[0.6875rem] font-mono text-[var(--color-text-muted)]">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 pt-1 text-xs font-mono text-[var(--color-text-muted)]">
                           <div>
                             <span className="text-[var(--color-text-dim)] block">Input:</span>
                             <code className="text-[var(--color-text-main)]">{tc.input || "(empty)"}</code>
@@ -356,7 +356,7 @@ export function ResultsPane({
                       )}
 
                       {tc.isHidden && (
-                        <p className="text-[0.625rem] text-[var(--color-text-dim)] pt-0.5">
+                        <p className="text-xs text-[var(--color-text-dim)] pt-0.5">
                           Inputs and expected outputs for hidden test cases are securely redacted.
                         </p>
                       )}

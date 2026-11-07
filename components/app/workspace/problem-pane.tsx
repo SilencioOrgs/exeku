@@ -49,18 +49,18 @@ export function ProblemPane({
 
   return (
     <div
-      className={`problem-pane flex flex-col h-full bg-[var(--color-surface)] border-2 border-[var(--color-border)] select-text overflow-hidden ${className}`}
+      className={`problem-pane flex flex-col h-full bg-[var(--color-surface)] border border-[var(--color-border)] select-text overflow-hidden ${className}`}
     >
       {/* Pane Header */}
-      <div className="p-3 bg-[var(--color-elevated)] border-b-2 border-[var(--color-border)] shrink-0 flex items-center justify-between gap-2 flex-wrap">
+      <div className="p-3 bg-[var(--color-elevated)] border-b border-[var(--color-border)] shrink-0 flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-mono text-[0.625rem] text-[var(--color-accent)] font-bold tracking-wider uppercase">
-            [PROBLEM]
+          <span className="font-mono text-xs text-[var(--color-accent)] font-bold">
+            Problem
           </span>
           <h2 className="font-heading text-base text-[var(--color-text-main)] truncate">
-            {problem.title}_
+            {problem.title}
           </h2>
-          <PixelBadge variant={diffVariant} bracketed className="text-[0.625rem] py-0 px-1 font-mono">
+          <PixelBadge variant={diffVariant} bracketed className="text-xs py-0 px-1 font-mono">
             {problem.difficulty.toUpperCase()}
           </PixelBadge>
         </div>
@@ -68,14 +68,14 @@ export function ProblemPane({
         <Link
           href="/app/challenges"
           title="Pick a different problem"
-          className="inline-flex items-center gap-1 text-[0.625rem] font-mono text-[var(--color-text-muted)] hover:text-[var(--color-accent)]"
+          className="inline-flex items-center gap-1 text-xs font-mono text-[var(--color-text-muted)] hover:text-[var(--color-accent)]"
         >
-          CATALOG <DotIcon name="arrowUp" size={12} aria-hidden="true" />
+          Catalog <DotIcon name="arrowUp" size={12} aria-hidden="true" />
         </Link>
       </div>
 
       {/* Resource Limits Telemetry */}
-      <div className="px-3 py-1.5 bg-[var(--color-canvas)] border-b border-[var(--color-border)] flex items-center justify-between text-[0.625rem] font-mono text-[var(--color-text-muted)] shrink-0">
+      <div className="px-3 py-1.5 bg-[var(--color-canvas)] border-b border-[var(--color-border)] flex items-center justify-between text-xs font-mono text-[var(--color-text-muted)] shrink-0">
         <div className="flex items-center gap-1">
           <DotIcon name="alarm" size={11} className="text-[var(--color-accent)]" />
           <span>Time Limit: {problem.timeLimitMs}ms</span>
@@ -90,8 +90,8 @@ export function ProblemPane({
       <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs font-mono min-h-0">
         {/* Description */}
         <section className="space-y-1.5">
-          <span className="font-heading text-xs text-[var(--color-accent)] block uppercase tracking-wider font-bold">
-            DESCRIPTION
+          <span className="font-heading text-xs text-[var(--color-accent)] block font-bold">
+            Description
           </span>
           <p className="font-sans text-xs text-[var(--color-text-main)] leading-relaxed">
             {problem.description}
@@ -100,8 +100,8 @@ export function ProblemPane({
 
         {/* Input Specification */}
         <section className="space-y-1.5">
-          <span className="font-heading text-xs text-[var(--color-accent)] block uppercase tracking-wider font-bold">
-            INPUT SPECIFICATION
+          <span className="font-heading text-xs text-[var(--color-accent)] block font-bold">
+            Input specification
           </span>
           <div className="p-2.5 bg-[var(--color-canvas)] border border-[var(--color-border)] text-[var(--color-text-muted)] leading-relaxed">
             {problem.inputSpec}
@@ -110,8 +110,8 @@ export function ProblemPane({
 
         {/* Output Specification */}
         <section className="space-y-1.5">
-          <span className="font-heading text-xs text-[var(--color-accent)] block uppercase tracking-wider font-bold">
-            OUTPUT SPECIFICATION
+          <span className="font-heading text-xs text-[var(--color-accent)] block font-bold">
+            Output specification
           </span>
           <div className="p-2.5 bg-[var(--color-canvas)] border border-[var(--color-border)] text-[var(--color-text-muted)] leading-relaxed">
             {problem.outputSpec}
@@ -120,27 +120,27 @@ export function ProblemPane({
 
         {/* Constraints */}
         <section className="space-y-1.5">
-          <span className="font-heading text-xs text-[var(--color-accent)] block uppercase tracking-wider font-bold">
-            CONSTRAINTS
+          <span className="font-heading text-xs text-[var(--color-accent)] block font-bold">
+            Constraints
           </span>
           <ul className="list-disc list-inside p-2.5 bg-[var(--color-canvas)] border border-[var(--color-border)] text-[var(--color-text-muted)] space-y-1">
             {problem.constraints.map((c, idx) => (
-              <li key={idx} className="text-[0.6875rem]">
+              <li key={idx} className="text-xs">
                 {c}
               </li>
             ))}
-            <li className="text-[0.6875rem]">Execution time limit: {problem.timeLimitMs} milliseconds</li>
-            <li className="text-[0.6875rem]">Evaluation memory ceiling: {Math.round(problem.memoryLimitKb / 1000)} MB</li>
+            <li className="text-xs">Execution time limit: {problem.timeLimitMs} milliseconds</li>
+            <li className="text-xs">Evaluation memory ceiling: {Math.round(problem.memoryLimitKb / 1000)} MB</li>
           </ul>
         </section>
 
         {/* Sample Test Cases */}
         <section className="space-y-2.5">
           <div className="flex items-center justify-between">
-            <span className="font-heading text-xs text-[var(--color-accent)] uppercase tracking-wider font-bold">
+            <span className="font-heading text-xs text-[var(--color-accent)] font-bold">
               SAMPLE TEST CASES ({problem.sampleTestCases.length})
             </span>
-            <span className="text-[0.625rem] text-[var(--color-text-dim)]">
+            <span className="text-xs text-[var(--color-text-dim)]">
               {problem.visibleTestCases.length} visible test cases
             </span>
           </div>
@@ -152,7 +152,7 @@ export function ProblemPane({
               className="p-3 bg-[var(--color-canvas)] border border-[var(--color-border)] space-y-2"
             >
               <div className="flex items-center justify-between">
-                <span className="font-bold text-[var(--color-text-main)] text-[0.6875rem]">
+                <span className="font-bold text-[var(--color-text-main)] text-xs">
                   Sample #{idx + 1}
                 </span>
 
@@ -160,18 +160,18 @@ export function ProblemPane({
                   <button
                     type="button"
                     onClick={() => handleCopyInput(sample.input, idx)}
-                    className="text-[0.625rem] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] flex items-center gap-1 cursor-pointer transition-colors px-1.5 py-0.5 border border-[var(--color-border)] bg-[var(--color-elevated)]"
+                    className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-accent)] flex items-center gap-1 cursor-pointer transition-colors px-1.5 py-0.5 border border-[var(--color-border)] bg-[var(--color-elevated)]"
                     title="Copy sample input to clipboard"
                   >
                     {copiedIdx === idx ? (
                       <>
                         <DotIcon name="circleCheck" size={13} aria-hidden="true" className="text-[var(--color-mint)]" />
-                        <span className="text-[var(--color-mint)] font-bold">COPIED</span>
+                        <span className="text-[var(--color-mint)] font-bold">Copied</span>
                       </>
                     ) : (
                       <>
                         <DotIcon name="file" size={10} />
-                        <span>COPY INPUT</span>
+                        <span>Copy input</span>
                       </>
                     )}
                   </button>
@@ -179,15 +179,15 @@ export function ProblemPane({
                   <button
                     type="button"
                     onClick={() => onUseCustomStdin(sample.input)}
-                    className="text-[0.625rem] text-[var(--color-accent)] hover:underline cursor-pointer px-1.5 py-0.5 border border-[var(--color-accent)]/40 bg-[var(--color-accent)]/10"
+                    className="text-xs text-[var(--color-accent)] hover:underline cursor-pointer px-1.5 py-0.5 border border-[var(--color-accent)]/40 bg-[var(--color-accent)]/10"
                     title="Load this input into Custom Stdin tab"
                   >
-                    USE IN STDIN <DotIcon name="arrowRight" size={14} aria-hidden="true" />
+                    Use in stdin <DotIcon name="arrowRight" size={14} aria-hidden="true" />
                   </button>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[0.6875rem]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                 <div>
                   <span className="text-[var(--color-text-dim)] block mb-0.5">Input:</span>
                   <pre className="p-1.5 bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-main)] overflow-x-auto whitespace-pre-wrap">
@@ -203,7 +203,7 @@ export function ProblemPane({
               </div>
 
               {sample.explanation && (
-                <p className="text-[0.625rem] text-[var(--color-text-muted)] font-sans italic border-t border-[var(--color-border)]/50 pt-1.5">
+                <p className="text-xs text-[var(--color-text-muted)] font-sans italic border-t border-[var(--color-border)]/50 pt-1.5">
                   Note: {sample.explanation}
                 </p>
               )}

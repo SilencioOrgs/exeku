@@ -22,7 +22,7 @@ export const PixelButton = React.forwardRef<HTMLButtonElement, PixelButtonProps>
       cyan: "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-primary-foreground)] hover:bg-[var(--color-primary-hover)]",
       secondary: "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-main)] hover:bg-[var(--color-elevated)]",
       ghost: "border-transparent bg-transparent text-[var(--color-text-muted)] hover:bg-[var(--color-elevated)] hover:text-[var(--color-text-main)]",
-      pink: "border-[var(--color-pink)] bg-[var(--color-pink)] text-white hover:opacity-90",
+      pink: "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-primary-foreground)] hover:bg-[var(--color-primary-hover)]",
     };
     const styles = cn(
       "appearance-button inline-flex shrink-0 cursor-pointer items-center justify-center whitespace-nowrap rounded-lg border font-medium normal-case shadow-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ring)] disabled:pointer-events-none disabled:opacity-50",

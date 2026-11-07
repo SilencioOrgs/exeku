@@ -22,7 +22,7 @@ export function Navbar() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-[var(--color-canvas)]/95 backdrop-blur-sm border-b-2 border-[var(--color-border)] shadow-none">
+    <header className="sticky top-0 z-50 w-full bg-[var(--color-canvas)]/95 backdrop-blur-sm border-b border-[var(--color-border)] shadow-none">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-16 py-3 flex gap-3 flex-wrap items-center justify-between">
         {/* Brand Wordmark */}
         <div className="flex items-center gap-3">
@@ -41,13 +41,13 @@ export function Navbar() {
           <div className="hidden sm:flex items-center ml-2">
             <PixelBadge variant="cyan">
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-pulse mr-1" />
-              ONLINE PREVIEW
+              Online preview
             </PixelBadge>
           </div>
         </div>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden xl:flex items-center gap-4 text-sm font-mono tracking-wide">
+        <nav className="hidden xl:flex items-center gap-4 text-sm font-mono">
           {navLinks.map((link) => (
             <a
               key={link.label}
@@ -89,13 +89,13 @@ export function Navbar() {
 
       {/* Mobile Menu Drawer */}
       {mobileMenuOpen && (
-        <div className="xl:hidden bg-[var(--color-surface)] border-b-2 border-[var(--color-border)] px-4 pt-3 pb-6 flex flex-col gap-4">
+        <div className="xl:hidden bg-[var(--color-surface)] border-b border-[var(--color-border)] px-4 pt-3 pb-6 flex flex-col gap-4">
           <div className="flex items-center justify-between pb-2 border-b border-[var(--color-border)]">
             <PixelBadge variant="cyan">
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-pulse mr-1" />
-              ONLINE PREVIEW
+              Online preview
             </PixelBadge>
-            <span className="text-xs font-mono text-[var(--color-text-muted)]">LOCAL DEV PREVIEW</span>
+            <span className="text-xs font-mono text-[var(--color-text-muted)]">Local dev preview</span>
           </div>
 
           <nav className="flex flex-col gap-3">

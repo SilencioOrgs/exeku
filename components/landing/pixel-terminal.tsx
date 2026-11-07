@@ -112,43 +112,38 @@ export function PixelTerminal() {
   };
 
   return (
-    <div className="relative w-full rounded-none border-2 border-[var(--color-primary)] bg-[var(--color-surface)] pixel-box-purple overflow-hidden">
-      {/* Decorative corner tabs */}
-      <div className="pixel-corner-mark absolute top-0 left-0 w-3 h-3 bg-[var(--color-accent)] z-20" />
-      <div className="pixel-corner-mark absolute top-0 right-0 w-3 h-3 bg-[var(--color-accent)] z-20" />
-      <div className="pixel-corner-mark absolute bottom-0 left-0 w-3 h-3 bg-[var(--color-pink)] z-20" />
-      <div className="pixel-corner-mark absolute bottom-0 right-0 w-3 h-3 bg-[var(--color-pink)] z-20" />
+    <div className="relative w-full rounded-none border border-[var(--color-primary)] bg-[var(--color-surface)] pixel-box-purple overflow-hidden">
 
       {/* Terminal Title Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 px-3 sm:px-4 py-2.5 bg-[var(--color-elevated)] border-b-2 border-[var(--color-border)] font-mono text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-3 sm:px-4 py-2.5 bg-[var(--color-elevated)] border-b border-[var(--color-border)] font-mono text-xs">
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 bg-[var(--color-pink)] inline-block border border-black/60" />
             <span className="w-2.5 h-2.5 bg-[var(--color-accent)] inline-block border border-black/60" />
             <span className="w-2.5 h-2.5 bg-[var(--color-mint)] inline-block border border-black/60" />
           </div>
-          <span className="text-[var(--color-text-main)] font-bold ml-1 tracking-wider">
+          <span className="text-[var(--color-text-main)] font-bold ml-1">
             exeku-terminal<span className="text-[var(--color-accent)]">_mock</span>
           </span>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-[var(--color-text-muted)] hidden sm:inline">[HOST: 127.0.0.1]</span>
-          <PixelBadge variant="cyan">DEV PREVIEW</PixelBadge>
+          <span className="text-[var(--color-text-muted)] hidden sm:inline">Host: 127.0.0.1</span>
+          <PixelBadge variant="cyan">Dev preview</PixelBadge>
         </div>
       </div>
 
       {/* Disclaimer Banner: Strictly labeled as demo */}
-      <div className="px-3 sm:px-4 py-1.5 bg-[var(--color-elevated)] border-b border-[var(--color-pink)]/40 flex items-center justify-between gap-2 text-[0.6875rem] font-mono text-[var(--color-pink)]">
+      <div className="px-3 sm:px-4 py-1.5 bg-[var(--color-elevated)] border-b border-[var(--color-pink)]/40 flex items-center justify-between gap-2 text-xs font-mono text-[var(--color-pink)]">
         <div className="flex items-center gap-1.5">
           <DotIcon name="circleBlock" className="w-3.5 h-3.5 text-[var(--color-pink)] shrink-0" />
-          <span>DEMO SIMULATION ONLY — Local execution engine is in active development on the roadmap.</span>
+          <span>Demo animation. Real code runs in the workspace sandbox.</span>
         </div>
-        <span className="hidden md:inline text-[0.625rem] uppercase opacity-75">Not a live compiler</span>
+        <span className="hidden md:inline text-xs opacity-75">Not a live compiler</span>
       </div>
 
       {/* Language Switcher Tabs with Doticons */}
-      <div className="flex items-center border-b-2 border-[var(--color-border)] bg-[var(--color-canvas)] px-2 sm:px-4 overflow-x-auto">
+      <div className="flex items-center border-b border-[var(--color-border)] bg-[var(--color-canvas)] px-2 sm:px-4 overflow-x-auto">
         {(Object.keys(SNIPPETS) as LanguageKey[]).map((key) => {
           const isActive = activeLang === key;
           const snippet = SNIPPETS[key];
@@ -160,7 +155,7 @@ export function PixelTerminal() {
                 setActiveLang(key);
                 setHasRun(false);
               }}
-              className={`px-3 sm:px-4 py-2 text-xs font-mono font-medium tracking-wider flex items-center gap-2 border-b-2 transition-colors cursor-pointer outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-accent)] ${
+              className={`px-3 sm:px-4 py-2 text-xs font-mono font-medium flex items-center gap-2 border-b transition-colors cursor-pointer outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-accent)] ${
                 isActive
                   ? "border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-elevated)]"
                   : "border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-elevated)]"
@@ -172,27 +167,25 @@ export function PixelTerminal() {
                 className={isActive ? "text-[var(--color-accent)]" : "text-[var(--color-text-muted)]"}
               />
               <span>{snippet.name}</span>
-              <span className="text-[0.625rem] text-[var(--color-text-dim)]">({snippet.filename})</span>
+              <span className="text-xs text-[var(--color-text-dim)]">({snippet.filename})</span>
             </button>
           );
         })}
       </div>
 
       {/* Code Editor Body Viewport */}
-      <div className="relative p-3 sm:p-5 bg-[var(--color-canvas)] font-mono text-xs sm:text-sm overflow-x-auto min-h-[220px]">
-        {/* Subtle Scanlines Overlay */}
-        <div className="absolute inset-0 scanlines pointer-events-none opacity-40" />
+      <div className="relative p-3 sm:p-5 bg-[var(--color-canvas)] font-code text-xs sm:text-sm overflow-x-auto min-h-[220px]">
 
         <div className="relative z-10 flex">
           {/* Line Numbers */}
-          <div className="select-none text-[var(--color-text-dim)] pr-4 text-right border-r border-[var(--color-border)]/60 font-mono text-xs sm:text-sm leading-6">
+          <div className="select-none text-[var(--color-text-dim)] pr-4 text-right border-r border-[var(--color-border)]/60 font-code text-xs sm:text-sm leading-6">
             {current.code.map((_, i) => (
               <div key={i}>{String(i + 1).padStart(2, "0")}</div>
             ))}
           </div>
 
           {/* Code Lines */}
-          <div className="pl-4 font-mono text-xs sm:text-sm leading-6 text-[var(--color-text-main)] flex-1">
+          <div className="pl-4 font-code text-xs sm:text-sm leading-6 text-[var(--color-text-main)] flex-1">
             {current.code.map((line, i) => (
               <div key={i} className="whitespace-pre">
                 {line.startsWith("#") || line.startsWith("//") ? (
@@ -212,14 +205,14 @@ export function PixelTerminal() {
       </div>
 
       {/* Action Strip & Simulated Terminal Output */}
-      <div className="p-3 sm:p-4 bg-[var(--color-surface)] border-t-2 border-[var(--color-border)]">
+      <div className="p-3 sm:p-4 bg-[var(--color-surface)] border-t border-[var(--color-border)]">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={handleRunDemo}
               disabled={isRunning}
-              className="px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-accent-foreground)] font-mono font-bold text-xs uppercase flex items-center gap-1.5 transition-all [box-shadow:var(--shadow-btn)] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer disabled:opacity-50"
+              className="px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-accent-foreground)] font-mono font-bold text-xs flex items-center gap-1.5 transition-all active:translate-x-[1px] active:translate-y-[1px] cursor-pointer disabled:opacity-50"
             >
               <DotIcon name="circlePlay" size={14} className="text-[var(--color-accent-foreground)]" />
               {isRunning ? "Simulating..." : "Run Demo"}
@@ -229,7 +222,7 @@ export function PixelTerminal() {
               <button
                 type="button"
                 onClick={handleReset}
-                className="px-3 py-2 bg-[var(--color-elevated)] hover:bg-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] font-mono text-xs uppercase flex items-center gap-1 border border-[var(--color-border)] cursor-pointer"
+                className="px-3 py-2 bg-[var(--color-elevated)] hover:bg-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] font-mono text-xs flex items-center gap-1 border border-[var(--color-border)] cursor-pointer"
                 title="Reset simulation"
               >
                 <DotIcon name="arrowLeft" className="w-3 h-3" />
@@ -238,14 +231,14 @@ export function PixelTerminal() {
             )}
           </div>
 
-          <div className="text-[0.6875rem] font-mono text-[var(--color-text-muted)] flex items-center gap-2">
+          <div className="text-xs font-mono text-[var(--color-text-muted)] flex items-center gap-2">
             <DotIcon name="windows" size={13} className="text-[var(--color-mint)]" />
             <span>Target Architecture: Windows x64</span>
           </div>
         </div>
 
         {/* Output Console Box */}
-        <div className="p-2.5 sm:p-3 bg-[var(--color-canvas)] border border-[var(--color-border)] font-mono text-xs text-[var(--color-text-muted)] min-h-[72px]">
+        <div className="p-2.5 sm:p-3 bg-[var(--color-canvas)] border border-[var(--color-border)] font-code text-xs text-[var(--color-text-muted)] min-h-[72px]">
           {isRunning ? (
             <div className="text-[var(--color-accent)] animate-pulse flex items-center gap-2">
               <span className="animate-spin">◐</span>
@@ -271,7 +264,7 @@ export function PixelTerminal() {
             </div>
           ) : (
             <div className="text-[var(--color-text-dim)] italic">
-              Click &quot;Run Demo <DotIcon name="circlePlay" size={14} aria-hidden="true" />&quot; to simulate how local tests will run on your machine once the execution engine is released.
+              Click &quot;Run Demo <DotIcon name="circlePlay" size={14} aria-hidden="true" />&quot; to see how test results look in the workspace.
             </div>
           )}
         </div>

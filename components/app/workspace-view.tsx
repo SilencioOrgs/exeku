@@ -565,7 +565,7 @@ export function WorkspaceView() {
     <div className="workspace-view flex min-h-[420px] h-[calc(100dvh-90px)] flex-col gap-2 overflow-hidden">
       {/* Slim dismissible offline notice; no execution fallbacks. */}
       {sandboxHealth && !sandboxHealth.isAvailable && !offlineDismissed && (
-        <div className="flex h-8 min-w-0 shrink-0 items-center gap-2 overflow-hidden border border-[var(--color-pink)] bg-[var(--color-elevated)] px-2 text-[11px] text-[var(--color-text-main)]">
+        <div className="flex h-8 min-w-0 shrink-0 items-center gap-2 overflow-hidden border border-[var(--color-pink)] bg-[var(--color-elevated)] px-2 text-xs text-[var(--color-text-main)]">
           <DotIcon name="circleBlock" size={13} className="shrink-0 text-[var(--color-pink)]" aria-hidden="true" />
           <span className="min-w-0 flex-1 truncate">Sandbox offline: Piston not running on :2000</span>
           <button
@@ -584,22 +584,22 @@ export function WorkspaceView() {
       {/* Timed Challenge Active Banner */}
       {challenge.isTimedActive && (
         <div
-          className={`px-2 py-1 border flex flex-nowrap items-center justify-between gap-2 shrink-0 overflow-x-auto text-[0.6875rem] transition-colors ${
+          className={`px-2 py-1 border flex flex-nowrap items-center justify-between gap-2 shrink-0 overflow-x-auto text-xs transition-colors ${
             challenge.isWarningTime
               ? "bg-[var(--color-pink)]/15 border-[var(--color-pink)] animate-pulse"
               : "bg-[var(--color-canvas)] border-[var(--color-accent)]"
           }`}
         >
           <div className="flex shrink-0 items-center gap-3">
-            <div className="flex items-center gap-1.5 font-heading text-[0.6875rem] text-[var(--color-accent)]">
+            <div className="flex items-center gap-1.5 font-heading text-xs text-[var(--color-accent)]">
               <DotIcon name="alarm"
                 size={16}
                 className={challenge.isWarningTime ? "text-[var(--color-pink)] animate-bounce" : "text-[var(--color-accent)]"}
               />
-              <span>TIMED CHALLENGE ACTIVE:</span>
+              <span>Timed challenge active:</span>
             </div>
             <span
-              className={`font-mono text-[0.6875rem] font-bold tracking-wider px-2 py-0 border ${
+              className={`font-mono text-xs font-bold px-2 py-0 border ${
                 challenge.isWarningTime
                   ? "border-[var(--color-pink)] text-[var(--color-pink)] bg-[var(--color-pink)]/20"
                   : "border-[var(--color-mint)] text-[var(--color-mint)] bg-[var(--color-mint)]/10"
@@ -623,14 +623,14 @@ export function WorkspaceView() {
                 }
               }}
               disabled={!challenge.hasSubmittedAtLeastOnce}
-              className="text-[0.6875rem] py-0"
+              className="text-xs py-0"
               title={
                 challenge.hasSubmittedAtLeastOnce
                   ? "Finish and submit challenge"
                   : "Submit solution at least once to enable finishing challenge"
               }
             >
-              FINISH CHALLENGE <DotIcon name="circleCheck" size={14} aria-hidden="true" />
+              Finish challenge <DotIcon name="circleCheck" size={14} aria-hidden="true" />
             </PixelButton>
 
             <PixelButton
@@ -639,7 +639,7 @@ export function WorkspaceView() {
               onClick={() => setIsForfeitModalOpen(true)}
               className="text-xs"
             >
-              FORFEIT / EXIT <DotIcon name="close" size={14} aria-hidden="true" />
+              Forfeit / exit <DotIcon name="close" size={14} aria-hidden="true" />
             </PixelButton>
           </div>
         </div>
@@ -658,18 +658,18 @@ export function WorkspaceView() {
       )}
 
       {/* Responsive Mobile / Tablet View Switcher (Hidden on Desktop >= 1280px) */}
-      <div className="xl:hidden flex items-center justify-between p-1.5 bg-[var(--color-surface)] border-2 border-[var(--color-border)] shrink-0 gap-1">
+      <div className="xl:hidden flex items-center justify-between p-1.5 bg-[var(--color-surface)] border border-[var(--color-border)] shrink-0 gap-1">
         <button
           type="button"
           onClick={() => setMobileActivePane("problem")}
           className={`flex-1 py-1.5 px-2 text-xs font-heading flex items-center justify-center gap-1.5 border transition-colors cursor-pointer ${
             mobileActivePane === "problem"
-              ? "bg-[var(--color-canvas)] border-[var(--color-accent)] text-[var(--color-accent)] [box-shadow:var(--shadow-btn)]"
+              ? "bg-[var(--color-canvas)] border-[var(--color-accent)] text-[var(--color-accent)]"
               : "border-transparent text-[var(--color-text-dim)] hover:text-[var(--color-text-main)]"
           }`}
         >
           <DotIcon name="list" size={13} aria-hidden="true" />
-          <span>PROBLEM</span>
+          <span>Problem</span>
         </button>
 
         <button
@@ -677,12 +677,12 @@ export function WorkspaceView() {
           onClick={() => setMobileActivePane("code")}
           className={`flex-1 py-1.5 px-2 text-xs font-heading flex items-center justify-center gap-1.5 border transition-colors cursor-pointer ${
             mobileActivePane === "code"
-              ? "bg-[var(--color-canvas)] border-[var(--color-accent)] text-[var(--color-accent)] [box-shadow:var(--shadow-btn)]"
+              ? "bg-[var(--color-canvas)] border-[var(--color-accent)] text-[var(--color-accent)]"
               : "border-transparent text-[var(--color-text-dim)] hover:text-[var(--color-text-main)]"
           }`}
         >
           <DotIcon name="file" size={13} aria-hidden="true" />
-          <span>CODE</span>
+          <span>Code</span>
           <span
             className={`w-1.5 h-1.5 rounded-full ${
               saveStatus === "SAVED" ? "bg-[var(--color-mint)]" : "bg-[var(--color-pink)]"
@@ -695,15 +695,15 @@ export function WorkspaceView() {
           onClick={() => setMobileActivePane("results")}
           className={`flex-1 py-1.5 px-2 text-xs font-heading flex items-center justify-center gap-1.5 border transition-colors cursor-pointer ${
             mobileActivePane === "results"
-              ? "bg-[var(--color-canvas)] border-[var(--color-accent)] text-[var(--color-accent)] [box-shadow:var(--shadow-btn)]"
+              ? "bg-[var(--color-canvas)] border-[var(--color-accent)] text-[var(--color-accent)]"
               : "border-transparent text-[var(--color-text-dim)] hover:text-[var(--color-text-main)]"
           }`}
         >
           <DotIcon name="powershell" size={13} adaptive aria-hidden="true" />
-          <span>RESULTS</span>
+          <span>Results</span>
           {judgingResult && (
             <span
-              className={`text-[0.5625rem] font-mono px-1 py-0.2 border ${
+              className={`text-xs font-mono px-1 py-0.2 border ${
                 judgingResult.overallVerdict === "ACCEPTED"
                   ? "border-[var(--color-mint)] text-[var(--color-mint)]"
                   : "border-[var(--color-pink)] text-[var(--color-pink)]"
@@ -751,7 +751,7 @@ export function WorkspaceView() {
               className="hidden xl:flex h-full w-10 items-center justify-center border border-[var(--color-border)] bg-[var(--color-surface)] text-xs text-[var(--color-text-muted)]"
               aria-label="Expand problem pane"
               onClick={() => setLayout("split")}
-            ><span className="[writing-mode:vertical-rl]">PROBLEM ›</span></button>
+            ><span className="[writing-mode:vertical-rl]">Problem ›</span></button>
           ) :           <ProblemPane
             problem={problem}
             onUseCustomStdin={(sampleInput) => {
@@ -790,7 +790,7 @@ export function WorkspaceView() {
               aria-label="Programming language"
               value={activeLang}
               onChange={(e) => void handleSwitchLanguage(e.target.value as PreferredLanguage)}
-              className="h-8 w-[76px] shrink-0 border border-[var(--color-border)] bg-[var(--color-canvas)] px-1 text-[11px] text-[var(--color-text-main)] sm:w-[100px]"
+              className="h-8 w-[76px] shrink-0 border border-[var(--color-border)] bg-[var(--color-canvas)] px-1 text-xs text-[var(--color-text-main)] sm:w-[100px]"
             >
               {ALL_SUPPORTED_LANGUAGES.map((lang) => <option key={lang} value={lang}>{LANGUAGE_DISPLAY_NAMES[lang]}</option>)}
             </select>
@@ -799,8 +799,8 @@ export function WorkspaceView() {
               aria-pressed={isDemoMode}
               onClick={() => setUserDemoToggle(!isDemoMode)}
               title="Toggle frontend-only demo"
-              className={`h-6 shrink-0 rounded-[var(--radius-btn)] border px-1.5 text-[10px] ${isDemoMode ? "border-[var(--color-accent)] text-[var(--color-accent)]" : "border-[var(--color-border)]"}`}
-            >DEMO</button>
+              className={`h-6 shrink-0 rounded-[var(--radius-btn)] border px-1.5 text-xs ${isDemoMode ? "border-[var(--color-accent)] text-[var(--color-accent)]" : "border-[var(--color-border)]"}`}
+            >Demo</button>
             <span className="hidden h-5 shrink-0 border-l border-[var(--color-border)] sm:inline" aria-hidden="true" />
             <PixelButton size="icon" variant="ghost" onClick={() => setIsResetOpen(true)} aria-label="Reset active file" title="Reset active file">
               <DotIcon name="arrowLeft" size={14} aria-hidden="true" />
@@ -849,7 +849,7 @@ export function WorkspaceView() {
           </div>
 
           {/* Code editor frame */}
-          <div className="flex-1 min-h-0 border-2 border-[var(--color-border)] bg-[var(--color-canvas)] [border-radius:var(--radius-card)] overflow-hidden relative">
+          <div className="flex-1 min-h-0 border border-[var(--color-border)] bg-[var(--color-canvas)] [border-radius:var(--radius-card)] overflow-hidden relative">
             <CodeEditor
               key={`${problem?.id ?? "free"}/${activeLang}/${activeFile}`}
               filename={activeFile}
@@ -952,15 +952,15 @@ export function WorkspaceView() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs">
           <PixelCard
             variant="elevated"
-            className="w-full max-w-md border-2 border-[var(--color-pink)] p-6 bg-[var(--color-surface)] [box-shadow:var(--shadow-btn)] space-y-4"
+            className="w-full max-w-md border border-[var(--color-pink)] p-6 bg-[var(--color-surface)] space-y-4"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 border-2 border-[var(--color-pink)] bg-[var(--color-canvas)] flex items-center justify-center text-[var(--color-pink)] font-heading text-xl font-bold">
+              <div className="w-10 h-10 border border-[var(--color-pink)] bg-[var(--color-canvas)] flex items-center justify-center text-[var(--color-pink)] font-heading text-xl font-bold">
                 !
               </div>
               <div>
                 <h3 className="font-heading text-lg text-[var(--color-text-main)]">
-                  RESET WORKSPACE BUFFER?_
+                  Reset workspace buffer?
                 </h3>
                 <span className="font-mono text-xs text-[var(--color-text-muted)]">
                   Target: {filename}
@@ -982,14 +982,14 @@ export function WorkspaceView() {
                 size="sm"
                 onClick={() => setIsResetOpen(false)}
               >
-                CANCEL
+                Cancel
               </PixelButton>
               <PixelButton
                 variant="pink"
                 size="sm"
                 onClick={handleConfirmReset}
               >
-                CONFIRM RESET ↺
+                Confirm reset ↺
               </PixelButton>
             </div>
           </PixelCard>
@@ -1001,15 +1001,15 @@ export function WorkspaceView() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs">
           <PixelCard
             variant="elevated"
-            className="w-full max-w-md border-2 border-[var(--color-pink)] p-6 bg-[var(--color-surface)] [box-shadow:var(--shadow-btn)] space-y-4"
+            className="w-full max-w-md border border-[var(--color-pink)] p-6 bg-[var(--color-surface)] space-y-4"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 border-2 border-[var(--color-pink)] bg-[var(--color-canvas)] flex items-center justify-center text-[var(--color-pink)] font-heading text-xl font-bold">
+              <div className="w-10 h-10 border border-[var(--color-pink)] bg-[var(--color-canvas)] flex items-center justify-center text-[var(--color-pink)] font-heading text-xl font-bold">
                 !
               </div>
               <div>
                 <h3 className="font-heading text-lg text-[var(--color-text-main)]">
-                  FORFEIT TIMED CHALLENGE?_
+                  Forfeit timed challenge?
                 </h3>
                 <span className="font-mono text-xs text-[var(--color-pink)]">
                   Time Remaining: {challenge.formattedTime}
@@ -1027,7 +1027,7 @@ export function WorkspaceView() {
                 size="sm"
                 onClick={() => setIsForfeitModalOpen(false)}
               >
-                RESUME CHALLENGE
+                Resume challenge
               </PixelButton>
               <PixelButton
                 variant="pink"
@@ -1037,7 +1037,7 @@ export function WorkspaceView() {
                   setIsForfeitModalOpen(false);
                 }}
               >
-                CONFIRM FORFEIT <DotIcon name="close" size={14} aria-hidden="true" />
+                Confirm forfeit <DotIcon name="close" size={14} aria-hidden="true" />
               </PixelButton>
             </div>
           </PixelCard>

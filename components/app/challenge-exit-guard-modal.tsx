@@ -26,10 +26,10 @@ export function ChallengeExitGuardModal() {
     >
       <PixelCard
         variant="elevated"
-        className="w-full max-w-md border-2 border-[var(--color-pink)] p-6 bg-[var(--color-surface)] [box-shadow:var(--shadow-btn)] space-y-4"
+        className="w-full max-w-md border border-[var(--color-pink)] p-6 bg-[var(--color-surface)] space-y-4"
       >
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 border-2 border-[var(--color-pink)] bg-[var(--color-canvas)] flex items-center justify-center text-[var(--color-pink)] font-heading text-xl font-bold">
+          <div className="w-10 h-10 border border-[var(--color-pink)] bg-[var(--color-canvas)] flex items-center justify-center text-[var(--color-pink)] font-heading text-xl font-bold">
             !
           </div>
           <div>
@@ -37,7 +37,7 @@ export function ChallengeExitGuardModal() {
               id="guard-modal-title"
               className="font-heading text-lg text-[var(--color-text-main)]"
             >
-              EXIT CHALLENGE AND FORFEIT?_
+              Exit challenge and forfeit?
             </h3>
             <span className="font-mono text-xs text-[var(--color-text-muted)]">
               Remaining session time: {formattedTime}
@@ -58,7 +58,7 @@ export function ChallengeExitGuardModal() {
             onClick={cancelPendingNavigation}
             className="text-xs"
           >
-            KEEP WORKING
+            Keep working
           </PixelButton>
           <PixelButton
             variant="pink"
@@ -66,7 +66,7 @@ export function ChallengeExitGuardModal() {
             onClick={confirmPendingNavigation}
             className="text-xs font-heading"
           >
-            EXIT AND FORFEIT <DotIcon name="close" size={14} aria-hidden="true" />
+            Exit and forfeit <DotIcon name="close" size={14} aria-hidden="true" />
           </PixelButton>
         </div>
       </PixelCard>

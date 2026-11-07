@@ -78,7 +78,7 @@ export function FileTabs({ language, files, activeName, mainName, saveStatus, on
     <div className="relative flex min-w-0 flex-1 items-center gap-1 overflow-visible">
       <div ref={tabsRef} role="tablist" aria-label="Source files" className="flex min-w-0 items-center gap-0.5 overflow-x-auto whitespace-nowrap">
         {files.map((file, index) => (
-          <div key={file.name} className={`group inline-flex h-8 shrink-0 items-center border-b-2 ${activeName === file.name ? "border-[var(--color-accent)] bg-[var(--color-elevated)]" : "border-transparent"}`}>
+          <div key={file.name} className={`group inline-flex h-8 shrink-0 items-center border-b ${activeName === file.name ? "border-[var(--color-accent)] bg-[var(--color-elevated)]" : "border-transparent"}`}>
             {editing === file.name ? (
               <input
                 ref={inputRef}
@@ -136,7 +136,7 @@ export function FileTabs({ language, files, activeName, mainName, saveStatus, on
           disabled={files.length >= 6} className="h-8 w-7 shrink-0 text-base hover:bg-[var(--color-elevated)] disabled:opacity-40"
         ><DotIcon name="circlePlus" size={14} aria-hidden="true" /></button>
       )}
-      {error && <span role="alert" title={error} className="absolute left-0 top-full z-30 mt-1 max-w-60 border border-[var(--color-pink)] bg-[var(--color-surface)] p-1 text-[10px] text-[var(--color-pink)]">{error}</span>}
+      {error && <span role="alert" title={error} className="absolute left-0 top-full z-30 mt-1 max-w-60 border border-[var(--color-pink)] bg-[var(--color-surface)] p-1 text-xs text-[var(--color-pink)]">{error}</span>}
     </div>
   );
 }

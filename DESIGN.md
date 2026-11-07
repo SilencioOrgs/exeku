@@ -7,8 +7,8 @@ colors:
   elevated: "#f4f4f5"
   border: "#e4e4e7"
   text: "#18181b"
-  text-muted: "#52525b"
-  text-dim: "#71717a"
+  text-muted: "#4a4a52"
+  text-dim: "#4a4a52"
   primary: "#18181b"
   primary-foreground: "#ffffff"
   ring: "#52525b"
@@ -116,7 +116,7 @@ Buttons and inputs 8px radius, cards and dialogs 12px, small badges 6px. Borders
 
 - Use `components/ui`: `Button` (default, outline, ghost, secondary, destructive; sizes xs, sm, default, icon), `Dialog`, `Card`, `Input`, `Tooltip`, `Sheet`, `Separator`, `Skeleton`.
 - Code editor: `components/app/code-editor.tsx`, a native `<textarea>` with a line-number gutter. Tab indents, Shift+Tab outdents, Enter keeps indentation, Ctrl/Cmd+Enter runs, Ctrl/Cmd+Shift+Enter submits, Esc then Tab leaves the editor.
-- Icons: Doticons via `DotIcon`. Icon-only buttons need `aria-label`.
+- Icons: lucide-react via `DotIcon`. Icon-only buttons need `aria-label`.
 - Focus: 2px outline in `--color-ring`, 2px offset.
 
 ## Do's and Don'ts

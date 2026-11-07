@@ -52,10 +52,10 @@ export function SubmitConfirmModal({
     >
       <PixelCard
         variant="elevated"
-        className="w-full max-w-md border-2 border-[var(--color-primary)] p-4 sm:p-5 bg-[var(--color-surface)] [box-shadow:var(--shadow-btn)] space-y-3"
+        className="w-full max-w-md border border-[var(--color-primary)] p-4 sm:p-5 bg-[var(--color-surface)] space-y-3"
       >
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 border-2 border-[var(--color-primary)] bg-[var(--color-canvas)] flex items-center justify-center text-[var(--color-primary)] font-heading text-lg font-bold">
+          <div className="w-10 h-10 border border-[var(--color-primary)] bg-[var(--color-canvas)] flex items-center justify-center text-[var(--color-primary)] font-heading text-lg font-bold">
             ?
           </div>
           <div>
@@ -63,7 +63,7 @@ export function SubmitConfirmModal({
               id="submit-confirm-title"
               className="font-heading text-lg text-[var(--color-text-main)]"
             >
-              SUBMIT YOUR SOLUTION?_
+              Submit your solution?
             </h3>
             <span className="font-mono text-xs text-[var(--color-text-muted)]">
               {problem.title} &bull; {LANGUAGE_DISPLAY_NAMES[language]}
@@ -77,14 +77,14 @@ export function SubmitConfirmModal({
 
         {isTimedActive && (
           <div className="p-2.5 bg-[var(--color-canvas)] border border-[var(--color-accent)] font-mono text-xs flex items-center justify-between">
-            <span className="text-[var(--color-accent)] font-bold">TIMED CHALLENGE ACTIVE:</span>
+            <span className="text-[var(--color-accent)] font-bold">Timed challenge active:</span>
             <span className="text-[var(--color-mint)] font-bold">{formattedRemainingTime} remaining</span>
           </div>
         )}
 
         <div className="flex items-center justify-end gap-3 pt-2">
           <PixelButton variant="ghost" size="sm" onClick={onClose} className="text-xs">
-            CANCEL
+            Cancel
           </PixelButton>
           <PixelButton
             variant="primary"
@@ -92,7 +92,7 @@ export function SubmitConfirmModal({
             onClick={onConfirm}
             className="text-xs font-heading"
           >
-            CONFIRM SUBMIT <DotIcon name="circleCheck" size={14} aria-hidden="true" />
+            Confirm submit <DotIcon name="circleCheck" size={14} aria-hidden="true" />
           </PixelButton>
         </div>
       </PixelCard>
@@ -122,7 +122,7 @@ export function SubmissionEvaluatingModal({
     >
       <PixelCard
         variant="elevated"
-        className="w-full max-w-sm border-2 border-[var(--color-mint)] p-4 sm:p-5 bg-[var(--color-surface)] [box-shadow:var(--shadow-btn)] text-center space-y-3"
+        className="w-full max-w-sm border border-[var(--color-mint)] p-4 sm:p-5 bg-[var(--color-surface)] text-center space-y-3"
       >
         <div className="flex justify-center">
           <div className="w-12 h-12 border-4 border-[var(--color-mint)] border-t-transparent animate-spin" />
@@ -130,14 +130,14 @@ export function SubmissionEvaluatingModal({
 
         <div className="space-y-1">
           <h3 className="font-heading text-lg text-[var(--color-text-main)] animate-pulse">
-            EVALUATING SOLUTION...
+            Evaluating solution...
           </h3>
           <p className="font-mono text-xs text-[var(--color-text-muted)]">
             Testing {problem.title} against test cases in sandbox judge.
           </p>
         </div>
 
-        <div className="text-[0.6875rem] font-mono text-[var(--color-text-dim)] bg-[var(--color-canvas)] p-2 border border-[var(--color-border)]">
+        <div className="text-xs font-mono text-[var(--color-text-dim)] bg-[var(--color-canvas)] p-2 border border-[var(--color-border)]">
           Target: {LANGUAGE_DISPLAY_NAMES[language]} runner &bull; Concurrency queue active
         </div>
       </PixelCard>
@@ -207,7 +207,7 @@ export function SubmissionResultModal({
     >
       <PixelCard
         variant="elevated"
-        className={`w-full max-w-md border-2 p-4 sm:p-5 bg-[var(--color-surface)] [box-shadow:var(--shadow-btn)] space-y-3 ${
+        className={`w-full max-w-md border p-4 sm:p-5 bg-[var(--color-surface)] space-y-3 ${
           isAccepted
             ? "border-[var(--color-mint)]"
             : isUnavailable
@@ -218,7 +218,7 @@ export function SubmissionResultModal({
         {/* Header with Visual Verdict Icon */}
         <div className="flex items-center gap-3">
           <div
-            className={`w-12 h-12 border-2 flex items-center justify-center shrink-0 ${
+            className={`w-12 h-12 border flex items-center justify-center shrink-0 ${
               isAccepted
                 ? "border-[var(--color-mint)] bg-[var(--color-mint)]/10 text-[var(--color-mint)]"
                 : isUnavailable
@@ -247,11 +247,11 @@ export function SubmissionResultModal({
                     : "text-[var(--color-pink)]"
                 }`}
               >
-                {result.overallVerdict}_
+                {result.overallVerdict}
               </h3>
               {isDemo && (
-                <PixelBadge variant="purple" bracketed className="text-[0.625rem] py-0 px-1 font-mono">
-                  DEMO SIMULATED
+                <PixelBadge variant="purple" bracketed className="text-xs py-0 px-1 font-mono">
+                  Demo simulated
                 </PixelBadge>
               )}
             </div>
@@ -270,13 +270,13 @@ export function SubmissionResultModal({
         {!isUnavailable && (
           <div className="grid grid-cols-3 gap-2 p-3 bg-[var(--color-canvas)] border border-[var(--color-border)] font-mono text-xs text-center">
             <div>
-              <span className="text-[0.625rem] text-[var(--color-text-dim)] block">Passed Tests</span>
+              <span className="text-xs text-[var(--color-text-dim)] block">Passed Tests</span>
               <strong className="text-[var(--color-text-main)] text-sm">
                 {result.passedTests} / {result.totalTests}
               </strong>
             </div>
             <div>
-              <span className="text-[0.625rem] text-[var(--color-text-dim)] block">Score</span>
+              <span className="text-xs text-[var(--color-text-dim)] block">Score</span>
               <strong
                 className={`text-sm ${
                   isAccepted ? "text-[var(--color-mint)]" : "text-[var(--color-pink)]"
@@ -286,7 +286,7 @@ export function SubmissionResultModal({
               </strong>
             </div>
             <div>
-              <span className="text-[0.625rem] text-[var(--color-text-dim)] block">Max Time</span>
+              <span className="text-xs text-[var(--color-text-dim)] block">Max Time</span>
               <strong className="text-[var(--color-text-main)] text-sm">
                 {result.maxDurationMs}ms
               </strong>
@@ -295,10 +295,10 @@ export function SubmissionResultModal({
         )}
 
         {isUnavailable && (
-          <div className="p-3 bg-[var(--color-canvas)] border border-[var(--color-pink)]/40 font-mono text-[0.6875rem] text-[var(--color-text-muted)] space-y-1">
-            <div className="text-[var(--color-pink)] font-bold">SETUP INSTRUCTIONS:</div>
+          <div className="p-3 bg-[var(--color-canvas)] border border-[var(--color-pink)]/40 font-mono text-xs text-[var(--color-text-muted)] space-y-1">
+            <div className="text-[var(--color-pink)] font-bold">Setup instructions:</div>
             <p>To run genuine untrusted code, launch the Piston container:</p>
-            <code className="block p-1 bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-accent)] text-[0.625rem]">
+            <code className="block p-1 bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-accent)] text-xs">
               docker run -d -p 2000:2000 ghcr.io/engineerman/piston/piston
             </code>
           </div>
@@ -316,7 +316,7 @@ export function SubmissionResultModal({
               }}
               className="text-xs"
             >
-              VIEW TEST DETAILS <DotIcon name="arrowRight" size={14} aria-hidden="true" />
+              View test details <DotIcon name="arrowRight" size={14} aria-hidden="true" />
             </PixelButton>
           ) : (
             <div />
@@ -335,7 +335,7 @@ export function SubmissionResultModal({
             {isAccepted && nextProblemId && (
               <Link href={`/app/workspace?problem=${encodeURIComponent(nextProblemId)}`}>
                 <PixelButton variant="primary" size="sm" className="text-xs font-heading">
-                  NEXT PROBLEM <DotIcon name="arrowRight" size={14} aria-hidden="true" />
+                  Next problem <DotIcon name="arrowRight" size={14} aria-hidden="true" />
                 </PixelButton>
               </Link>
             )}
@@ -379,10 +379,10 @@ export function TimeExpiredModal({
     >
       <PixelCard
         variant="elevated"
-        className="w-full max-w-md border-2 border-[var(--color-pink)] p-4 sm:p-5 bg-[var(--color-surface)] [box-shadow:var(--shadow-btn)] space-y-3"
+        className="w-full max-w-md border border-[var(--color-pink)] p-4 sm:p-5 bg-[var(--color-surface)] space-y-3"
       >
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 border-2 border-[var(--color-pink)] bg-[var(--color-canvas)] flex items-center justify-center text-[var(--color-pink)] font-heading text-xl font-bold">
+          <div className="w-12 h-12 border border-[var(--color-pink)] bg-[var(--color-canvas)] flex items-center justify-center text-[var(--color-pink)] font-heading text-xl font-bold">
             <DotIcon name="alarm" size={24} />
           </div>
           <div>
@@ -390,7 +390,7 @@ export function TimeExpiredModal({
               id="expired-modal-title"
               className="font-heading text-lg text-[var(--color-text-main)]"
             >
-              TIME EXPIRED_
+              Time expired
             </h3>
             <span className="font-mono text-xs text-[var(--color-pink)]">
               Challenge countdown reached 00:00
@@ -413,7 +413,7 @@ export function TimeExpiredModal({
 
         <div className="flex items-center justify-end gap-2 pt-2">
           <PixelButton variant="primary" size="sm" onClick={onClose} className="text-xs">
-            VIEW WORKSPACE
+            View workspace
           </PixelButton>
         </div>
       </PixelCard>
