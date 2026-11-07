@@ -46,7 +46,8 @@ Exeku provides a high-craft developer aesthetic paired with robust automated cod
   - Automatic judging engine with deterministic verdict calculation (AC, WA, CE, RE, TLE, MLE, IE).
   - Server-authoritative test case evaluation with hidden test input/output redaction.
   - Local profile and code draft persistence via IndexedDB (safe hydration without cloud lock-in during developer preview).
-  - Blue-and-white shadcn/ui design system with a VS Code-style highlighted editor (see `DESIGN.md`).
+  - Pastel, skeuomorphic shadcn/ui design system with a LeetCode-style orange accent and a VS Code-style highlighted editor (see `DESIGN.md`).
+  - Hardware Lab preview: blink an LED on a virtual Arduino and spin a 3D-printable chassis (Three.js).
 - **Technical Constraints:**
   - **No Unsafe Execution:** Student code is strictly untrusted. Code execution must run inside an isolated sandbox (Piston/`isolate` container) with enforced CPU limits, memory limits, wall-clock timeouts, restricted filesystem access, and disabled outbound networking. Arbitrary unsandboxed host process execution is strictly prohibited.
   - **Local Development Boundaries:** No public cloud infrastructure (Vercel, Render, Oracle Cloud) or cloud databases are provisioned during this stage. Everything runs and verifies locally.
@@ -60,8 +61,8 @@ Exeku provides a high-craft developer aesthetic paired with robust automated cod
 
 - **Name:** Exeku
 - **Tagline:** "Your Code. Your Machine."
-- **Aesthetic Direction:** Blue and white, shadcn/ui. A quiet, precise tool; code is colored like VS Code.
-- **Visual Identity Foundation:** Slate light and dark themes with one blue, Geist Sans and Geist Mono, 1px borders, 8–12px radius. Green/red only for verdicts and errors. Full details in `DESIGN.md`.
+- **Aesthetic Direction:** LeetCode made friendly for students: pastel, softly tactile (skeuomorphic) surfaces, one orange accent, Easy/Medium/Hard colors. Code is colored like VS Code.
+- **Visual Identity Foundation:** Warm light and dark themes, LeetCode orange, pastel tiles, raised cards and keycap buttons, Geist Sans and Geist Mono. Green/red only for verdicts and errors. Full details in `DESIGN.md`.
 - **Appearance Settings:** Light or dark (light by default), plus code font size, text size, high contrast and reduced motion. The old multi-theme engine was retired.
 
 ## Product Principles

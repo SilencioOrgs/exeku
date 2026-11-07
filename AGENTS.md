@@ -81,8 +81,9 @@ Student code is strictly untrusted:
 
 The source of truth is `DESIGN.md`. Read it before any UI change. Summary:
 
-- **Theme & Vibe**: Blue and white, shadcn/ui, light (default) and dark mode. Quiet, precise, tool-like. The code editor uses VS Code Light+/Dark+ syntax colors.
-- **Color**: Slate neutrals plus one blue (`--color-primary`). Green/red only for verdicts, errors and destructive actions, always with a word (AC, WA). Use the tokens in `app/globals.css`, never raw hex.
+- **Theme & Vibe**: LeetCode for students. Pastel, softly skeuomorphic surfaces (raised cards, keycap buttons, recessed inputs), LeetCode orange accent, light (default) and dark mode, on every page including the landing page. The code editor uses VS Code Light+/Dark+ syntax colors.
+- **Color**: Warm neutrals, one orange (`--color-primary`), pastel tiles (`.tile-*`) for grouping, Easy/Medium/Hard colors via `DifficultyBadge`. Green/red only for verdicts, errors and destructive actions, always with a word (AC, WA). Use the tokens in `app/globals.css`, never raw hex.
+- **Hardware Lab** (`/app/lab`, `components/lab`): Arduino breadboard simulator preview and Three.js chassis preview. Real simulation (avr8js) and STL export are planned.
 - **Typography**: Geist Sans for UI and headings, Geist Mono for code and numbers. Sentence case. No ALL CAPS labels, no trailing `_` cursors, no `[BRACKET]` labels.
 - **Components**: shadcn/ui primitives in `components/ui` (`Button`, `Dialog`, `Card`, `Input`, `Tooltip`, `Sheet`). lucide-react icons through `DotIcon`.
 - **Fonts are bundled** through the `geist` npm package. The app must work with no internet.
