@@ -12,7 +12,7 @@ export function Footer() {
   ];
 
   return (
-    <footer className="bg-[var(--color-canvas)] border-t-2 border-[var(--color-border)] text-[var(--color-text-muted)] font-mono text-xs">
+    <footer className="bg-[var(--color-canvas)] border-t border-[var(--color-border)] text-[var(--color-text-muted)] font-mono text-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
           {/* Brand Info */}
@@ -22,7 +22,7 @@ export function Footer() {
                 <DotIcon name="powershell" size={16} />
               </div>
               <span
-                className="text-2xl font-bold text-[var(--color-text-main)] tracking-wider"
+                className="text-2xl font-bold text-[var(--color-text-main)]"
                 style={{ fontFamily: "var(--font-heading-active)" }}
               >
                 exeku<span className="text-[var(--color-accent)]">_</span>
@@ -36,15 +36,15 @@ export function Footer() {
             </p>
 
             <div className="pt-2 flex flex-wrap gap-2">
-              <PixelBadge variant="mint">OFFLINE FIRST</PixelBadge>
+              <PixelBadge variant="mint">Offline first</PixelBadge>
               <PixelBadge variant="cyan">WINDOWS x64</PixelBadge>
-              <PixelBadge variant="pink">ZERO TELEMETRY</PixelBadge>
+              <PixelBadge variant="pink">Zero telemetry</PixelBadge>
             </div>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h4 className="text-[var(--color-text-main)] font-bold text-sm tracking-wider uppercase mb-3">
+            <h4 className="text-[var(--color-text-main)] font-bold text-sm mb-3">
               Navigation
             </h4>
             <ul className="space-y-2">
@@ -64,7 +64,7 @@ export function Footer() {
 
           {/* Repository & System */}
           <div>
-            <h4 className="text-[var(--color-text-main)] font-bold text-sm tracking-wider uppercase mb-3">
+            <h4 className="text-[var(--color-text-main)] font-bold text-sm mb-3">
               Repository
             </h4>
             <ul className="space-y-2 mb-4">
@@ -92,11 +92,11 @@ export function Footer() {
         </div>
 
         {/* System Telemetry Dock */}
-        <div className="pt-8 border-t border-[var(--color-elevated)] flex flex-col sm:flex-row items-center justify-between gap-4 text-[0.6875rem] text-[var(--color-text-dim)]">
+        <div className="pt-8 border-t border-[var(--color-elevated)] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[var(--color-text-dim)]">
           <div className="flex flex-wrap items-center gap-4">
-            <span>[HOST: 127.0.0.1]</span>
-            <span>[PORT: 3000]</span>
-            <span>[RUNTIME: NODE.JS / NEXT.JS 16]</span>
+            <span>Host: 127.0.0.1</span>
+            <span>Port: 3000</span>
+            <span>Runtime: NODE.JS / Next.js 16</span>
           </div>
 
           <div>

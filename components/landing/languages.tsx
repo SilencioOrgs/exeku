@@ -72,10 +72,10 @@ export function Languages() {
         {/* Section Header */}
         <div className="max-w-3xl mb-14">
           <div className="mb-3">
-            <PixelBadge variant="cyan">CORE CURRICULUM</PixelBadge>
+            <PixelBadge variant="cyan">Core curriculum</PixelBadge>
           </div>
           <h2
-            className="text-3xl sm:text-4xl md:text-5xl font-bold text-[var(--color-text-main)] mb-6 uppercase tracking-tight"
+            className="text-3xl sm:text-4xl md:text-5xl font-bold text-[var(--color-text-main)] mb-6 tracking-tight"
             style={{ fontFamily: "var(--font-heading-active)" }}
           >
             Four Foundational Languages.
@@ -93,7 +93,7 @@ export function Languages() {
             <PixelCard
               key={lang.id}
               variant="default"
-              className={`bg-[var(--color-surface)] border-2 ${lang.accentBorder} transition-all`}
+              className={`bg-[var(--color-surface)] border ${lang.accentBorder} transition-all`}
             >
               <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
                 <div className="flex items-center gap-3">
@@ -102,7 +102,7 @@ export function Languages() {
                   </div>
                   <div>
                     <h3
-                      className="text-2xl font-bold text-[var(--color-text-main)] tracking-wider"
+                      className="text-2xl font-bold text-[var(--color-text-main)]"
                       style={{ fontFamily: "var(--font-heading-active)" }}
                     >
                       {lang.name}
@@ -115,7 +115,7 @@ export function Languages() {
 
               {/* Planned Curriculum Tracks */}
               <div className="mb-4 pt-3 border-t border-[var(--color-border)]">
-                <span className="text-xs font-mono text-[var(--color-text-muted)] uppercase tracking-wider block mb-2">
+                <span className="text-xs font-mono text-[var(--color-text-muted)] block mb-2">
                   Planned Curriculum Modules:
                 </span>
                 <div className="flex flex-wrap gap-2">

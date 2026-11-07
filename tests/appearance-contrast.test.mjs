@@ -4,31 +4,35 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 const css = readFileSync(new URL('../app/globals.css', import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
 const blocks = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(([, selector, body]) => ({ selector: selector.trim(), values: Object.fromEntries([...body.matchAll(/(--[\w-]+):\s*([^;]+);/g)].map(([, key, value]) => [key, value.replace(/ !important$/, '').trim()])) }));
-function palette(style, mode, contrast = 'standard') {
-  const attributes = { 'ui-style': style, 'color-mode': mode, contrast };
+function palette(mode, contrast = 'standard') {
+  const attributes = { 'color-mode': mode, contrast };
   const values = {};
   for (const { selector, values: next } of blocks) {
     if (selector.startsWith('@') || selector.includes('@theme')) continue;
     const matches = selector.split(',').some(part => {
       part = part.trim();
       if (part === ':root') return true;
-      if (part.includes(':') || /[ .*]/.test(part)) return false;
+      if (!part.startsWith(':root[')) return false;
       const requested = [...part.matchAll(/\[data-([\w-]+)="([^"]+)"\]/g)];
-      return requested.length && requested.every(([, key, value]) => attributes[key] === value);
+      return requested.length && part.replace(/^:root/, '').replace(/\[[^\]]+\]/g, '') === '' && requested.every(([, key, value]) => attributes[key] === value);
     });
     if (matches) Object.assign(values, next);
   }
-  function resolve(key) { const value = values[key]; const reference = value?.match(/^var\((--[\w-]+)\)$/); return reference ? resolve(reference[1]) : value; }
+  function resolve(key) {
+    const value = values[key];
+    const reference = value?.match(/^var\((--[\w-]+)\)$/) ?? value?.match(/^rgb\(from var\((--[\w-]+)\)/);
+    return reference ? resolve(reference[1]) : value;
+  }
   return resolve;
 }
 function rgb(hex) { assert.match(hex, /^#[0-9a-f]{6}$/i); return hex.slice(1).match(/../g).map(value => parseInt(value, 16)); }
 function luminance(channels) { return channels.map(value => { const channel = value / 255; return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4; }).reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0); }
 function contrast(a, b) { const x = luminance(a), y = luminance(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
-for (const style of ['pixel-arcade', 'minimal-saas', 'studio-crm']) {
+{
   for (const mode of ['light', 'dark']) {
     for (const setting of ['standard', 'high']) {
-      test(style + ' ' + mode + ' ' + setting + ' readable surfaces and controls', () => {
-        const get = palette(style, mode, setting);
+      test(mode + ' ' + setting + ' readable surfaces and controls', () => {
+        const get = palette(mode, setting);
         for (const factor of setting === 'high' ? [1] : [0.8, 1, 1.2]) {
           for (const surface of ['canvas', 'surface', 'elevated']) {
             const background = rgb(get('--base-' + surface)).map(channel => Math.min(255, channel * factor));

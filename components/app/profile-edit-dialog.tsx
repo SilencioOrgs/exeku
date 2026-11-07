@@ -87,13 +87,13 @@ function ProfileEditModalContent({
         if (e.key === "Escape") onClose();
       }}
     >
-      <div className="w-full max-w-lg bg-[var(--color-surface)] border-2 border-[var(--color-primary)] [box-shadow:var(--shadow-card)] [border-radius:var(--radius-card)] p-6 space-y-5 text-foreground max-h-[90vh] overflow-y-auto">
+      <div className="w-full max-w-lg bg-[var(--color-surface)] border border-[var(--color-primary)] [box-shadow:var(--shadow-card)] [border-radius:var(--radius-card)] p-6 space-y-5 text-foreground max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between border-b-2 border-[var(--color-border)] pb-3">
+        <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-3">
           <div className="flex items-center gap-2">
-            <PixelBadge variant="purple">EDIT</PixelBadge>
+            <PixelBadge variant="purple">Edit</PixelBadge>
             <h3 id="edit-dialog-title" className="font-heading text-lg sm:text-xl text-foreground">
-              EDIT LOCAL PROFILE_
+              Edit local profile
             </h3>
           </div>
           <button
@@ -107,14 +107,14 @@ function ProfileEditModalContent({
 
         {error && (
           <div role="alert" className="p-2.5 bg-[var(--color-elevated)] border border-[var(--color-pink)] text-[var(--color-pink)] font-mono text-xs">
-            [ERROR] {error}
+            {error}
           </div>
         )}
 
         {/* Display Name */}
         <div className="space-y-1.5">
           <div className="flex justify-between text-xs font-mono">
-            <label htmlFor="edit-name" className="text-[var(--color-text-main)] uppercase tracking-wide">
+            <label htmlFor="edit-name" className="text-[var(--color-text-main)]">
               Display Name
             </label>
             <span className={validation.isValid ? "text-[var(--color-mint)]" : "text-[var(--color-pink)]"}>
@@ -127,13 +127,13 @@ function ProfileEditModalContent({
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             maxLength={32}
-            className="w-full px-3 py-2 bg-[var(--color-canvas)] border-2 border-[var(--color-border)] focus:border-[var(--color-accent)] text-foreground font-mono text-sm outline-none transition-colors"
+            className="w-full px-3 py-2 bg-[var(--color-canvas)] border border-[var(--color-border)] focus:border-[var(--color-accent)] text-foreground font-mono text-sm outline-none transition-colors"
           />
         </div>
 
         {/* Tagline / Bio */}
         <div className="space-y-1.5">
-          <label htmlFor="edit-bio" className="block text-xs font-mono text-[var(--color-text-muted)] uppercase tracking-wide">
+          <label htmlFor="edit-bio" className="block text-xs font-mono text-[var(--color-text-muted)]">
             Tagline / Bio (optional)
           </label>
           <input
@@ -142,13 +142,13 @@ function ProfileEditModalContent({
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             maxLength={100}
-            className="w-full px-3 py-2 bg-[var(--color-canvas)] border-2 border-[var(--color-border)] focus:border-[var(--color-primary)] text-foreground font-mono text-sm outline-none transition-colors"
+            className="w-full px-3 py-2 bg-[var(--color-canvas)] border border-[var(--color-border)] focus:border-[var(--color-primary)] text-foreground font-mono text-sm outline-none transition-colors"
           />
         </div>
 
         {/* Avatar Selection Grid */}
         <div className="space-y-1.5">
-          <span className="block text-xs font-mono text-[var(--color-text-main)] uppercase tracking-wide">
+          <span className="block text-xs font-mono text-[var(--color-text-main)]">
             Avatar Selection
           </span>
           <div className="grid grid-cols-4 gap-2">
@@ -167,14 +167,14 @@ function ProfileEditModalContent({
                     }
                   }}
                   className={cn(
-                    "p-2 border-2 cursor-pointer flex flex-col items-center gap-1 bg-[var(--color-canvas)] transition-all select-none",
+                    "p-2 border cursor-pointer flex flex-col items-center gap-1 bg-[var(--color-canvas)] transition-all select-none",
                     isSelected
                       ? "border-[var(--color-accent)] [box-shadow:var(--shadow-card)] [border-radius:var(--radius-card)]"
                       : "border-[var(--color-border)] hover:border-[var(--color-primary)]"
                   )}
                 >
                   <PixelAvatar avatarId={av.id} size={36} />
-                  <span className="text-[10px] font-mono text-center truncate w-full text-[var(--color-text-muted)]">
+                  <span className="text-xs font-mono text-center truncate w-full text-[var(--color-text-muted)]">
                     {av.name}
                   </span>
                 </div>
@@ -185,7 +185,7 @@ function ProfileEditModalContent({
 
         {/* Primary Language */}
         <div className="space-y-1.5">
-          <span className="block text-xs font-mono text-[var(--color-text-main)] uppercase tracking-wide">
+          <span className="block text-xs font-mono text-[var(--color-text-main)]">
             Primary Language
           </span>
           <div className="grid grid-cols-2 gap-2">
@@ -204,7 +204,7 @@ function ProfileEditModalContent({
                     }
                   }}
                   className={cn(
-                    "p-2 border-2 cursor-pointer flex items-center gap-2 bg-[var(--color-canvas)] select-none",
+                    "p-2 border cursor-pointer flex items-center gap-2 bg-[var(--color-canvas)] select-none",
                     isSelected
                       ? "border-[var(--color-accent)] text-[var(--color-accent)]"
                       : "border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-primary)]"
@@ -220,7 +220,7 @@ function ProfileEditModalContent({
 
         {/* Experience Level */}
         <div className="space-y-1.5">
-          <span className="block text-xs font-mono text-[var(--color-text-main)] uppercase tracking-wide">
+          <span className="block text-xs font-mono text-[var(--color-text-main)]">
             Experience Level
           </span>
           <div className="grid grid-cols-3 gap-2">
@@ -232,7 +232,7 @@ function ProfileEditModalContent({
                   type="button"
                   onClick={() => setExperienceLevel(lvl.id)}
                   className={cn(
-                    "py-2 px-1 text-xs font-mono border-2 transition-colors select-none",
+                    "py-2 px-1 text-xs font-mono border transition-colors select-none",
                     isSelected
                       ? "bg-[var(--color-elevated)] border-[var(--color-mint)] text-[var(--color-mint)]"
                       : "bg-[var(--color-canvas)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-primary)]"
@@ -246,9 +246,9 @@ function ProfileEditModalContent({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-3 pt-3 border-t-2 border-[var(--color-border)]">
+        <div className="flex items-center justify-end gap-3 pt-3 border-t border-[var(--color-border)]">
           <PixelButton variant="ghost" size="sm" onClick={onClose} disabled={isSaving}>
-            CANCEL
+            Cancel
           </PixelButton>
           <PixelButton
             variant="cyan"
@@ -256,7 +256,7 @@ function ProfileEditModalContent({
             onClick={handleSave}
             disabled={isSaving}
           >
-            {isSaving ? "SAVING..." : "SAVE CHANGES"}
+            {isSaving ? "Saving…" : "Save changes"}
           </PixelButton>
         </div>
       </div>

@@ -4,18 +4,16 @@ import { WorkspaceView } from "@/components/app/workspace-view";
 
 export const metadata: Metadata = {
   title: "Workspace — Exeku",
-  description: "Online programming practice sandbox and Monaco editor environment.",
+  description: "Write, run and submit code in Python 3, Java, C++ and C.",
 };
 
 export default function WorkspacePage() {
   return (
     <Suspense
       fallback={
-        <div className="flex flex-col items-center justify-center p-12 text-center">
-          <div className="w-10 h-10 border-4 border-[#00F0FF] border-t-transparent animate-spin mb-4" />
-          <span className="font-mono text-xs text-[#00F0FF] uppercase tracking-widest animate-pulse">
-            INITIALIZING WORKSPACE...
-          </span>
+        <div className="flex flex-col items-center justify-center gap-3 p-12 text-center text-sm text-[var(--color-text-muted)]">
+          <div className="size-6 animate-spin rounded-full border-2 border-[var(--color-border)] border-t-[var(--color-text-main)]" aria-hidden="true" />
+          Loading workspace…
         </div>
       }
     >

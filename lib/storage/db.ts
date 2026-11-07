@@ -27,11 +27,16 @@ function isIndexedDBAvailable(): boolean {
   );
 }
 
+// One shared connection per tab. Opening per call leaked connections and blocked future upgrades.
+let dbPromise: Promise<IDBDatabase> | null = null;
+let dbFactory: IDBFactory | null = null;
+
 function openDB(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    if (!isIndexedDBAvailable()) {
-      return reject(new Error("IndexedDB is not available in this environment."));
-    }
+  if (!isIndexedDBAvailable()) {
+    return Promise.reject(new Error("IndexedDB is not available in this environment."));
+  }
+  if (dbFactory !== window.indexedDB) { dbFactory = window.indexedDB; dbPromise = null; }
+  dbPromise ??= new Promise<IDBDatabase>((resolve, reject) => {
 
     const request = window.indexedDB.open(DB_NAME, DB_VERSION);
 
@@ -51,13 +56,19 @@ function openDB(): Promise<IDBDatabase> {
     };
 
     request.onsuccess = (event) => {
-      resolve((event.target as IDBOpenDBRequest).result);
+      const db = (event.target as IDBOpenDBRequest).result;
+      // Let a newer tab upgrade the schema; the next call here reopens.
+      db.onversionchange = () => { db.close(); dbPromise = null; };
+      db.onclose = () => { dbPromise = null; };
+      resolve(db);
     };
 
     request.onerror = (event) => {
+      dbPromise = null;
       reject((event.target as IDBOpenDBRequest).error || new Error("Failed to open IndexedDB"));
     };
   });
+  return dbPromise;
 }
 
 export async function idbGet<T>(storeName: string, key: string): Promise<T | null> {

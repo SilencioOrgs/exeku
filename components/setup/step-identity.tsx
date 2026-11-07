@@ -32,13 +32,13 @@ export function StepIdentity({
       {/* Header */}
       <div>
         <div className="flex items-center gap-2 mb-2">
-          <PixelBadge variant="cyan">STEP 01</PixelBadge>
-          <span className="text-xs font-mono text-[var(--color-text-muted)] uppercase tracking-wider">
-            LOCAL IDENTITY
+          <PixelBadge variant="cyan">Step 01</PixelBadge>
+          <span className="text-xs font-mono text-[var(--color-text-muted)]">
+            Local identity
           </span>
         </div>
-        <h2 className="font-heading text-2xl sm:text-3xl text-[var(--color-text-main)] tracking-wide">
-          WELCOME, CODER_
+        <h2 className="font-heading text-2xl sm:text-3xl text-[var(--color-text-main)]">
+          Welcome to Exeku
         </h2>
         <p className="text-sm text-[var(--color-text-muted)] mt-1">
           Let&apos;s set up your local coding profile. No cloud accounts, no email, no surveillance.
@@ -50,7 +50,7 @@ export function StepIdentity({
         <div className="flex items-center justify-between">
           <label
             htmlFor="display-name"
-            className="block text-xs font-mono uppercase tracking-wider text-[var(--color-text-main)]"
+            className="block text-xs font-mono text-[var(--color-text-main)]"
           >
             Display Name <span className="text-[var(--color-pink)]">*</span>
           </label>
@@ -83,10 +83,10 @@ export function StepIdentity({
             aria-describedby={isInvalid ? "name-error" : "name-hint"}
             placeholder="e.g. ByteHacker42"
             className={cn(
-              "w-full px-4 py-3 bg-[var(--color-canvas)] text-[var(--color-text-main)] font-mono text-sm border-2 transition-all outline-none",
+              "w-full px-4 py-3 bg-[var(--color-canvas)] text-[var(--color-text-main)] font-mono text-sm border transition-all outline-none",
               isInvalid
-                ? "border-[var(--color-pink)] [box-shadow:var(--shadow-btn)] focus:border-[var(--color-pink)]"
-                : "border-[var(--color-border)] focus:border-[var(--color-accent)] focus:[box-shadow:var(--shadow-btn)]",
+                ? "border-[var(--color-pink)] focus:border-[var(--color-pink)]"
+                : "border-[var(--color-border)] focus:border-[var(--color-accent)] focus:",
               "placeholder:text-[var(--color-text-dim)]"
             )}
           />
@@ -113,7 +113,7 @@ export function StepIdentity({
         <div className="flex items-center justify-between">
           <label
             htmlFor="profile-bio"
-            className="block text-xs font-mono uppercase tracking-wider text-[var(--color-text-muted)]"
+            className="block text-xs font-mono text-[var(--color-text-muted)]"
           >
             Tagline or Bio <span className="text-[var(--color-text-dim)]">(optional)</span>
           </label>
@@ -129,7 +129,7 @@ export function StepIdentity({
           onChange={(e) => onChangeBio(e.target.value)}
           maxLength={100}
           placeholder="e.g. Systems enthusiast, mastering pointers and algorithms"
-          className="w-full px-4 py-3 bg-[var(--color-canvas)] text-[var(--color-text-main)] font-mono text-sm border-2 border-[var(--color-border)] focus:border-[var(--color-primary)] focus:[box-shadow:var(--shadow-btn)] transition-all outline-none placeholder:text-[var(--color-text-dim)]"
+          className="w-full px-4 py-3 bg-[var(--color-canvas)] text-[var(--color-text-main)] font-mono text-sm border border-[var(--color-border)] focus:border-[var(--color-primary)] focus: transition-all outline-none placeholder:text-[var(--color-text-dim)]"
         />
       </div>
 
@@ -138,7 +138,7 @@ export function StepIdentity({
         <DotIcon name="shield" size={18} className="text-[var(--color-mint)] mt-0.5" />
         <div className="text-xs font-mono space-y-0.5">
           <span className="text-[var(--color-mint)] font-bold block">
-            100% OFFLINE PERSISTENCE
+            100% Offline persistence
           </span>
           <p className="text-[var(--color-text-dim)]">
             Profile data is written strictly into local IndexedDB on this machine. Never sent to any cloud server or telemetry endpoint.

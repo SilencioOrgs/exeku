@@ -16,7 +16,7 @@ export function About() {
       iconName: "shield",
       iconColor: "text-[var(--color-pink)]",
       title: "Isolated Sandboxing",
-      tag: "SECURE RUNTIME",
+      tag: "Secure runtime",
       badgeVariant: "pink",
       description:
         "Untrusted code is executed inside ephemeral, resource-constrained sandbox containers. Memory limits, CPU quotas, and air-gapped process isolation protect the host system from runaway loops and unsafe operations.",
@@ -25,7 +25,7 @@ export function About() {
       iconName: "circlePlay",
       iconColor: "text-[var(--color-accent)]",
       title: "Automated Assessment",
-      tag: "CODECHUM MODEL",
+      tag: "CodeChum model",
       badgeVariant: "cyan",
       description:
         "Deterministic test suite verification with instant grading. Visible test cases provide actionable debugging feedback, while hidden test cases ensure algorithmic rigor and prevent hardcoded answers.",
@@ -34,7 +34,7 @@ export function About() {
       iconName: "windows",
       iconColor: "text-[var(--color-mint)]",
       title: "Local Developer Preview",
-      tag: "ZERO LOCK-IN",
+      tag: "Zero lock-in",
       badgeVariant: "mint",
       description:
         "During local developer preview, your profile, settings, and workspace operate directly in your browser and local developer environment without forced cloud logins, third-party trackers, or vendor lock-in.",
@@ -42,15 +42,15 @@ export function About() {
   ];
 
   return (
-    <section id="about" className="py-20 md:py-28 bg-[var(--color-canvas)] border-t-2 border-b-2 border-[var(--color-border)] relative">
+    <section id="about" className="py-20 md:py-28 bg-[var(--color-canvas)] border-t border-b border-[var(--color-border)] relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="max-w-3xl mb-14">
           <div className="mb-3">
-            <PixelBadge variant="purple">ABOUT EXEKU</PixelBadge>
+            <PixelBadge variant="purple">About Exeku</PixelBadge>
           </div>
           <h2
-            className="text-3xl sm:text-4xl md:text-5xl font-bold text-[var(--color-text-main)] mb-6 uppercase tracking-tight"
+            className="text-3xl sm:text-4xl md:text-5xl font-bold text-[var(--color-text-main)] mb-6 tracking-tight"
             style={{ fontFamily: "var(--font-heading-active)" }}
           >
             Code. Practice. Compete.
@@ -71,14 +71,14 @@ export function About() {
               className="bg-[var(--color-surface)] hover:border-[var(--color-primary)] transition-all group"
             >
               <div className="flex items-center justify-between mb-6">
-                <div className="w-12 h-12 bg-[var(--color-elevated)] border-2 border-[var(--color-border)] group-hover:border-[var(--color-accent)] flex items-center justify-center transition-colors [box-shadow:var(--shadow-btn)]">
+                <div className="w-12 h-12 bg-[var(--color-elevated)] border border-[var(--color-border)] group-hover:border-[var(--color-accent)] flex items-center justify-center transition-colors">
                   <DotIcon name={pillar.iconName} size={24} className={pillar.iconColor} />
                 </div>
                 <PixelBadge variant={pillar.badgeVariant}>{pillar.tag}</PixelBadge>
               </div>
 
               <h3
-                className="text-xl sm:text-2xl font-bold text-[var(--color-text-main)] mb-3 tracking-wide"
+                className="text-xl sm:text-2xl font-bold text-[var(--color-text-main)] mb-3"
                 style={{ fontFamily: "var(--font-heading-active)" }}
               >
                 {pillar.title}
@@ -92,11 +92,11 @@ export function About() {
         </div>
 
         {/* Tactical Callout Box */}
-        <div className="mt-12 p-6 bg-[var(--color-elevated)] border-2 border-[var(--color-primary)]/50 pixel-box flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="mt-12 p-6 bg-[var(--color-elevated)] border border-[var(--color-primary)]/50 pixel-box flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <DotIcon name="shield" size={24} className="text-[var(--color-accent)] shrink-0" />
             <div>
-              <h4 className="text-[var(--color-text-main)] font-mono font-bold text-sm uppercase">
+              <h4 className="text-[var(--color-text-main)] font-mono font-bold text-sm">
                 Local Developer Preview Architecture
               </h4>
               <p className="text-xs sm:text-sm text-[var(--color-text-muted)] font-sans">
@@ -104,7 +104,7 @@ export function About() {
               </p>
             </div>
           </div>
-          <PixelBadge variant="mint">DEV PREVIEW</PixelBadge>
+          <PixelBadge variant="mint">Dev preview</PixelBadge>
         </div>
       </div>
     </section>

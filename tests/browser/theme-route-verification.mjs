@@ -84,7 +84,7 @@ try {
       await openNav("/app/challenges", ".challenges-view");
       await page.locator(`a[href="/app/workspace?problem=${id}"]:visible`).first().click();
       await page.locator(".workspace-toolbar:visible").waitFor();
-      await page.locator(".monaco-editor:visible").first().waitFor();
+      await page.locator(".code-editor textarea:visible").first().waitFor();
       assert.deepEqual(pageErrors, [], `Workspace revisit failed: ${id}, round ${round + 1}`);
       console.log(`PASS problem revisit ${round + 1}: ${id}`);
     }
@@ -109,7 +109,7 @@ try {
         await page.locator(`a[href="/app/workspace?problem=${id}"]:visible`).first().click();
         await page.waitForURL((url) => url.searchParams.get("problem") === id);
         await page.locator(".workspace-toolbar:visible").waitFor();
-        await page.locator(".monaco-editor:visible").first().waitFor();
+        await page.locator(".code-editor textarea:visible").first().waitFor();
         assert.deepEqual(pageErrors, [], `${mode} ${contrast}: ${id}`);
       }
       await openNav("/app/workspace", ".workspace-toolbar:visible");

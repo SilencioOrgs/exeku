@@ -66,22 +66,12 @@ export function AppShell({ children }: AppShellProps) {
       <div role="status" aria-live="polite" className="min-h-screen bg-[var(--color-canvas)] flex flex-col items-center justify-center p-4">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-[var(--color-accent)] border-t-transparent animate-spin" />
-          <span className="font-mono text-xs text-[var(--color-accent)] uppercase tracking-widest animate-pulse">
-            LOADING LOCAL WORKSPACE...
+          <span className="font-mono text-xs text-[var(--color-accent)] animate-pulse">
+            Loading local workspace...
           </span>
         </div>
       </div>
       )}
-      {/* Background Pixel Grid Pattern */}
-      <div
-        className="arcade-decoration absolute inset-0 pointer-events-none opacity-20 z-0"
-        style={{
-          backgroundImage:
-            "linear-gradient(to right, var(--color-border) 1px, transparent 1px), linear-gradient(to bottom, var(--color-border) 1px, transparent 1px)",
-          backgroundSize: "32px 32px",
-        }}
-      />
-
       {/* Top Application Bar */}
       {!blocked && <AppTopbar
         profile={profile}
@@ -108,7 +98,7 @@ export function AppShell({ children }: AppShellProps) {
                 collapsed={false}
                 onToggleCollapse={() => setMobileOpen(false)}
                 onNavigate={() => setMobileOpen(false)}
-                className="w-full h-full [box-shadow:var(--shadow-btn)]"
+                className="w-full h-full"
               />
           </SheetContent>
         </Sheet>

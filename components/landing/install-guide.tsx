@@ -26,7 +26,7 @@ export function InstallGuide() {
       step: "02",
       title: "Install Dependencies",
       command: "npm install",
-      notes: "Installs Next.js 16, React 19, Tailwind CSS v4, and Monaco Editor packages locally.",
+      notes: "Installs Next.js 16, React 19, Tailwind CSS v4 and the bundled Geist fonts locally.",
       icon: "npm",
     },
     {
@@ -52,10 +52,10 @@ export function InstallGuide() {
         {/* Section Header */}
         <div className="max-w-3xl mb-14">
           <div className="mb-3">
-            <PixelBadge variant="cyan">DEVELOPER SETUP</PixelBadge>
+            <PixelBadge variant="cyan">Developer setup</PixelBadge>
           </div>
           <h2
-            className="text-3xl sm:text-4xl md:text-5xl font-bold text-[var(--color-text-main)] mb-6 uppercase tracking-tight"
+            className="text-3xl sm:text-4xl md:text-5xl font-bold text-[var(--color-text-main)] mb-6 tracking-tight"
             style={{ fontFamily: "var(--font-heading-active)" }}
           >
             Run The Developer Preview.
@@ -67,11 +67,11 @@ export function InstallGuide() {
         </div>
 
         {/* Repository Access Notice */}
-        <div className="mb-10 p-5 bg-[var(--color-elevated)] border-2 border-[var(--color-primary)]/50 pixel-box flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="mb-10 p-5 bg-[var(--color-elevated)] border border-[var(--color-primary)]/50 pixel-box flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-start gap-3">
             <DotIcon name="lock-close" size={20} className="text-[var(--color-accent)] mt-0.5 shrink-0" />
             <div>
-              <h3 className="text-[var(--color-text-main)] font-mono font-bold text-sm uppercase">
+              <h3 className="text-[var(--color-text-main)] font-mono font-bold text-sm">
                 Private Repository Access Required
               </h3>
               <p className="text-xs sm:text-sm text-[var(--color-text-muted)] font-sans">
@@ -83,7 +83,7 @@ export function InstallGuide() {
               </p>
             </div>
           </div>
-          <PixelBadge variant="pink">PRIVATE REPO</PixelBadge>
+          <PixelBadge variant="pink">Private repo</PixelBadge>
         </div>
 
         {/* 3 Step Pipeline */}
@@ -92,7 +92,7 @@ export function InstallGuide() {
             <PixelCard
               key={s.step}
               variant="default"
-              className="bg-[var(--color-surface)] border-2 border-[var(--color-border)] flex flex-col justify-between"
+              className="bg-[var(--color-surface)] border border-[var(--color-border)] flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between mb-4">
@@ -100,7 +100,7 @@ export function InstallGuide() {
                     className="text-3xl font-bold text-[var(--color-accent)]"
                     style={{ fontFamily: "var(--font-heading-active)" }}
                   >
-                    STEP {s.step}
+                    Step {s.step}
                   </span>
                   <DotIcon name={s.icon} size={18} className="text-[var(--color-text-muted)]" />
                 </div>
@@ -128,12 +128,12 @@ export function InstallGuide() {
                   {copiedIndex === idx ? (
                     <>
                       <DotIcon name="circleCheck" className="w-3 h-3 text-[var(--color-mint)]" />
-                      <span className="text-[var(--color-mint)]">COPIED!</span>
+                      <span className="text-[var(--color-mint)]">Copied!</span>
                     </>
                   ) : (
                     <>
                       <DotIcon name="file" className="w-3 h-3" />
-                      <span>COPY</span>
+                      <span>Copy</span>
                     </>
                   )}
                 </button>

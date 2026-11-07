@@ -28,10 +28,10 @@ const LANGUAGE_ICONS: Record<PreferredLanguage, DotIconName> = {
 };
 
 const DIFFICULTY_TABS: { id: FilterTier; label: string }[] = [
-  { id: "all", label: "ALL TIERS" },
-  { id: "beginner", label: "BEGINNER" },
-  { id: "intermediate", label: "INTERMEDIATE" },
-  { id: "advanced", label: "ADVANCED" },
+  { id: "all", label: "All levels" },
+  { id: "beginner", label: "Beginner" },
+  { id: "intermediate", label: "Intermediate" },
+  { id: "advanced", label: "Advanced" },
 ];
 
 export function ChallengesView() {
@@ -87,13 +87,13 @@ export function ChallengesView() {
   return (
     <div className="challenges-view appearance-stack space-y-6">
       {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-[var(--color-border)] pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--color-border)] pb-4">
         <div>
-          <h1 className="font-heading text-2xl text-[var(--color-text-main)] tracking-wide">
-            PROGRAMMING PROBLEMS &amp; ASSESSMENTS_
+          <h1 className="font-heading text-2xl text-[var(--color-text-main)]">
+            Problems
           </h1>
           <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-            Choose a problem, write code, and test your solution in the workspace.
+            Pick a problem, write your solution, and submit it for judging.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -105,11 +105,11 @@ export function ChallengesView() {
 
       {/* Active Timed Challenge Banner */}
       {challenge.isTimedActive && (
-        <div className="p-3 bg-[var(--color-canvas)] border-2 border-[var(--color-accent)] flex items-center justify-between gap-3 flex-wrap">
+        <div className="p-3 bg-[var(--color-canvas)] border border-[var(--color-accent)] flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2 font-mono text-xs text-[var(--color-text-main)]">
             <DotIcon name="alarm" size={16} className="text-[var(--color-accent)] animate-pulse" />
             <span>
-              ACTIVE CHALLENGE: <strong>{challenge.session?.problemTitle}</strong> ({challenge.formattedTime} left)
+              Active challenge: <strong>{challenge.session?.problemTitle}</strong> ({challenge.formattedTime} left)
             </span>
           </div>
           <Link href={`/app/workspace?problem=${encodeURIComponent(challenge.session?.problemId ?? "")}`} className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] px-3 text-xs font-medium text-[var(--color-primary-foreground)] transition-colors hover:bg-[var(--color-primary-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ring)]"><DotIcon name="arrowRight" size={14} aria-hidden="true" /> Resume Challenge</Link>
@@ -117,12 +117,12 @@ export function ChallengesView() {
       )}
 
       {/* Filter and Search Bar */}
-      <PixelCard variant="default" className="p-4 border-2 border-[var(--color-border)] space-y-4">
+      <PixelCard variant="default" className="p-4 border border-[var(--color-border)] space-y-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           {/* Language Selector */}
           <div className="space-y-1.5">
-            <span className="font-mono text-[0.625rem] text-[var(--color-text-dim)] uppercase tracking-wider block">
-              LANGUAGE FILTER:
+            <span className="font-mono text-xs text-[var(--color-text-dim)] block">
+              Language filter:
             </span>
             <div className="flex flex-wrap items-center gap-1.5">
               <button
@@ -130,11 +130,11 @@ export function ChallengesView() {
                 onClick={() => setSelectedLanguage("all")}
                 className={`px-3 py-1.5 border font-mono text-xs transition-colors cursor-pointer ${
                   selectedLanguage === "all"
-                    ? "bg-[var(--color-elevated)] border-[var(--color-accent)] text-[var(--color-accent)] [box-shadow:var(--shadow-btn)]"
+                    ? "bg-[var(--color-elevated)] border-[var(--color-accent)] text-[var(--color-accent)]"
                     : "bg-[var(--color-canvas)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]"
                 }`}
               >
-                ALL LANGUAGES
+                All languages
               </button>
               {ALL_SUPPORTED_LANGUAGES.map((lang) => {
                 const isSelected = selectedLanguage === lang;
@@ -145,7 +145,7 @@ export function ChallengesView() {
                     onClick={() => setSelectedLanguage(lang)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 border font-mono text-xs transition-colors cursor-pointer ${
                       isSelected
-                        ? "bg-[var(--color-elevated)] border-[var(--color-accent)] text-[var(--color-accent)] [box-shadow:var(--shadow-btn)]"
+                        ? "bg-[var(--color-elevated)] border-[var(--color-accent)] text-[var(--color-accent)]"
                         : "bg-[var(--color-canvas)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]"
                     }`}
                   >
@@ -163,8 +163,8 @@ export function ChallengesView() {
 
           {/* Difficulty Tier Filters */}
           <div className="space-y-1.5">
-            <span className="font-mono text-[0.625rem] text-[var(--color-text-dim)] uppercase tracking-wider block">
-              DIFFICULTY FILTER:
+            <span className="font-mono text-xs text-[var(--color-text-dim)] block">
+              Difficulty filter:
             </span>
             <div className="flex flex-wrap items-center gap-1.5">
               {DIFFICULTY_TABS.map((tier) => {
@@ -174,9 +174,9 @@ export function ChallengesView() {
                     key={tier.id}
                     type="button"
                     onClick={() => setSelectedTier(tier.id)}
-                    className={`px-2.5 py-1.5 border font-mono text-[0.6875rem] transition-colors cursor-pointer ${
+                    className={`px-2.5 py-1.5 border font-mono text-xs transition-colors cursor-pointer ${
                       isSelected
-                        ? "bg-[var(--color-primary)]/20 border-[var(--color-primary)] text-[var(--color-text-main)] [box-shadow:var(--shadow-btn)]"
+                        ? "bg-[var(--color-primary)]/20 border-[var(--color-primary)] text-[var(--color-text-main)]"
                         : "bg-[var(--color-canvas)] border-[var(--color-border)] text-[var(--color-text-dim)] hover:text-[var(--color-text-muted)]"
                     }`}
                   >
@@ -212,8 +212,8 @@ export function ChallengesView() {
       {/* Problem Cards Listing */}
       <div className="space-y-3">
         {problems.length === 0 ? (
-          <PixelCard variant="default" className="p-8 text-center border-2 border-[var(--color-border)] space-y-2">
-            <span className="font-heading text-lg text-[var(--color-text-main)]">NO PROBLEMS FOUND_</span>
+          <PixelCard variant="default" className="p-8 text-center border border-[var(--color-border)] space-y-2">
+            <span className="font-heading text-lg text-[var(--color-text-main)]">No problems found</span>
             <p className="text-xs text-[var(--color-text-dim)] font-mono">
               Try adjusting your difficulty or search filters to find available practice problems.
             </p>
@@ -231,19 +231,19 @@ export function ChallengesView() {
               <PixelCard
                 key={prob.id}
                 variant="elevated"
-                className="p-4 sm:p-5 border-2 border-[var(--color-border)] hover:border-[var(--color-primary)]/80 transition-colors bg-[var(--color-surface)] space-y-3"
+                className="p-4 sm:p-5 border border-[var(--color-border)] hover:border-[var(--color-primary)]/80 transition-colors bg-[var(--color-surface)] space-y-3"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2.5 flex-wrap">
                       <h2 className="font-heading text-lg text-[var(--color-text-main)]">
-                        {prob.title}_
+                        {prob.title}
                       </h2>
                       <PixelBadge variant={diffVariant} bracketed>
-                        {prob.difficulty.toUpperCase()}
+                        <span className="capitalize">{prob.difficulty}</span>
                       </PixelBadge>
                       <span className="font-mono text-xs text-[var(--color-text-dim)]">
-                        [{prob.category}]
+                        {prob.category}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 text-xs font-mono text-[var(--color-text-muted)]">
@@ -279,13 +279,13 @@ export function ChallengesView() {
                 </div>
 
                 {/* Tags & Languages */}
-                <div className="pt-2 border-t border-[var(--color-border)]/60 flex items-center justify-between flex-wrap gap-2 text-[0.6875rem] font-mono">
+                <div className="pt-2 border-t border-[var(--color-border)]/60 flex items-center justify-between flex-wrap gap-2 text-xs font-mono">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-[var(--color-text-dim)]">Supported:</span>
                     {prob.supportedLanguages.map((l) => (
                       <span
                         key={l}
-                        className={`px-1.5 py-0.5 border text-[0.625rem] ${
+                        className={`px-1.5 py-0.5 border text-xs ${
                           profile?.preferredLanguage === l
                             ? "border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent)]/10 font-bold"
                             : "border-[var(--color-border)] text-[var(--color-text-muted)] bg-[var(--color-canvas)]"
@@ -313,13 +313,13 @@ export function ChallengesView() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs">
           <PixelCard
             variant="elevated"
-            className="w-full max-w-2xl border-2 border-[var(--color-accent)] p-6 bg-[var(--color-surface)] [box-shadow:var(--shadow-btn)] space-y-4 max-h-[85vh] flex flex-col"
+            className="w-full max-w-2xl border border-[var(--color-accent)] p-6 bg-[var(--color-surface)] space-y-4 max-h-[85vh] flex flex-col"
           >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-3 shrink-0">
               <div className="flex items-center gap-2.5">
                 <h3 className="font-heading text-xl text-[var(--color-text-main)]">
-                  {activeProblemDetail.title}_
+                  {activeProblemDetail.title}
                 </h3>
                 <PixelBadge
                   variant={
@@ -331,7 +331,7 @@ export function ChallengesView() {
                   }
                   bracketed
                 >
-                  {activeProblemDetail.difficulty.toUpperCase()}
+                  <span className="capitalize">{activeProblemDetail.difficulty}</span>
                 </PixelBadge>
               </div>
 
@@ -340,35 +340,35 @@ export function ChallengesView() {
                 onClick={() => setInspectProblemId(null)}
                 className="text-[var(--color-text-dim)] hover:text-[var(--color-text-main)] font-mono text-sm cursor-pointer"
               >
-                <DotIcon name="close" size={14} aria-hidden="true" /> CLOSE
+                <DotIcon name="close" size={14} aria-hidden="true" /> Close
               </button>
             </div>
 
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto space-y-4 text-xs font-mono pr-2">
               <div className="space-y-1">
-                <span className="text-[var(--color-accent)] font-heading text-sm block">PROBLEM DESCRIPTION</span>
+                <span className="text-[var(--color-accent)] font-heading text-sm block">Problem description</span>
                 <p className="text-[var(--color-text-main)] leading-relaxed font-sans text-sm">
                   {activeProblemDetail.description}
                 </p>
               </div>
 
               <div className="space-y-1">
-                <span className="text-[var(--color-accent)] font-heading text-sm block">INPUT SPECIFICATION</span>
+                <span className="text-[var(--color-accent)] font-heading text-sm block">Input specification</span>
                 <p className="text-[var(--color-text-muted)] bg-[var(--color-canvas)] p-2.5 border border-[var(--color-border)]">
                   {activeProblemDetail.inputSpec}
                 </p>
               </div>
 
               <div className="space-y-1">
-                <span className="text-[var(--color-accent)] font-heading text-sm block">OUTPUT SPECIFICATION</span>
+                <span className="text-[var(--color-accent)] font-heading text-sm block">Output specification</span>
                 <p className="text-[var(--color-text-muted)] bg-[var(--color-canvas)] p-2.5 border border-[var(--color-border)]">
                   {activeProblemDetail.outputSpec}
                 </p>
               </div>
 
               <div className="space-y-1">
-                <span className="text-[var(--color-accent)] font-heading text-sm block">CONSTRAINTS</span>
+                <span className="text-[var(--color-accent)] font-heading text-sm block">Constraints</span>
                 <ul className="list-disc list-inside text-[var(--color-text-muted)] space-y-0.5">
                   {activeProblemDetail.constraints.map((c, idx) => (
                     <li key={idx}>{c}</li>
@@ -380,11 +380,11 @@ export function ChallengesView() {
 
               {/* Sample Test Cases */}
               <div className="space-y-2">
-                <span className="text-[var(--color-accent)] font-heading text-sm block">SAMPLE TEST CASES</span>
+                <span className="text-[var(--color-accent)] font-heading text-sm block">Sample test cases</span>
                 {activeProblemDetail.sampleTestCases.map((s, idx) => (
                   <div key={idx} className="p-3 bg-[var(--color-canvas)] border border-[var(--color-border)] space-y-1">
                     <span className="text-[var(--color-text-main)] font-bold block">Sample #{idx + 1}</span>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[0.6875rem]">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                       <div>
                         <span className="text-[var(--color-text-dim)] block">Input:</span>
                         <pre className="text-[var(--color-text-main)] bg-[var(--color-surface)] p-1.5 border border-[var(--color-border)]">
@@ -399,7 +399,7 @@ export function ChallengesView() {
                       </div>
                     </div>
                     {s.explanation && (
-                      <p className="text-[0.625rem] text-[var(--color-text-dim)] pt-1">
+                      <p className="text-xs text-[var(--color-text-dim)] pt-1">
                         Explanation: {s.explanation}
                       </p>
                     )}
@@ -410,7 +410,7 @@ export function ChallengesView() {
 
             {/* Footer */}
             <div className="pt-3 border-t border-[var(--color-border)] flex items-center justify-between shrink-0">
-              <span className="text-[0.6875rem] font-mono text-[var(--color-text-dim)]">
+              <span className="text-xs font-mono text-[var(--color-text-dim)]">
                 {activeProblemDetail.visibleTestCases.length} visible test cases ready
               </span>
 
@@ -420,7 +420,7 @@ export function ChallengesView() {
                   size="sm"
                   onClick={() => setInspectProblemId(null)}
                 >
-                  CLOSE
+                  Close
                 </PixelButton>
 
                 <button
@@ -432,7 +432,7 @@ export function ChallengesView() {
                   className="px-3 py-1.5 border border-[var(--color-pink)] text-[var(--color-pink)] hover:bg-[var(--color-pink)]/10 font-heading text-xs cursor-pointer transition-colors flex items-center gap-1.5"
                 >
                   <DotIcon name="alarm" size={13} />
-                  <span>START TIMED CHALLENGE <DotIcon name="alarm" size={14} aria-hidden="true" /></span>
+                  <span>Start timed challenge <DotIcon name="alarm" size={14} aria-hidden="true" /></span>
                 </button>
 
                 <Link href={`/app/workspace?problem=${encodeURIComponent(activeProblemDetail.id)}`} className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] px-3 text-xs font-medium text-[var(--color-primary-foreground)] transition-colors hover:bg-[var(--color-primary-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ring)]"><DotIcon name="circlePlay" size={14} aria-hidden="true" /> Solve In Workspace</Link>

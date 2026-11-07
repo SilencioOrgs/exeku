@@ -33,13 +33,13 @@ export function StepAvatar({
       {/* Header */}
       <div>
         <div className="flex items-center gap-2 mb-2">
-          <PixelBadge variant="pink">STEP 02</PixelBadge>
-          <span className="text-xs font-mono text-[var(--color-text-muted)] uppercase tracking-wider">
-            PERSONA MATRIX
+          <PixelBadge variant="pink">Step 02</PixelBadge>
+          <span className="text-xs font-mono text-[var(--color-text-muted)]">
+            Avatar
           </span>
         </div>
-        <h2 className="font-heading text-2xl sm:text-3xl text-[var(--color-text-main)] tracking-wide">
-          SELECT YOUR AVATAR_
+        <h2 className="font-heading text-2xl sm:text-3xl text-[var(--color-text-main)]">
+          Select your avatar
         </h2>
         <p className="text-sm text-[var(--color-text-muted)] mt-1">
           Pick your retro pixel persona. Rendered 100% locally with zero external image requests.
@@ -47,19 +47,19 @@ export function StepAvatar({
       </div>
 
       {/* Active Avatar Focus Spotlight */}
-      <div className="p-4 bg-[var(--color-canvas)] border-2 border-[var(--color-border)] flex items-center gap-4">
+      <div className="p-4 bg-[var(--color-canvas)] border border-[var(--color-border)] flex items-center gap-4">
         <PixelAvatar
           avatarId={selectedMeta.id}
           size={56}
-          className="border-2 [box-shadow:var(--shadow-btn)]"
+          className="border"
         />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="font-mono text-base font-bold text-[var(--color-text-main)] tracking-wide truncate">
+            <span className="font-mono text-base font-bold text-[var(--color-text-main)] truncate">
               {selectedMeta.name}
             </span>
-            <PixelBadge variant="cyan" bracketed={false} className="text-[0.625rem] py-0 px-1.5">
-              ACTIVE
+            <PixelBadge variant="cyan" bracketed={false} className="text-xs py-0 px-1.5">
+              Active
             </PixelBadge>
           </div>
           <p className="text-xs font-mono text-[var(--color-text-muted)] mt-0.5">
@@ -86,11 +86,11 @@ export function StepAvatar({
               onClick={() => onSelectAvatar(avatar.id)}
               onKeyDown={(e) => handleKeyDown(e, avatar)}
               className={cn(
-                "group relative p-3 border-2 cursor-pointer transition-all duration-100 outline-none select-none",
+                "group relative p-3 border cursor-pointer transition-all duration-100 outline-none select-none",
                 "bg-[var(--color-surface)] hover:bg-[var(--color-elevated)] focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]",
                 isSelected
-                  ? "border-[var(--color-accent)] [box-shadow:var(--shadow-btn)]"
-                  : "border-[var(--color-border)] hover:border-[var(--color-primary)] [box-shadow:var(--shadow-btn)]"
+                  ? "border-[var(--color-accent)]"
+                  : "border-[var(--color-border)] hover:border-[var(--color-primary)]"
               )}
             >
               {isSelected && (
@@ -107,13 +107,13 @@ export function StepAvatar({
                 <div className="w-full">
                   <span
                     className={cn(
-                      "block text-xs font-mono font-bold tracking-wide truncate",
+                      "block text-xs font-mono font-bold truncate",
                       isSelected ? "text-[var(--color-accent)]" : "text-[var(--color-text-main)]"
                     )}
                   >
                     {avatar.name}
                   </span>
-                  <span className="block text-[0.625rem] font-mono text-[var(--color-text-muted)] truncate">
+                  <span className="block text-xs font-mono text-[var(--color-text-muted)] truncate">
                     {avatar.role}
                   </span>
                 </div>

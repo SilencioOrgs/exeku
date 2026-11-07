@@ -10,7 +10,7 @@ export function FAQ() {
   const faqs = [
     {
       q: "Does Exeku require internet connectivity to run?",
-      a: "No. Once cloned and dependencies installed, Exeku is engineered to run offline. All styles, fonts, and editor interfaces are bundled locally. The upcoming execution engine and grading modules will compile and evaluate code 100% on your machine without external API calls.",
+      a: "No. Once cloned and dependencies installed, Exeku is engineered to run offline. All styles, fonts and the code editor are bundled locally. Code runs in a sandbox container on your own machine, so no external API calls are needed.",
     },
     {
       q: "Do students or teachers need to create a cloud account?",
@@ -21,8 +21,8 @@ export function FAQ() {
       a: "Exeku is currently targeted specifically for Windows (Windows 10/11) to address the primary operating system used in educational computer labs and institutional workstations. Cross-platform support will be evaluated in future milestones.",
     },
     {
-      q: "When will the local code execution engine and auto-grader be released?",
-      a: "The execution engine and automated grading system are actively in development on our roadmap. The current release is a developer preview delivering the offline Next.js platform shell, Monaco editor foundation, and curriculum scaffolding.",
+      q: "How does Exeku run and grade code?",
+      a: "Code runs inside a local Piston sandbox container (port 2000) with time and memory limits, never directly on your computer. Submissions are judged against visible and hidden test cases. If the sandbox is not running, Exeku says so instead of faking results.",
     },
     {
       q: "Can schools deploy Exeku on air-gapped lab computers?",
@@ -35,15 +35,15 @@ export function FAQ() {
   };
 
   return (
-    <section id="faq" className="py-20 md:py-28 bg-[var(--color-canvas)] border-t-2 border-b-2 border-[var(--color-border)] relative">
+    <section id="faq" className="py-20 md:py-28 bg-[var(--color-canvas)] border-t border-b border-[var(--color-border)] relative">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-14">
           <div className="mb-3">
-            <PixelBadge variant="purple">KNOWLEDGE BASE</PixelBadge>
+            <PixelBadge variant="purple">Knowledge base</PixelBadge>
           </div>
           <h2
-            className="text-3xl sm:text-4xl md:text-5xl font-bold text-[var(--color-text-main)] mb-4 uppercase tracking-tight"
+            className="text-3xl sm:text-4xl md:text-5xl font-bold text-[var(--color-text-main)] mb-4 tracking-tight"
             style={{ fontFamily: "var(--font-heading-active)" }}
           >
             Frequently Asked Questions.
@@ -60,7 +60,7 @@ export function FAQ() {
             return (
               <div
                 key={idx}
-                className="border-2 border-[var(--color-border)] bg-[var(--color-surface)] transition-colors"
+                className="border border-[var(--color-border)] bg-[var(--color-surface)] transition-colors"
               >
                 <button
                   type="button"

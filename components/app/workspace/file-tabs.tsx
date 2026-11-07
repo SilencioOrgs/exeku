@@ -75,14 +75,14 @@ export function FileTabs({ language, files, activeName, mainName, saveStatus, on
   };
 
   return (
-    <div className="relative flex min-w-0 flex-1 items-center gap-1 overflow-visible">
+    <div className="relative flex min-w-28 flex-1 items-center gap-1 overflow-visible">
       <div ref={tabsRef} role="tablist" aria-label="Source files" className="flex min-w-0 items-center gap-0.5 overflow-x-auto whitespace-nowrap">
         {files.map((file, index) => (
-          <div key={file.name} className={`group inline-flex h-8 shrink-0 items-center border-b-2 ${activeName === file.name ? "border-[var(--color-accent)] bg-[var(--color-elevated)]" : "border-transparent"}`}>
+          <div key={file.name} className={`group inline-flex h-8 shrink-0 items-center rounded-md ${activeName === file.name ? "bg-[var(--color-elevated)] text-[var(--color-text-main)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]"}`}>
             {editing === file.name ? (
               <input
                 ref={inputRef}
-                className="h-7 w-28 border border-[var(--color-accent)] bg-[var(--color-canvas)] px-1.5 text-xs"
+                className="font-code h-7 w-28 rounded-md border border-[var(--color-text-main)] bg-[var(--color-surface)] px-1.5 text-xs"
                 value={draftName}
                 aria-label="Rename file"
                 onChange={(e) => { setDraftName(e.target.value); setError(null); }}
@@ -101,11 +101,11 @@ export function FileTabs({ language, files, activeName, mainName, saveStatus, on
                 onDoubleClick={() => { if (file.name !== mainName) begin(file.name); }}
                 onAuxClick={(e) => { if (e.button === 1) close(file); }}
                 onKeyDown={(e) => moveTab(e, index)}
-                className="inline-flex h-8 items-center gap-1.5 px-2 text-xs"
+                className="font-code inline-flex h-8 items-center gap-1.5 px-2 text-xs"
               >
                 <DotIcon name="file" size={14} aria-hidden="true" />
                 <span>{file.name}</span>
-                {activeName === file.name && <span aria-label={saveStatus} title={saveStatus} className={`h-1.5 w-1.5 rounded-full ${saveStatus === "SAVED" ? "bg-[var(--color-mint)]" : "bg-[var(--color-pink)]"}`} />}
+                {activeName === file.name && saveStatus !== "SAVED" && <span title="Unsaved changes" className="size-1.5 rounded-full bg-[var(--color-text-main)]"><span className="sr-only">Unsaved changes</span></span>}
               </button>
             )}
             {file.name !== mainName && editing !== file.name && (
@@ -126,17 +126,17 @@ export function FileTabs({ language, files, activeName, mainName, saveStatus, on
           value={draftName}
           aria-label="New file name"
           placeholder="new.py"
-          className="h-7 w-28 shrink-0 border border-[var(--color-accent)] bg-[var(--color-canvas)] px-1.5 text-xs"
+          className="font-code h-7 w-28 shrink-0 rounded-md border border-[var(--color-text-main)] bg-[var(--color-surface)] px-1.5 text-xs"
           onChange={(e) => { setDraftName(e.target.value); setError(null); }}
           onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") cancel(); }}
         />
       ) : (
         <button
           type="button" onClick={() => begin(null)} title="Add source file" aria-label="Add source file"
-          disabled={files.length >= 6} className="h-8 w-7 shrink-0 text-base hover:bg-[var(--color-elevated)] disabled:opacity-40"
+          disabled={files.length >= 6} className="grid size-8 shrink-0 place-items-center rounded-md text-[var(--color-text-muted)] hover:bg-[var(--color-elevated)] hover:text-[var(--color-text-main)] disabled:opacity-40"
         ><DotIcon name="circlePlus" size={14} aria-hidden="true" /></button>
       )}
-      {error && <span role="alert" title={error} className="absolute left-0 top-full z-30 mt-1 max-w-60 border border-[var(--color-pink)] bg-[var(--color-surface)] p-1 text-[10px] text-[var(--color-pink)]">{error}</span>}
+      {error && <span role="alert" title={error} className="absolute left-0 top-full z-30 mt-1 max-w-60 rounded-md border border-[var(--color-text-main)] bg-[var(--color-surface)] p-1.5 text-xs text-[var(--color-text-main)]">{error}</span>}
     </div>
   );
 }

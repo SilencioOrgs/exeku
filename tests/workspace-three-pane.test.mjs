@@ -8,7 +8,6 @@ import { getVisibleProblem } from "../lib/problems/catalog.ts";
 import {
   ALL_SUPPORTED_LANGUAGES,
   getFilenameForLanguage,
-  getMonacoLanguage,
 } from "../lib/workspace-defaults.ts";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -38,44 +37,18 @@ test("workspace-three-pane - catalog problems satisfy three-pane data contract",
   // Center Pane Data Requirements
   ALL_SUPPORTED_LANGUAGES.forEach((lang) => {
     const filename = getFilenameForLanguage(lang);
-    const monacoMode = getMonacoLanguage(lang);
     assert.ok(filename.includes("."));
-    assert.ok(monacoMode);
     assert.ok(problem.starterCodes[lang]);
   });
 });
 
-test("workspace-three-pane - globals.css contains palette overrides for all 15 palette variations", () => {
+test("workspace-three-pane - globals.css ships one black-and-white theme, no retired styles or palettes", () => {
   const css = fs.readFileSync(globalsCssPath, "utf8");
-
-  const expectedPalettes = [
-    // Pixel Arcade
-    "neon-violet",
-    "pastel-dream",
-    "mint-terminal",
-    "sunset-arcade",
-    "ocean-pixel",
-    // Clarity
-    "sapphire",
-    "lavender",
-    "forest",
-    "rose",
-    "monochrome",
-    // Command
-    "emerald-console",
-    "amber-terminal",
-    "steel-blue",
-    "graphite",
-    "crimson-control",
-  ];
-
-  expectedPalettes.forEach((palette) => {
-    const pattern = `[data-palette="${palette}"]`;
-    assert.ok(
-      css.includes(pattern),
-      `Expected globals.css to define CSS token overrides for palette: ${palette}`
-    );
-  });
+  for (const retired of ["pixel-arcade", "studio-crm", "neon-violet", "#00F0FF", "#9E00FF"]) {
+    assert.ok(!css.includes(retired), `globals.css still contains retired theme value: ${retired}`);
+  }
+  assert.match(css, /:root\[data-color-mode="dark"\]/);
+  assert.match(css, /:root\[data-contrast="high"\]\[data-color-mode="light"\]/);
 });
 
 test("workspace-three-pane - components implement responsive classes without horizontal document scroll", () => {

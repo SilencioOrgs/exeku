@@ -93,26 +93,26 @@ export async function runBrowserVerification() {
   assert.equal(docOverflow1366, false, 'Laptop 1366x768 must have zero horizontal document overflow');
 
   // 3. Demo Controls: Load Solved Example and Preview Accepted Modal
-  await page.locator('button', { hasText: 'LOAD SOLVED' }).click();
-  await page.locator('button', { hasText: 'PREVIEW ACCEPTED' }).click();
+  await page.locator('button', { hasText: 'Load correct code' }).click();
+  await page.locator('button', { hasText: 'Preview accepted' }).click();
   await page.waitForSelector('[role="dialog"]');
   await page.screenshot({ path: path.join(outputDir, '03-modal-simulated-accepted.png') });
-  await page.locator('button', { hasText: 'CONTINUE CODING' }).click();
+  await page.locator('button', { hasText: 'Keep coding' }).click();
   await page.waitForSelector('[role="dialog"]', { state: 'detached' });
 
   // 4. Demo Controls: Load Incorrect Example and Preview Wrong Answer Modal
-  await page.locator('button', { hasText: 'LOAD INCORRECT' }).click();
-  await page.locator('button', { hasText: 'PREVIEW WRONG ANSWER' }).click();
+  await page.locator('button', { hasText: 'Load wrong code' }).click();
+  await page.locator('button', { hasText: 'Preview wrong answer' }).click();
   await page.waitForSelector('[role="dialog"]');
   await page.screenshot({ path: path.join(outputDir, '04-modal-simulated-wrong-answer.png') });
-  await page.locator('button', { hasText: 'KEEP WORKING' }).click();
+  await page.locator('button', { hasText: 'Keep coding' }).click();
   await page.waitForSelector('[role="dialog"]', { state: 'detached' });
 
   // 5. Submit Confirmation Dialog
   await page.getByRole('button', { name: 'Submit solution' }).click();
   await page.waitForSelector('[role="dialog"]');
   await page.screenshot({ path: path.join(outputDir, '05-modal-submit-confirmation.png') });
-  await page.locator('button', { hasText: 'CANCEL' }).click();
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
   await page.waitForSelector('[role="dialog"]', { state: 'detached' });
 
   // 6. Timed Challenge Mode
@@ -121,22 +121,22 @@ export async function runBrowserVerification() {
   await page.screenshot({ path: path.join(outputDir, '06-challenges-catalog-timed-options.png') });
 
   // Start timed challenge
-  await page.getByRole('button', { name: 'TIMED', exact: true }).first().click();
+  await page.getByRole('button', { name: 'Timed', exact: true }).first().click();
   await page.waitForSelector('.workspace-view');
   await page.screenshot({ path: path.join(outputDir, '07-workspace-timed-challenge-active.png') });
 
-  // 7. Mobile Viewport 390px (Switcher tabs: Problem, Code, Results)
+  // 7. Mobile Viewport 390px (Switcher tabs: Problem, Code, Output)
   await page.setViewportSize({ width: 390, height: 844 });
   // Problem tab
-  await page.locator('.xl\\:hidden button', { hasText: 'PROBLEM' }).click();
+  await page.locator('.xl\\:hidden button', { hasText: 'Problem' }).click();
   await page.screenshot({ path: path.join(outputDir, '08-mobile-390-problem-tab.png') });
 
   // Code tab
-  await page.locator('.xl\\:hidden button', { hasText: 'CODE' }).click();
+  await page.locator('.xl\\:hidden button', { hasText: 'Code' }).click();
   await page.screenshot({ path: path.join(outputDir, '09-mobile-390-code-tab.png') });
 
   // Results tab
-  await page.locator('.xl\\:hidden button', { hasText: 'RESULTS' }).click();
+  await page.locator('.xl\\:hidden button', { hasText: 'Output' }).click();
   await page.screenshot({ path: path.join(outputDir, '10-mobile-390-results-tab.png') });
 
   // 8. Appearance Studio & Palettes

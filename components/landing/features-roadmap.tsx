@@ -13,23 +13,23 @@ export function FeaturesRoadmap() {
   }> = [
     {
       title: "Next.js 16 Offline Web Shell",
-      status: "CURRENT FOUNDATION",
+      status: "Available now",
       statusVariant: "mint",
       iconName: "next",
       description:
         "High-performance local web application built on Next.js 16 App Router and React 19. Designed to run locally on Windows machines with zero network roundtrips.",
     },
     {
-      title: "Monaco Editor Integration",
-      status: "CURRENT FOUNDATION",
+      title: "Built-in Code Editor",
+      status: "Available now",
       statusVariant: "mint",
       iconName: "vscode",
       description:
-        "Professional desktop-grade code editor with syntax highlighting, indentation guides, and keyboard navigation packaged completely inside local bundles.",
+        "A fast plain-text editor with line numbers, Tab indentation, auto-indent and keyboard shortcuts. Nothing is downloaded from a CDN.",
     },
     {
       title: "Retro Pixel UI System",
-      status: "CURRENT FOUNDATION",
+      status: "Available now",
       statusVariant: "mint",
       iconName: "stars",
       description:
@@ -37,7 +37,7 @@ export function FeaturesRoadmap() {
     },
     {
       title: "Zero Runtime CDN Dependencies",
-      status: "CURRENT FOUNDATION",
+      status: "Available now",
       statusVariant: "mint",
       iconName: "shield",
       description:
@@ -54,7 +54,7 @@ export function FeaturesRoadmap() {
   }> = [
     {
       title: "Local Execution Engine",
-      status: "PLANNED ROADMAP",
+      status: "Planned",
       statusVariant: "pink",
       iconName: "cog",
       description:
@@ -62,7 +62,7 @@ export function FeaturesRoadmap() {
     },
     {
       title: "Automated On-Device Grading",
-      status: "PLANNED ROADMAP",
+      status: "Planned",
       statusVariant: "pink",
       iconName: "circleCheck",
       description:
@@ -70,7 +70,7 @@ export function FeaturesRoadmap() {
     },
     {
       title: "Offline AI Learning Assistant",
-      status: "PLANNED ROADMAP",
+      status: "Planned",
       statusVariant: "pink",
       iconName: "ai",
       description:
@@ -78,7 +78,7 @@ export function FeaturesRoadmap() {
     },
     {
       title: "Local Profiles & Progress Tracking",
-      status: "PLANNED ROADMAP",
+      status: "Planned",
       statusVariant: "pink",
       iconName: "database",
       description:
@@ -87,15 +87,15 @@ export function FeaturesRoadmap() {
   ];
 
   return (
-    <section id="features" className="py-20 md:py-28 bg-[var(--color-canvas)] border-t-2 border-b-2 border-[var(--color-border)] relative">
+    <section id="features" className="py-20 md:py-28 bg-[var(--color-canvas)] border-t border-b border-[var(--color-border)] relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="max-w-3xl mb-14">
           <div className="mb-3">
-            <PixelBadge variant="pink">ARCHITECTURE & ROADMAP</PixelBadge>
+            <PixelBadge variant="pink">Architecture & roadmap</PixelBadge>
           </div>
           <h2
-            className="text-3xl sm:text-4xl md:text-5xl font-bold text-[var(--color-text-main)] mb-6 uppercase tracking-tight"
+            className="text-3xl sm:text-4xl md:text-5xl font-bold text-[var(--color-text-main)] mb-6 tracking-tight"
             style={{ fontFamily: "var(--font-heading-active)" }}
           >
             Honest Architecture.
@@ -111,15 +111,15 @@ export function FeaturesRoadmap() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Column 1: Current Foundation */}
           <div className="appearance-stack space-y-6">
-            <div className="flex items-center gap-2 pb-3 border-b-2 border-[var(--color-mint)]/40">
+            <div className="flex items-center gap-2 pb-3 border-b border-[var(--color-mint)]/40">
               <span className="w-2.5 h-2.5 bg-[var(--color-mint)] inline-block" />
               <h3
-                className="text-xl sm:text-2xl font-bold text-[var(--color-text-main)] tracking-wider"
+                className="text-xl sm:text-2xl font-bold text-[var(--color-text-main)]"
                 style={{ fontFamily: "var(--font-heading-active)" }}
               >
                 Current Foundation
               </h3>
-              <PixelBadge variant="mint" className="ml-auto">AVAILABLE NOW</PixelBadge>
+              <PixelBadge variant="mint" className="ml-auto">Available now</PixelBadge>
             </div>
 
             <div className="space-y-4">
@@ -128,14 +128,14 @@ export function FeaturesRoadmap() {
                   key={item.title}
                   variant="default"
                   cornerMarks={false}
-                  className="p-5 bg-[var(--color-surface)] border-2 border-[var(--color-border)] hover:border-[var(--color-mint)]/50 transition-colors"
+                  className="p-5 bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-mint)]/50 transition-colors"
                 >
                   <div className="flex items-start gap-3">
                     <div className="p-2 bg-[var(--color-elevated)] border border-[var(--color-border)] text-[var(--color-mint)] shrink-0 mt-0.5">
                       <DotIcon name={item.iconName} size={18} className="text-[var(--color-mint)]" />
                     </div>
                     <div>
-                      <h4 className="text-base font-bold text-[var(--color-text-main)] font-mono tracking-wide mb-1">
+                      <h4 className="text-base font-bold text-[var(--color-text-main)] font-mono mb-1">
                         {item.title}
                       </h4>
                       <p className="text-xs sm:text-sm text-[var(--color-text-muted)] leading-relaxed">
@@ -150,15 +150,15 @@ export function FeaturesRoadmap() {
 
           {/* Column 2: Development Roadmap */}
           <div className="appearance-stack space-y-6">
-            <div className="flex items-center gap-2 pb-3 border-b-2 border-[var(--color-pink)]/40">
+            <div className="flex items-center gap-2 pb-3 border-b border-[var(--color-pink)]/40">
               <span className="w-2.5 h-2.5 bg-[var(--color-pink)] inline-block" />
               <h3
-                className="text-xl sm:text-2xl font-bold text-[var(--color-text-main)] tracking-wider"
+                className="text-xl sm:text-2xl font-bold text-[var(--color-text-main)]"
                 style={{ fontFamily: "var(--font-heading-active)" }}
               >
                 Development Roadmap
               </h3>
-              <PixelBadge variant="pink" className="ml-auto">IN DEVELOPMENT</PixelBadge>
+              <PixelBadge variant="pink" className="ml-auto">In development</PixelBadge>
             </div>
 
             <div className="space-y-4">
@@ -167,7 +167,7 @@ export function FeaturesRoadmap() {
                   key={item.title}
                   variant="default"
                   cornerMarks={false}
-                  className="p-5 bg-[var(--color-surface)] border-2 border-[var(--color-border)] hover:border-[var(--color-pink)]/50 transition-colors"
+                  className="p-5 bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-pink)]/50 transition-colors"
                 >
                   <div className="flex items-start gap-3">
                     <div className="p-2 bg-[var(--color-elevated)] border border-[var(--color-border)] text-[var(--color-pink)] shrink-0 mt-0.5">
@@ -175,10 +175,10 @@ export function FeaturesRoadmap() {
                     </div>
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <h4 className="text-base font-bold text-[var(--color-text-main)] font-mono tracking-wide">
+                        <h4 className="text-base font-bold text-[var(--color-text-main)] font-mono">
                           {item.title}
                         </h4>
-                        <span className="text-[0.625rem] font-mono px-1.5 py-0.2 bg-[var(--color-elevated)] text-[var(--color-pink)] border border-[var(--color-pink)]/40 flex items-center gap-1">
+                        <span className="text-xs font-mono px-1.5 py-0.2 bg-[var(--color-elevated)] text-[var(--color-pink)] border border-[var(--color-pink)]/40 flex items-center gap-1">
                           <DotIcon name="alarm" className="w-2.5 h-2.5" /> Planned
                         </span>
                       </div>
