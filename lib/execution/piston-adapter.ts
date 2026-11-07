@@ -20,6 +20,8 @@ export interface PistonPayload {
   args?: string[];
   compile_timeout?: number;
   run_timeout?: number;
+  /** Bytes. Piston's default is -1, meaning no limit. */
+  run_memory_limit?: number;
 }
 
 export interface PistonExecutionResponse {
@@ -78,6 +80,9 @@ export class PistonAdapter implements IExecutionAdapter {
       args: [],
       compile_timeout: 10000,
       run_timeout: timeLimit,
+      // shortcut: Java runs without a memory cap because Piston limits address space and the JVM
+      // reserves far more than its heap; upgrade by launching java with -Xmx through a runner script.
+      ...(request.language === "java" ? {} : { run_memory_limit: (request.memoryLimitKb || 128000) * 1024 }),
     };
   }
 
@@ -85,19 +90,23 @@ export class PistonAdapter implements IExecutionAdapter {
     data: PistonExecutionResponse,
     durationMs: number
   ): ExecutionResult {
-    // 1. Check for compilation errors
-    if (data.compile && data.compile.code !== 0 && data.compile.code !== null) {
+    // 1. Check for compilation errors. A killed compiler has code null and Piston skips the run stage.
+    if (data.compile && data.compile.code !== 0) {
+      const killed = data.compile.code === null;
       return {
         status: "COMPILATION_ERROR",
         exitCode: data.compile.code,
         stdout: data.compile.stdout || "",
         stderr: data.compile.stderr || "",
-        compilerOutput: data.compile.output || data.compile.stderr || "",
+        compilerOutput: data.compile.output || data.compile.stderr || (killed ? `Compilation was stopped (${data.compile.signal ?? "timeout"}).` : ""),
         durationMs,
       };
     }
 
     const run = data.run;
+    if (!run) {
+      return { status: "INTERNAL_ERROR", exitCode: null, stdout: "", stderr: "The sandbox returned no run result.", durationMs, error: data.message };
+    }
 
     // 2. Check for timeout (SIGKILL or explicit timeout message)
     if (
@@ -142,12 +151,12 @@ export class PistonAdapter implements IExecutionAdapter {
     const payload = this.buildPistonPayload(request);
     const startTime = Date.now();
 
+    const controller = new AbortController();
+    const clientTimeout = setTimeout(
+      () => controller.abort(),
+      (request.timeLimitMs || 3000) + 5000
+    );
     try {
-      const controller = new AbortController();
-      const clientTimeout = setTimeout(
-        () => controller.abort(),
-        (request.timeLimitMs || 3000) + 5000
-      );
 
       const res = await fetch(`${this.baseUrl}/api/v2/execute`, {
         method: "POST",
@@ -155,8 +164,6 @@ export class PistonAdapter implements IExecutionAdapter {
         body: JSON.stringify(payload),
         signal: controller.signal,
       });
-
-      clearTimeout(clientTimeout);
 
       if (!res.ok) {
         const text = await res.text();
@@ -195,6 +202,8 @@ export class PistonAdapter implements IExecutionAdapter {
         durationMs: duration,
         error: message,
       };
+    } finally {
+      clearTimeout(clientTimeout);
     }
   }
 

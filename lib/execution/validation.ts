@@ -11,6 +11,8 @@ export const MIN_TIME_LIMIT_MS = 500;
 export const MAX_TIME_LIMIT_MS = 10000;
 export const DEFAULT_TIME_LIMIT_MS = 3000;
 export const DEFAULT_MEMORY_LIMIT_KB = 128000;
+export const MIN_MEMORY_LIMIT_KB = 16000;
+export const MAX_MEMORY_LIMIT_KB = 256000;
 
 export type ValidationResult =
   | { valid: true; request: ExecutionRequest }
@@ -107,7 +109,7 @@ export function validateExecutionRequest(input: unknown): ValidationResult {
 
   let memoryLimitKb = DEFAULT_MEMORY_LIMIT_KB;
   if (typeof raw.memoryLimitKb === "number" && !isNaN(raw.memoryLimitKb)) {
-    memoryLimitKb = Math.max(16000, Math.floor(raw.memoryLimitKb));
+    memoryLimitKb = Math.min(Math.max(Math.floor(raw.memoryLimitKb), MIN_MEMORY_LIMIT_KB), MAX_MEMORY_LIMIT_KB);
   }
 
   return {

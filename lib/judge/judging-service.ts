@@ -136,6 +136,22 @@ export class JudgingService {
         };
       }
 
+      // Any other non-verdict status (sandbox HTTP error, unknown state) is the judge's failure,
+      // never the student's wrong answer.
+      if (!["SUCCESS", "COMPILATION_ERROR", "TIME_LIMIT_EXCEEDED", "RUNTIME_ERROR"].includes(execResult.status)) {
+        return {
+          problemId,
+          language: submission.language,
+          overallVerdict: "INTERNAL_JUDGE_ERROR",
+          passedTests: 0,
+          totalTests: problem.testCases.length,
+          scorePercentage: 0,
+          maxDurationMs,
+          testResults: [],
+          error: execResult.error || "The sandbox returned an unexpected error. Nothing was judged.",
+        };
+      }
+
       // Handle compilation error -> short circuit remaining tests
       if (execResult.status === "COMPILATION_ERROR") {
         compilationError = execResult.compilerOutput || execResult.stderr;
@@ -162,8 +178,8 @@ export class JudgingService {
           passed: false,
           verdict: "TIME_LIMIT_EXCEEDED",
           durationMs: execResult.durationMs,
-          stderr: execResult.stderr,
-          // Redaction: only expose inputs on visible test cases
+          // Redaction: hidden tests expose nothing a program could have printed, stderr included.
+          stderr: testCase.isHidden ? undefined : execResult.stderr,
           input: testCase.isHidden ? undefined : testCase.input,
           expectedOutput: testCase.isHidden ? undefined : testCase.expectedOutput,
           actualOutput: testCase.isHidden ? undefined : execResult.stdout,
@@ -180,7 +196,7 @@ export class JudgingService {
           passed: false,
           verdict: "RUNTIME_ERROR",
           durationMs: execResult.durationMs,
-          stderr: execResult.stderr,
+          stderr: testCase.isHidden ? undefined : execResult.stderr,
           input: testCase.isHidden ? undefined : testCase.input,
           expectedOutput: testCase.isHidden ? undefined : testCase.expectedOutput,
           actualOutput: testCase.isHidden ? undefined : execResult.stdout,
