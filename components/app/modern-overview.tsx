@@ -8,7 +8,7 @@ import { ProfileEditDialog } from "./profile-edit-dialog";
 import { CodingActivity } from "./coding-activity";
 import { DifficultyBadge } from "./difficulty-badge";
 import { tokenize } from "@/lib/syntax";
-import { BreadboardScene } from "@/components/lab/breadboard-scene";
+import { CircuitView } from "@/components/lab/circuit-view";
 import type { ProblemSummary } from "@/types/problem";
 import { getFilenameForLanguage, getStarterCode } from "@/lib/workspace-defaults";
 import type { LocalProfile, ProfileInput } from "@/types/profile";
@@ -70,8 +70,8 @@ export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfil
             <h2 className="text-lg font-semibold">Hardware Lab</h2>
             <span className="rounded-full bg-[var(--color-surface)] px-2 py-0.5 text-xs font-medium text-[var(--color-text-muted)]">Preview</span>
           </div>
-          <Link href="/app/lab" aria-label="Open the breadboard simulator" className="block rounded-xl bg-[var(--color-surface)] p-2 shadow-[var(--shadow-inset)]">
-            <BreadboardScene ledOn className="h-auto w-full" />
+          <Link href="/app/lab" aria-label="Open the breadboard simulator" className="bg-grid block overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-canvas)]">
+            <CircuitView ledOn interactive={false} view={[70, 85, 110]} className="pointer-events-none h-44" label="Arduino Uno and breadboard with a lit red LED" />
           </Link>
           <p className="text-sm text-[var(--color-text-muted)]">Blink an LED on a virtual Arduino, then preview a 3D-printable case for it.</p>
           <Link href="/app/lab" className={buttonVariants({ className: "w-full" })}><DotIcon name="play" size={15} aria-hidden="true" />Click to simulate</Link>
@@ -101,15 +101,15 @@ export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfil
           <svg viewBox="0 0 200 140" className="mx-auto h-32 w-auto" aria-hidden="true">
             {/* Isometric enclosure with its lid lifted. */}
             <g transform="translate(0 20)">
-            <path d="M40 70 L100 100 L160 70 L100 40 Z" fill="#ffd9c2" stroke="#d9a07c" />
-            <path d="M40 70 L40 88 L100 118 L100 100 Z" fill="#f2b08e" stroke="#d9a07c" />
-            <path d="M160 70 L160 88 L100 118 L100 100 Z" fill="#e89b76" stroke="#d9a07c" />
-            <path d="M62 70 L100 89 L138 70 L100 51 Z" fill="#2f9ea3" opacity="0.85" />
-            <circle cx="118" cy="66" r="4" fill="#ff5a4f" />
+            <path d="M40 70 L100 100 L160 70 L100 40 Z" fill="#ff9a2e" stroke="#7a3c00" />
+            <path d="M40 70 L40 88 L100 118 L100 100 Z" fill="#e07a10" stroke="#7a3c00" />
+            <path d="M160 70 L160 88 L100 118 L100 100 Z" fill="#b85d05" stroke="#7a3c00" />
+            <path d="M62 70 L100 89 L138 70 L100 51 Z" fill="#00818a" opacity="0.95" />
+            <circle cx="118" cy="66" r="4" fill="#ff3b30" />
             </g>
-            <path d="M40 34 L100 64 L160 34 L100 4 Z" fill="#ffe8d6" stroke="#d9a07c" opacity="0.9" />
-            <path d="M40 34 L40 40 L100 70 L100 64 Z" fill="#f2b08e" stroke="#d9a07c" />
-            <path d="M160 34 L160 40 L100 70 L100 64 Z" fill="#e89b76" stroke="#d9a07c" />
+            <path d="M40 34 L100 64 L160 34 L100 4 Z" fill="#2a2a2a" stroke="#ffa116" opacity="0.75" />
+            <path d="M40 34 L40 40 L100 70 L100 64 Z" fill="#e07a10" stroke="#7a3c00" />
+            <path d="M160 34 L160 40 L100 70 L100 64 Z" fill="#b85d05" stroke="#7a3c00" />
           </svg>
           <Link href="/app/lab#chassis" className={buttonVariants({ variant: "outline", className: "w-full" })}><DotIcon name="box" size={15} aria-hidden="true" />Open 3D chassis</Link>
         </section>

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DotIcon } from "@/components/retro/dot-icon";
 import { CodeEditor } from "@/components/app/code-editor";
-import { BreadboardScene } from "./breadboard-scene";
+import { CircuitView } from "./circuit-view";
 import { BLINK_SKETCH, parseSketch } from "@/lib/lab/blink";
 
 const WIRED_PIN = 13;
@@ -70,8 +70,8 @@ export function BreadboardSim() {
       </div>
 
       <div className="space-y-3">
-        <div className="skeuo-card tile-sky relative overflow-hidden rounded-xl border border-[var(--color-border)] p-3">
-          <BreadboardScene ledOn={ledOn} className="h-auto w-full" />
+        <div className="skeuo-card bg-grid relative overflow-hidden rounded-xl border border-[var(--color-border)]">
+          <CircuitView ledOn={ledOn} view={[80, 95, 120]} className="h-72 sm:h-80" label={`Arduino Uno wired to a breadboard: pin 13, a 220 ohm resistor and a red LED, which is ${ledOn ? "on" : "off"}. Drag to rotate.`} />
           <span className="absolute top-3 right-3 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-0.5 text-xs font-medium" aria-live="polite">
             {running ? (ledOn ? "LED on" : "LED off") : "Stopped"}
           </span>
