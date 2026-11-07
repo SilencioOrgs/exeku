@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { DotIcon } from "@/components/retro/dot-icon";
 import { VerdictBadge } from "./verdict-badge";
 import type { ExecutionResult } from "@/types/execution";
@@ -111,7 +112,7 @@ export function ResultsPane({
           <div className="flex h-full flex-col gap-2">
             <div className="flex shrink-0 items-center justify-between text-xs text-[var(--color-text-muted)]">
               <label htmlFor="workspace-stdin">Standard input for Run</label>
-              <button type="button" onClick={() => onCustomStdinChange("")} className="underline underline-offset-2 hover:text-[var(--color-text-main)]">Clear</button>
+              <Button type="button" variant="ghost" size="xs" onClick={() => onCustomStdinChange("")}>Clear</Button>
             </div>
             <textarea
               id="workspace-stdin"

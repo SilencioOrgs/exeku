@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { DotIcon } from "@/components/retro/dot-icon";
 
 import React, { useState } from "react";
@@ -60,14 +61,9 @@ export function ProfileResetDialog({
               Reset local profile
             </h3>
           </div>
-          <button
-            onClick={onClose}
-            disabled={isDeleting}
-            aria-label="Close dialog"
-            className="text-[var(--color-text-muted)] hover:text-[var(--color-pink)] font-mono text-sm px-2 py-1 transition-colors"
-          >
-            <DotIcon name="close" size={14} aria-hidden="true" />
-          </button>
+          <Button type="button" variant="ghost" size="icon-sm" onClick={onClose} disabled={isDeleting} aria-label="Close dialog">
+            <DotIcon name="close" size={15} aria-hidden="true" />
+          </Button>
         </div>
 
         {error && (

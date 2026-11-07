@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { PixelBadge } from "@/components/retro/pixel-badge";
 import { DotIcon } from "@/components/retro/dot-icon";
 import { cn } from "@/lib/utils";
 
@@ -31,12 +30,6 @@ export function StepIdentity({
     <div className="appearance-stack space-y-6">
       {/* Header */}
       <div>
-        <div className="flex items-center gap-2 mb-2">
-          <PixelBadge variant="cyan">Step 01</PixelBadge>
-          <span className="text-xs font-mono text-[var(--color-text-muted)]">
-            Local identity
-          </span>
-        </div>
         <h2 className="font-heading text-2xl sm:text-3xl text-[var(--color-text-main)]">
           Welcome to Exeku
         </h2>
@@ -133,18 +126,9 @@ export function StepIdentity({
         />
       </div>
 
-      {/* Offline Assurance Callout */}
-      <div className="flex items-start gap-3 p-3.5 bg-[var(--color-canvas)] border border-[var(--color-border)] text-[var(--color-text-muted)]">
-        <DotIcon name="shield" size={18} className="text-[var(--color-primary-text)] mt-0.5" />
-        <div className="text-xs font-mono space-y-0.5">
-          <span className="text-[var(--color-primary-text)] font-bold block">
-            100% Offline persistence
-          </span>
-          <p className="text-[var(--color-text-dim)]">
-            Profile data is written strictly into local IndexedDB on this machine. Never sent to any cloud server or telemetry endpoint.
-          </p>
-        </div>
-      </div>
+      <p className="flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
+        <DotIcon name="shield" size={14} aria-hidden="true" />Your profile is saved in this browser only.
+      </p>
     </div>
   );
 }

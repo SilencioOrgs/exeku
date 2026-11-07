@@ -63,19 +63,6 @@ export function SettingsView() {
     );
   }
 
-  const levelNum =
-    profile.experienceLevel === "beginner"
-      ? "1"
-      : profile.experienceLevel === "intermediate"
-      ? "2"
-      : "3";
-
-  const levelBadgeVariant =
-    profile.experienceLevel === "beginner"
-      ? "mint"
-      : profile.experienceLevel === "intermediate"
-      ? "cyan"
-      : "pink";
 
   const createdDate = new Date(profile.createdAt).toLocaleDateString(undefined, {
     year: "numeric",
@@ -95,11 +82,6 @@ export function SettingsView() {
             Customize your workspace and manage your profile.
           </p>
         </div>
-        <div className="settings-technical-badge flex items-center gap-2">
-          <PixelBadge variant="purple" bracketed>
-            LOCAL PARTITION: exeku_local_v1
-          </PixelBadge>
-        </div>
       </div>
 
       <AppearanceStudio />
@@ -114,16 +96,14 @@ export function SettingsView() {
             <PixelAvatar
               avatarId={profile.avatarId}
               size={56}
-              className="border border-[var(--color-accent)] shadow-[2px_2px_0px_#000000] shrink-0"
+              className="shrink-0"
             />
             <div className="min-w-0 space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-heading text-xl text-foreground [overflow-wrap:anywhere]">
                   <StyleText arcade={<>{profile.displayName.toUpperCase()}</>} clarity={profile.displayName} />
                 </span>
-                <PixelBadge variant={levelBadgeVariant} bracketed>
-                  Level {levelNum} · <span className="capitalize">{profile.experienceLevel}</span>
-                </PixelBadge>
+                <PixelBadge><span className="capitalize">{profile.experienceLevel}</span></PixelBadge>
               </div>
               {profile.bio ? (
                 <p className="text-xs text-[var(--color-text-muted)] max-w-lg">
@@ -137,20 +117,15 @@ export function SettingsView() {
             </div>
           </div>
 
-          <PixelButton
-            variant="cyan"
-            size="sm"
-            onClick={() => setIsEditOpen(true)}
-            className="w-full sm:w-auto"
-          >
-            Edit profile <span className="arcade-copy"><DotIcon name="pencil" size={14} aria-hidden="true" /></span>
+          <PixelButton variant="secondary" onClick={() => setIsEditOpen(true)} className="w-full sm:w-auto">
+            <DotIcon name="pencil" size={15} aria-hidden="true" />Edit profile
           </PixelButton>
         </div>
 
         {/* Profile Properties Details */}
         <div className="pt-3 border-t border-[var(--color-border)] grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono text-xs">
-          <div className="p-2.5 bg-[var(--color-canvas)] border border-[var(--color-border)] space-y-1">
-            <span className="text-[var(--color-text-dim)] text-xs">Preferred Track</span>
+          <div className="space-y-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-canvas)] p-2.5">
+            <span className="text-[var(--color-text-dim)] text-xs">Preferred language</span>
             <div className="flex items-center gap-2 text-foreground">
               <DotIcon
                 name={LANGUAGE_ICONS[profile.preferredLanguage]}
@@ -161,15 +136,15 @@ export function SettingsView() {
             </div>
           </div>
 
-          <div className="p-2.5 bg-[var(--color-canvas)] border border-[var(--color-border)] space-y-1">
-            <span className="text-[var(--color-text-dim)] text-xs">Experience Level</span>
+          <div className="space-y-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-canvas)] p-2.5">
+            <span className="text-[var(--color-text-dim)] text-xs">Experience level</span>
             <div className="text-[var(--color-primary-text)]">
               {profile.experienceLevel}
             </div>
           </div>
 
-          <div className="p-2.5 bg-[var(--color-canvas)] border border-[var(--color-border)] space-y-1">
-            <span className="text-[var(--color-text-dim)] text-xs">Profile UUID</span>
+          <div className="space-y-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-canvas)] p-2.5">
+            <span className="text-[var(--color-text-dim)] text-xs">Profile ID</span>
             <div className="text-[var(--color-text-muted)] truncate" title={profile.id}>
               {profile.id}
             </div>

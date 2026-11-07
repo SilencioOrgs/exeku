@@ -9,7 +9,6 @@ import { DEFAULT_AVATAR_ID } from "@/lib/avatars";
 import type { ExperienceLevel, PreferredLanguage } from "@/types/profile";
 import { PixelCard } from "@/components/retro/pixel-card";
 import { PixelButton } from "@/components/retro/pixel-button";
-import { PixelBadge } from "@/components/retro/pixel-badge";
 import { DotIcon } from "@/components/retro/dot-icon";
 import { StepIdentity } from "./step-identity";
 import { StepAvatar } from "./step-avatar";
@@ -97,9 +96,6 @@ export function OnboardingWizard() {
             </span>
           </Link>
 
-          <PixelBadge variant="muted" bracketed>
-            Offline profile V1
-          </PixelBadge>
         </div>
 
         {/* Existing Profile Warning Banner */}

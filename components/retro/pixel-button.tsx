@@ -1,35 +1,23 @@
-import React from "react";
-import { cn } from "@/lib/utils";
+import Link from "next/link";
+import type { ComponentProps } from "react";
+import { Button, buttonVariants } from "@/components/ui/button";
 
-/** Backwards-compatible wrapper, now styled as a neutral shadcn-style button. */
-export interface PixelButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+/**
+ * Legacy name kept so older screens keep compiling. It renders the shadcn Button, so every
+ * button in the app looks and behaves the same. Prefer `Button` / `buttonVariants` in new code.
+ */
+export interface PixelButtonProps extends Omit<ComponentProps<typeof Button>, "variant" | "size"> {
   variant?: "primary" | "secondary" | "cyan" | "pink" | "ghost";
   size?: "xs" | "icon" | "sm" | "md" | "lg";
   href?: string;
 }
 
-export const PixelButton = React.forwardRef<HTMLButtonElement, PixelButtonProps>(
-  ({ children, variant = "primary", size = "md", className, href, onClick, ...props }, ref) => {
-    const sizes = {
-      xs: "h-8 min-h-8 gap-1.5 px-2.5 text-xs",
-      icon: "h-8 w-8 min-h-8 p-0",
-      sm: "h-9 min-h-9 gap-1.5 px-3 text-xs",
-      md: "h-10 min-h-10 gap-2 px-4 text-sm",
-      lg: "h-11 min-h-11 gap-2 px-5 text-sm",
-    };
-    const variants = {
-      primary: "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-primary-foreground)] hover:bg-[var(--color-primary-hover)]",
-      cyan: "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-primary-foreground)] hover:bg-[var(--color-primary-hover)]",
-      secondary: "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-main)] hover:bg-[var(--color-elevated)]",
-      ghost: "border-transparent bg-transparent text-[var(--color-text-muted)] hover:bg-[var(--color-elevated)] hover:text-[var(--color-text-main)]",
-      pink: "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-primary-foreground)] hover:bg-[var(--color-primary-hover)]",
-    };
-    const styles = cn(
-      "appearance-button inline-flex shrink-0 cursor-pointer items-center justify-center whitespace-nowrap rounded-lg border font-medium normal-case shadow-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ring)] disabled:pointer-events-none disabled:opacity-50",
-      sizes[size], variants[variant], variant === "ghost" ? "is-ghost" : variant === "secondary" ? "" : "is-primary", className,
-    );
-    if (href) return <a href={href} className={styles}>{children}</a>;
-    return <button ref={ref} className={styles} onClick={onClick} {...props}>{children}</button>;
+const VARIANT = { primary: "default", cyan: "default", pink: "default", secondary: "outline", ghost: "ghost" } as const;
+const SIZE = { xs: "xs", icon: "icon", sm: "sm", md: "default", lg: "lg" } as const;
+
+export function PixelButton({ variant = "primary", size = "md", href, className, children, ...props }: PixelButtonProps) {
+  if (href) {
+    return <Link href={href} className={buttonVariants({ variant: VARIANT[variant], size: SIZE[size], className: typeof className === "string" ? className : undefined })}>{children}</Link>;
   }
-);
-PixelButton.displayName = "PixelButton";
+  return <Button variant={VARIANT[variant]} size={SIZE[size]} className={className} {...props}>{children}</Button>;
+}

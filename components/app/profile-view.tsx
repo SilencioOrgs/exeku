@@ -1,5 +1,6 @@
 "use client";
 
+import { Button, buttonVariants } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useProfile } from "@/hooks/use-profile";
@@ -32,10 +33,10 @@ export function ProfileView() {
   return (
     <div className="profile-view mx-auto w-full max-w-6xl space-y-6 p-4 sm:p-6 lg:p-8">
       <header className="flex flex-wrap items-center justify-between gap-3">
-        <div><p className="text-xs font-medium text-[var(--color-text-muted)]">Personal workspace</p><h1 className="font-heading text-2xl font-semibold tracking-tight sm:text-3xl">Profile</h1></div>
-        <button type="button" onClick={() => setEditing(true)} className="profile-action">
-          <DotIcon name="cog" size={16} aria-hidden="true" /> Edit profile
-        </button>
+        <div><h1 className="font-heading text-2xl font-semibold tracking-tight sm:text-3xl">Profile</h1></div>
+        <Button type="button" variant="outline" onClick={() => setEditing(true)}>
+          <DotIcon name="pencil" size={15} aria-hidden="true" />Edit profile
+        </Button>
       </header>
       <section aria-label="Your profile" className="profile-panel flex flex-wrap items-center gap-4 p-5 sm:gap-6 sm:p-6">
         <PixelAvatar avatarId={profile.avatarId} size={72} className="shrink-0" />
@@ -44,8 +45,8 @@ export function ProfileView() {
           <p className="text-sm text-[var(--color-text-muted)]">{profile.bio || "Your personal coding workspace"}</p>
           <p className="text-xs text-[var(--color-text-muted)]">Coding locally since {joined}</p>
         </div>
-        <Link href="/app/settings" className="profile-action">
-          <DotIcon name="cog" size={16} aria-hidden="true" /> Appearance
+        <Link href="/app/settings" className={buttonVariants({ variant: "outline" })}>
+          <DotIcon name="cog" size={15} aria-hidden="true" />Appearance
         </Link>
       </section>
       <div className="grid gap-3 sm:grid-cols-2">
@@ -57,13 +58,13 @@ export function ProfileView() {
         <div className="profile-panel p-4 sm:p-5">
           <p className="text-xs text-[var(--color-text-muted)]">Saved workspace drafts</p>
           <p className="mt-2 text-lg font-semibold">{draftCount === null ? "Unavailable" : draftCount}</p>
-          <Link href="/app/workspace" className="mt-1 inline-flex items-center gap-1 text-sm underline underline-offset-4"><DotIcon name="arrowRight" size={14} aria-hidden="true" /> Open editor</Link>
+          <Link href="/app/workspace" className={buttonVariants({ variant: "outline", size: "sm", className: "mt-2" })}>Open editor</Link>
         </div>
       </div>
       <CodingActivity profileId={profile.id} />
       <div className="flex flex-wrap items-center gap-2">
-        <Link className="profile-action" href="/app/challenges"><DotIcon name="list" size={16} aria-hidden="true" /> Browse problems</Link>
-        <Link className="profile-action" href="/app/workspace"><DotIcon name="vscode" size={16} aria-hidden="true" /> Continue coding</Link>
+        <Link className={buttonVariants()} href="/app/challenges"><DotIcon name="list" size={15} aria-hidden="true" />Browse problems</Link>
+        <Link className={buttonVariants({ variant: "outline" })} href="/app/workspace"><DotIcon name="vscode" size={15} aria-hidden="true" />Continue coding</Link>
       </div>
       <p className="text-xs text-[var(--color-text-muted)]">Activity reflects days with saved edits on this browser only. It is not linked to your GitHub account or a verified competition history.</p>
       <ProfileEditDialog

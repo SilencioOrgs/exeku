@@ -19,7 +19,7 @@ export function AppearanceStudio({ compact = false, onApplied }: { compact?: boo
     ? "Previewing. Apply to save."
     : notice || "Saved on this device.";
 
-  return <section aria-label="Appearance settings" className={`minimal-appearance-studio mx-auto w-full max-w-3xl space-y-5 ${compact ? "is-compact" : ""}`}>
+  return <section aria-label="Appearance settings" className={`minimal-appearance-studio w-full space-y-5 ${compact ? "is-compact" : ""}`}>
     {!compact && <header className="space-y-1"><h2 className="text-xl font-semibold tracking-tight">Appearance</h2><p className="text-sm text-[var(--color-text-muted)]">Exeku is dark: orange on black, with code colored like VS Code Dark+.</p></header>}
     <fieldset disabled={busy} className="min-w-0">
       <div className="grid gap-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 sm:grid-cols-2">
@@ -31,7 +31,7 @@ export function AppearanceStudio({ compact = false, onApplied }: { compact?: boo
     </fieldset>
     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-border)] pt-4">
       <div className="space-y-1"><p role="status" aria-live="polite" className="text-xs text-[var(--color-text-muted)]">{status}</p>
-        {!compact && <button type="button" disabled={busy} onClick={() => { reset(); setNotice(""); }} className="text-xs underline underline-offset-4 disabled:opacity-50">Reset to defaults</button>}
+        {!compact && <Button type="button" variant="link" size="xs" className="px-0" disabled={busy} onClick={() => { reset(); setNotice(""); }}>Reset to defaults</Button>}
         {(persistenceStatus === "error" || persistenceStatus === "session") && <p role="alert" className="max-w-md text-xs text-[var(--color-text-muted)]">{persistenceMessage}</p>}
       </div>
       <div className="flex items-center gap-2">

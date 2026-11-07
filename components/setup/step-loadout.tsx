@@ -103,12 +103,6 @@ export function StepLoadout({
     <div className="appearance-stack space-y-6">
       {/* Header */}
       <div>
-        <div className="flex items-center gap-2 mb-2">
-          <PixelBadge variant="mint">Step 03</PixelBadge>
-          <span className="text-xs font-mono text-[var(--color-text-muted)]">
-            Preferences
-          </span>
-        </div>
         <h2 className="font-heading text-2xl sm:text-3xl text-[var(--color-text-main)]">
           Set your preferences
         </h2>
