@@ -4,7 +4,6 @@ import Link from "next/link";
 import { Menu, ArrowUpRight } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "./theme-toggle";
 import { useChallengeSession } from "@/hooks/use-challenge-session";
 import type { LocalProfile } from "@/types/profile";
 
@@ -32,7 +31,6 @@ export function AppTopbar({ onToggleMobileMenu }: AppTopbarProps) {
     </div>
     <div className="flex items-center gap-2">
       {isTimedActive && <span className="rounded-md border border-[var(--color-border)] px-2 py-1 text-xs tabular-nums">Challenge {formattedTime}</span>}
-      <ThemeToggle />
       <Link href="/" onClick={(event) => { if (!requestNavigation("/")) event.preventDefault(); }} className="hidden items-center gap-1 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] sm:inline-flex">Website <ArrowUpRight size={14} /></Link>
     </div>
   </header>;

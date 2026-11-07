@@ -29,9 +29,9 @@ function rgb(hex) { assert.match(hex, /^#[0-9a-f]{6}$/i); return hex.slice(1).ma
 function luminance(channels) { return channels.map(value => { const channel = value / 255; return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4; }).reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0); }
 function contrast(a, b) { const x = luminance(a), y = luminance(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
 {
-  for (const mode of ['light', 'dark']) {
+  for (const mode of ['dark']) {
     for (const setting of ['standard', 'high']) {
-      test(mode + ' ' + setting + ' readable surfaces and controls', () => {
+      test('dark only, ' + setting + ' readable surfaces and controls', () => {
         const get = palette(mode, setting);
         for (const factor of [1]) { // brightness setting was retired
           for (const surface of ['canvas', 'surface', 'elevated']) {

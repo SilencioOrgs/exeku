@@ -116,8 +116,10 @@ export class AppearanceRepository {
    * Resolves effective color mode ("dark" or "light") given the configured mode
    * and the system's preferred color scheme.
    */
-  resolveEffectiveColorMode(colorMode: ColorMode, systemPrefersDark: boolean): "dark" | "light" {
-    return colorMode === "system" ? (systemPrefersDark ? "dark" : "light") : colorMode;
+  // Dark only. Callers still pass the saved mode so older preferences keep their shape.
+  resolveEffectiveColorMode(...args: [colorMode: ColorMode, systemPrefersDark: boolean]): "dark" {
+    void args;
+    return "dark";
   }
 }
 

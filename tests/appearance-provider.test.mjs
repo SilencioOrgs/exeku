@@ -27,7 +27,7 @@ function providerHarness(profilePromise, { indexedDB = {}, saveAppearance } = {}
   };
   const repository = {
     getPreferences: () => guest, persistenceStatus: 'saved',
-    resolveEffectiveColorMode: (mode, dark) => mode === 'system' ? dark ? 'dark' : 'light' : mode,
+    resolveEffectiveColorMode: () => 'dark',
     savePreferences: next => { guest = next; writes.push(['guest', next]); },
     commitPreferences: next => { guest = next; writes.push(['guest', next]); return true; },
   };
@@ -79,7 +79,7 @@ test('system scheme and motion changes update the interface while keeping saved 
   harness.render();
   await new Promise(setImmediate);
   let context = harness.render();
-  assert.equal(context.effectiveColorMode, 'light');
+  assert.equal(context.effectiveColorMode, 'dark');
   for (const query of harness.queries.values()) { query.matches = true; query.change(); }
   context = harness.render();
   assert.equal(context.effectiveColorMode, 'dark');

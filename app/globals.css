@@ -31,94 +31,46 @@
 }
 
 /* =========================================================================
-   EXEKU TOKENS: tactile pastel, LeetCode orange. DESIGN.md is the source of truth.
-   [data-theme-scope] lets one subtree (the code editor, previews) pin light or dark.
+   EXEKU TOKENS: orange on black, dark only. DESIGN.md is the source of truth.
    ========================================================================= */
 :root,
-[data-theme-scope="light"] {
-  color-scheme: light;
-  --color-canvas: #fbf6ef;
-  --color-surface: #fffdfa;
-  --color-elevated: #f5ede2;
-  --color-border: #e8dccb;
-  --color-border-subtle: #f1e8db;
-  --color-text-main: #2b2118;
-  --color-text-muted: #5c4f42;
-  --color-text-dim: #5c4f42;
-  /* Orange keycaps carry dark text; orange as text uses the deeper --color-accent. */
-  --color-primary: #ffa116;
-  --color-primary-hover: #ffb340;
-  --color-primary-edge: #d27f00;
-  --primary-foreground: #2b2118;
-  --color-ring: #c2410c;
-  --color-accent: #9a4a06;
-  --color-accent-hover: #7c3a04;
-  --accent-foreground: #ffffff;
-  --color-primary-text: #9a4a06;
-  --color-key-edge: #d9c7ad;
-  /* LeetCode difficulty + verdict colors. Always shown with a word. */
-  --color-easy: #0b6e64;   --color-easy-bg: #d8f3ee;
-  --color-medium: #8a5a00; --color-medium-bg: #fdf0c4;
-  --color-hard: #be123c;   --color-hard-bg: #fde0e4;
-  --color-mint: #15703a;
-  --color-pink: #be123c;
-  --color-warning: #8a5a00;
-  --color-danger-foreground: #ffffff;
-  /* Pastel tiles. */
-  --tint-peach: #ffe8d6; --tint-mint: #dcf5e8; --tint-lavender: #ebe5fb; --tint-sky: #ddeefc; --tint-butter: #fff3c4;
-  /* Skeuomorphic depth. */
-  --shadow-raised: inset 0 1px 0 rgb(255 255 255 / 0.9), 0 1px 2px rgb(74 48 20 / 0.08), 0 8px 20px -12px rgb(74 48 20 / 0.28);
-  --shadow-inset: inset 0 2px 3px rgb(74 48 20 / 0.10), inset 0 -1px 0 rgb(255 255 255 / 0.7);
-  --key-highlight: rgb(255 255 255 / 0.6);
-  --key-shadow: rgb(74 48 20 / 0.22);
-  --bb-board-top: #fffaf1; --bb-board: #f3e7d2; --bb-edge: #d9c7ad; --bb-hole: #c9b79c; --bb-channel: #e6d7bd;
-}
-:root[data-color-mode="dark"],
-[data-theme-scope="dark"] {
+[data-theme-scope] {
   color-scheme: dark;
-  --color-canvas: #1a1a1a;
-  --color-surface: #262626;
-  --color-elevated: #303030;
-  --color-border: #3e3e3e;
-  --color-border-subtle: #303030;
-  --color-text-main: #eceae6;
-  --color-text-muted: #a8a49e;
-  --color-text-dim: #a8a49e;
+  --color-canvas: #0a0a0a;
+  --color-surface: #121212;
+  --color-elevated: #1a1a1a;
+  --color-border: #262626;
+  --color-border-subtle: #1c1c1c;
+  --color-text-main: #f5f5f4;
+  --color-text-muted: #a8a29e;
+  --color-text-dim: #a8a29e;
+  /* LeetCode orange. Orange buttons carry black text. */
   --color-primary: #ffa116;
   --color-primary-hover: #ffb340;
   --color-primary-edge: #b86f00;
-  --primary-foreground: #1a1a1a;
+  --primary-foreground: #0a0a0a;
   --color-ring: #ffa116;
   --color-accent: #ffb84d;
   --color-accent-hover: #ffd08a;
-  --accent-foreground: #1a1a1a;
+  --accent-foreground: #0a0a0a;
   --color-primary-text: #ffb84d;
-  --color-key-edge: #141414;
-  --color-easy: #00b8a3;   --color-easy-bg: #17322e;
-  --color-medium: #ffc01e; --color-medium-bg: #3a321b;
-  --color-hard: #ff8a9a;   --color-hard-bg: #3d2128;
+  --color-key-edge: #050505;
+  /* LeetCode difficulty + verdict colors. Always shown with a word. */
+  --color-easy: #00b8a3;   --color-easy-bg: #0f2b27;
+  --color-medium: #ffc01e; --color-medium-bg: #33290f;
+  --color-hard: #ff8a9a;   --color-hard-bg: #3a1a20;
   --color-mint: #2cbb5d;
   --color-pink: #ff8a9a;
   --color-warning: #ffc01e;
-  --color-danger-foreground: #1a1a1a;
-  --tint-peach: #3a2a20; --tint-mint: #1f3329; --tint-lavender: #2b2740; --tint-sky: #1e2c3d; --tint-butter: #3a321b;
-  --shadow-raised: inset 0 1px 0 rgb(255 255 255 / 0.05), 0 1px 2px rgb(0 0 0 / 0.4), 0 10px 24px -14px rgb(0 0 0 / 0.8);
-  --shadow-inset: inset 0 2px 4px rgb(0 0 0 / 0.45), inset 0 -1px 0 rgb(255 255 255 / 0.04);
-  --key-highlight: rgb(255 255 255 / 0.12);
-  --key-shadow: rgb(0 0 0 / 0.5);
-  --bb-board-top: #e9e2d6; --bb-board: #d6cbb8; --bb-edge: #8f8471; --bb-hole: #9b8e78; --bb-channel: #bfb39d;
+  --color-danger-foreground: #0a0a0a;
+  --glow-primary: 0 0 0 1px rgb(255 161 22 / 0.35), 0 8px 30px -8px rgb(255 161 22 / 0.45);
+  --shadow-raised: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 1px 2px rgb(0 0 0 / 0.6), 0 16px 40px -24px rgb(0 0 0 / 0.9);
+  --shadow-inset: inset 0 1px 2px rgb(0 0 0 / 0.6);
+  --key-highlight: rgb(255 255 255 / 0.08);
+  --key-shadow: rgb(0 0 0 / 0.6);
 }
-:root[data-contrast="high"][data-color-mode="light"] {
-  --color-canvas: #ffffff; --color-surface: #ffffff; --color-elevated: #f5ede2;
-  --color-border: #000000; --color-border-subtle: #262626;
-  --color-text-main: #000000; --color-text-muted: #1c1712; --color-text-dim: #1c1712;
-  --primary-foreground: #000000; --color-ring: #000000;
-  --color-accent: #6b2f02; --color-primary-text: #6b2f02;
-  --color-easy: #064e47; --color-medium: #5c3c00; --color-hard: #881337;
-  --color-mint: #14532d; --color-pink: #881337; --color-warning: #5c3c00;
-}
-:root[data-contrast="high"][data-color-mode="dark"] {
-  --color-canvas: #000000; --color-surface: #0a0a0a; --color-elevated: #141414;
+:root[data-contrast="high"] {
+  --color-canvas: #000000; --color-surface: #000000; --color-elevated: #0a0a0a;
   --color-border: #ffffff; --color-border-subtle: #d4d4d4;
   --color-text-main: #ffffff; --color-text-muted: #e5e5e5; --color-text-dim: #d4d4d4;
   --primary-foreground: #000000; --color-ring: #ffffff;
@@ -133,7 +85,7 @@
 }
 
 /* =========================================================================
-   SKEUOMORPHIC MATERIALS: raised cards, keycap buttons, recessed fields.
+   MATERIALS: soft depth on black. Cards lift, fields sink, orange glows.
    ========================================================================= */
 [data-slot="card"], .appearance-card, .modern-feature-card, .profile-panel, .coding-activity,
 .problem-pane, .results-pane, .workspace-toolbar, .settings-advanced, .skeuo-card {
@@ -141,49 +93,57 @@
   border-radius: 14px;
 }
 :where(input:not([type="checkbox"], [type="radio"], [type="range"]), select, textarea):not(.code-editor-input) {
-  background-color: var(--color-surface);
+  background-color: var(--color-canvas);
   box-shadow: var(--shadow-inset);
 }
 .skeuo-key, [data-slot="button"][data-variant="default"], [data-slot="button"][data-variant="outline"],
 [data-slot="button"][data-variant="secondary"], .appearance-button:not(.is-ghost) {
-  border: 1px solid var(--color-key-edge);
-  background-image: linear-gradient(180deg, var(--key-highlight), transparent 60%);
-  box-shadow: inset 0 1px 0 var(--key-highlight), 0 2px 0 var(--color-key-edge), 0 3px 6px -2px var(--key-shadow);
-  transition: transform 90ms ease, box-shadow 90ms ease, background-color 120ms ease;
+  border: 1px solid var(--color-border);
+  background-image: linear-gradient(180deg, var(--key-highlight), transparent 70%);
+  box-shadow: inset 0 1px 0 var(--key-highlight), 0 1px 0 var(--color-key-edge), 0 4px 10px -4px var(--key-shadow);
+  transition: transform 90ms ease, box-shadow 160ms ease, background-color 120ms ease, border-color 120ms ease;
 }
 [data-slot="button"][data-variant="default"], .appearance-button.is-primary {
-  --color-key-edge: var(--color-primary-edge);
+  border-color: var(--color-primary-edge);
   background-color: var(--color-primary);
+  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.22), transparent 60%);
   color: var(--primary-foreground);
   font-weight: 600;
 }
-[data-slot="button"][data-variant="default"]:hover:not(:disabled), .appearance-button.is-primary:hover:not(:disabled) { background-color: var(--color-primary-hover); }
+[data-slot="button"][data-variant="default"]:hover:not(:disabled), .appearance-button.is-primary:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+  box-shadow: var(--glow-primary);
+}
 [data-slot="button"][data-variant="outline"], [data-slot="button"][data-variant="secondary"], .appearance-button:not(.is-primary, .is-ghost) {
-  background-color: var(--color-surface);
+  background-color: var(--color-elevated);
   color: var(--color-text-main);
 }
+[data-slot="button"][data-variant="outline"]:hover:not(:disabled), [data-slot="button"][data-variant="secondary"]:hover:not(:disabled) { border-color: rgb(255 161 22 / 0.5); }
 :is(.skeuo-key, [data-slot="button"][data-variant="default"], [data-slot="button"][data-variant="outline"], [data-slot="button"][data-variant="secondary"], .appearance-button:not(.is-ghost)):active:not(:disabled) {
-  transform: translateY(2px);
-  box-shadow: inset 0 2px 4px var(--key-shadow), 0 0 0 var(--color-key-edge);
+  transform: translateY(1px);
+  box-shadow: inset 0 2px 4px var(--key-shadow);
 }
 @media (prefers-reduced-motion: reduce) {
   :is(.skeuo-key, [data-slot="button"], .appearance-button) { transition: none; }
 }
-.tile-peach { background-color: var(--tint-peach); }
-.tile-mint { background-color: var(--tint-mint); }
-.tile-lavender { background-color: var(--tint-lavender); }
-.tile-sky { background-color: var(--tint-sky); }
-.tile-butter { background-color: var(--tint-butter); }
-
-/* Code editor: VS Code Light+ / Dark+ colors. */
-.code-editor[data-theme-scope="light"] {
-  --ed-bg: #ffffff; --ed-fg: #000000; --ed-gutter: #237893; --ed-gutter-active: #0b216f;
-  --ed-line: #eef4fd; --ed-selection: rgb(0 120 215 / 0.25); --ed-caret: #000000;
-  --tok-keyword: #0000ff; --tok-control: #af00db; --tok-string: #a31515; --tok-number: #098658;
-  --tok-comment: #008000; --tok-function: #795e26; --tok-type: #267f99; --tok-constant: #0000ff;
-  --tok-variable: #001080; --tok-preproc: #af00db; --tok-bracket0: #0431fa; --tok-bracket1: #319331; --tok-bracket2: #7b3814;
+/* Tiles: black glass with an orange light from one corner. */
+.tile-peach, .tile-mint, .tile-lavender, .tile-sky, .tile-butter { background-color: var(--color-surface); }
+.tile-peach { background-image: radial-gradient(120% 90% at 0% 0%, rgb(255 161 22 / 0.16), transparent 60%); }
+.tile-mint { background-image: radial-gradient(120% 90% at 100% 0%, rgb(255 161 22 / 0.10), transparent 55%); }
+.tile-lavender { background-image: radial-gradient(120% 90% at 100% 100%, rgb(255 161 22 / 0.14), transparent 60%); }
+.tile-sky { background-image: radial-gradient(100% 80% at 50% 0%, rgb(255 255 255 / 0.05), transparent 60%); }
+.tile-butter { background-image: radial-gradient(120% 90% at 0% 100%, rgb(255 161 22 / 0.12), transparent 60%); }
+.text-gradient-orange {
+  background: linear-gradient(90deg, #ffd08a, #ffa116 45%, #ff7a00);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
 }
-.code-editor[data-theme-scope="dark"] {
+.bg-grid {
+  background-image: linear-gradient(rgb(255 255 255 / 0.035) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / 0.035) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* Code editor: VS Code Dark+ colors. */
+.code-editor {
   --ed-bg: #1e1e1e; --ed-fg: #d4d4d4; --ed-gutter: #858585; --ed-gutter-active: #c6c6c6;
   --ed-line: #2a2d2e; --ed-selection: rgb(38 79 120 / 0.7); --ed-caret: #aeafad;
   --tok-keyword: #569cd6; --tok-control: #c586c0; --tok-string: #ce9178; --tok-number: #b5cea8;

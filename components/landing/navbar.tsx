@@ -1,6 +1,5 @@
 "use client";
 
-import { ThemeToggle } from "@/components/app/theme-toggle";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useProfile } from "@/hooks/use-profile";
@@ -14,16 +13,17 @@ export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
+    { label: "Practice", href: "#practice" },
+    { label: "Lab tour", href: "#tour" },
     { label: "About", href: "#about" },
     { label: "Languages", href: "#languages" },
-    { label: "Lab", href: "#lab" },
     { label: "Roadmap", href: "#features" },
     { label: "Installation", href: "#install" },
     { label: "FAQ", href: "#faq" },
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-[var(--color-canvas)]/95 backdrop-blur-sm border-b border-[var(--color-border)] shadow-none">
+    <header className="sticky top-0 z-50 w-full border-b border-[var(--color-border)] bg-[var(--color-canvas)]/70 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-16 py-3 flex gap-3 flex-wrap items-center justify-between">
         {/* Brand Wordmark */}
         <div className="flex items-center gap-3">
@@ -31,7 +31,7 @@ export function Navbar() {
             href="#hero"
             className="flex items-center gap-2 group outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
           >
-            <div className="w-8 h-8 rounded-lg bg-[var(--color-elevated)] border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-main)]">
+            <div className="w-8 h-8 rounded-lg bg-[var(--color-primary)] flex items-center justify-center text-[var(--primary-foreground)] shadow-[var(--glow-primary)]">
               <DotIcon name="powershell" size={16} />
             </div>
             <span className="font-heading text-xl font-semibold tracking-tight text-foreground transition-colors">
@@ -48,16 +48,13 @@ export function Navbar() {
         </div>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden xl:flex items-center gap-4 text-sm font-mono">
+        <nav className="hidden lg:flex items-center gap-6 text-sm">
           {navLinks.map((link) => (
             <a
               key={link.label}
               href={link.href}
-              className="text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors flex items-center gap-1 group outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-accent)]"
+              className="text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] transition-colors rounded outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
             >
-              <span className="text-[var(--color-primary)] opacity-0 group-hover:opacity-100 transition-opacity">
-                <DotIcon name="circlePlay" size={14} aria-hidden="true" />
-              </span>
               {link.label}
             </a>
           ))}
@@ -65,7 +62,6 @@ export function Navbar() {
 
         {/* Action Button & Mobile Menu Toggle */}
         <div className="flex items-center gap-3">
-          <ThemeToggle />
           <div className="hidden sm:block">
             <PixelButton
               variant="cyan"
@@ -79,7 +75,7 @@ export function Navbar() {
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="xl:hidden min-h-11 min-w-11 p-2 text-[var(--color-text-muted)] hover:text-foreground bg-[var(--color-elevated)] border border-[var(--color-border)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+            className="lg:hidden rounded-lg min-h-11 min-w-11 p-2 text-[var(--color-text-muted)] hover:text-foreground bg-[var(--color-elevated)] border border-[var(--color-border)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
             aria-label="Toggle navigation menu"
             aria-expanded={mobileMenuOpen}
           >
@@ -90,7 +86,7 @@ export function Navbar() {
 
       {/* Mobile Menu Drawer */}
       {mobileMenuOpen && (
-        <div className="xl:hidden bg-[var(--color-surface)] border-b border-[var(--color-border)] px-4 pt-3 pb-6 flex flex-col gap-4">
+        <div className="lg:hidden bg-[var(--color-surface)] border-b border-[var(--color-border)] px-4 pt-3 pb-6 flex flex-col gap-4">
           <div className="flex items-center justify-between pb-2 border-b border-[var(--color-border)]">
             <PixelBadge variant="cyan">
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-pulse mr-1" />

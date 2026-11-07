@@ -9,12 +9,12 @@ function boot(stored, {dark=false,motion=false,denied=false}={}) {
  return root;
 }
 test("boot handles corrupt and denied storage with consistent defaults",()=>{
- for(const stored of [{},{exeku_appearance_settings:"{"}]) {const root=boot(stored);assert.equal(root.dataset.uiStyle,"minimal-saas");assert.equal(root.dataset.colorMode,"light");assert.equal(root.style.values["--ui-font-scale"],"100%");}
+ for(const stored of [{},{exeku_appearance_settings:"{"}]) {const root=boot(stored);assert.equal(root.dataset.uiStyle,"minimal-saas");assert.equal(root.dataset.colorMode,"dark");assert.equal(root.style.values["--ui-font-scale"],"100%");}
  assert.equal(boot({}, {denied:true,motion:true}).dataset.reducedMotion,"true");
 });
 test("boot resolves system without replacing its saved preference",()=>{
  const raw=JSON.stringify({uiStyle:"minimal-saas",colorMode:"system",reducedMotion:"system",density:"spacious"});
- for(const dark of [false,true]) {const root=boot({exeku_appearance_settings:raw},{dark,motion:true});assert.equal(root.dataset.colorMode,dark?"dark":"light");assert.equal(root.dataset.reducedMotion,"true");assert.equal(root.dataset.density,"spacious");}
+ for(const dark of [false,true]) {const root=boot({exeku_appearance_settings:raw},{dark,motion:true});assert.equal(root.dataset.colorMode,"dark");assert.equal(root.dataset.reducedMotion,"true");assert.equal(root.dataset.density,"spacious");}
 });
 test("boot prefers synchronized active snapshot and validates surface controls",()=>{
  const root=boot({exeku_appearance_snapshot:JSON.stringify({uiStyle:"studio-crm",contrastMode:"high",brightness:120,uiFontScale:999}),exeku_appearance_settings:JSON.stringify({uiStyle:"minimal-saas"})});
