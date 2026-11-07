@@ -9,6 +9,7 @@ import { CodingActivity } from "./coding-activity";
 import { DifficultyBadge } from "./difficulty-badge";
 import { tokenize } from "@/lib/syntax";
 import { CircuitView } from "@/components/lab/circuit-view";
+import { ClockView } from "@/components/lab/clock-view";
 import type { ProblemSummary } from "@/types/problem";
 import { getFilenameForLanguage, getStarterCode } from "@/lib/workspace-defaults";
 import type { LocalProfile, ProfileInput } from "@/types/profile";
@@ -73,7 +74,7 @@ export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfil
           <Link href="/app/lab" aria-label="Open the breadboard simulator" className="bg-grid block overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-canvas)]">
             <CircuitView ledOn interactive={false} view={[70, 85, 110]} className="pointer-events-none h-44" label="Arduino Uno and breadboard with a lit red LED" />
           </Link>
-          <p className="text-sm text-[var(--color-text-muted)]">Blink an LED on a virtual Arduino, then preview a 3D-printable case for it.</p>
+          <p className="text-sm text-[var(--color-text-muted)]">Blink an LED on a virtual Arduino, then see it become a finished, printable product.</p>
           <Link href="/app/lab" className={buttonVariants({ className: "w-full" })}><DotIcon name="play" size={15} aria-hidden="true" />Click to simulate</Link>
         </section>
 
@@ -93,25 +94,15 @@ export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfil
           </div>
         </section>
 
-        <section aria-label="3D chassis" className="skeuo-card tile-butter flex flex-col justify-between gap-3 rounded-2xl border border-[var(--color-border)] p-5">
+        <section aria-label="Finished build" className="skeuo-card tile-butter flex flex-col justify-between gap-3 rounded-2xl border border-[var(--color-border)] p-5">
           <div>
-            <h2 className="text-lg font-semibold">Print a case for it</h2>
-            <p className="text-sm text-[var(--color-text-muted)]">Exeku sizes an enclosure around your breadboard project. Spin it in 3D.</p>
+            <h2 className="text-lg font-semibold">Turn it into a product</h2>
+            <p className="text-sm text-[var(--color-text-muted)]">A breadboard prototype, organized and printed: this desk clock is the first template.</p>
           </div>
-          <svg viewBox="0 0 200 140" className="mx-auto h-32 w-auto" aria-hidden="true">
-            {/* Isometric enclosure with its lid lifted. */}
-            <g transform="translate(0 20)">
-            <path d="M40 70 L100 100 L160 70 L100 40 Z" fill="#ff9a2e" stroke="#7a3c00" />
-            <path d="M40 70 L40 88 L100 118 L100 100 Z" fill="#e07a10" stroke="#7a3c00" />
-            <path d="M160 70 L160 88 L100 118 L100 100 Z" fill="#b85d05" stroke="#7a3c00" />
-            <path d="M62 70 L100 89 L138 70 L100 51 Z" fill="#00818a" opacity="0.95" />
-            <circle cx="118" cy="66" r="4" fill="#ff3b30" />
-            </g>
-            <path d="M40 34 L100 64 L160 34 L100 4 Z" fill="#2a2a2a" stroke="#ffa116" opacity="0.75" />
-            <path d="M40 34 L40 40 L100 70 L100 64 Z" fill="#e07a10" stroke="#7a3c00" />
-            <path d="M160 34 L160 40 L100 70 L100 64 Z" fill="#b85d05" stroke="#7a3c00" />
-          </svg>
-          <Link href="/app/lab#chassis" className={buttonVariants({ variant: "outline", className: "w-full" })}><DotIcon name="box" size={15} aria-hidden="true" />Open 3D chassis</Link>
+          <Link href="/app/lab#chassis" aria-label="See the finished desk clock build" className="bg-grid block overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-canvas)]">
+            <ClockView interactive={false} view={[95, 70, 130]} className="pointer-events-none h-40" label="Finished Arduino desk clock in an orange printed case, showing the time" />
+          </Link>
+          <Link href="/app/lab#chassis" className={buttonVariants({ variant: "outline", className: "w-full" })}><DotIcon name="box" size={15} aria-hidden="true" />See the finished build</Link>
         </section>
       </div>
 

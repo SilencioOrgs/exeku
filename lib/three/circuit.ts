@@ -5,6 +5,7 @@
  *
  * Coordinates: X to the right, Y up, Z toward the viewer. A board's "far" edge is -Z.
  * GrabCAD or other CAD models can replace a part: see public/models/README.md.
+ * The finished product (desk clock in a printed case) lives in ./clock.ts.
  */
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
@@ -434,77 +435,6 @@ export function buildCircuit(): Circuit {
       uno.ledL.emissiveIntensity = on ? 2 : 0;
     },
     dispose() { disposeTree(group); },
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Auto-sized enclosure: base, four walls with USB and power cutouts, smoked lid.
-// ---------------------------------------------------------------------------
-export interface Enclosure {
-  group: THREE.Group;
-  outer: { w: number; d: number; h: number };
-  wall: number;
-  /** 0 = nothing printed yet, 1 = walls fully printed. */
-  setBuild(t: number): void;
-  /** 0 = lid lifted away, 1 = lid closed. */
-  setLid(t: number): void;
-  setLidVisible(visible: boolean): void;
-}
-
-export function buildEnclosure(bounds: THREE.Box3, { wall = 2.4, gap = 5 } = {}): Enclosure {
-  const shell = new THREE.MeshStandardMaterial({ color: "#e86f00", roughness: 0.62, metalness: 0 });
-  const lidMat = new THREE.MeshPhysicalMaterial({ color: "#1a1a1a", roughness: 0.08, metalness: 0, transparent: true, opacity: 0.42, clearcoat: 1 });
-  const size = bounds.getSize(new THREE.Vector3());
-  const center = bounds.getCenter(new THREE.Vector3());
-  // Tall enough that the lid clears the jumper wires.
-  const inner = { w: size.x + gap * 2, d: size.z + gap * 2, h: Math.max(30, size.y + 2) };
-  const outer = { w: inner.w + wall * 2, d: inner.d + wall * 2, h: inner.h + wall };
-  const group = new THREE.Group();
-  group.position.set(center.x, -wall - 1.5, center.z);
-
-  const walls = new THREE.Group();
-  const base = mesh(new RoundedBoxGeometry(outer.w, wall, outer.d, 3, 1.1), shell, 0, wall / 2, 0);
-  group.add(base);
-  const add = (w: number, h: number, d: number, x: number, y: number, z: number) => w > 0.5 && d > 0.5 && h > 0.5 && walls.add(mesh(new RoundedBoxGeometry(w, h, d, 2, Math.min(0.9, w / 2 - 0.01, d / 2 - 0.01)), shell, x, y, z));
-  add(outer.w, outer.h, wall, 0, outer.h / 2, outer.d / 2 - wall / 2);
-  add(outer.w, outer.h, wall, 0, outer.h / 2, -outer.d / 2 + wall / 2);
-  add(wall, outer.h, outer.d, outer.w / 2 - wall / 2, outer.h / 2, 0);
-  // Left wall: openings for the USB-B port and the barrel jack (Uno at its fixed spot).
-  const lx = -outer.w / 2 + wall / 2;
-  const usbZ = uz(38.1) - center.z, jackZ = uz(7.6) - center.z;
-  const openings = [[usbZ, 14, 16], [jackZ, 11, 16]].sort((p, q) => p[0] - q[0]);
-  let cursor = -outer.d / 2;
-  for (const [z, width, height] of openings) {
-    const start = z - width / 2, end = z + width / 2;
-    if (start > cursor) add(wall, outer.h, start - cursor, lx, outer.h / 2, (cursor + start) / 2);
-    add(wall, outer.h - height, width, lx, height + (outer.h - height) / 2, z);
-    cursor = end;
-  }
-  add(wall, outer.h, outer.d / 2 - cursor, lx, outer.h / 2, (cursor + outer.d / 2) / 2);
-  group.add(walls);
-
-  const lid = mesh(new RoundedBoxGeometry(outer.w, wall, outer.d, 3, 1.1), lidMat, 0, outer.h + wall / 2, 0);
-  lid.castShadow = false;
-  group.add(lid);
-  const lidY = outer.h + wall / 2;
-
-  return {
-    group,
-    outer,
-    wall,
-    setBuild(t) {
-      const k = Math.min(1, Math.max(0, t));
-      walls.visible = k > 0.001;
-      walls.scale.y = Math.max(0.001, k);
-      base.visible = k > 0.001;
-    },
-    setLid(t) {
-      const k = Math.min(1, Math.max(0, t));
-      lid.visible = k > 0.001;
-      lid.position.y = lidY + (1 - k) * 60;
-      lidMat.opacity = 0.42 * k;
-    },
-    setLidVisible(visible) { lid.visible = visible; lid.position.y = lidY; lidMat.opacity = 0.42; },
   };
 }
 

@@ -7,7 +7,7 @@ import { ChassisPreview } from "./chassis-preview";
 const ROADMAP = [
   { title: "Simulate Arduino", body: "Wire parts on a breadboard and run your sketch.", status: "Preview", tile: "tile-mint", icon: "play" },
   { title: "Design in 3D", body: "Lay out boards and parts for a dashboard or landing page.", status: "Preview", tile: "tile-lavender", icon: "box" },
-  { title: "Auto chassis", body: "Generate an enclosure that fits your breadboard, ready to 3D print.", status: "Planned", tile: "tile-peach", icon: "download" },
+  { title: "Auto chassis", body: "Exeku lays out your prototype's parts and designs the case around them, like this desk clock, ready to 3D print.", status: "Planned", tile: "tile-peach", icon: "download" },
 ];
 
 export function LabView() {
@@ -17,7 +17,7 @@ export function LabView() {
         <div>
           <p className="text-xs font-semibold text-[var(--color-primary-text)]">Hardware Lab · Preview</p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight">Build it, run it, print it</h1>
-          <p className="mt-1 max-w-[65ch] text-sm text-[var(--color-text-muted)]">Edit the sketch and press Run to blink the LED. Then spin the enclosure Exeku sized for this circuit.</p>
+          <p className="mt-1 max-w-[65ch] text-sm text-[var(--color-text-muted)]">Prototype on the breadboard: edit the sketch and press Run. Then see where it ends up: the same kind of parts organized into a finished, printable product.</p>
         </div>
       </header>
 
@@ -28,7 +28,7 @@ export function LabView() {
 
       <section aria-labelledby="chassis-heading" id="chassis" className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <div className="space-y-3">
-          <h2 id="chassis-heading" className="text-lg font-semibold">3D chassis</h2>
+          <h2 id="chassis-heading" className="text-lg font-semibold">From prototype to product</h2>
           <ChassisPreview />
         </div>
         <div className="space-y-3">

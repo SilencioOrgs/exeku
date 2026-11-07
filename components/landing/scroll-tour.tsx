@@ -6,6 +6,7 @@ import { useAppearance } from "@/hooks/use-appearance";
 import { buttonVariants } from "@/components/ui/button";
 import { DotIcon } from "@/components/retro/dot-icon";
 import { cn } from "@/lib/utils";
+import { CLOCK_CASE, CLOCK_PARTS } from "@/lib/three/clock-spec";
 
 type Vec = [number, number, number];
 /** Camera position and look-at target for each step, relative to the circuit's center. */
@@ -13,16 +14,16 @@ const SHOTS: Array<{ pos: Vec; look: Vec }> = [
   { pos: [-5, 95, 115], look: [-44, 4, 0] },
   { pos: [30, 175, 95], look: [8, 6, -8] },
   { pos: [78, 52, 48], look: [36, 14, -11] },
-  { pos: [170, 205, 230], look: [0, 10, 0] },
-  { pos: [-180, 175, 215], look: [0, 16, 0] },
+  { pos: [115, 195, 170], look: [0, 14, 0] },
+  { pos: [-120, 80, 225], look: [0, 22, 0] },
 ];
 
 const STEPS = [
   { kicker: "01 · Write", title: "Start with a sketch", body: "Write Arduino code in the same editor you use for problems, with VS Code colors and shortcuts." },
   { kicker: "02 · Wire", title: "Wire a real breadboard", body: "Pin 13 to a 220 Ω resistor, the resistor to the LED, the LED back to ground. Parts are modeled to the millimetre." },
   { kicker: "03 · Run", title: "Press Run. Watch it blink.", body: "The sketch runs step by step. The LED and the board's own L light follow pin 13, and Serial prints to the monitor." },
-  { kicker: "04 · Enclose", title: "A case that fits, automatically", body: "Exeku measures the board, breadboard and wires, then sizes walls, standoffs and cutouts for USB and power." },
-  { kicker: "05 · Print", title: "Close the lid. Print it.", body: "Spin the enclosure, check the fit, and export it for your 3D printer. STL export is next on the roadmap." },
+  { kicker: "04 · Organize", title: "From breadboard to a real build", body: "The same kind of parts, laid out on a tidy carrier board, with a case printed around them: a window for the display, holes for the buttons, a port for USB." },
+  { kicker: "05 · Print", title: "Close it. Print it. Use it.", body: "The prototype becomes a desk clock you can keep on your table. STL export is next on the roadmap." },
 ];
 
 const ease = (t: number) => t * t * (3 - 2 * t);
@@ -33,7 +34,6 @@ export function ScrollTour() {
   const mountRef = useRef<HTMLDivElement>(null);
   const progressRef = useRef(0);
   const [step, setStep] = useState(0);
-  const [size, setSize] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const { effectiveReducedMotion } = useAppearance();
 
@@ -62,17 +62,18 @@ export function ScrollTour() {
     let disposed = false;
     let cleanup = () => {};
     (async () => {
-      const [THREE, { createStage }, { buildCircuit, buildEnclosure }, { applyModelOverrides }] = await Promise.all([
-        import("three"), import("@/lib/three/stage"), import("@/lib/three/circuit"), import("@/lib/three/overrides"),
+      const [THREE, { createStage }, { buildCircuit }, { buildClock }, { applyModelOverrides }] = await Promise.all([
+        import("three"), import("@/lib/three/stage"), import("@/lib/three/circuit"), import("@/lib/three/clock"), import("@/lib/three/overrides"),
       ]);
       if (disposed) return;
       const stage = createStage(mount, { fov: 30 });
       const circuit = buildCircuit();
-      const enclosure = buildEnclosure(circuit.bounds);
-      stage.scene.add(circuit.group, enclosure.group);
-      setSize(`${enclosure.outer.w.toFixed(0)} × ${enclosure.outer.d.toFixed(0)} × ${enclosure.outer.h.toFixed(0)} mm`);
-      void applyModelOverrides(circuit.group, () => disposed);
       const center = circuit.bounds.getCenter(new THREE.Vector3()).setY(0);
+      // The finished product the prototype turns into, in the same spot.
+      const clock = buildClock();
+      clock.group.position.copy(center);
+      stage.scene.add(circuit.group, clock.group);
+      void applyModelOverrides(circuit.group, () => disposed);
       const pos = new THREE.Vector3(), look = new THREE.Vector3(), lookNow = new THREE.Vector3();
       const a = new THREE.Vector3(), b = new THREE.Vector3();
 
@@ -94,7 +95,7 @@ export function ScrollTour() {
         if (w === lastW && h === lastH) return;
         lastW = w; lastH = h;
         if (window.innerWidth >= 768) stage.camera.setViewOffset(w, h, -w * 0.2, 0, w, h);
-        else stage.camera.setViewOffset(w, h, 0, h * 0.18, w, h);
+        else stage.camera.setViewOffset(w, h, 0, h * 0.1, w, h);
       };
       shotAt(progressRef.current);
       stage.camera.position.copy(pos);
@@ -111,8 +112,14 @@ export function ScrollTour() {
         // Blink once the sketch is "running" (step 3 onward).
         const running = p >= 2 / STEPS.length - 0.01;
         circuit.setLed(running && (effectiveReducedMotion || Math.floor(time * 2) % 2 === 0));
-        enclosure.setBuild(ease(clamp((p - 0.6) / 0.14)));
-        enclosure.setLid(ease(clamp((p - 0.82) / 0.1)));
+        // Step 4 swaps the breadboard for the organized build and prints the walls; step 5 closes the lid.
+        const product = p >= 0.6;
+        circuit.group.visible = !product;
+        clock.group.visible = product;
+        clock.setBuild(ease(clamp((p - 0.6) / 0.12)));
+        clock.setOpen(1 - ease(clamp((p - 0.8) / 0.08)));
+        const now = new Date();
+        clock.setTime(now.getHours(), now.getMinutes(), effectiveReducedMotion || now.getSeconds() % 2 === 0);
       });
       setReady(true);
       cleanup = () => { stage.dispose(); };
@@ -125,7 +132,7 @@ export function ScrollTour() {
       <div className="sticky top-0 h-screen overflow-hidden">
         <div aria-hidden="true" className="bg-grid absolute inset-0 opacity-70" />
         <div aria-hidden="true" className="pointer-events-none absolute top-1/2 right-0 h-[70vh] w-[70vw] -translate-y-1/2 rounded-full bg-[radial-gradient(closest-side,rgb(255_161_22/0.14),transparent)]" />
-        <div ref={mountRef} className="absolute inset-0" role="img" aria-label="3D tour: an Arduino blink circuit gets an enclosure printed around it as you scroll.">
+        <div ref={mountRef} className="absolute inset-0" role="img" aria-label="3D tour: an Arduino blink circuit on a breadboard turns into a finished, printed desk clock as you scroll.">
           {!ready && <span className="absolute inset-0 grid place-items-center text-sm text-[var(--color-text-muted)]">Loading 3D parts…</span>}
         </div>
 
@@ -151,7 +158,7 @@ export function ScrollTour() {
                   <p className="font-code text-xs font-medium text-[var(--color-primary-text)]">{s.kicker}</p>
                   <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl md:text-5xl">{s.title}</h2>
                   <p className="mt-3 text-base leading-relaxed text-[var(--color-text-muted)] md:text-lg">{s.body}</p>
-                  <StepDetail index={i} size={size} />
+                  <StepDetail index={i} />
                 </article>
               ))}
             </div>
@@ -162,7 +169,7 @@ export function ScrollTour() {
   );
 }
 
-function StepDetail({ index, size }: { index: number; size: string | null }) {
+function StepDetail({ index }: { index: number }) {
   const box = "mt-5 hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3";
   if (index === 0) return (
     <pre className={cn(box, "code-editor font-code text-xs leading-5 md:block")}>
@@ -185,16 +192,15 @@ function StepDetail({ index, size }: { index: number; size: string | null }) {
   );
   if (index === 2) return <pre className={cn(box, "font-code text-xs leading-5 text-[var(--color-text-muted)] md:block")}>{"> LED on\n> LED off\n> LED on"}</pre>;
   if (index === 3) return (
-    <dl className={cn(box, "font-code grid-cols-3 gap-2 text-center text-xs md:grid")}>
-      <div><dt className="text-[var(--color-text-muted)]">Outside</dt><dd className="mt-1">{size ?? "…"}</dd></div>
-      <div><dt className="text-[var(--color-text-muted)]">Wall</dt><dd className="mt-1">2.4 mm</dd></div>
-      <div><dt className="text-[var(--color-text-muted)]">Cutouts</dt><dd className="mt-1">USB, DC</dd></div>
-    </dl>
+    <ul className={cn(box, "flex-wrap gap-1.5 text-xs md:flex")} aria-label="Parts inside">
+      {CLOCK_PARTS.map((part) => <li key={part} className="rounded-md border border-[var(--color-border)] bg-[var(--color-elevated)] px-2 py-0.5">{part}</li>)}
+      <li className="font-code px-1 py-0.5 text-[var(--color-text-muted)]">{CLOCK_CASE.w} × {CLOCK_CASE.d} × {CLOCK_CASE.h} mm</li>
+    </ul>
   );
   return (
     <div className="mt-5 flex flex-wrap gap-3">
       <Link href="/app/lab" className={buttonVariants({ size: "lg" })}><DotIcon name="play" size={15} aria-hidden="true" />Click to simulate</Link>
-      <Link href="/app/lab#chassis" className={buttonVariants({ variant: "outline", size: "lg" })}>Open 3D chassis</Link>
+      <Link href="/app/lab#chassis" className={buttonVariants({ variant: "outline", size: "lg" })}>See the finished build</Link>
     </div>
   );
 }
