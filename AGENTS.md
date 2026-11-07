@@ -18,7 +18,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Current Development Status**: Local Development / Developer Preview (no public deployment to Vercel/Render)
 - **Supported Languages**: Python 3, Java, C++, C
 - **Primary Workflows**: Problem solving, code execution, automated test judging, programming contests, student telemetry
-- **Future Roadmap**: Online-hosted multi-tenant web deployment, server-authoritative contest identities, multi-theme Appearance Studio (Phase 2C), instructor-managed lessons, offline AI tutor
+- **Future Roadmap**: Online-hosted multi-tenant web deployment, server-authoritative contest identities, Appearance settings (Phase 2C), instructor-managed lessons, offline AI tutor
 
 ---
 
@@ -29,7 +29,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/turbopack`, `tw-animate-css`, `app/globals.css`)
 - **UI Components**: shadcn/ui configured with Base UI primitives (`@base-ui/react`), Nova preset (`style: "base-nova"`), and Lucide React icons (`components.json`)
 - **Icons**: Official Doticons pixel icon system (`components/retro/dot-icon.tsx`)
-- **Editor**: Monaco Editor (`monaco-editor`, `@monaco-editor/react`)
+- **Editor**: Built-in plain-text code editor (`components/app/code-editor.tsx`): a native `<textarea>` with a line-number gutter. No Monaco, no CDN downloads.
 - **Storage**: IndexedDB local profiles and draft persistence (v2 schema)
 - **Execution Sandbox Target**: Piston API (`POST /api/v2/execute`) via isolated container sandbox
 - **Package Manager**: npm (use `npm.cmd` / `npx.cmd` in Windows PowerShell if execution policies restrict script loading)
@@ -42,7 +42,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 Exeku is built with clean ownership boundaries between collaborative modules:
 
 ### Primary Developer Owns:
-- Monaco workspace and code editing experience
+- Workspace and code editing experience
 - Code execution service and sandbox adapter layer
 - Automatic judging engine, verdict calculation, and test case evaluation
 - Programming problems library and problem schemas
@@ -79,20 +79,13 @@ Student code is strictly untrusted:
 
 ## 5. Design System & Aesthetics
 
-Exeku balances retro nostalgic craft with modern accessibility:
+The source of truth is `DESIGN.md`. Read it before any UI change. Summary:
 
-- **Theme & Vibe**: Retro pixel-art developer aesthetic with high functional clarity.
-- **Color Palette**:
-  - Canvas: `#090514`
-  - Surface: `#120A24`
-  - Elevated: `#1B0F36`
-  - Border: `#2E1A57`
-  - Accents: Neon Purple (`#9E00FF`), Neon Cyan (`#00F0FF`), Neon Pink (`#FF007A`), Mint Green (`#00FF9D`).
-- **Typography**:
-  - Headings & Badges: Pixelify Sans (`font-pixel`).
-  - Interface & Body: Geist Sans.
-  - Code & Telemetry: Geist Mono (`font-mono`).
-- **Component Style**: Tactile pixel buttons, cards, borders, badges, and Doticons icons.
+- **Theme & Vibe**: Black and white, shadcn/ui. Quiet, precise, tool-like. No neon, no gradients, no decorative color.
+- **Color**: Neutral zinc tokens only (`--color-canvas`, `--color-surface`, `--color-elevated`, `--color-border`, `--color-text-main`, `--color-text-muted`). Light and dark mode plus high contrast. Verdicts are shown with words and icons, not color.
+- **Typography**: Geist Sans for UI and headings, Geist Mono for code and numbers. Sentence case. No ALL CAPS labels, no trailing `_` cursors, no `[BRACKET]` labels.
+- **Components**: shadcn/ui primitives in `components/ui` (`Button`, `Dialog`, `Card`, `Input`, `Tooltip`, `Sheet`). Doticons for icons.
+- **Fonts are bundled** through the `geist` npm package. The app must work with no internet.
 
 ---
 
@@ -105,8 +98,20 @@ Always invoke skills through verified, installed interfaces.
 - Use planning (`brainstorming`, `writing-plans`, `executing-plans`), debugging (`systematic-debugging`), and verification (`verification-before-completion`).
 
 ### Impeccable
-- **Location**: `C:\Users\Asnor\.gemini\config\skills\impeccable`.
-- Consult for UX review, workspace ergonomics, visual hierarchy, responsive layouts, and accessibility audits.
+- **Location**: vendored in this repo: `.agents/skills/impeccable` (Codex), `.agent/skills/impeccable` (Antigravity), `.cursor/skills/impeccable` (Cursor).
+- Use for UI work: `/impeccable audit`, `critique`, `polish`, `typeset`, `layout`, `clarify`. It reads `PRODUCT.md` and `DESIGN.md`.
+
+### Ponytail
+- **Location**: vendored in this repo: `.agents/skills/ponytail*`, `.agent/skills/ponytail*`, `.cursor/skills/ponytail*`, plus the always-on Cursor rule `.cursor/rules/ponytail.mdc`.
+- Commands: `ponytail-review` (review a diff), `ponytail-audit` (whole repo), `ponytail-debt` (list `shortcut:` comments).
+- Always-on rules (from Ponytail, MIT):
+  - Solve the whole problem with the least new code. Deletion beats addition.
+  - Before writing: does it need to exist? Is it already in this codebase? In the platform or an installed dependency? Never add a dependency for a few lines.
+  - Be lazy about the solution, never about the change: finish every caller, test and fixture the change touches.
+  - Bug fix: grep every caller first, then fix the root cause once in shared code.
+  - New non-trivial logic leaves one small test.
+  - A shortcut with a known limit gets a comment: `shortcut: <the limit>, <when to upgrade>`.
+  - Never cut: validation at trust boundaries, error handling that prevents data loss, security, accessibility.
 
 ### Caveman
 - Keep agent exploration focused, edits surgical, and communication concise without sacrificing quality.
