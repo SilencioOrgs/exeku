@@ -2,7 +2,6 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   getFilenameForLanguage,
-  getMonacoLanguage,
   getStarterCode,
   ALL_SUPPORTED_LANGUAGES,
 } from "../lib/workspace-defaults.ts";
@@ -12,13 +11,6 @@ test("workspace-defaults - maps languages to correct filenames", () => {
   assert.equal(getFilenameForLanguage("java"), "Main.java");
   assert.equal(getFilenameForLanguage("cpp"), "main.cpp");
   assert.equal(getFilenameForLanguage("c"), "main.c");
-});
-
-test("workspace-defaults - maps languages to correct Monaco modes", () => {
-  assert.equal(getMonacoLanguage("python"), "python");
-  assert.equal(getMonacoLanguage("java"), "java");
-  assert.equal(getMonacoLanguage("cpp"), "cpp");
-  assert.equal(getMonacoLanguage("c"), "c");
 });
 
 test("workspace-defaults - provides language-specific starter code", () => {

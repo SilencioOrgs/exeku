@@ -7,7 +7,7 @@ import { useChallengeSession } from "@/hooks/use-challenge-session";
 import { PixelCard } from "@/components/retro/pixel-card";
 import { PixelButton } from "@/components/retro/pixel-button";
 import { DotIcon } from "@/components/retro/dot-icon";
-import { MonacoEditorPane } from "./monaco-editor-pane";
+import { CodeEditor } from "./code-editor";
 import { ProblemPane } from "./workspace/problem-pane";
 import { ResultsPane, type ResultsTab } from "./workspace/results-pane";
 import { DemoControls } from "./workspace/demo-controls";
@@ -26,7 +26,6 @@ import {
   ALL_SUPPORTED_LANGUAGES,
   LANGUAGE_DISPLAY_NAMES,
   getFilenameForLanguage,
-  getMonacoLanguage,
   getStarterCode,
 } from "@/lib/workspace-defaults";
 import {
@@ -78,7 +77,7 @@ export function WorkspaceView() {
 
   // Layout & Tabs
   const [mobileActivePane, setMobileActivePane] = useState<MobileActivePane>("code");
-  // Keeps Monaco mounted while letting students expand or restore the editor.
+  // Layout modes let students expand or restore the editor.
   const [layout, setLayout] = useState<"split" | "wide" | "focus">(problemIdParam ? "split" : "wide");
   const [layoutReady, setLayoutReady] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -538,8 +537,6 @@ export function WorkspaceView() {
   useEffect(() => {
     const shortcut = (event: KeyboardEvent) => {
       if (!(event.ctrlKey || event.metaKey) || event.key !== "Enter") return;
-      // Monaco handles the same shortcuts internally. Do not dispatch twice.
-      if (event.target instanceof Element && event.target.closest(".monaco-editor")) return;
       event.preventDefault();
       if (isRunning || isSubmitting) return;
       if (event.shiftKey) {
@@ -563,7 +560,6 @@ export function WorkspaceView() {
   }, [problem, problemIds]);
 
   const filename = activeFile;
-  const monacoLang = getMonacoLanguage(activeLang);
 
   return (
     <div className="workspace-view flex min-h-[420px] h-[calc(100dvh-90px)] flex-col gap-2 overflow-hidden">
@@ -852,15 +848,13 @@ export function WorkspaceView() {
             </PixelButton>
           </div>
 
-          {/* Monaco Editor Frame */}
+          {/* Code editor frame */}
           <div className="flex-1 min-h-0 border-2 border-[var(--color-border)] bg-[var(--color-canvas)] [border-radius:var(--radius-card)] overflow-hidden relative">
-            <MonacoEditorPane
-              language={monacoLang}
+            <CodeEditor
+              key={`${problem?.id ?? "free"}/${activeLang}/${activeFile}`}
+              filename={activeFile}
               value={code}
-              path={`/${profile?.id ?? "guest"}/${problem?.id ?? "free"}/${activeLang}/${activeFile}`}
               onChange={handleCodeChange}
-              onRun={() => { if (!isRunning && !isSubmitting) void handleRunCode(); }}
-              onSubmit={() => { if (problem && !isRunning && !isSubmitting) handleOpenSubmitModal(); }}
             />
           </div>
         </div>

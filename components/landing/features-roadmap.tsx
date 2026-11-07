@@ -20,12 +20,12 @@ export function FeaturesRoadmap() {
         "High-performance local web application built on Next.js 16 App Router and React 19. Designed to run locally on Windows machines with zero network roundtrips.",
     },
     {
-      title: "Monaco Editor Integration",
+      title: "Built-in Code Editor",
       status: "CURRENT FOUNDATION",
       statusVariant: "mint",
       iconName: "vscode",
       description:
-        "Professional desktop-grade code editor with syntax highlighting, indentation guides, and keyboard navigation packaged completely inside local bundles.",
+        "A fast plain-text editor with line numbers, Tab indentation, auto-indent and keyboard shortcuts. Nothing is downloaded from a CDN.",
     },
     {
       title: "Retro Pixel UI System",

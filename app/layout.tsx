@@ -1,18 +1,10 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+// Fonts ship inside the app bundle, so Exeku builds and runs with no internet.
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import { appearanceBootstrap } from "@/lib/appearance-bootstrap";
 import { AppearanceProvider } from "@/hooks/use-appearance";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "Exeku — Your Code. Your Machine.",
@@ -33,7 +25,7 @@ export default function RootLayout({
       lang="en"
       data-scroll-behavior="smooth"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark scroll-smooth`}
+      className={`${GeistSans.variable} ${GeistMono.variable} h-full antialiased dark scroll-smooth`}
     >
       <head>
         <script

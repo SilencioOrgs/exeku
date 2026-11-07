@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { AppearancePreferences } from "@/types/appearance";
 
 const FONTS = {
@@ -6,20 +7,15 @@ const FONTS = {
   monospace: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
 };
 
-export function resolveEditorAppearance(preferences: AppearancePreferences, effectiveMode: "dark" | "light", reducedMotion: boolean) {
-  const mode = preferences.contrastMode === "high" || preferences.editorTheme === "auto" || preferences.editorTheme === "high-contrast" ? effectiveMode : preferences.editorTheme;
-  // Legacy appearance IDs may remain in local storage, but the editor uses one modern syntax skin.
-  const style = "minimal";
-  const highContrast = preferences.contrastMode === "high" || preferences.editorTheme === "high-contrast";
-  return {
-    theme: "exeku-" + (highContrast ? "hc" : style) + "-" + mode,
-    options: {
-      fontFamily: FONTS[preferences.editorFontFamily],
-      fontSize: preferences.editorFontSize,
-      lineHeight: Math.max(preferences.editorLineHeight, preferences.editorFontSize + 2),
-      fontLigatures: preferences.editorLigatures,
-      cursorBlinking: reducedMotion ? "solid" as const : "smooth" as const,
-      smoothScrolling: !reducedMotion,
-    },
+/** Editor colors follow the UI unless the student pinned light or dark for the editor only. */
+export function resolveEditorAppearance(preferences: AppearancePreferences, effectiveMode: "dark" | "light") {
+  const followsUi = preferences.contrastMode === "high" || preferences.editorTheme === "auto" || preferences.editorTheme === "high-contrast";
+  const mode: "dark" | "light" = followsUi ? effectiveMode : preferences.editorTheme as "dark" | "light";
+  const style: CSSProperties = {
+    fontFamily: FONTS[preferences.editorFontFamily],
+    fontSize: `${preferences.editorFontSize}px`,
+    lineHeight: `${Math.max(preferences.editorLineHeight, preferences.editorFontSize + 2)}px`,
+    fontVariantLigatures: preferences.editorLigatures ? "normal" : "none",
   };
+  return { mode, style };
 }

@@ -1,6 +1,6 @@
 /**
  * Profile-scoped, local-only coding activity. Each day is counted once when
- * a changed Monaco buffer is successfully persisted. Not GitHub commits,
+ * a changed editor buffer is successfully persisted. Not GitHub commits,
  * execution results, or server-authoritative contest progress.
  */
 export const CODING_ACTIVITY_EVENT = "exeku:coding-activity";

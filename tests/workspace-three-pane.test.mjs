@@ -8,7 +8,6 @@ import { getVisibleProblem } from "../lib/problems/catalog.ts";
 import {
   ALL_SUPPORTED_LANGUAGES,
   getFilenameForLanguage,
-  getMonacoLanguage,
 } from "../lib/workspace-defaults.ts";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -38,9 +37,7 @@ test("workspace-three-pane - catalog problems satisfy three-pane data contract",
   // Center Pane Data Requirements
   ALL_SUPPORTED_LANGUAGES.forEach((lang) => {
     const filename = getFilenameForLanguage(lang);
-    const monacoMode = getMonacoLanguage(lang);
     assert.ok(filename.includes("."));
-    assert.ok(monacoMode);
     assert.ok(problem.starterCodes[lang]);
   });
 });

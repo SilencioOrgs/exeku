@@ -4,7 +4,7 @@ import { WorkspaceView } from "@/components/app/workspace-view";
 
 export const metadata: Metadata = {
   title: "Workspace — Exeku",
-  description: "Online programming practice sandbox and Monaco editor environment.",
+  description: "Write, run and submit code in Python 3, Java, C++ and C.",
 };
 
 export default function WorkspacePage() {

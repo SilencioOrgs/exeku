@@ -26,7 +26,7 @@ export function InstallGuide() {
       step: "02",
       title: "Install Dependencies",
       command: "npm install",
-      notes: "Installs Next.js 16, React 19, Tailwind CSS v4, and Monaco Editor packages locally.",
+      notes: "Installs Next.js 16, React 19, Tailwind CSS v4 and the bundled Geist fonts locally.",
       icon: "npm",
     },
     {

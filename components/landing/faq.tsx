@@ -10,7 +10,7 @@ export function FAQ() {
   const faqs = [
     {
       q: "Does Exeku require internet connectivity to run?",
-      a: "No. Once cloned and dependencies installed, Exeku is engineered to run offline. All styles, fonts, and editor interfaces are bundled locally. The upcoming execution engine and grading modules will compile and evaluate code 100% on your machine without external API calls.",
+      a: "No. Once cloned and dependencies installed, Exeku is engineered to run offline. All styles, fonts and the code editor are bundled locally. Code runs in a sandbox container on your own machine, so no external API calls are needed.",
     },
     {
       q: "Do students or teachers need to create a cloud account?",
@@ -21,8 +21,8 @@ export function FAQ() {
       a: "Exeku is currently targeted specifically for Windows (Windows 10/11) to address the primary operating system used in educational computer labs and institutional workstations. Cross-platform support will be evaluated in future milestones.",
     },
     {
-      q: "When will the local code execution engine and auto-grader be released?",
-      a: "The execution engine and automated grading system are actively in development on our roadmap. The current release is a developer preview delivering the offline Next.js platform shell, Monaco editor foundation, and curriculum scaffolding.",
+      q: "How does Exeku run and grade code?",
+      a: "Code runs inside a local Piston sandbox container (port 2000) with time and memory limits, never directly on your computer. Submissions are judged against visible and hidden test cases. If the sandbox is not running, Exeku says so instead of faking results.",
     },
     {
       q: "Can schools deploy Exeku on air-gapped lab computers?",

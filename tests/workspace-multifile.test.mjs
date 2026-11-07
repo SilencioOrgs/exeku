@@ -73,10 +73,9 @@ test("workspace multi-file: legacy free drafts load as main file and problem-spe
   await draftRepository.deleteProfileDrafts(profile);
 });
 
-test("workspace multi-file: toolbar avoids unlayered touch minimums and keeps a mounted Monaco path", () => {
+test("workspace multi-file: toolbar avoids unlayered touch minimums and keys the editor per file", () => {
   const view = read("components/app/workspace-view.tsx");
   const css = read("app/globals.css").replace(/\/\*[\s\S]*?\*\//g, "");
-  const editor = read("components/app/monaco-editor-pane.tsx");
   assert.match(view, /className="workspace-toolbar/);
   assert.match(view, /<FileTabs/);
   assert.match(view, /<Group/);
@@ -97,6 +96,5 @@ test("workspace multi-file: toolbar avoids unlayered touch minimums and keeps a 
       blocks.pop();
     }
   }
-  assert.match(editor, /keepCurrentModel/);
-  assert.match(editor, /path=\{path\}/);
+  assert.match(view, /<CodeEditor[\s\S]*?key=\{/);
 });

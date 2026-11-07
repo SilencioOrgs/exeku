@@ -27,19 +27,6 @@ export function getFilenameForLanguage(lang: PreferredLanguage): string {
   }
 }
 
-export function getMonacoLanguage(lang: PreferredLanguage): string {
-  switch (lang) {
-    case "python":
-      return "python";
-    case "java":
-      return "java";
-    case "cpp":
-      return "cpp";
-    case "c":
-      return "c";
-  }
-}
-
 export function getStarterCode(lang: PreferredLanguage): string {
   switch (lang) {
     case "python":
