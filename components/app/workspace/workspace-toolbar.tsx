@@ -64,7 +64,7 @@ export function WorkspaceToolbar(props: WorkspaceToolbarProps) {
         type="button" variant={props.isDemoMode ? "secondary" : "ghost"} size="sm"
         aria-pressed={props.isDemoMode} onClick={props.onToggleDemo}
         title="Simulated results without a sandbox"
-        className="hidden sm:inline-flex"
+        className="hidden 2xl:inline-flex"
       >Demo</Button>
       <span className="mx-0.5 hidden h-5 border-l border-[var(--color-border)] sm:inline" aria-hidden="true" />
       <Button type="button" variant="ghost" size="icon-sm" onClick={props.onReset} aria-label="Reset file" title="Reset file">
