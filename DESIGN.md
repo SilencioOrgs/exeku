@@ -1,6 +1,6 @@
 ---
 name: Exeku
-description: Dark, orange-on-black coding practice and judging workspace in the spirit of LeetCode, with a VS Code-style editor and a 3D Hardware Lab. Your Code. Your Machine.
+description: Dark, orange-on-black competitive programming practice and judging in the spirit of LeetCode, with a VS Code-style editor. Your Code. Your Machine.
 colors:
   canvas: "#0a0a0a"
   surface: "#121212"
@@ -83,9 +83,9 @@ components:
 
 ## Overview
 
-Exeku is where students practice code, compete, and build hardware. It looks like LeetCode at night: black surfaces, one orange accent, Easy/Medium/Hard colors everyone recognizes, and code colored like VS Code Dark+. It is dark only; there is no light theme.
+Exeku is where students practice competitive programming. It looks like LeetCode at night: black surfaces, one orange accent, Easy/Medium/Hard colors everyone recognizes, and code colored like VS Code Dark+. It is dark only; there is no light theme.
 
-Most screens are "Operate" surfaces (problems, workspace, settings): scanability wins. The landing page and the Hardware Lab are allowed more expression: the live 3D board, the scroll tour, orange glows.
+Most screens are "Operate" surfaces (problems, workspace, settings): scanability wins. The landing page is allowed more expression: the 3D versus arena and orange glows.
 
 ## Colors
 
@@ -106,27 +106,25 @@ Most screens are "Operate" surfaces (problems, workspace, settings): scanability
 
 ## Layout
 
-- App shell: sidebar (Overview, Challenges, Workspace, Hardware Lab, Profile, Settings) + top bar.
-- Dashboard: bento tiles (Continue coding, Hardware Lab with "Click to simulate", problems, chassis).
+- App shell: sidebar (Overview, Challenges, Workspace, Profile, Settings) + top bar.
+- Dashboard: competitive programming first: problem counts by difficulty, the problem set with timed-round buttons, a Timed round card, Continue coding, then a one-line Exeku Lab app strip and coding activity.
 - Problems: LeetCode-style table with difficulty count cards, rounded search and pill filters.
-- Landing: hero (headline left; on the right a 3D arena where two students code head to head under a holographic VS scoreboard), Practice (editor demo), the pinned scroll tour (`#tour`, five steps: write, wire, run, organize, print: the breadboard prototype becomes a finished desk clock), then About, Languages, Roadmap, Install, FAQ.
+- Landing: hero (headline left; a 3D arena where two students code head to head under a holographic VS scoreboard), Practice (editor demo), About, Languages, the Exeku Lab app banner, FAQ. No install guide or roadmap on the site.
 
 ## Depth
 
 - Cards lift with `--shadow-raised` (a hairline top highlight and a soft black drop), 14px radius.
 - Inputs sink with `--shadow-inset` on the canvas color.
+- One button system: `Button` and links styled with `buttonVariants` look identical (cva adds `btn-primary` / `btn-outline` / `btn-ghost` marker classes that `globals.css` styles). Never hand-style a `<button>`; use `Button` with a variant, and `aria-pressed` for toggles and pickers.
 - Buttons are subtle keys: a faint top highlight and a 1px press on `:active`. The orange button glows (`--glow-primary`) on hover. Ghost buttons stay flat.
 - Reduced motion removes the press, the camera glide, auto-rotate and the hero blink.
 
-## 3D Hardware Lab
+## 3D and the Exeku Lab app
 
-- Prototype parts are modeled in code to real dimensions in `lib/three/circuit.ts`: Arduino Uno R3 (68.6 × 53.4 mm, with headers, ATmega328P, USB-B, barrel jack, silkscreen), 400-point half breadboard, 5 mm LED, 220 Ω resistor and jumper wires.
-- The chassis is shown as a finished product, not a breadboard in a box: `lib/three/clock.ts` is an Arduino desk clock (110 × 62 × 48 mm printed case, live 4-digit display, buttons, buzzer grille, USB port) whose lid swings open to show the parts organized on a carrier board (Nano, DS3231, TM1637, buzzer). Sizes and parts live in `lib/three/clock-spec.ts`.
-- `lib/three/arena.ts` is the hero scene: stylized, faceless players in centimetres, laptops showing code, and a holographic scoreboard.
-- `lib/three/stage.ts` sets up the renderer: ACES tone mapping, studio lighting with an orange rim light, soft shadows, and a render loop that pauses off screen.
-- React wrappers: `components/lab/circuit-view.tsx` (prototype), `components/lab/clock-view.tsx` (finished build), `components/landing/versus-scene.tsx` (hero). three.js loads only when they mount.
-- CAD models (for example from GrabCAD) can replace the Uno or breadboard through `public/models/manifest.json`; see `public/models/README.md`. Check each model's license first.
-- Every 3D view has a `role="img"` label describing what it shows and a text fallback when WebGL is off.
+- Arduino/MCU simulation, 3D design and printable cases belong to a separate desktop/mobile app, Exeku Lab. The website only promotes it: `components/lab/lab-app-banner.tsx` (landing showcase and a slim dashboard strip). Download links live in `lib/lab-app.ts`; an empty URL shows "coming soon".
+- 3D on the site: `lib/three/arena.ts` (hero), `lib/three/circuit.ts` (Arduino Uno, breadboard, LED, resistor, wires to real millimetres, used in the Lab banner), `lib/three/stage.ts` (renderer, lighting, shadows, pauses off screen). React wrappers: `components/landing/versus-scene.tsx`, `components/lab/circuit-view.tsx`. three.js loads only when they mount.
+- CAD models (for example from GrabCAD) can replace the Uno or breadboard through `public/models/manifest.json`; check each model's license first.
+- Every 3D view has a `role="img"` label and a text fallback when WebGL is off.
 
 ## Components
 
@@ -139,7 +137,8 @@ Most screens are "Operate" surfaces (problems, workspace, settings): scanability
 ## Do's and Don'ts
 
 - Do keep one orange action per area (Run is outline, Submit is primary).
-- Do show real data only. Demo and preview features say "Demo" or "Preview" on the result itself.
+- Do show real data only. Demo features say "Demo" on the result itself.
+- Don't add decorative status pills ("Online preview", "Live", "V1", "Step 01"). Labels must carry information.
 - Don't add a light theme, a second accent color, neon, scanlines or pixel corners.
 - Don't load anything from a CDN. The app, fonts, three.js and models must work offline.
 - Don't use `alert()`; use a `Dialog`.
