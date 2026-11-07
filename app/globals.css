@@ -31,79 +31,149 @@
 }
 
 /* =========================================================================
-   EXEKU TOKENS: blue and white. DESIGN.md is the source of truth.
-   [data-theme-scope] lets one subtree (the code editor) pin light or dark.
+   EXEKU TOKENS: tactile pastel, LeetCode orange. DESIGN.md is the source of truth.
+   [data-theme-scope] lets one subtree (the code editor, previews) pin light or dark.
    ========================================================================= */
 :root,
 [data-theme-scope="light"] {
   color-scheme: light;
-  --color-canvas: #f8fafc;
-  --color-surface: #ffffff;
-  --color-elevated: #f1f5f9;
-  --color-border: #e2e8f0;
-  --color-border-subtle: #f1f5f9;
-  --color-text-main: #0f172a;
-  --color-text-muted: #475569;
-  --color-text-dim: #475569;
-  --color-primary: #2563eb;
-  --color-primary-hover: #1d4ed8;
-  --primary-foreground: #ffffff;
-  --color-ring: #2563eb;
-  --color-accent: #1d4ed8;
-  --color-accent-hover: #1e40af;
+  --color-canvas: #fbf6ef;
+  --color-surface: #fffdfa;
+  --color-elevated: #f5ede2;
+  --color-border: #e8dccb;
+  --color-border-subtle: #f1e8db;
+  --color-text-main: #2b2118;
+  --color-text-muted: #5c4f42;
+  --color-text-dim: #5c4f42;
+  /* Orange keycaps carry dark text; orange as text uses the deeper --color-accent. */
+  --color-primary: #ffa116;
+  --color-primary-hover: #ffb340;
+  --color-primary-edge: #d27f00;
+  --primary-foreground: #2b2118;
+  --color-ring: #c2410c;
+  --color-accent: #9a4a06;
+  --color-accent-hover: #7c3a04;
   --accent-foreground: #ffffff;
-  --color-primary-text: #1d4ed8;
-  /* Verdict colors back up the words (AC, WA...), never replace them. */
-  --color-mint: #15803d;
-  --color-pink: #b91c1c;
-  --color-warning: #854d0e;
+  --color-primary-text: #9a4a06;
+  --color-key-edge: #d9c7ad;
+  /* LeetCode difficulty + verdict colors. Always shown with a word. */
+  --color-easy: #0b6e64;   --color-easy-bg: #d8f3ee;
+  --color-medium: #8a5a00; --color-medium-bg: #fdf0c4;
+  --color-hard: #be123c;   --color-hard-bg: #fde0e4;
+  --color-mint: #15703a;
+  --color-pink: #be123c;
+  --color-warning: #8a5a00;
   --color-danger-foreground: #ffffff;
+  /* Pastel tiles. */
+  --tint-peach: #ffe8d6; --tint-mint: #dcf5e8; --tint-lavender: #ebe5fb; --tint-sky: #ddeefc; --tint-butter: #fff3c4;
+  /* Skeuomorphic depth. */
+  --shadow-raised: inset 0 1px 0 rgb(255 255 255 / 0.9), 0 1px 2px rgb(74 48 20 / 0.08), 0 8px 20px -12px rgb(74 48 20 / 0.28);
+  --shadow-inset: inset 0 2px 3px rgb(74 48 20 / 0.10), inset 0 -1px 0 rgb(255 255 255 / 0.7);
+  --key-highlight: rgb(255 255 255 / 0.6);
+  --key-shadow: rgb(74 48 20 / 0.22);
+  --bb-board-top: #fffaf1; --bb-board: #f3e7d2; --bb-edge: #d9c7ad; --bb-hole: #c9b79c; --bb-channel: #e6d7bd;
 }
 :root[data-color-mode="dark"],
 [data-theme-scope="dark"] {
   color-scheme: dark;
-  --color-canvas: #0b1120;
-  --color-surface: #0f172a;
-  --color-elevated: #1e293b;
-  --color-border: #334155;
-  --color-border-subtle: #1e293b;
-  --color-text-main: #f8fafc;
-  --color-text-muted: #94a3b8;
-  --color-text-dim: #94a3b8;
-  --color-primary: #2563eb;
-  --color-primary-hover: #3b82f6;
-  --primary-foreground: #ffffff;
-  --color-ring: #60a5fa;
-  --color-accent: #60a5fa;
-  --color-accent-hover: #93c5fd;
-  --accent-foreground: #0f172a;
-  --color-primary-text: #60a5fa;
-  --color-mint: #4ade80;
-  --color-pink: #f87171;
-  --color-warning: #facc15;
-  --color-danger-foreground: #0f172a;
+  --color-canvas: #1a1a1a;
+  --color-surface: #262626;
+  --color-elevated: #303030;
+  --color-border: #3e3e3e;
+  --color-border-subtle: #303030;
+  --color-text-main: #eceae6;
+  --color-text-muted: #a8a49e;
+  --color-text-dim: #a8a49e;
+  --color-primary: #ffa116;
+  --color-primary-hover: #ffb340;
+  --color-primary-edge: #b86f00;
+  --primary-foreground: #1a1a1a;
+  --color-ring: #ffa116;
+  --color-accent: #ffb84d;
+  --color-accent-hover: #ffd08a;
+  --accent-foreground: #1a1a1a;
+  --color-primary-text: #ffb84d;
+  --color-key-edge: #141414;
+  --color-easy: #00b8a3;   --color-easy-bg: #17322e;
+  --color-medium: #ffc01e; --color-medium-bg: #3a321b;
+  --color-hard: #ff8a9a;   --color-hard-bg: #3d2128;
+  --color-mint: #2cbb5d;
+  --color-pink: #ff8a9a;
+  --color-warning: #ffc01e;
+  --color-danger-foreground: #1a1a1a;
+  --tint-peach: #3a2a20; --tint-mint: #1f3329; --tint-lavender: #2b2740; --tint-sky: #1e2c3d; --tint-butter: #3a321b;
+  --shadow-raised: inset 0 1px 0 rgb(255 255 255 / 0.05), 0 1px 2px rgb(0 0 0 / 0.4), 0 10px 24px -14px rgb(0 0 0 / 0.8);
+  --shadow-inset: inset 0 2px 4px rgb(0 0 0 / 0.45), inset 0 -1px 0 rgb(255 255 255 / 0.04);
+  --key-highlight: rgb(255 255 255 / 0.12);
+  --key-shadow: rgb(0 0 0 / 0.5);
+  --bb-board-top: #e9e2d6; --bb-board: #d6cbb8; --bb-edge: #8f8471; --bb-hole: #9b8e78; --bb-channel: #bfb39d;
 }
 :root[data-contrast="high"][data-color-mode="light"] {
-  --color-canvas: #ffffff; --color-surface: #ffffff; --color-elevated: #f1f5f9;
+  --color-canvas: #ffffff; --color-surface: #ffffff; --color-elevated: #f5ede2;
   --color-border: #000000; --color-border-subtle: #262626;
-  --color-text-main: #000000; --color-text-muted: #171717; --color-text-dim: #262626;
-  --color-primary: #1e3a8a; --color-primary-hover: #172554; --color-ring: #000000;
-  --color-accent: #1e3a8a; --color-primary-text: #1e3a8a;
-  --color-mint: #14532d; --color-pink: #7f1d1d; --color-warning: #422006;
+  --color-text-main: #000000; --color-text-muted: #1c1712; --color-text-dim: #1c1712;
+  --primary-foreground: #000000; --color-ring: #000000;
+  --color-accent: #6b2f02; --color-primary-text: #6b2f02;
+  --color-easy: #064e47; --color-medium: #5c3c00; --color-hard: #881337;
+  --color-mint: #14532d; --color-pink: #881337; --color-warning: #5c3c00;
 }
 :root[data-contrast="high"][data-color-mode="dark"] {
-  --color-canvas: #000000; --color-surface: #0a0a0a; --color-elevated: #121212;
+  --color-canvas: #000000; --color-surface: #0a0a0a; --color-elevated: #141414;
   --color-border: #ffffff; --color-border-subtle: #d4d4d4;
   --color-text-main: #ffffff; --color-text-muted: #e5e5e5; --color-text-dim: #d4d4d4;
-  --color-primary: #bfdbfe; --color-primary-hover: #dbeafe; --primary-foreground: #000000; --color-ring: #ffffff;
-  --color-accent: #bfdbfe; --accent-foreground: #000000; --color-primary-text: #bfdbfe;
-  --color-mint: #bbf7d0; --color-pink: #fecaca; --color-warning: #fef08a; --color-danger-foreground: #000000;
+  --primary-foreground: #000000; --color-ring: #ffffff;
+  --color-accent: #ffd08a; --accent-foreground: #000000; --color-primary-text: #ffd08a;
+  --color-easy: #5eead4; --color-medium: #fde68a; --color-hard: #fecdd3;
+  --color-mint: #bbf7d0; --color-pink: #fecdd3; --color-warning: #fde68a; --color-danger-foreground: #000000;
 }
 :root,
 [data-theme-scope] {
   --color-primary-foreground: var(--primary-foreground);
   --color-accent-foreground: var(--accent-foreground);
 }
+
+/* =========================================================================
+   SKEUOMORPHIC MATERIALS: raised cards, keycap buttons, recessed fields.
+   ========================================================================= */
+[data-slot="card"], .appearance-card, .modern-feature-card, .profile-panel, .coding-activity,
+.problem-pane, .results-pane, .workspace-toolbar, .settings-advanced, .skeuo-card {
+  box-shadow: var(--shadow-raised);
+  border-radius: 14px;
+}
+:where(input:not([type="checkbox"], [type="radio"], [type="range"]), select, textarea):not(.code-editor-input) {
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-inset);
+}
+.skeuo-key, [data-slot="button"][data-variant="default"], [data-slot="button"][data-variant="outline"],
+[data-slot="button"][data-variant="secondary"], .appearance-button:not(.is-ghost) {
+  border: 1px solid var(--color-key-edge);
+  background-image: linear-gradient(180deg, var(--key-highlight), transparent 60%);
+  box-shadow: inset 0 1px 0 var(--key-highlight), 0 2px 0 var(--color-key-edge), 0 3px 6px -2px var(--key-shadow);
+  transition: transform 90ms ease, box-shadow 90ms ease, background-color 120ms ease;
+}
+[data-slot="button"][data-variant="default"], .appearance-button.is-primary {
+  --color-key-edge: var(--color-primary-edge);
+  background-color: var(--color-primary);
+  color: var(--primary-foreground);
+  font-weight: 600;
+}
+[data-slot="button"][data-variant="default"]:hover:not(:disabled), .appearance-button.is-primary:hover:not(:disabled) { background-color: var(--color-primary-hover); }
+[data-slot="button"][data-variant="outline"], [data-slot="button"][data-variant="secondary"], .appearance-button:not(.is-primary, .is-ghost) {
+  background-color: var(--color-surface);
+  color: var(--color-text-main);
+}
+:is(.skeuo-key, [data-slot="button"][data-variant="default"], [data-slot="button"][data-variant="outline"], [data-slot="button"][data-variant="secondary"], .appearance-button:not(.is-ghost)):active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: inset 0 2px 4px var(--key-shadow), 0 0 0 var(--color-key-edge);
+}
+@media (prefers-reduced-motion: reduce) {
+  :is(.skeuo-key, [data-slot="button"], .appearance-button) { transition: none; }
+}
+.tile-peach { background-color: var(--tint-peach); }
+.tile-mint { background-color: var(--tint-mint); }
+.tile-lavender { background-color: var(--tint-lavender); }
+.tile-sky { background-color: var(--tint-sky); }
+.tile-butter { background-color: var(--tint-butter); }
 
 /* Code editor: VS Code Light+ / Dark+ colors. */
 .code-editor[data-theme-scope="light"] {
@@ -287,7 +357,7 @@ input::placeholder, textarea::placeholder { color: var(--color-text-dim); opacit
   font-family:var(--font-ui); font-size:.875rem; font-weight:500; border:0;
   border-radius:8px; box-shadow:none; letter-spacing:normal;
 }
-.app-sidebar .appearance-nav-item[aria-current="page"] { background:color-mix(in srgb, var(--color-primary) 12%, var(--color-surface)); color:var(--color-primary-text); box-shadow:none; }
+.app-sidebar .appearance-nav-item[aria-current="page"] { background:color-mix(in srgb, var(--color-primary) 18%, var(--color-surface)); color:var(--color-text-main); font-weight:600; box-shadow: inset 0 1px 0 var(--key-highlight), 0 1px 0 var(--color-key-edge); }
 :is(.workspace-view,.challenges-view) .font-heading { font-family:var(--font-ui); font-weight:600; letter-spacing:-.015em; }
 :is(.workspace-view,.challenges-view) .font-mono:not(pre):not(code) { font-family:var(--font-ui); letter-spacing:normal; }
 .settings-advanced {

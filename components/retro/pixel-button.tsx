@@ -26,7 +26,7 @@ export const PixelButton = React.forwardRef<HTMLButtonElement, PixelButtonProps>
     };
     const styles = cn(
       "appearance-button inline-flex shrink-0 cursor-pointer items-center justify-center whitespace-nowrap rounded-lg border font-medium normal-case shadow-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ring)] disabled:pointer-events-none disabled:opacity-50",
-      sizes[size], variants[variant], className,
+      sizes[size], variants[variant], variant === "ghost" ? "is-ghost" : variant === "secondary" ? "" : "is-primary", className,
     );
     if (href) return <a href={href} className={styles}>{children}</a>;
     return <button ref={ref} className={styles} onClick={onClick} {...props}>{children}</button>;
