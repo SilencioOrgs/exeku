@@ -47,7 +47,7 @@ Exeku provides a high-craft developer aesthetic paired with robust automated cod
   - Server-authoritative test case evaluation with hidden test input/output redaction.
   - Local profile and code draft persistence via IndexedDB (safe hydration without cloud lock-in during developer preview).
   - Dark, orange-on-black shadcn/ui design system in the spirit of LeetCode, with a VS Code Dark+ editor (see `DESIGN.md`).
-  - Hardware Lab preview: blink an LED on a realistic 3D Arduino Uno and breadboard, and preview a printable enclosure (Three.js). The landing page tours it on scroll.
+  - Hardware Lab preview: blink an LED on a realistic 3D Arduino Uno and breadboard, then see the prototype as a finished, printable product (an Arduino desk clock with organized parts). The landing page tours it on scroll; the hero shows a head-to-head coding match.
 - **Technical Constraints:**
   - **No Unsafe Execution:** Student code is strictly untrusted. Code execution must run inside an isolated sandbox (Piston/`isolate` container) with enforced CPU limits, memory limits, wall-clock timeouts, restricted filesystem access, and disabled outbound networking. Arbitrary unsandboxed host process execution is strictly prohibited.
   - **Local Development Boundaries:** No public cloud infrastructure (Vercel, Render, Oracle Cloud) or cloud databases are provisioned during this stage. Everything runs and verifies locally.

@@ -109,7 +109,7 @@ Most screens are "Operate" surfaces (problems, workspace, settings): scanability
 - App shell: sidebar (Overview, Challenges, Workspace, Hardware Lab, Profile, Settings) + top bar.
 - Dashboard: bento tiles (Continue coding, Hardware Lab with "Click to simulate", problems, chassis).
 - Problems: LeetCode-style table with difficulty count cards, rounded search and pill filters.
-- Landing: hero (headline left, live 3D board right), Practice (editor demo), the pinned scroll tour (`#tour`, five steps: write, wire, run, enclose, print), then About, Languages, Roadmap, Install, FAQ.
+- Landing: hero (headline left; on the right a 3D arena where two students code head to head under a holographic VS scoreboard), Practice (editor demo), the pinned scroll tour (`#tour`, five steps: write, wire, run, organize, print: the breadboard prototype becomes a finished desk clock), then About, Languages, Roadmap, Install, FAQ.
 
 ## Depth
 
@@ -120,9 +120,11 @@ Most screens are "Operate" surfaces (problems, workspace, settings): scanability
 
 ## 3D Hardware Lab
 
-- Parts are modeled in code to real dimensions in `lib/three/circuit.ts`: Arduino Uno R3 (68.6 × 53.4 mm, with headers, ATmega328P, USB-B, barrel jack, silkscreen), 400-point half breadboard, 5 mm LED, 220 Ω resistor and jumper wires. `buildEnclosure` sizes a case around them.
+- Prototype parts are modeled in code to real dimensions in `lib/three/circuit.ts`: Arduino Uno R3 (68.6 × 53.4 mm, with headers, ATmega328P, USB-B, barrel jack, silkscreen), 400-point half breadboard, 5 mm LED, 220 Ω resistor and jumper wires.
+- The chassis is shown as a finished product, not a breadboard in a box: `lib/three/clock.ts` is an Arduino desk clock (110 × 62 × 48 mm printed case, live 4-digit display, buttons, buzzer grille, USB port) whose lid swings open to show the parts organized on a carrier board (Nano, DS3231, TM1637, buzzer). Sizes and parts live in `lib/three/clock-spec.ts`.
+- `lib/three/arena.ts` is the hero scene: stylized, faceless players in centimetres, laptops showing code, and a holographic scoreboard.
 - `lib/three/stage.ts` sets up the renderer: ACES tone mapping, studio lighting with an orange rim light, soft shadows, and a render loop that pauses off screen.
-- `components/lab/circuit-view.tsx` is the one React wrapper; three.js loads only when it mounts.
+- React wrappers: `components/lab/circuit-view.tsx` (prototype), `components/lab/clock-view.tsx` (finished build), `components/landing/versus-scene.tsx` (hero). three.js loads only when they mount.
 - CAD models (for example from GrabCAD) can replace the Uno or breadboard through `public/models/manifest.json`; see `public/models/README.md`. Check each model's license first.
 - Every 3D view has a `role="img"` label describing what it shows and a text fallback when WebGL is off.
 
