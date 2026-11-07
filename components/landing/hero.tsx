@@ -1,52 +1,46 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { useProfile } from "@/hooks/use-profile";
-import { useAppearance } from "@/hooks/use-appearance";
 import { buttonVariants } from "@/components/ui/button";
 import { DotIcon } from "@/components/retro/dot-icon";
-import { CircuitView } from "@/components/lab/circuit-view";
+import { VersusScene } from "./versus-scene";
 
 const STATS = [
   { value: "4", label: "languages judged" },
   { value: "AC/WA", label: "instant verdicts" },
-  { value: "3D", label: "Arduino lab" },
+  { value: "Timed", label: "challenge mode" },
 ];
 
 export function Hero() {
   const { profile } = useProfile();
-  const { effectiveReducedMotion } = useAppearance();
-  const [ledOn, setLedOn] = useState(true);
-
-  useEffect(() => {
-    if (effectiveReducedMotion) return;
-    const id = window.setInterval(() => setLedOn((on) => !on), 650);
-    return () => window.clearInterval(id);
-  }, [effectiveReducedMotion]);
 
   return (
-    <section id="hero" className="bg-grid relative overflow-hidden border-b border-[var(--color-border)]">
-      <div aria-hidden="true" className="pointer-events-none absolute -top-40 right-[-10%] h-[560px] w-[760px] rounded-full bg-[radial-gradient(closest-side,rgb(255_161_22/0.22),transparent)] blur-2xl" />
+    <section id="hero" className="relative overflow-hidden border-b border-[var(--color-border)]">
+      <div aria-hidden="true" className="bg-grid absolute inset-0 opacity-60" />
+      <div aria-hidden="true" className="pointer-events-none absolute top-1/3 left-1/2 h-[620px] w-[900px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgb(255_161_22/0.16),transparent)]" />
+      <VersusScene className="absolute inset-x-0 top-0 h-[54vh] min-h-[340px] md:inset-y-0 md:h-auto" />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 hidden w-[46%] bg-gradient-to-r from-[var(--color-canvas)] via-[var(--color-canvas)]/75 to-transparent md:block" />
       <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent to-[var(--color-canvas)]" />
-      <div className="relative mx-auto grid max-w-7xl items-center gap-8 px-4 pt-14 pb-16 sm:px-6 md:pt-20 lg:grid-cols-[1fr_1.15fr] lg:gap-4 lg:px-8 lg:pb-24">
-        <div className="max-w-xl">
-          <span className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/80 px-3 py-1 text-xs font-medium text-[var(--color-text-muted)]">
-            <span className="size-1.5 rounded-full bg-[var(--color-primary)] shadow-[0_0_8px_var(--color-primary)]" aria-hidden="true" />
-            Developer preview · Your code. Your machine.
+
+      <div className="pointer-events-none relative mx-auto flex min-h-[calc(100svh-4rem)] max-w-7xl items-end px-4 pt-[50vh] pb-14 sm:px-6 md:items-center md:pt-16 lg:px-8">
+        <div className="pointer-events-auto max-w-xl">
+          <span className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/80 px-3 py-1 text-xs font-medium text-[var(--color-text-muted)] backdrop-blur">
+            <span className="size-1.5 animate-pulse rounded-full bg-[var(--color-primary)] shadow-[0_0_8px_var(--color-primary)]" aria-hidden="true" />
+            Live practice arena · Developer preview
           </span>
           <h1 className="mt-6 text-5xl leading-[1.02] font-semibold tracking-tight text-[var(--color-text-main)] sm:text-6xl xl:text-7xl">
-            Code it.<br />Wire it.<br /><span className="text-gradient-orange">Print it.</span>
+            Out-code<br />your <span className="text-gradient-orange">rival.</span>
           </h1>
-          <p className="mt-6 text-lg leading-relaxed text-[var(--color-text-muted)]">
-            Practice problems like a competitive programmer, with instant judging in Python, Java, C++ and C. Then take your code off the screen: blink a real-looking Arduino and get a case that fits it.
+          <p className="mt-6 max-w-md text-lg leading-relaxed text-[var(--color-text-muted)]">
+            Competitive programming practice for students. Same problem, same clock: solve it in Python, Java, C++ or C and let the judge decide, test by test.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link href={profile ? "/app" : "/setup"} className={buttonVariants({ size: "lg", className: "h-11 px-5 text-base" })}>
-              {profile ? "Open your workspace" : "Start practicing"}<DotIcon name="arrowRight" size={16} aria-hidden="true" />
+            <Link href={profile ? "/app/challenges" : "/setup"} className={buttonVariants({ size: "lg", className: "h-11 px-5 text-base" })}>
+              {profile ? "Pick a problem" : "Start practicing"}<DotIcon name="arrowRight" size={16} aria-hidden="true" />
             </Link>
-            <a href="#tour" className={buttonVariants({ variant: "outline", size: "lg", className: "h-11 px-5 text-base" })}>
-              Take the tour<DotIcon name="arrowDown" size={16} aria-hidden="true" />
+            <a href="#practice" className={buttonVariants({ variant: "outline", size: "lg", className: "h-11 px-5 text-base" })}>
+              See how it works<DotIcon name="arrowDown" size={16} aria-hidden="true" />
             </a>
           </div>
           <dl className="mt-10 grid max-w-md grid-cols-3 gap-4 border-t border-[var(--color-border)] pt-6">
@@ -57,20 +51,6 @@ export function Hero() {
               </div>
             ))}
           </dl>
-        </div>
-
-        <div className="relative">
-          <CircuitView
-            ledOn={ledOn}
-            view={[120, 120, 190]}
-            className="h-[340px] sm:h-[460px] lg:h-[560px]"
-            label="A 3D Arduino Uno wired to a breadboard with a blinking red LED. Drag to rotate."
-          />
-          <div className="pointer-events-none absolute bottom-4 left-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/85 px-3 py-2 backdrop-blur">
-            <p className="font-code text-xs text-[var(--color-text-muted)]">blink.ino</p>
-            <p className="font-code text-sm"><span className="tok-function">digitalWrite</span>(<span className="tok-number">13</span>, <span className="tok-constant">{ledOn ? "HIGH" : "LOW"}</span>);</p>
-          </div>
-          <p className="pointer-events-none absolute right-4 bottom-4 text-xs text-[var(--color-text-muted)]">Drag to rotate</p>
         </div>
       </div>
     </section>
