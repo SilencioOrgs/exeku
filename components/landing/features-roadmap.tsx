@@ -111,8 +111,8 @@ export function FeaturesRoadmap() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Column 1: Current Foundation */}
           <div className="appearance-stack space-y-6">
-            <div className="flex items-center gap-2 pb-3 border-b border-[var(--color-mint)]/40">
-              <span className="w-2.5 h-2.5 bg-[var(--color-mint)] inline-block" />
+            <div className="flex items-center gap-2 pb-3 border-b border-[var(--color-primary-text)]/40">
+              <span className="w-2.5 h-2.5 bg-[var(--color-primary-text)] inline-block" />
               <h3
                 className="text-xl sm:text-2xl font-bold text-[var(--color-text-main)]"
                 style={{ fontFamily: "var(--font-heading-active)" }}
@@ -128,11 +128,11 @@ export function FeaturesRoadmap() {
                   key={item.title}
                   variant="default"
                   cornerMarks={false}
-                  className="p-5 bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-mint)]/50 transition-colors"
+                  className="p-5 bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-primary-text)]/50 transition-colors"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="p-2 bg-[var(--color-elevated)] border border-[var(--color-border)] text-[var(--color-mint)] shrink-0 mt-0.5">
-                      <DotIcon name={item.iconName} size={18} className="text-[var(--color-mint)]" />
+                    <div className="p-2 bg-[var(--color-elevated)] border border-[var(--color-border)] text-[var(--color-primary-text)] shrink-0 mt-0.5">
+                      <DotIcon name={item.iconName} size={18} className="text-[var(--color-primary-text)]" />
                     </div>
                     <div>
                       <h4 className="text-base font-bold text-[var(--color-text-main)] font-mono mb-1">
@@ -150,8 +150,8 @@ export function FeaturesRoadmap() {
 
           {/* Column 2: Development Roadmap */}
           <div className="appearance-stack space-y-6">
-            <div className="flex items-center gap-2 pb-3 border-b border-[var(--color-pink)]/40">
-              <span className="w-2.5 h-2.5 bg-[var(--color-pink)] inline-block" />
+            <div className="flex items-center gap-2 pb-3 border-b border-[var(--color-primary-text)]/40">
+              <span className="w-2.5 h-2.5 bg-[var(--color-primary-text)] inline-block" />
               <h3
                 className="text-xl sm:text-2xl font-bold text-[var(--color-text-main)]"
                 style={{ fontFamily: "var(--font-heading-active)" }}
@@ -167,18 +167,18 @@ export function FeaturesRoadmap() {
                   key={item.title}
                   variant="default"
                   cornerMarks={false}
-                  className="p-5 bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-pink)]/50 transition-colors"
+                  className="p-5 bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-primary-text)]/50 transition-colors"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="p-2 bg-[var(--color-elevated)] border border-[var(--color-border)] text-[var(--color-pink)] shrink-0 mt-0.5">
-                      <DotIcon name={item.iconName} size={18} className="text-[var(--color-pink)]" />
+                    <div className="p-2 bg-[var(--color-elevated)] border border-[var(--color-border)] text-[var(--color-primary-text)] shrink-0 mt-0.5">
+                      <DotIcon name={item.iconName} size={18} className="text-[var(--color-primary-text)]" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <h4 className="text-base font-bold text-[var(--color-text-main)] font-mono">
                           {item.title}
                         </h4>
-                        <span className="text-xs font-mono px-1.5 py-0.2 bg-[var(--color-elevated)] text-[var(--color-pink)] border border-[var(--color-pink)]/40 flex items-center gap-1">
+                        <span className="text-xs font-mono px-1.5 py-0.2 bg-[var(--color-elevated)] text-[var(--color-primary-text)] border border-[var(--color-primary-text)]/40 flex items-center gap-1">
                           <DotIcon name="alarm" className="w-2.5 h-2.5" /> Planned
                         </span>
                       </div>

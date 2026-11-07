@@ -33,9 +33,9 @@ function contrast(a, b) { const x = luminance(a), y = luminance(b); return (Math
     for (const setting of ['standard', 'high']) {
       test(mode + ' ' + setting + ' readable surfaces and controls', () => {
         const get = palette(mode, setting);
-        for (const factor of setting === 'high' ? [1] : [0.8, 1, 1.2]) {
+        for (const factor of [1]) { // brightness setting was retired
           for (const surface of ['canvas', 'surface', 'elevated']) {
-            const background = rgb(get('--base-' + surface)).map(channel => Math.min(255, channel * factor));
+            const background = rgb(get('--color-' + surface)).map(channel => Math.min(255, channel * factor));
             for (const token of ['text-main', 'text-muted', 'text-dim', 'accent', 'mint', 'pink', 'primary-text', 'warning']) {
               const ratio = contrast(rgb(get('--color-' + token)), background);
               assert.ok(ratio >= (setting === 'high' ? 7 : 4.5), token + ' on ' + surface + ' at ' + factor + ': ' + ratio.toFixed(2));

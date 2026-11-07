@@ -11,8 +11,8 @@ export function PixelBadge({ children, variant = "default", bracketed: _brackete
   return <span className={cn(
     "appearance-badge inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-medium normal-case tracking-normal",
     "border-[var(--color-border)] bg-[var(--color-elevated)] text-[var(--color-text-muted)]",
-    variant === "pink" && "text-[var(--color-pink)]",
-    variant === "mint" && "text-[var(--color-mint)]",
+    variant === "pink" && "text-[var(--color-primary-text)]",
+    variant === "mint" && "text-[var(--color-primary-text)]",
     className,
   )} {...props}>{children}</span>;
 }

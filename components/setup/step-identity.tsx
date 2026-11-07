@@ -60,7 +60,7 @@ export function StepIdentity({
               charCount > 32
                 ? "text-[var(--color-pink)]"
                 : charCount >= 2
-                ? "text-[var(--color-mint)]"
+                ? "text-[var(--color-primary-text)]"
                 : "text-[var(--color-text-dim)]"
             )}
             aria-live="polite"
@@ -135,9 +135,9 @@ export function StepIdentity({
 
       {/* Offline Assurance Callout */}
       <div className="flex items-start gap-3 p-3.5 bg-[var(--color-canvas)] border border-[var(--color-border)] text-[var(--color-text-muted)]">
-        <DotIcon name="shield" size={18} className="text-[var(--color-mint)] mt-0.5" />
+        <DotIcon name="shield" size={18} className="text-[var(--color-primary-text)] mt-0.5" />
         <div className="text-xs font-mono space-y-0.5">
-          <span className="text-[var(--color-mint)] font-bold block">
+          <span className="text-[var(--color-primary-text)] font-bold block">
             100% Offline persistence
           </span>
           <p className="text-[var(--color-text-dim)]">

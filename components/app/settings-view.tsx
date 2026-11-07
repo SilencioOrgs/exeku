@@ -163,7 +163,7 @@ export function SettingsView() {
 
           <div className="p-2.5 bg-[var(--color-canvas)] border border-[var(--color-border)] space-y-1">
             <span className="text-[var(--color-text-dim)] text-xs">Experience Level</span>
-            <div className="text-[var(--color-mint)]">
+            <div className="text-[var(--color-primary-text)]">
               {profile.experienceLevel}
             </div>
           </div>
@@ -191,8 +191,8 @@ export function SettingsView() {
               Real inspection of client storage schemas and data isolation.
             </p>
           </div>
-          <span className="flex items-center gap-1.5 font-mono text-xs text-[var(--color-mint)]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-mint)] animate-pulse" />
+          <span className="flex items-center gap-1.5 font-mono text-xs text-[var(--color-primary-text)]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-primary-text)] animate-pulse" />
             100% Local
           </span>
         </div>
@@ -201,7 +201,7 @@ export function SettingsView() {
           <div className="p-3 bg-[var(--color-canvas)] border border-[var(--color-border)] space-y-1">
             <span className="text-[var(--color-text-dim)] text-xs">Database Target</span>
             <div className="text-foreground font-bold">exeku_local_v1</div>
-            <span className="text-[var(--color-mint)] text-xs">Version 2 (Active)</span>
+            <span className="text-[var(--color-primary-text)] text-xs">Version 2 (Active)</span>
           </div>
 
           <div className="p-3 bg-[var(--color-canvas)] border border-[var(--color-border)] space-y-1">
@@ -220,7 +220,7 @@ export function SettingsView() {
 
           <div className="p-3 bg-[var(--color-canvas)] border border-[var(--color-border)] space-y-1">
             <span className="text-[var(--color-text-dim)] text-xs">Telemetry Transmitted</span>
-            <div className="text-[var(--color-mint)] font-bold">0 Bytes</div>
+            <div className="text-[var(--color-primary-text)] font-bold">0 Bytes</div>
             <span className="text-[var(--color-text-dim)] text-xs">Stored on this device</span>
           </div>
         </div>

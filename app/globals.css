@@ -31,75 +31,116 @@
 }
 
 /* =========================================================================
-   EXEKU TOKENS: black and white. DESIGN.md is the source of truth.
+   EXEKU TOKENS: blue and white. DESIGN.md is the source of truth.
    [data-theme-scope] lets one subtree (the code editor) pin light or dark.
    ========================================================================= */
 :root,
 [data-theme-scope="light"] {
   color-scheme: light;
-  --base-canvas: #fafafa;
-  --base-surface: #ffffff;
-  --base-elevated: #f4f4f5;
-  --color-border: #e4e4e7;
-  --color-border-subtle: #f4f4f5;
-  --color-text-main: #18181b;
-  /* Muted text keeps 4.5:1 even at 80% surface brightness. */
-  --color-text-muted: #4a4a52;
-  --color-text-dim: #4a4a52;
-  --color-primary: #18181b;
-  --color-primary-hover: #3f3f46;
+  --color-canvas: #f8fafc;
+  --color-surface: #ffffff;
+  --color-elevated: #f1f5f9;
+  --color-border: #e2e8f0;
+  --color-border-subtle: #f1f5f9;
+  --color-text-main: #0f172a;
+  --color-text-muted: #475569;
+  --color-text-dim: #475569;
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
   --primary-foreground: #ffffff;
-  --color-ring: #52525b;
+  --color-ring: #2563eb;
+  --color-accent: #1d4ed8;
+  --color-accent-hover: #1e40af;
+  --accent-foreground: #ffffff;
+  --color-primary-text: #1d4ed8;
+  /* Verdict colors back up the words (AC, WA...), never replace them. */
+  --color-mint: #15803d;
+  --color-pink: #b91c1c;
+  --color-warning: #854d0e;
+  --color-danger-foreground: #ffffff;
 }
 :root[data-color-mode="dark"],
 [data-theme-scope="dark"] {
   color-scheme: dark;
-  --base-canvas: #09090b;
-  --base-surface: #111113;
-  --base-elevated: #27272a;
-  --color-border: #343438;
-  --color-border-subtle: #27272a;
-  --color-text-main: #fafafa;
-  --color-text-muted: #a1a1aa;
-  --color-text-dim: #a1a1aa;
-  --color-primary: #fafafa;
-  --color-primary-hover: #e4e4e7;
-  --primary-foreground: #18181b;
-  --color-ring: #a1a1aa;
+  --color-canvas: #0b1120;
+  --color-surface: #0f172a;
+  --color-elevated: #1e293b;
+  --color-border: #334155;
+  --color-border-subtle: #1e293b;
+  --color-text-main: #f8fafc;
+  --color-text-muted: #94a3b8;
+  --color-text-dim: #94a3b8;
+  --color-primary: #2563eb;
+  --color-primary-hover: #3b82f6;
+  --primary-foreground: #ffffff;
+  --color-ring: #60a5fa;
+  --color-accent: #60a5fa;
+  --color-accent-hover: #93c5fd;
+  --accent-foreground: #0f172a;
+  --color-primary-text: #60a5fa;
+  --color-mint: #4ade80;
+  --color-pink: #f87171;
+  --color-warning: #facc15;
+  --color-danger-foreground: #0f172a;
 }
-:root[data-contrast="high"] { --brightness-factor: 1 !important; }
 :root[data-contrast="high"][data-color-mode="light"] {
-  --base-canvas: #ffffff; --base-surface: #ffffff; --base-elevated: #f4f4f5;
+  --color-canvas: #ffffff; --color-surface: #ffffff; --color-elevated: #f1f5f9;
   --color-border: #000000; --color-border-subtle: #262626;
   --color-text-main: #000000; --color-text-muted: #171717; --color-text-dim: #262626;
-  --color-primary: #000000; --color-primary-hover: #262626; --color-ring: #000000;
+  --color-primary: #1e3a8a; --color-primary-hover: #172554; --color-ring: #000000;
+  --color-accent: #1e3a8a; --color-primary-text: #1e3a8a;
+  --color-mint: #14532d; --color-pink: #7f1d1d; --color-warning: #422006;
 }
 :root[data-contrast="high"][data-color-mode="dark"] {
-  --base-canvas: #000000; --base-surface: #0a0a0a; --base-elevated: #121212;
+  --color-canvas: #000000; --color-surface: #0a0a0a; --color-elevated: #121212;
   --color-border: #ffffff; --color-border-subtle: #d4d4d4;
   --color-text-main: #ffffff; --color-text-muted: #e5e5e5; --color-text-dim: #d4d4d4;
-  --color-primary: #ffffff; --color-primary-hover: #e5e5e5; --color-ring: #ffffff;
+  --color-primary: #bfdbfe; --color-primary-hover: #dbeafe; --primary-foreground: #000000; --color-ring: #ffffff;
+  --color-accent: #bfdbfe; --accent-foreground: #000000; --color-primary-text: #bfdbfe;
+  --color-mint: #bbf7d0; --color-pink: #fecaca; --color-warning: #fef08a; --color-danger-foreground: #000000;
 }
 :root,
 [data-theme-scope] {
-  /* The brightness setting scales background channels only; text stays intact. */
-  --color-canvas: rgb(from var(--base-canvas) calc(r * var(--brightness-factor)) calc(g * var(--brightness-factor)) calc(b * var(--brightness-factor)));
-  --color-surface: rgb(from var(--base-surface) calc(r * var(--brightness-factor)) calc(g * var(--brightness-factor)) calc(b * var(--brightness-factor)));
-  --color-elevated: rgb(from var(--base-elevated) calc(r * var(--brightness-factor)) calc(g * var(--brightness-factor)) calc(b * var(--brightness-factor)));
   --color-primary-foreground: var(--primary-foreground);
-  --color-primary-text: var(--color-text-main);
-  /* No accent color. Legacy accent/status tokens resolve to neutrals on purpose. */
-  --color-accent: var(--color-primary);
-  --color-accent-hover: var(--color-primary-hover);
-  --accent-foreground: var(--primary-foreground);
-  --color-accent-foreground: var(--primary-foreground);
-  --color-mint: var(--color-text-main);
-  --color-pink: var(--color-text-main);
-  --color-warning: var(--color-text-main);
-  --color-danger-foreground: var(--color-surface);
+  --color-accent-foreground: var(--accent-foreground);
 }
+
+/* Code editor: VS Code Light+ / Dark+ colors. */
+.code-editor[data-theme-scope="light"] {
+  --ed-bg: #ffffff; --ed-fg: #000000; --ed-gutter: #237893; --ed-gutter-active: #0b216f;
+  --ed-line: #eef4fd; --ed-selection: rgb(0 120 215 / 0.25); --ed-caret: #000000;
+  --tok-keyword: #0000ff; --tok-control: #af00db; --tok-string: #a31515; --tok-number: #098658;
+  --tok-comment: #008000; --tok-function: #795e26; --tok-type: #267f99; --tok-constant: #0000ff;
+  --tok-variable: #001080; --tok-preproc: #af00db; --tok-bracket0: #0431fa; --tok-bracket1: #319331; --tok-bracket2: #7b3814;
+}
+.code-editor[data-theme-scope="dark"] {
+  --ed-bg: #1e1e1e; --ed-fg: #d4d4d4; --ed-gutter: #858585; --ed-gutter-active: #c6c6c6;
+  --ed-line: #2a2d2e; --ed-selection: rgb(38 79 120 / 0.7); --ed-caret: #aeafad;
+  --tok-keyword: #569cd6; --tok-control: #c586c0; --tok-string: #ce9178; --tok-number: #b5cea8;
+  --tok-comment: #6a9955; --tok-function: #dcdcaa; --tok-type: #4ec9b0; --tok-constant: #569cd6;
+  --tok-variable: #9cdcfe; --tok-preproc: #c586c0; --tok-bracket0: #ffd700; --tok-bracket1: #da70d6; --tok-bracket2: #179fff;
+}
+.code-editor { background: var(--ed-bg); color: var(--ed-fg); }
+.code-editor-gutter { background: var(--ed-bg); color: var(--ed-gutter); }
+.code-editor-gutter .is-active { color: var(--ed-gutter-active); }
+.code-editor-highlight .is-active { background: var(--ed-line); }
+.code-editor-input:focus-visible { outline: none; }
+.code-editor-input { color: transparent; -webkit-text-fill-color: transparent; caret-color: var(--ed-caret); }
+.code-editor-input::selection { background: var(--ed-selection); color: transparent; -webkit-text-fill-color: transparent; }
+.tok-keyword { color: var(--tok-keyword); }
+.tok-control { color: var(--tok-control); }
+.tok-string { color: var(--tok-string); }
+.tok-number { color: var(--tok-number); }
+.tok-comment { color: var(--tok-comment); }
+.tok-function { color: var(--tok-function); }
+.tok-type { color: var(--tok-type); }
+.tok-constant { color: var(--tok-constant); }
+.tok-variable { color: var(--tok-variable); }
+.tok-preproc { color: var(--tok-preproc); }
+.tok-bracket0 { color: var(--tok-bracket0); }
+.tok-bracket1 { color: var(--tok-bracket1); }
+.tok-bracket2 { color: var(--tok-bracket2); }
 :root {
-  --brightness-factor: 1;
   --font-ui: var(--font-geist-sans), sans-serif;
   --font-code: var(--font-geist-mono), monospace;
   --font-heading-active: var(--font-geist-sans), sans-serif;
@@ -246,7 +287,7 @@ input::placeholder, textarea::placeholder { color: var(--color-text-dim); opacit
   font-family:var(--font-ui); font-size:.875rem; font-weight:500; border:0;
   border-radius:8px; box-shadow:none; letter-spacing:normal;
 }
-.app-sidebar .appearance-nav-item[aria-current="page"] { background:var(--color-elevated); color:var(--color-text-main); box-shadow:none; }
+.app-sidebar .appearance-nav-item[aria-current="page"] { background:color-mix(in srgb, var(--color-primary) 12%, var(--color-surface)); color:var(--color-primary-text); box-shadow:none; }
 :is(.workspace-view,.challenges-view) .font-heading { font-family:var(--font-ui); font-weight:600; letter-spacing:-.015em; }
 :is(.workspace-view,.challenges-view) .font-mono:not(pre):not(code) { font-family:var(--font-ui); letter-spacing:normal; }
 .settings-advanced {

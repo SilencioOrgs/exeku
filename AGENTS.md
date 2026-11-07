@@ -29,7 +29,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/turbopack`, `tw-animate-css`, `app/globals.css`)
 - **UI Components**: shadcn/ui configured with Base UI primitives (`@base-ui/react`), Nova preset (`style: "base-nova"`), and Lucide React icons (`components.json`)
 - **Icons**: lucide-react through the `DotIcon` wrapper (`components/retro/dot-icon.tsx`)
-- **Editor**: Built-in plain-text code editor (`components/app/code-editor.tsx`): a native `<textarea>` with a line-number gutter. No Monaco, no CDN downloads.
+- **Editor**: Built-in code editor (`components/app/code-editor.tsx`): a native `<textarea>` over a syntax-highlighted copy (`lib/syntax.ts`, VS Code colors). No Monaco, no CDN downloads.
 - **Storage**: IndexedDB local profiles and draft persistence (v2 schema)
 - **Execution Sandbox Target**: Piston API (`POST /api/v2/execute`) via isolated container sandbox
 - **Package Manager**: npm (use `npm.cmd` / `npx.cmd` in Windows PowerShell if execution policies restrict script loading)
@@ -81,8 +81,8 @@ Student code is strictly untrusted:
 
 The source of truth is `DESIGN.md`. Read it before any UI change. Summary:
 
-- **Theme & Vibe**: Black and white, shadcn/ui. Quiet, precise, tool-like. No neon, no gradients, no decorative color.
-- **Color**: Neutral zinc tokens only (`--color-canvas`, `--color-surface`, `--color-elevated`, `--color-border`, `--color-text-main`, `--color-text-muted`). Light and dark mode plus high contrast. Verdicts are shown with words and icons, not color.
+- **Theme & Vibe**: Blue and white, shadcn/ui, light (default) and dark mode. Quiet, precise, tool-like. The code editor uses VS Code Light+/Dark+ syntax colors.
+- **Color**: Slate neutrals plus one blue (`--color-primary`). Green/red only for verdicts, errors and destructive actions, always with a word (AC, WA). Use the tokens in `app/globals.css`, never raw hex.
 - **Typography**: Geist Sans for UI and headings, Geist Mono for code and numbers. Sentence case. No ALL CAPS labels, no trailing `_` cursors, no `[BRACKET]` labels.
 - **Components**: shadcn/ui primitives in `components/ui` (`Button`, `Dialog`, `Card`, `Input`, `Tooltip`, `Sheet`). lucide-react icons through `DotIcon`.
 - **Fonts are bundled** through the `geist` npm package. The app must work with no internet.

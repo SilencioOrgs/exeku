@@ -46,7 +46,7 @@ Exeku provides a high-craft developer aesthetic paired with robust automated cod
   - Automatic judging engine with deterministic verdict calculation (AC, WA, CE, RE, TLE, MLE, IE).
   - Server-authoritative test case evaluation with hidden test input/output redaction.
   - Local profile and code draft persistence via IndexedDB (safe hydration without cloud lock-in during developer preview).
-  - Black-and-white shadcn/ui design system with lucide-react icons (see `DESIGN.md`).
+  - Blue-and-white shadcn/ui design system with a VS Code-style highlighted editor (see `DESIGN.md`).
 - **Technical Constraints:**
   - **No Unsafe Execution:** Student code is strictly untrusted. Code execution must run inside an isolated sandbox (Piston/`isolate` container) with enforced CPU limits, memory limits, wall-clock timeouts, restricted filesystem access, and disabled outbound networking. Arbitrary unsandboxed host process execution is strictly prohibited.
   - **Local Development Boundaries:** No public cloud infrastructure (Vercel, Render, Oracle Cloud) or cloud databases are provisioned during this stage. Everything runs and verifies locally.
@@ -60,9 +60,9 @@ Exeku provides a high-craft developer aesthetic paired with robust automated cod
 
 - **Name:** Exeku
 - **Tagline:** "Your Code. Your Machine."
-- **Aesthetic Direction:** Black and white, shadcn/ui. A quiet, precise tool that gets out of the way of the code.
-- **Visual Identity Foundation:** Neutral zinc light and dark themes, Geist Sans and Geist Mono, 1px borders, 8–12px radius. No accent color; state is shown with words and icons. Full details in `DESIGN.md`.
-- **Appearance Settings:** Light, dark or system mode, high contrast, UI and editor font size, density, and reduced motion. The old multi-theme engine (Pixel Arcade, Studio/CRM, palettes) was retired.
+- **Aesthetic Direction:** Blue and white, shadcn/ui. A quiet, precise tool; code is colored like VS Code.
+- **Visual Identity Foundation:** Slate light and dark themes with one blue, Geist Sans and Geist Mono, 1px borders, 8–12px radius. Green/red only for verdicts and errors. Full details in `DESIGN.md`.
+- **Appearance Settings:** Light or dark (light by default), plus code font size, text size, high contrast and reduced motion. The old multi-theme engine was retired.
 
 ## Product Principles
 

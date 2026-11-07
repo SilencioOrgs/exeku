@@ -14,7 +14,7 @@ export function About() {
   }> = [
     {
       iconName: "shield",
-      iconColor: "text-[var(--color-pink)]",
+      iconColor: "text-[var(--color-primary-text)]",
       title: "Isolated Sandboxing",
       tag: "Secure runtime",
       badgeVariant: "pink",
@@ -32,7 +32,7 @@ export function About() {
     },
     {
       iconName: "windows",
-      iconColor: "text-[var(--color-mint)]",
+      iconColor: "text-[var(--color-primary-text)]",
       title: "Local Developer Preview",
       tag: "Zero lock-in",
       badgeVariant: "mint",

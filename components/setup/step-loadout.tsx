@@ -39,7 +39,7 @@ const LANGUAGES: LanguageOption[] = [
     label: "Java",
     iconName: "java",
     tag: "Object-oriented",
-    accent: "var(--color-pink)",
+    accent: "var(--color-primary-text)",
     description: "Robust, strictly typed, structured enterprise and academic standard.",
   },
   {
@@ -55,7 +55,7 @@ const LANGUAGES: LanguageOption[] = [
     label: "C",
     iconName: "file",
     tag: "Low-level",
-    accent: "var(--color-mint)",
+    accent: "var(--color-primary-text)",
     description: "Direct memory management, pointers, and foundational computer architecture.",
   },
 ];
@@ -211,18 +211,18 @@ export function StepLoadout({
                 }}
                 className={cn(
                   "p-3.5 border cursor-pointer transition-all duration-100 outline-none select-none relative",
-                  "bg-[var(--color-surface)] hover:bg-[var(--color-elevated)] focus-visible:ring-2 focus-visible:ring-[var(--color-mint)]",
+                  "bg-[var(--color-surface)] hover:bg-[var(--color-elevated)] focus-visible:ring-2 focus-visible:ring-[var(--color-primary-text)]",
                   isSelected
-                    ? "border-[var(--color-mint)]"
+                    ? "border-[var(--color-primary-text)]"
                     : "border-[var(--color-border)] hover:border-[var(--color-primary)]"
                 )}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-mono text-[var(--color-mint)] font-bold">
+                  <span className="text-xs font-mono text-[var(--color-primary-text)] font-bold">
                     {lvl.tag}
                   </span>
                   {isSelected && (
-                    <span className="text-xs font-mono text-[var(--color-mint)] font-bold">
+                    <span className="text-xs font-mono text-[var(--color-primary-text)] font-bold">
                       [●]
                     </span>
                   )}
@@ -267,7 +267,7 @@ export function StepLoadout({
             </div>
             <div>
               <span className="text-[var(--color-text-dim)] block">Experience:</span>
-              <span className="text-[var(--color-mint)] font-bold">
+              <span className="text-[var(--color-primary-text)] font-bold">
                 {selectedLevelObj.label}
               </span>
             </div>

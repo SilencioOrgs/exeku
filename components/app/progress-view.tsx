@@ -150,7 +150,7 @@ export function ProgressView() {
           <span className="font-mono text-xs text-[var(--color-text-dim)] block">
             Challenges solved
           </span>
-          <div className="font-heading text-xl text-[var(--color-mint)]">
+          <div className="font-heading text-xl text-[var(--color-primary-text)]">
             Not tracked yet
           </div>
           <p className="font-mono text-xs text-[var(--color-text-muted)]">
@@ -163,7 +163,7 @@ export function ProgressView() {
           <span className="font-mono text-xs text-[var(--color-text-dim)] block">
             Code runs
           </span>
-          <div className="font-heading text-xl text-[var(--color-pink)]">
+          <div className="font-heading text-xl text-[var(--color-primary-text)]">
             Not tracked yet
           </div>
           <p className="font-mono text-xs text-[var(--color-text-muted)]">
@@ -242,7 +242,7 @@ export function ProgressView() {
                   <span
                     className={`font-mono text-xs px-1.5 py-0.5 border ${
                       draft
-                        ? "border-[var(--color-mint)]/40 text-[var(--color-mint)] bg-[var(--color-mint)]/10"
+                        ? "border-[var(--color-primary-text)]/40 text-[var(--color-primary-text)] bg-[var(--color-primary-text)]/10"
                         : "border-[var(--color-text-dim)]/40 text-[var(--color-text-dim)] bg-[var(--color-text-dim)]/10"
                     }`}
                   >
@@ -321,7 +321,7 @@ export function ProgressView() {
       {/* Offline Student Report Placeholder */}
       <PixelCard variant="default" className="p-4 sm:p-5 border border-[var(--color-border)] space-y-3">
         <div className="flex items-center justify-between">
-          <span className="font-heading text-xs text-[var(--color-mint)]">
+          <span className="font-heading text-xs text-[var(--color-primary-text)]">
             Offline academic verification &amp; export
           </span>
           <PixelBadge variant="mint" bracketed>

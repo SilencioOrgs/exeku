@@ -116,7 +116,7 @@ export function InstallGuide() {
 
               {/* Command Box with Copy Button */}
               <div className="mt-2 bg-[var(--color-canvas)] border border-[var(--color-border)] p-3 flex flex-col justify-between gap-2">
-                <code className="text-xs font-mono text-[var(--color-mint)] whitespace-pre-wrap break-all">
+                <code className="text-xs font-mono text-[var(--color-primary-text)] whitespace-pre-wrap break-all">
                   {s.command}
                 </code>
 
@@ -127,8 +127,8 @@ export function InstallGuide() {
                 >
                   {copiedIndex === idx ? (
                     <>
-                      <DotIcon name="circleCheck" className="w-3 h-3 text-[var(--color-mint)]" />
-                      <span className="text-[var(--color-mint)]">Copied!</span>
+                      <DotIcon name="circleCheck" className="w-3 h-3 text-[var(--color-primary-text)]" />
+                      <span className="text-[var(--color-primary-text)]">Copied!</span>
                     </>
                   ) : (
                     <>
@@ -144,7 +144,7 @@ export function InstallGuide() {
 
         {/* PowerShell Troubleshooting Tip */}
         <div className="mt-8 p-4 bg-[var(--color-surface)] border border-[var(--color-border)] flex items-start gap-3 text-xs font-mono text-[var(--color-text-muted)]">
-          <DotIcon name="powershell" size={16} className="text-[var(--color-pink)] shrink-0 mt-0.5" />
+          <DotIcon name="powershell" size={16} className="text-[var(--color-primary-text)] shrink-0 mt-0.5" />
           <div>
             <strong className="text-[var(--color-text-main)]">Windows PowerShell Execution Policy Note:</strong> If you receive a script execution policy restriction error when running npm commands, invoke PowerShell as Administrator or run:{" "}
             <code className="text-[var(--color-accent)] bg-[var(--color-canvas)] px-1 py-0.5">

@@ -159,7 +159,7 @@ export function OnboardingWizard() {
                 className={cn(
                   "px-2 py-1 border transition-colors",
                   step === 2
-                    ? "bg-[var(--color-pink)] text-[var(--color-danger-foreground)] font-bold border-[var(--color-pink)]"
+                    ? "bg-[var(--color-primary-text)] text-[var(--color-danger-foreground)] font-bold border-[var(--color-primary-text)]"
                     : "bg-[var(--color-canvas)] text-[var(--color-text-muted)] border-[var(--color-border)]"
                 )}
               >
@@ -170,7 +170,7 @@ export function OnboardingWizard() {
                 className={cn(
                   "px-2 py-1 border transition-colors",
                   step === 3
-                    ? "bg-[var(--color-mint)] text-[var(--color-accent-foreground)] font-bold border-white"
+                    ? "bg-[var(--color-primary-text)] text-[var(--color-accent-foreground)] font-bold border-white"
                     : "bg-[var(--color-canvas)] text-[var(--color-text-muted)] border-[var(--color-border)]"
                 )}
               >
@@ -254,7 +254,7 @@ export function OnboardingWizard() {
                 size="md"
                 onClick={handleFinalSubmit}
                 disabled={isSubmitting}
-                className="bg-[var(--color-mint)] text-[var(--color-accent-foreground)] border-[var(--color-border)] hover:bg-[var(--color-mint)] font-bold"
+                className="bg-[var(--color-primary-text)] text-[var(--color-accent-foreground)] border-[var(--color-border)] hover:bg-[var(--color-primary-text)] font-bold"
               >
                 {isSubmitting ? "Creating profile…" : "Create profile"}
               </PixelButton>

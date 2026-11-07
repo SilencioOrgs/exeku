@@ -37,7 +37,7 @@ test('draft selection, reset, and discard never write or change saved appearance
   state.render().discard();
   assert.equal(state.render().isDirty, false);
   state.render().reset();
-  assert.equal(state.render().draftPreferences.colorMode, 'system');
+  assert.equal(state.render().draftPreferences.colorMode, 'light');
   assert.equal(state.saved().colorMode, 'light');
   state.render().discard();
   assert.equal(state.render().draftPreferences.colorMode, 'light');
