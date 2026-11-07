@@ -58,7 +58,7 @@ export function About() {
           <p className="text-base sm:text-lg text-[var(--color-text-muted)] font-sans leading-relaxed">
             Exeku is an online programming practice and assessment platform inspired by CodeChum,
             currently in local developer preview. We combine instant automated judging, multi-language sandboxes,
-            and competitive programming workflows with a distinct retro developer aesthetic.
+            and competitive programming workflows, plus a Hardware Lab for Arduino projects.
           </p>
         </div>
 

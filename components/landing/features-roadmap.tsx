@@ -28,12 +28,12 @@ export function FeaturesRoadmap() {
         "A fast plain-text editor with line numbers, Tab indentation, auto-indent and keyboard shortcuts. Nothing is downloaded from a CDN.",
     },
     {
-      title: "Pastel Skeuomorphic UI",
+      title: "Orange-on-Black UI",
       status: "Available now",
       statusVariant: "mint",
       iconName: "stars",
       description:
-        "Soft pastel surfaces, raised cards and pressable keys with a LeetCode-style orange accent. Light and dark mode, keyboard accessible, built on shadcn/ui and Tailwind CSS v4.",
+        "A dark, LeetCode-style interface with one orange accent, Easy/Medium/Hard colors and VS Code Dark+ code. Keyboard accessible, built on shadcn/ui and Tailwind CSS v4.",
     },
     {
       title: "Zero Runtime CDN Dependencies",

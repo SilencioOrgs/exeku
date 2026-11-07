@@ -1,8 +1,9 @@
 import { Navbar } from "@/components/landing/navbar";
 import { Hero } from "@/components/landing/hero";
+import { Practice } from "@/components/landing/practice";
+import { ScrollTour } from "@/components/landing/scroll-tour";
 import { About } from "@/components/landing/about";
 import { Languages } from "@/components/landing/languages";
-import { LabTeaser } from "@/components/landing/lab-teaser";
 import { FeaturesRoadmap } from "@/components/landing/features-roadmap";
 import { InstallGuide } from "@/components/landing/install-guide";
 import { FAQ } from "@/components/landing/faq";
@@ -14,9 +15,10 @@ export default function Home() {
       <Navbar />
       <main className="flex-1">
         <Hero />
+        <Practice />
+        <ScrollTour />
         <About />
         <Languages />
-        <LabTeaser />
         <FeaturesRoadmap />
         <InstallGuide />
         <FAQ />

@@ -1,90 +1,76 @@
 "use client";
 
-import React from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useProfile } from "@/hooks/use-profile";
-import { PixelBadge } from "@/components/retro/pixel-badge";
-import { PixelButton } from "@/components/retro/pixel-button";
+import { useAppearance } from "@/hooks/use-appearance";
+import { buttonVariants } from "@/components/ui/button";
 import { DotIcon } from "@/components/retro/dot-icon";
-import { PixelTerminal } from "./pixel-terminal";
+import { CircuitView } from "@/components/lab/circuit-view";
 
-import { StyleText } from "@/components/appearance/style-text";
+const STATS = [
+  { value: "4", label: "languages judged" },
+  { value: "AC/WA", label: "instant verdicts" },
+  { value: "3D", label: "Arduino lab" },
+];
 
 export function Hero() {
-  const router = useRouter();
   const { profile } = useProfile();
+  const { effectiveReducedMotion } = useAppearance();
+  const [ledOn, setLedOn] = useState(true);
+
+  useEffect(() => {
+    if (effectiveReducedMotion) return;
+    const id = window.setInterval(() => setLedOn((on) => !on), 650);
+    return () => window.clearInterval(id);
+  }, [effectiveReducedMotion]);
 
   return (
-    <section id="hero" className="relative pt-12 pb-20 md:pt-20 md:pb-28 overflow-hidden">
-      {/* Ambient retro glow backgrounds */}
-
-      <div className="landing-hero-layout max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="landing-hero-copy flex flex-col items-center text-center max-w-4xl mx-auto mb-12 sm:mb-16">
-          {/* Developer-preview status, not a fake metric */}
-          <div className="mb-6 flex flex-wrap items-center justify-center gap-2">
-            <PixelBadge variant="muted">Developer preview</PixelBadge>
-          </div>
-
-          {/* Headline */}
-          <h1
-            className="text-4xl sm:text-6xl md:text-7xl font-semibold tracking-tight text-[var(--color-text-main)] mb-6 leading-[1.1]"
-            style={{ fontFamily: "var(--font-heading-active)" }}
-          >
-            <StyleText arcade="YOUR CODE." clarity="Your code." /> <br className="hidden sm:inline" />
-            <span className="text-[var(--color-accent)]">
-              <StyleText arcade="YOUR MACHINE." clarity="Your machine." />
-            </span>
+    <section id="hero" className="bg-grid relative overflow-hidden border-b border-[var(--color-border)]">
+      <div aria-hidden="true" className="pointer-events-none absolute -top-40 right-[-10%] h-[560px] w-[760px] rounded-full bg-[radial-gradient(closest-side,rgb(255_161_22/0.22),transparent)] blur-2xl" />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent to-[var(--color-canvas)]" />
+      <div className="relative mx-auto grid max-w-7xl items-center gap-8 px-4 pt-14 pb-16 sm:px-6 md:pt-20 lg:grid-cols-[1fr_1.15fr] lg:gap-4 lg:px-8 lg:pb-24">
+        <div className="max-w-xl">
+          <span className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/80 px-3 py-1 text-xs font-medium text-[var(--color-text-muted)]">
+            <span className="size-1.5 rounded-full bg-[var(--color-primary)] shadow-[0_0_8px_var(--color-primary)]" aria-hidden="true" />
+            Developer preview · Your code. Your machine.
+          </span>
+          <h1 className="mt-6 text-5xl leading-[1.02] font-semibold tracking-tight text-[var(--color-text-main)] sm:text-6xl xl:text-7xl">
+            Code it.<br />Wire it.<br /><span className="text-gradient-orange">Print it.</span>
           </h1>
-
-          {/* Subtitle */}
-          <p className="text-lg sm:text-xl text-[var(--color-text-muted)] max-w-2xl font-sans leading-relaxed mb-8">
-            An online programming practice, assessment, and competition platform inspired by CodeChum.
-            Solve challenges, run code in isolated sandboxes, and receive instant judging verdicts across Python 3, Java, C++, and C.
+          <p className="mt-6 text-lg leading-relaxed text-[var(--color-text-muted)]">
+            Practice problems like a competitive programmer, with instant judging in Python, Java, C++ and C. Then take your code off the screen: blink a real-looking Arduino and get a case that fits it.
           </p>
-
-          {/* Call to action buttons */}
-          <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
-            <PixelButton
-              variant="cyan"
-              size="lg"
-              onClick={() => router.push(profile ? "/app" : "/setup")}
-              className="w-full sm:w-auto"
-            >
-              <DotIcon name="windows" size={16} className="text-[var(--color-accent-foreground)]" />{" "}
-              {profile ? "Launch Workspace" : "Get Started (Setup Profile)"}
-            </PixelButton>
-
-            <PixelButton
-              variant="secondary"
-              size="lg"
-              href="#about"
-              className="w-full sm:w-auto"
-            >
-              About Exeku <DotIcon name="arrowDown" className="w-4 h-4 text-[var(--color-accent)]" />
-            </PixelButton>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <Link href={profile ? "/app" : "/setup"} className={buttonVariants({ size: "lg", className: "h-11 px-5 text-base" })}>
+              {profile ? "Open your workspace" : "Start practicing"}<DotIcon name="arrowRight" size={16} aria-hidden="true" />
+            </Link>
+            <a href="#tour" className={buttonVariants({ variant: "outline", size: "lg", className: "h-11 px-5 text-base" })}>
+              Take the tour<DotIcon name="arrowDown" size={16} aria-hidden="true" />
+            </a>
           </div>
-
-          {/* Core Trust Badges */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-8 mt-10 pt-8 border-t border-[var(--color-border)]/60 w-full max-w-2xl font-mono text-xs text-[var(--color-text-muted)]">
-            <div className="flex items-center justify-center gap-2">
-              <DotIcon name="shield" size={16} className="text-[var(--color-primary-text)]" />
-              <span>Container Sandboxing</span>
-            </div>
-            <div className="flex items-center justify-center gap-2">
-              <DotIcon name="cog" size={16} className="text-[var(--color-accent)]" />
-              <span>Automatic Judging</span>
-            </div>
-            <div className="col-span-2 sm:col-span-1 flex items-center justify-center gap-2">
-              <DotIcon name="powershell" size={16} className="text-[var(--color-primary-text)]" />
-              <span>4 Core Languages</span>
-            </div>
-          </div>
+          <dl className="mt-10 grid max-w-md grid-cols-3 gap-4 border-t border-[var(--color-border)] pt-6">
+            {STATS.map((stat) => (
+              <div key={stat.label}>
+                <dt className="text-xs text-[var(--color-text-muted)]">{stat.label}</dt>
+                <dd className="font-code mt-1 text-xl font-semibold text-[var(--color-text-main)]">{stat.value}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
 
-        {/* Centerpiece Pixel Terminal */}
-        <div className="landing-hero-demo max-w-5xl mx-auto">
-
-          <PixelTerminal />
+        <div className="relative">
+          <CircuitView
+            ledOn={ledOn}
+            view={[120, 120, 190]}
+            className="h-[340px] sm:h-[460px] lg:h-[560px]"
+            label="A 3D Arduino Uno wired to a breadboard with a blinking red LED. Drag to rotate."
+          />
+          <div className="pointer-events-none absolute bottom-4 left-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/85 px-3 py-2 backdrop-blur">
+            <p className="font-code text-xs text-[var(--color-text-muted)]">blink.ino</p>
+            <p className="font-code text-sm"><span className="tok-function">digitalWrite</span>(<span className="tok-number">13</span>, <span className="tok-constant">{ledOn ? "HIGH" : "LOW"}</span>);</p>
+          </div>
+          <p className="pointer-events-none absolute right-4 bottom-4 text-xs text-[var(--color-text-muted)]">Drag to rotate</p>
         </div>
       </div>
     </section>
