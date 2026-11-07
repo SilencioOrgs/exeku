@@ -75,13 +75,13 @@ test("workspace multi-file: legacy free drafts load as main file and problem-spe
 
 test("workspace multi-file: toolbar avoids unlayered touch minimums and keys the editor per file", () => {
   const view = read("components/app/workspace-view.tsx");
+  const toolbar = read("components/app/workspace/workspace-toolbar.tsx");
   const css = read("app/globals.css").replace(/\/\*[\s\S]*?\*\//g, "");
-  assert.match(view, /className="workspace-toolbar/);
-  assert.match(view, /<FileTabs/);
+  assert.match(toolbar, /className="workspace-toolbar/);
+  assert.match(toolbar, /<FileTabs/);
   assert.match(view, /<Group/);
   assert.match(view, /<Panel id="editor"/);
-  assert.match(view, /sourceCode: mainCode/);
-  assert.match(view, /files,/);
+  assert.match(view, /sourceCode: files\.mainCode, files: files\.files/);
   const blocks = [];
   for (const match of css.matchAll(/([^{}]*)([{}])/g)) {
     if (match[2] === "{") {

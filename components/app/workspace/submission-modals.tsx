@@ -1,422 +1,117 @@
 "use client";
 
-import { DotIcon } from "@/components/retro/dot-icon";
-
-import React, { useEffect } from "react";
 import Link from "next/link";
-import { PixelCard } from "@/components/retro/pixel-card";
-import { PixelButton } from "@/components/retro/pixel-button";
-import { PixelBadge } from "@/components/retro/pixel-badge";
+import type { ReactNode } from "react";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { VerdictBadge } from "./verdict-badge";
+import { isRealVerdict } from "@/lib/verdicts";
+import type { JudgingResult } from "@/lib/judge/judging-service";
 
-import type { JudgingResult, OverallVerdict } from "@/lib/judge/judging-service";
-import type { VisibleProblem } from "@/types/problem";
-import type { PreferredLanguage } from "@/types/profile";
-import { LANGUAGE_DISPLAY_NAMES } from "@/lib/workspace-defaults";
+const PISTON_COMMAND = "docker run -d -p 2000:2000 ghcr.io/engineerman/piston/piston";
 
-export interface SubmitConfirmModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+const DESCRIPTIONS: Record<string, string> = {
+  ACCEPTED: "Every test passed.",
+  WRONG_ANSWER: "At least one test printed a different answer than expected.",
+  COMPILATION_ERROR: "The compiler could not build your code. Check the compiler output.",
+  RUNTIME_ERROR: "Your program crashed or exited with an error.",
+  TIME_LIMIT_EXCEEDED: "Your program ran longer than the time limit.",
+  SERVICE_UNAVAILABLE: "Sandbox service unavailable. Nothing was judged. Start Piston on port 2000, then submit again.",
+  INTERNAL_JUDGE_ERROR: "The judge could not finish. This is not counted against you.",
+};
+
+export interface ConfirmDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  description: ReactNode;
+  confirmLabel: string;
   onConfirm: () => void;
-  problem: VisibleProblem;
-  language: PreferredLanguage;
-  isTimedActive?: boolean;
-  formattedRemainingTime?: string;
+  cancelLabel?: string;
+  children?: ReactNode;
 }
 
-export function SubmitConfirmModal({
-  isOpen,
-  onClose,
-  onConfirm,
-  problem,
-  language,
-  isTimedActive = false,
-  formattedRemainingTime = "",
-}: SubmitConfirmModalProps) {
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
-
+/** One confirm dialog for submit, reset, forfeit and finish. */
+export function ConfirmDialog({ open, onOpenChange, title, description, confirmLabel, onConfirm, cancelLabel = "Cancel", children }: ConfirmDialogProps) {
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="submit-confirm-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs"
-    >
-      <PixelCard
-        variant="elevated"
-        className="w-full max-w-md border border-[var(--color-primary)] p-4 sm:p-5 bg-[var(--color-surface)] space-y-3"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 border border-[var(--color-primary)] bg-[var(--color-canvas)] flex items-center justify-center text-[var(--color-primary)] font-heading text-lg font-bold">
-            ?
-          </div>
-          <div>
-            <h3
-              id="submit-confirm-title"
-              className="font-heading text-lg text-[var(--color-text-main)]"
-            >
-              Submit your solution?
-            </h3>
-            <span className="font-mono text-xs text-[var(--color-text-muted)]">
-              {problem.title} &bull; {LANGUAGE_DISPLAY_NAMES[language]}
-            </span>
-          </div>
-        </div>
-
-        <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
-          Your code will be evaluated against the complete test suite ({problem.visibleTestCases.length} visible test cases plus hidden evaluation tests).
-        </p>
-
-        {isTimedActive && (
-          <div className="p-2.5 bg-[var(--color-canvas)] border border-[var(--color-accent)] font-mono text-xs flex items-center justify-between">
-            <span className="text-[var(--color-accent)] font-bold">Timed challenge active:</span>
-            <span className="text-[var(--color-mint)] font-bold">{formattedRemainingTime} remaining</span>
-          </div>
-        )}
-
-        <div className="flex items-center justify-end gap-3 pt-2">
-          <PixelButton variant="ghost" size="sm" onClick={onClose} className="text-xs">
-            Cancel
-          </PixelButton>
-          <PixelButton
-            variant="primary"
-            size="sm"
-            onClick={onConfirm}
-            className="text-xs font-heading"
-          >
-            Confirm submit <DotIcon name="circleCheck" size={14} aria-hidden="true" />
-          </PixelButton>
-        </div>
-      </PixelCard>
-    </div>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
+        </DialogHeader>
+        {children}
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{cancelLabel}</Button>
+          <Button type="button" onClick={onConfirm}>{confirmLabel}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
-export interface SubmissionEvaluatingModalProps {
-  isOpen: boolean;
-  problem: VisibleProblem;
-  language: PreferredLanguage;
-}
-
-export function SubmissionEvaluatingModal({
-  isOpen,
-  problem,
-  language,
-}: SubmissionEvaluatingModalProps) {
-  if (!isOpen) return null;
-
-  return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Submission evaluating in progress"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs"
-    >
-      <PixelCard
-        variant="elevated"
-        className="w-full max-w-sm border border-[var(--color-mint)] p-4 sm:p-5 bg-[var(--color-surface)] text-center space-y-3"
-      >
-        <div className="flex justify-center">
-          <div className="w-12 h-12 border-4 border-[var(--color-mint)] border-t-transparent animate-spin" />
-        </div>
-
-        <div className="space-y-1">
-          <h3 className="font-heading text-lg text-[var(--color-text-main)] animate-pulse">
-            Evaluating solution...
-          </h3>
-          <p className="font-mono text-xs text-[var(--color-text-muted)]">
-            Testing {problem.title} against test cases in sandbox judge.
-          </p>
-        </div>
-
-        <div className="text-xs font-mono text-[var(--color-text-dim)] bg-[var(--color-canvas)] p-2 border border-[var(--color-border)]">
-          Target: {LANGUAGE_DISPLAY_NAMES[language]} runner &bull; Concurrency queue active
-        </div>
-      </PixelCard>
-    </div>
-  );
-}
-
-export interface SubmissionResultModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+export interface SubmissionResultDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   result: JudgingResult | null;
-  problem: VisibleProblem;
-  isDemo?: boolean;
-  onViewDetails?: () => void;
-  nextProblemId?: string | null;
+  problemTitle: string;
+  isDemo: boolean;
+  onViewDetails: () => void;
+  nextProblemId: string | null;
 }
 
-export function SubmissionResultModal({
-  isOpen,
-  onClose,
-  result,
-  problem,
-  isDemo = false,
-  onViewDetails,
-  nextProblemId,
-}: SubmissionResultModalProps) {
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
-
-  if (!isOpen || !result) return null;
-
-  const isAccepted = result.overallVerdict === "ACCEPTED";
-  const isUnavailable = result.overallVerdict === "SERVICE_UNAVAILABLE";
-
-  const getVerdictDescription = (verdict: OverallVerdict): string => {
-    switch (verdict) {
-      case "ACCEPTED":
-        return "Congratulations! All test cases passed with exact output matching.";
-      case "WRONG_ANSWER":
-        return "One or more test cases returned output that did not match the expected answer.";
-      case "COMPILATION_ERROR":
-        return "The compiler could not build your source code. Check syntax and declarations.";
-      case "RUNTIME_ERROR":
-        return "Your program terminated with a non-zero exit code or unhandled exception.";
-      case "TIME_LIMIT_EXCEEDED":
-        return "Your program exceeded the allowed execution time limit.";
-      case "SERVICE_UNAVAILABLE":
-        return "The local sandbox container (Piston on port 2000) is unreachable. No evaluation could be performed.";
-      case "INTERNAL_JUDGE_ERROR":
-      default:
-        return "An internal error occurred during automated judging evaluation.";
-    }
-  };
-
+export function SubmissionResultDialog({ open, onOpenChange, result, problemTitle, isDemo, onViewDetails, nextProblemId }: SubmissionResultDialogProps) {
+  if (!result) return null;
+  const accepted = result.overallVerdict === "ACCEPTED";
+  const unavailable = result.overallVerdict === "SERVICE_UNAVAILABLE";
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="result-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs"
-    >
-      <PixelCard
-        variant="elevated"
-        className={`w-full max-w-md border p-4 sm:p-5 bg-[var(--color-surface)] space-y-3 ${
-          isAccepted
-            ? "border-[var(--color-mint)]"
-            : isUnavailable
-            ? "border-[var(--color-accent)]"
-            : "border-[var(--color-pink)]"
-        }`}
-      >
-        {/* Header with Visual Verdict Icon */}
-        <div className="flex items-center gap-3">
-          <div
-            className={`w-12 h-12 border flex items-center justify-center shrink-0 ${
-              isAccepted
-                ? "border-[var(--color-mint)] bg-[var(--color-mint)]/10 text-[var(--color-mint)]"
-                : isUnavailable
-                ? "border-[var(--color-accent)] bg-[var(--color-accent)]/10 text-[var(--color-accent)]"
-                : "border-[var(--color-pink)] bg-[var(--color-pink)]/10 text-[var(--color-pink)]"
-            }`}
-          >
-            {isAccepted ? (
-              <DotIcon name="circleCheck" size={24} strokeWidth={3} />
-            ) : isUnavailable ? (
-              <DotIcon name="powershell" size={22} />
-            ) : (
-              <DotIcon name="close" size={24} strokeWidth={3} />
-            )}
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <div className="flex flex-wrap items-center gap-2">
+            <VerdictBadge status={result.overallVerdict} />
+            {isDemo && <span className="rounded-md border border-dashed border-[var(--color-text-muted)] px-1.5 text-xs text-[var(--color-text-muted)]">Demo result</span>}
           </div>
-
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h3
-                id="result-modal-title"
-                className={`font-heading text-xl font-bold ${
-                  isAccepted
-                    ? "text-[var(--color-mint)]"
-                    : isUnavailable
-                    ? "text-[var(--color-accent)]"
-                    : "text-[var(--color-pink)]"
-                }`}
-              >
-                {result.overallVerdict}
-              </h3>
-              {isDemo && (
-                <PixelBadge variant="purple" bracketed className="text-xs py-0 px-1 font-mono">
-                  Demo simulated
-                </PixelBadge>
-              )}
-            </div>
-            <span className="font-mono text-xs text-[var(--color-text-muted)] truncate block">
-              {problem.title}
-            </span>
-          </div>
-        </div>
-
-        {/* Verdict Explanation */}
-        <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
-          {getVerdictDescription(result.overallVerdict)}
-        </p>
-
-        {/* Telemetry Stats */}
-        {!isUnavailable && (
-          <div className="grid grid-cols-3 gap-2 p-3 bg-[var(--color-canvas)] border border-[var(--color-border)] font-mono text-xs text-center">
-            <div>
-              <span className="text-xs text-[var(--color-text-dim)] block">Passed Tests</span>
-              <strong className="text-[var(--color-text-main)] text-sm">
-                {result.passedTests} / {result.totalTests}
-              </strong>
-            </div>
-            <div>
-              <span className="text-xs text-[var(--color-text-dim)] block">Score</span>
-              <strong
-                className={`text-sm ${
-                  isAccepted ? "text-[var(--color-mint)]" : "text-[var(--color-pink)]"
-                }`}
-              >
-                {result.scorePercentage}%
-              </strong>
-            </div>
-            <div>
-              <span className="text-xs text-[var(--color-text-dim)] block">Max Time</span>
-              <strong className="text-[var(--color-text-main)] text-sm">
-                {result.maxDurationMs}ms
-              </strong>
-            </div>
-          </div>
+          <DialogTitle>{problemTitle}</DialogTitle>
+          <DialogDescription>{DESCRIPTIONS[result.overallVerdict] ?? "The judge returned an unexpected result."}</DialogDescription>
+        </DialogHeader>
+        {result.error && !unavailable && <p className="text-sm text-[var(--color-text-main)]">{result.error}</p>}
+        {result.totalTests > 0 && isRealVerdict(result.overallVerdict) && (
+          <dl className="font-code grid grid-cols-3 gap-2 rounded-md border border-[var(--color-border)] p-3 text-center text-xs">
+            <div><dt className="text-[var(--color-text-muted)]">Passed</dt><dd className="text-sm">{result.passedTests}/{result.totalTests}</dd></div>
+            <div><dt className="text-[var(--color-text-muted)]">Score</dt><dd className="text-sm">{result.scorePercentage}%</dd></div>
+            <div><dt className="text-[var(--color-text-muted)]">Max time</dt><dd className="text-sm">{result.maxDurationMs} ms</dd></div>
+          </dl>
         )}
-
-        {isUnavailable && (
-          <div className="p-3 bg-[var(--color-canvas)] border border-[var(--color-pink)]/40 font-mono text-xs text-[var(--color-text-muted)] space-y-1">
-            <div className="text-[var(--color-pink)] font-bold">Setup instructions:</div>
-            <p>To run genuine untrusted code, launch the Piston container:</p>
-            <code className="block p-1 bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-accent)] text-xs">
-              docker run -d -p 2000:2000 ghcr.io/engineerman/piston/piston
-            </code>
-          </div>
+        {unavailable && (
+          <code className="font-code block overflow-x-auto rounded-md border border-[var(--color-border)] bg-[var(--color-canvas)] p-2 text-xs">{PISTON_COMMAND}</code>
         )}
-
-        {/* Actions */}
-        <div className="flex items-center justify-between gap-2 pt-2 flex-wrap">
-          {onViewDetails ? (
-            <PixelButton
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                onClose();
-                onViewDetails();
-              }}
-              className="text-xs"
-            >
-              View test details <DotIcon name="arrowRight" size={14} aria-hidden="true" />
-            </PixelButton>
-          ) : (
-            <div />
+        <DialogFooter>
+          <Button type="button" variant="ghost" onClick={() => { onOpenChange(false); onViewDetails(); }}>View details</Button>
+          <Button type="button" variant={accepted && nextProblemId ? "outline" : "default"} onClick={() => onOpenChange(false)}>Keep coding</Button>
+          {accepted && nextProblemId && (
+            <Link className={buttonVariants()} href={`/app/workspace?problem=${encodeURIComponent(nextProblemId)}`}>Next problem</Link>
           )}
-
-          <div className="flex items-center gap-2">
-            <PixelButton
-              variant={isAccepted ? "secondary" : "ghost"}
-              size="sm"
-              onClick={onClose}
-              className="text-xs"
-            >
-              {isAccepted ? "CONTINUE CODING" : "KEEP WORKING"}
-            </PixelButton>
-
-            {isAccepted && nextProblemId && (
-              <Link href={`/app/workspace?problem=${encodeURIComponent(nextProblemId)}`}>
-                <PixelButton variant="primary" size="sm" className="text-xs font-heading">
-                  Next problem <DotIcon name="arrowRight" size={14} aria-hidden="true" />
-                </PixelButton>
-              </Link>
-            )}
-          </div>
-        </div>
-      </PixelCard>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
-export interface TimeExpiredModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  submissionCount: number;
-  lastVerdict?: string | null;
-}
-
-export function TimeExpiredModal({
-  isOpen,
-  onClose,
-  submissionCount,
-  lastVerdict,
-}: TimeExpiredModalProps) {
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
-
+export function TimeExpiredDialog({ open, onOpenChange, submissionCount, lastVerdict }: { open: boolean; onOpenChange: (open: boolean) => void; submissionCount: number; lastVerdict?: string | null }) {
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="expired-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs"
-    >
-      <PixelCard
-        variant="elevated"
-        className="w-full max-w-md border border-[var(--color-pink)] p-4 sm:p-5 bg-[var(--color-surface)] space-y-3"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 border border-[var(--color-pink)] bg-[var(--color-canvas)] flex items-center justify-center text-[var(--color-pink)] font-heading text-xl font-bold">
-            <DotIcon name="alarm" size={24} />
-          </div>
-          <div>
-            <h3
-              id="expired-modal-title"
-              className="font-heading text-lg text-[var(--color-text-main)]"
-            >
-              Time expired
-            </h3>
-            <span className="font-mono text-xs text-[var(--color-pink)]">
-              Challenge countdown reached 00:00
-            </span>
-          </div>
-        </div>
-
-        <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
-          The allotted session time for this challenge has expired. Timed submissions are now frozen.
-          Your current code draft has been preserved in your local buffer.
-        </p>
-
-        <div className="p-3 bg-[var(--color-canvas)] border border-[var(--color-border)] font-mono text-xs space-y-1">
-          <div className="text-[var(--color-text-dim)]">Session Summary:</div>
-          <div>Total Submissions Made: <strong>{submissionCount}</strong></div>
-          {lastVerdict && (
-            <div>Last Evaluated Verdict: <strong>{lastVerdict}</strong></div>
-          )}
-        </div>
-
-        <div className="flex items-center justify-end gap-2 pt-2">
-          <PixelButton variant="primary" size="sm" onClick={onClose} className="text-xs">
-            View workspace
-          </PixelButton>
-        </div>
-      </PixelCard>
-    </div>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Time is up</DialogTitle>
+          <DialogDescription>The challenge timer reached 00:00. Your code is still saved on this device.</DialogDescription>
+        </DialogHeader>
+        <dl className="font-code space-y-1 rounded-md border border-[var(--color-border)] p-3 text-xs">
+          <div className="flex justify-between"><dt className="text-[var(--color-text-muted)]">Submissions</dt><dd>{submissionCount}</dd></div>
+          {lastVerdict && <div className="flex items-center justify-between"><dt className="text-[var(--color-text-muted)]">Last verdict</dt><dd><VerdictBadge status={lastVerdict} short /></dd></div>}
+        </dl>
+        <DialogFooter><Button type="button" onClick={() => onOpenChange(false)}>Back to workspace</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

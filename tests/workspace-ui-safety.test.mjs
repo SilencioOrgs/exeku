@@ -23,7 +23,8 @@ test("workspace offers editor layout modes with the built-in editor", () => {
   const source = fs.readFileSync(path.join(root, "components/app/workspace-view.tsx"), "utf8");
   assert.match(source, /data-layout=\{layout\}/);
   assert.match(source, /<Group[\s\S]*?<Panel id="editor"/);
-  assert.match(source, /Cycle editor layout/);
+  assert.match(fs.readFileSync(path.join(root, "components/app/workspace/workspace-toolbar.tsx"), "utf8"), /Cycle editor layout/);
   assert.match(source, /<CodeEditor/);
-  assert.match(source, /recordCodingDay\(profile\.id\)/);
+  const files = fs.readFileSync(path.join(root, "hooks/use-workspace-files.ts"), "utf8");
+  assert.match(files, /recordCodingDay\(profile\.id\)/);
 });
