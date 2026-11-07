@@ -67,7 +67,7 @@ export function Hero() {
           {/* Core Trust Badges */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-8 mt-10 pt-8 border-t border-[var(--color-border)]/60 w-full max-w-2xl font-mono text-xs text-[var(--color-text-muted)]">
             <div className="flex items-center justify-center gap-2">
-              <DotIcon name="shield" size={16} className="text-[var(--color-mint)]" />
+              <DotIcon name="shield" size={16} className="text-[var(--color-primary-text)]" />
               <span>Container Sandboxing</span>
             </div>
             <div className="flex items-center justify-center gap-2">
@@ -75,7 +75,7 @@ export function Hero() {
               <span>Automatic Judging</span>
             </div>
             <div className="col-span-2 sm:col-span-1 flex items-center justify-center gap-2">
-              <DotIcon name="powershell" size={16} className="text-[var(--color-pink)]" />
+              <DotIcon name="powershell" size={16} className="text-[var(--color-primary-text)]" />
               <span>4 Core Languages</span>
             </div>
           </div>

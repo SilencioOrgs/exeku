@@ -15,7 +15,7 @@ test('transactional Apply does not replace canonical preferences when storage fa
 
 test("DEFAULT_APPEARANCE_PREFERENCES - has expected default values", () => {
   assert.equal(DEFAULT_APPEARANCE_PREFERENCES.uiStyle, "minimal-saas");
-  assert.equal(DEFAULT_APPEARANCE_PREFERENCES.colorMode, "system");
+  assert.equal(DEFAULT_APPEARANCE_PREFERENCES.colorMode, "light");
   assert.equal(DEFAULT_APPEARANCE_PREFERENCES.contrastMode, "standard");
   assert.equal(DEFAULT_APPEARANCE_PREFERENCES.uiFontFamily, "geist-sans");
   assert.equal(DEFAULT_APPEARANCE_PREFERENCES.uiFontScale, 100);
@@ -39,7 +39,7 @@ test("normalizeAppearancePreferences - validates and clamps preferences", () => 
   });
 
   assert.equal(normalized.uiStyle, "minimal-saas");
-  assert.equal(normalized.colorMode, "system");
+  assert.equal(normalized.colorMode, "light");
   assert.equal(normalized.uiFontScale, 150);
   assert.equal(normalized.brightness, 80);
   assert.equal(normalized.editorFontSize, 20);

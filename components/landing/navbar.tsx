@@ -1,6 +1,6 @@
 "use client";
 
-import { AppearanceModal } from "./appearance-modal";
+import { ThemeToggle } from "@/components/app/theme-toggle";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useProfile } from "@/hooks/use-profile";
@@ -64,7 +64,7 @@ export function Navbar() {
 
         {/* Action Button & Mobile Menu Toggle */}
         <div className="flex items-center gap-3">
-          <AppearanceModal />
+          <ThemeToggle />
           <div className="hidden sm:block">
             <PixelButton
               variant="cyan"

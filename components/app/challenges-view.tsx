@@ -267,7 +267,7 @@ export function ChallengesView() {
                     <button
                       type="button"
                       onClick={() => handleStartTimedChallenge(prob.id, prob.title)}
-                      className="px-2.5 py-1.5 border border-[var(--color-pink)] text-[var(--color-pink)] hover:bg-[var(--color-pink)]/10 font-heading text-xs cursor-pointer transition-colors flex items-center gap-1"
+                      className="px-2.5 py-1.5 border border-[var(--color-primary-text)] text-[var(--color-primary-text)] hover:bg-[var(--color-primary-text)]/10 font-heading text-xs cursor-pointer transition-colors flex items-center gap-1"
                       title="Start a 15-minute timed challenge session"
                     >
                       <DotIcon name="alarm" size={14} aria-hidden="true" />
@@ -393,7 +393,7 @@ export function ChallengesView() {
                       </div>
                       <div>
                         <span className="text-[var(--color-text-dim)] block">Output:</span>
-                        <pre className="text-[var(--color-mint)] bg-[var(--color-surface)] p-1.5 border border-[var(--color-border)]">
+                        <pre className="text-[var(--color-primary-text)] bg-[var(--color-surface)] p-1.5 border border-[var(--color-border)]">
                           {s.output.trim()}
                         </pre>
                       </div>
@@ -429,7 +429,7 @@ export function ChallengesView() {
                     handleStartTimedChallenge(activeProblemDetail.id, activeProblemDetail.title);
                     setInspectProblemId(null);
                   }}
-                  className="px-3 py-1.5 border border-[var(--color-pink)] text-[var(--color-pink)] hover:bg-[var(--color-pink)]/10 font-heading text-xs cursor-pointer transition-colors flex items-center gap-1.5"
+                  className="px-3 py-1.5 border border-[var(--color-primary-text)] text-[var(--color-primary-text)] hover:bg-[var(--color-primary-text)]/10 font-heading text-xs cursor-pointer transition-colors flex items-center gap-1.5"
                 >
                   <DotIcon name="alarm" size={13} />
                   <span>Start timed challenge <DotIcon name="alarm" size={14} aria-hidden="true" /></span>

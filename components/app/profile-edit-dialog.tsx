@@ -117,7 +117,7 @@ function ProfileEditModalContent({
             <label htmlFor="edit-name" className="text-[var(--color-text-main)]">
               Display Name
             </label>
-            <span className={validation.isValid ? "text-[var(--color-mint)]" : "text-[var(--color-pink)]"}>
+            <span className={validation.isValid ? "text-[var(--color-primary-text)]" : "text-[var(--color-pink)]"}>
               {displayName.length}/32
             </span>
           </div>
@@ -234,7 +234,7 @@ function ProfileEditModalContent({
                   className={cn(
                     "py-2 px-1 text-xs font-mono border transition-colors select-none",
                     isSelected
-                      ? "bg-[var(--color-elevated)] border-[var(--color-mint)] text-[var(--color-mint)]"
+                      ? "bg-[var(--color-elevated)] border-[var(--color-primary-text)] text-[var(--color-primary-text)]"
                       : "bg-[var(--color-canvas)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-primary)]"
                   )}
                 >

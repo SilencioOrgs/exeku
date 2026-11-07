@@ -133,7 +133,7 @@ export const VALID_LINE_HEIGHTS: readonly LineHeightOption[] = [
 export const DEFAULT_APPEARANCE_PREFERENCES: AppearancePreferences = {
   uiStyle: "minimal-saas",
   colorPalette: "monochrome",
-  colorMode: "system",
+  colorMode: "light",
   contrastMode: "standard",
   uiFontFamily: "geist-sans",
   uiFontScale: 100,

@@ -118,7 +118,7 @@ export function PixelTerminal() {
       <div className="flex flex-wrap items-center justify-between gap-2 px-3 sm:px-4 py-2.5 bg-[var(--color-elevated)] border-b border-[var(--color-border)] font-mono text-xs">
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 bg-[var(--color-pink)] inline-block border border-black/60" />
+            <span className="w-2.5 h-2.5 bg-[var(--color-primary-text)] inline-block border border-black/60" />
             <span className="w-2.5 h-2.5 bg-[var(--color-accent)] inline-block border border-black/60" />
             <span className="w-2.5 h-2.5 bg-[var(--color-mint)] inline-block border border-black/60" />
           </div>
@@ -134,9 +134,9 @@ export function PixelTerminal() {
       </div>
 
       {/* Disclaimer Banner: Strictly labeled as demo */}
-      <div className="px-3 sm:px-4 py-1.5 bg-[var(--color-elevated)] border-b border-[var(--color-pink)]/40 flex items-center justify-between gap-2 text-xs font-mono text-[var(--color-pink)]">
+      <div className="px-3 sm:px-4 py-1.5 bg-[var(--color-elevated)] border-b border-[var(--color-primary-text)]/40 flex items-center justify-between gap-2 text-xs font-mono text-[var(--color-primary-text)]">
         <div className="flex items-center gap-1.5">
-          <DotIcon name="circleBlock" className="w-3.5 h-3.5 text-[var(--color-pink)] shrink-0" />
+          <DotIcon name="circleBlock" className="w-3.5 h-3.5 text-[var(--color-primary-text)] shrink-0" />
           <span>Demo animation. Real code runs in the workspace sandbox.</span>
         </div>
         <span className="hidden md:inline text-xs opacity-75">Not a live compiler</span>
@@ -193,7 +193,7 @@ export function PixelTerminal() {
                 ) : line.includes("def ") || line.includes("void ") || line.includes("public class ") ? (
                   <span className="text-[var(--color-accent)] font-semibold">{line}</span>
                 ) : line.includes("return") || line.includes("for ") || line.includes("while ") ? (
-                  <span className="text-[var(--color-pink)]">{line}</span>
+                  <span className="text-[var(--color-primary-text)]">{line}</span>
                 ) : (
                   <span>{line}</span>
                 )}
