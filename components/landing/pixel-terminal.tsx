@@ -155,7 +155,7 @@ export function PixelTerminal() {
                 setActiveLang(key);
                 setHasRun(false);
               }}
-              className={`px-3 sm:px-4 py-2 text-xs font-mono font-medium flex items-center gap-2 border-b transition-colors cursor-pointer outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-accent)] ${
+              className={`shrink-0 whitespace-nowrap px-3 sm:px-4 py-2 text-xs font-mono font-medium flex items-center gap-2 border-b transition-colors cursor-pointer outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-accent)] ${
                 isActive
                   ? "border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-elevated)]"
                   : "border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-elevated)]"

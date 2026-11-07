@@ -2,6 +2,7 @@ import { Navbar } from "@/components/landing/navbar";
 import { Hero } from "@/components/landing/hero";
 import { About } from "@/components/landing/about";
 import { Languages } from "@/components/landing/languages";
+import { LabTeaser } from "@/components/landing/lab-teaser";
 import { FeaturesRoadmap } from "@/components/landing/features-roadmap";
 import { InstallGuide } from "@/components/landing/install-guide";
 import { FAQ } from "@/components/landing/faq";
@@ -15,6 +16,7 @@ export default function Home() {
         <Hero />
         <About />
         <Languages />
+        <LabTeaser />
         <FeaturesRoadmap />
         <InstallGuide />
         <FAQ />

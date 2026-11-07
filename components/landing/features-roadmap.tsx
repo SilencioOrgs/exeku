@@ -28,12 +28,12 @@ export function FeaturesRoadmap() {
         "A fast plain-text editor with line numbers, Tab indentation, auto-indent and keyboard shortcuts. Nothing is downloaded from a CDN.",
     },
     {
-      title: "Retro Pixel UI System",
+      title: "Pastel Skeuomorphic UI",
       status: "Available now",
       statusVariant: "mint",
       iconName: "stars",
       description:
-        "Custom 8-bit/16-bit developer aesthetic built with Tailwind CSS v4 and Base UI primitives. High-contrast, keyboard-accessible, and dark violet by default.",
+        "Soft pastel surfaces, raised cards and pressable keys with a LeetCode-style orange accent. Light and dark mode, keyboard accessible, built on shadcn/ui and Tailwind CSS v4.",
     },
     {
       title: "Zero Runtime CDN Dependencies",
@@ -75,6 +75,14 @@ export function FeaturesRoadmap() {
       iconName: "ai",
       description:
         "Quantized local language model tailored for computer science pedagogy. Provides syntax guidance, debugging hints, and conceptual explanations entirely offline.",
+    },
+    {
+      title: "Hardware Lab: Arduino & 3D Chassis",
+      status: "Planned",
+      statusVariant: "pink",
+      iconName: "box",
+      description:
+        "Wire a breadboard, run real Arduino sketches in the browser, then generate a 3D-printable enclosure that fits the prototype. The preview is in the app today.",
     },
     {
       title: "Local Profiles & Progress Tracking",
