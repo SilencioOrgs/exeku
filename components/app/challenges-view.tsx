@@ -181,11 +181,11 @@ export function ChallengesView() {
                   <td className="px-2 py-3"><DifficultyBadge difficulty={prob.difficulty} /></td>
                   <td className="font-code hidden px-2 py-3 text-[var(--color-text-muted)] lg:table-cell">{prob.totalTestsCount}</td>
                   <td className="px-4 py-3">
-                    <div className="flex justify-end gap-1.5">
-                      <Button type="button" variant="ghost" size="sm" onClick={() => setInspectProblemId(prob.id)}>
+                    <div className="flex flex-nowrap justify-end gap-1.5">
+                      <Button type="button" variant="outline" size="sm" className="hidden sm:inline-flex" onClick={() => setInspectProblemId(prob.id)} aria-label={`Read ${prob.title}`}>
                         <DotIcon name="book" size={14} aria-hidden="true" /><span className="hidden sm:inline">Read</span>
                       </Button>
-                      <Button type="button" variant="outline" size="sm" onClick={() => handleStartTimedChallenge(prob.id, prob.title)} title="Start a 15-minute timed challenge">
+                      <Button type="button" variant="outline" size="sm" onClick={() => handleStartTimedChallenge(prob.id, prob.title)} title="Start a 15-minute timed challenge" aria-label={`Start a timed challenge on ${prob.title}`}>
                         <DotIcon name="alarm" size={14} aria-hidden="true" /><span className="hidden sm:inline">Timed</span>
                       </Button>
                       <Link href={`/app/workspace?problem=${encodeURIComponent(prob.id)}`} className={buttonVariants({ size: "sm" })}>Solve</Link>

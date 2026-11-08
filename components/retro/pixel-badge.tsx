@@ -12,7 +12,7 @@ export function PixelBadge({ children, variant = "default", bracketed: _brackete
   return (
     <span
       className={cn(
-        "ui-badge inline-flex items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-elevated)] px-2 py-0.5 text-xs font-medium text-[var(--color-text-muted)]",
+        "ui-badge inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border border-[var(--color-border)] bg-[var(--color-elevated)] px-2 py-0.5 text-xs font-medium text-[var(--color-text-muted)]",
         variant === "pink" && "border-[var(--color-hard-bg)] bg-[var(--color-hard-bg)] text-[var(--color-hard)]",
         className,
       )}

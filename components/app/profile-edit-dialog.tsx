@@ -90,7 +90,7 @@ function ProfileEditModalContent({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-3">
           <div className="flex items-center gap-2">
-            <h3 id="edit-dialog-title" className="font-heading text-lg sm:text-xl text-foreground">
+            <h3 id="edit-dialog-title" className="text-lg font-semibold">
               Edit local profile
             </h3>
           </div>
@@ -100,14 +100,14 @@ function ProfileEditModalContent({
         </div>
 
         {error && (
-          <div role="alert" className="p-2.5 bg-[var(--color-elevated)] border border-[var(--color-pink)] text-[var(--color-pink)] font-mono text-xs">
+          <div role="alert" className="p-2.5 bg-[var(--color-elevated)] border border-[var(--color-pink)] text-[var(--color-pink)] text-xs">
             {error}
           </div>
         )}
 
         {/* Display Name */}
         <div className="space-y-1.5">
-          <div className="flex justify-between text-xs font-mono">
+          <div className="flex justify-between text-xs">
             <label htmlFor="edit-name" className="text-[var(--color-text-main)]">
               Display Name
             </label>
@@ -121,13 +121,13 @@ function ProfileEditModalContent({
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             maxLength={32}
-            className="w-full px-3 py-2 bg-[var(--color-canvas)] border border-[var(--color-border)] focus:border-[var(--color-accent)] text-foreground font-mono text-sm outline-none transition-colors"
+            className="w-full px-3 py-2 bg-[var(--color-canvas)] border border-[var(--color-border)] focus:border-[var(--color-accent)] text-foreground text-sm outline-none transition-colors"
           />
         </div>
 
         {/* Tagline / Bio */}
         <div className="space-y-1.5">
-          <label htmlFor="edit-bio" className="block text-xs font-mono text-[var(--color-text-muted)]">
+          <label htmlFor="edit-bio" className="block text-xs text-[var(--color-text-muted)]">
             Tagline / Bio (optional)
           </label>
           <input
@@ -136,13 +136,13 @@ function ProfileEditModalContent({
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             maxLength={100}
-            className="w-full px-3 py-2 bg-[var(--color-canvas)] border border-[var(--color-border)] focus:border-[var(--color-primary)] text-foreground font-mono text-sm outline-none transition-colors"
+            className="w-full px-3 py-2 bg-[var(--color-canvas)] border border-[var(--color-border)] focus:border-[var(--color-primary)] text-foreground text-sm outline-none transition-colors"
           />
         </div>
 
         {/* Avatar Selection Grid */}
         <div className="space-y-1.5">
-          <span className="block text-xs font-mono text-[var(--color-text-main)]">
+          <span className="block text-xs text-[var(--color-text-main)]">
             Avatar
           </span>
           <div className="grid grid-cols-4 gap-2">
@@ -167,7 +167,7 @@ function ProfileEditModalContent({
 
         {/* Primary Language */}
         <div className="space-y-1.5">
-          <span className="block text-xs font-mono text-[var(--color-text-main)]">
+          <span className="block text-xs text-[var(--color-text-main)]">
             Primary language
           </span>
           <div className="grid grid-cols-2 gap-2">
@@ -191,7 +191,7 @@ function ProfileEditModalContent({
 
         {/* Experience Level */}
         <div className="space-y-1.5">
-          <span className="block text-xs font-mono text-[var(--color-text-main)]">
+          <span className="block text-xs text-[var(--color-text-main)]">
             Experience level
           </span>
           <div className="grid grid-cols-3 gap-2">

@@ -71,7 +71,7 @@ export function OnboardingWizard() {
       <div className="min-h-screen bg-[var(--color-canvas)] flex flex-col items-center justify-center p-4">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-[var(--color-accent)] border-t-transparent animate-spin" />
-          <span className="font-mono text-xs text-[var(--color-accent)] animate-pulse">
+          <span className="text-xs text-[var(--color-accent)] animate-pulse">
             Initializing secure local storage...
           </span>
         </div>
@@ -88,10 +88,10 @@ export function OnboardingWizard() {
             href="/"
             className="flex items-center gap-2.5 text-[var(--color-text-main)] hover:text-[var(--color-accent)] transition-colors group"
           >
-            <div className="w-8 h-8 bg-[var(--color-primary)] text-[var(--color-primary-foreground)] border border-[var(--color-accent)] flex items-center justify-center font-heading text-base font-bold">
+            <div className="w-8 h-8 bg-[var(--color-primary)] text-[var(--color-primary-foreground)] border border-[var(--color-accent)] flex items-center justify-center font-semibold text-base font-bold">
               E
             </div>
-            <span className="font-heading text-xl text-[var(--color-text-main)] group-hover:text-[var(--color-accent)]">
+            <span className="font-semibold text-xl text-[var(--color-text-main)] group-hover:text-[var(--color-accent)]">
               exeku
             </span>
           </Link>
@@ -103,11 +103,11 @@ export function OnboardingWizard() {
           <div className="p-4 bg-[var(--color-elevated)] border border-[var(--color-primary)] space-y-3">
             <div className="flex items-center gap-2">
               <DotIcon name="stars" size={18} className="text-[var(--color-accent)]" />
-              <span className="font-mono text-xs font-bold text-[var(--color-text-main)]">
+              <span className="text-xs font-bold text-[var(--color-text-main)]">
                 Existing local profile detected
               </span>
             </div>
-            <p className="text-xs font-mono text-[var(--color-text-muted)]">
+            <p className="text-xs text-[var(--color-text-muted)]">
               A profile for <strong className="text-[var(--color-text-main)]">{profile.displayName}</strong> already exists on this machine. You can jump directly to the workspace or re-configure this profile.
             </p>
             <div className="flex flex-wrap items-center gap-3 pt-1">
@@ -138,7 +138,7 @@ export function OnboardingWizard() {
         {/* Wizard Main Card */}
         <PixelCard variant="elevated" className="border border-[var(--color-border)]">
           {/* Step Breadcrumbs Progress */}
-          <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-4 mb-6 text-xs font-mono select-none">
+          <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-4 mb-6 text-xs select-none">
             <div className="flex items-center gap-1 sm:gap-2">
               <span
                 className={cn(
@@ -183,7 +183,7 @@ export function OnboardingWizard() {
           {submitError && (
             <div
               role="alert"
-              className="p-3 mb-6 bg-[var(--color-elevated)] border border-[var(--color-pink)] text-[var(--color-pink)] font-mono text-xs flex items-center gap-2"
+              className="p-3 mb-6 bg-[var(--color-elevated)] border border-[var(--color-pink)] text-[var(--color-pink)] text-xs flex items-center gap-2"
             >
               <span className="font-bold">Error</span>
               <span>{submitError}</span>

@@ -29,17 +29,17 @@ export function ChallengeExitGuardModal() {
         className="w-full max-w-md border border-[var(--color-pink)] p-6 bg-[var(--color-surface)] space-y-4"
       >
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 border border-[var(--color-pink)] bg-[var(--color-canvas)] flex items-center justify-center text-[var(--color-pink)] font-heading text-xl font-bold">
+          <div className="w-10 h-10 border border-[var(--color-pink)] bg-[var(--color-canvas)] flex items-center justify-center text-[var(--color-pink)] font-semibold text-xl font-bold">
             !
           </div>
           <div>
             <h3
               id="guard-modal-title"
-              className="font-heading text-lg text-[var(--color-text-main)]"
+              className="font-semibold text-lg text-[var(--color-text-main)]"
             >
               Exit challenge and forfeit?
             </h3>
-            <span className="font-mono text-xs text-[var(--color-text-muted)]">
+            <span className="text-xs text-[var(--color-text-muted)]">
               Remaining session time: {formattedTime}
             </span>
           </div>
@@ -64,7 +64,7 @@ export function ChallengeExitGuardModal() {
             variant="pink"
             size="sm"
             onClick={confirmPendingNavigation}
-            className="text-xs font-heading"
+            className="text-xs font-semibold"
           >
             Exit and forfeit <DotIcon name="close" size={14} aria-hidden="true" />
           </PixelButton>

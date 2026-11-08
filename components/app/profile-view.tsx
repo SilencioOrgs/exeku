@@ -33,7 +33,7 @@ export function ProfileView() {
   return (
     <div className="profile-view mx-auto w-full max-w-6xl space-y-6 p-4 sm:p-6 lg:p-8">
       <header className="flex flex-wrap items-center justify-between gap-3">
-        <div><h1 className="font-heading text-2xl font-semibold tracking-tight sm:text-3xl">Profile</h1></div>
+        <div><h1 className="text-3xl font-semibold tracking-tight">Profile</h1></div>
         <Button type="button" variant="outline" onClick={() => setEditing(true)}>
           <DotIcon name="pencil" size={15} aria-hidden="true" />Edit profile
         </Button>

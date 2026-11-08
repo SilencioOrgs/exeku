@@ -56,7 +56,7 @@ export function SettingsView() {
     return (
       <div className="flex flex-col items-center justify-center p-12 text-center">
         <div className="w-10 h-10 border-4 border-[var(--color-accent)] border-t-transparent animate-spin mb-4" />
-        <span className="font-mono text-xs text-[var(--color-accent)] animate-pulse">
+        <span className="text-xs text-[var(--color-accent)] animate-pulse">
           Reading settings configuration...
         </span>
       </div>
@@ -75,7 +75,7 @@ export function SettingsView() {
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--color-border)] pb-4">
         <div>
-          <h1 className="font-heading text-2xl text-foreground">
+          <h1 className="text-3xl font-semibold tracking-tight">
             Settings
           </h1>
           <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
@@ -100,7 +100,7 @@ export function SettingsView() {
             />
             <div className="min-w-0 space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-heading text-xl text-foreground [overflow-wrap:anywhere]">
+                <span className="font-semibold text-xl text-foreground [overflow-wrap:anywhere]">
                   <StyleText arcade={<>{profile.displayName.toUpperCase()}</>} clarity={profile.displayName} />
                 </span>
                 <PixelBadge><span className="capitalize">{profile.experienceLevel}</span></PixelBadge>
@@ -110,7 +110,7 @@ export function SettingsView() {
                   &ldquo;{profile.bio}&rdquo;
                 </p>
               ) : (
-                <p className="text-xs text-[var(--color-text-dim)] font-mono">
+                <p className="text-xs text-[var(--color-text-dim)]">
                   No local bio set &bull; Initialized {createdDate}
                 </p>
               )}
@@ -123,7 +123,7 @@ export function SettingsView() {
         </div>
 
         {/* Profile Properties Details */}
-        <div className="pt-3 border-t border-[var(--color-border)] grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono text-xs">
+        <div className="pt-3 border-t border-[var(--color-border)] grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
           <div className="space-y-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-canvas)] p-2.5">
             <span className="text-[var(--color-text-dim)] text-xs">Preferred language</span>
             <div className="flex items-center gap-2 text-foreground">
@@ -138,7 +138,7 @@ export function SettingsView() {
 
           <div className="space-y-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-canvas)] p-2.5">
             <span className="text-[var(--color-text-dim)] text-xs">Experience level</span>
-            <div className="text-[var(--color-primary-text)]">
+            <div className="capitalize text-[var(--color-text-main)]">
               {profile.experienceLevel}
             </div>
           </div>
@@ -159,20 +159,20 @@ export function SettingsView() {
       <PixelCard variant="default" className="p-5 sm:p-6 border border-[var(--color-border)] space-y-4">
         <div className="flex flex-wrap gap-3 items-center justify-between border-b border-[var(--color-border)] pb-3">
           <div>
-            <h2 className="font-heading text-base text-foreground">
+            <h2 className="font-semibold">
               <StyleText arcade="Local storage" clarity="Device storage" command="Local storage" />
             </h2>
             <p className="text-xs text-[var(--color-text-dim)]">
               Real inspection of client storage schemas and data isolation.
             </p>
           </div>
-          <span className="flex items-center gap-1.5 font-mono text-xs text-[var(--color-primary-text)]">
+          <span className="flex items-center gap-1.5 text-xs text-[var(--color-primary-text)]">
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-primary-text)] animate-pulse" />
             100% Local
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 font-mono text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
           <div className="p-3 bg-[var(--color-canvas)] border border-[var(--color-border)] space-y-1">
             <span className="text-[var(--color-text-dim)] text-xs">Database Target</span>
             <div className="text-foreground font-bold">exeku_local_v1</div>
@@ -215,7 +215,7 @@ export function SettingsView() {
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--color-pink)]/40 pb-3">
           <div>
-            <h2 className="font-heading text-base text-[var(--color-pink)]">
+            <h2 className="font-semibold text-[var(--color-pink)]">
               <StyleText arcade="Danger zone" clarity="Reset local data" />
             </h2>
             <p className="text-xs text-[var(--color-text-muted)]">

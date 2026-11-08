@@ -217,8 +217,10 @@
     line-height: var(--line-height-base, 1.5);
   }
   :where(button, [role="button"], input, select) { min-height: 1.5rem; }
+  /* Touch: every button-looking control gets the same 44px target, including links styled with buttonVariants. */
   @media (pointer: coarse) {
-    :where(button, [role="button"], input, select) { min-height: 2.75rem; }
+    :where(button, [role="button"], input, select, .btn-primary, .btn-outline, .btn-ghost, .btn-destructive) { min-height: 2.75rem; }
+    :where([class~="size-6"], [class~="size-7"], [class~="size-8"], [class~="size-9"]):where([data-slot="button"], .btn-primary, .btn-outline, .btn-ghost) { min-width: 2.75rem; }
   }
 }
 
@@ -261,14 +263,8 @@ input::placeholder, textarea::placeholder { color: var(--color-text-dim); opacit
 .app-sidebar { border-width: 1px; }
 .appearance-nav-item { margin-block: 0.25rem; padding-inline: 1rem; border: 0; font-size: 0.875rem; font-weight: 500; box-shadow: none; }
 .appearance-nav-item[aria-current="page"] { background: color-mix(in srgb, var(--color-primary) 13%, var(--color-surface)); color: var(--color-primary-text); font-weight: 650; }
-.app-content > div > div:first-child h1 { font-size: clamp(1.5rem, 2.5vw, 2.25rem); letter-spacing: -0.025em; font-weight: 650; }
 .dashboard { container-type: inline-size; }
-.challenges-view .flex { flex-wrap: wrap; }
-.challenges-view .flex > * { min-width: 0; overflow-wrap: anywhere; }
-.challenges-view input { min-width: 0; width: 100%; }
 .progress-view { overflow-wrap: anywhere; }
-.progress-view .flex { flex-wrap: wrap; }
-.progress-view .flex > * { min-width: 0; }
 .progress-view .grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); }
 .workspace-view > div:first-child { overflow-wrap: anywhere; }
 .dashboard { display: grid; gap: var(--section-gap); }

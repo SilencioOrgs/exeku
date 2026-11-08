@@ -103,7 +103,7 @@ export function StepLoadout({
     <div className="appearance-stack space-y-6">
       {/* Header */}
       <div>
-        <h2 className="font-heading text-2xl sm:text-3xl text-[var(--color-text-main)]">
+        <h2 className="font-semibold text-2xl sm:text-3xl text-[var(--color-text-main)]">
           Set your preferences
         </h2>
         <p className="text-sm text-[var(--color-text-muted)] mt-1">
@@ -113,7 +113,7 @@ export function StepLoadout({
 
       {/* Preferred Programming Language */}
       <div className="space-y-3">
-        <label className="block text-xs font-mono text-[var(--color-text-main)]">
+        <label className="block text-xs text-[var(--color-text-main)]">
           Primary Language <span className="text-[var(--color-pink)]">*</span>
         </label>
         <div
@@ -154,16 +154,16 @@ export function StepLoadout({
                       <DotIcon name={lang.iconName} size={20} />
                     </div>
                     <div>
-                      <span className="font-mono text-sm font-bold text-[var(--color-text-main)] block">
+                      <span className="text-sm font-bold text-[var(--color-text-main)] block">
                         {lang.label}
                       </span>
-                      <span className="text-xs font-mono text-[var(--color-text-dim)]">
+                      <span className="text-xs text-[var(--color-text-dim)]">
                         {lang.tag}
                       </span>
                     </div>
                   </div>
                   {isSelected && (
-                    <span className="text-xs font-mono text-[var(--color-accent)] font-bold">
+                    <span className="text-xs text-[var(--color-accent)] font-bold">
                       [●]
                     </span>
                   )}
@@ -179,7 +179,7 @@ export function StepLoadout({
 
       {/* Experience Level */}
       <div className="space-y-3">
-        <label className="block text-xs font-mono text-[var(--color-text-main)]">
+        <label className="block text-xs text-[var(--color-text-main)]">
           Experience Level <span className="text-[var(--color-pink)]">*</span>
         </label>
         <div
@@ -212,16 +212,16 @@ export function StepLoadout({
                 )}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-mono text-[var(--color-primary-text)] font-bold">
+                  <span className="text-xs text-[var(--color-primary-text)] font-bold">
                     {lvl.tag}
                   </span>
                   {isSelected && (
-                    <span className="text-xs font-mono text-[var(--color-primary-text)] font-bold">
+                    <span className="text-xs text-[var(--color-primary-text)] font-bold">
                       [●]
                     </span>
                   )}
                 </div>
-                <span className="font-mono text-sm font-bold text-[var(--color-text-main)] block">
+                <span className="text-sm font-bold text-[var(--color-text-main)] block">
                   {lvl.label}
                 </span>
                 <p className="text-xs text-[var(--color-text-dim)] mt-1 line-clamp-2">
@@ -236,7 +236,7 @@ export function StepLoadout({
       {/* Loadout Review Summary Card */}
       <div className="p-4 bg-[var(--color-canvas)] border border-[var(--color-border)]">
         <div className="flex items-center justify-between mb-3 border-b border-[var(--color-border)] pb-2">
-          <span className="text-xs font-mono text-[var(--color-primary-text)] font-bold">
+          <span className="text-xs text-[var(--color-primary-text)] font-bold">
             Profile review summary
           </span>
           <PixelBadge variant="purple" bracketed={false} className="text-xs py-0 px-1">
@@ -246,7 +246,7 @@ export function StepLoadout({
 
         <div className="flex items-center gap-4">
           <PixelAvatar avatarId={avatarId} size={48} className="border" />
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 text-xs font-mono flex-1">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 text-xs flex-1">
             <div>
               <span className="text-[var(--color-text-dim)] block">Coder:</span>
               <span className="text-[var(--color-text-main)] font-bold truncate block">

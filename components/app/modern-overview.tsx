@@ -59,7 +59,7 @@ export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfil
     <div className="modern-overview space-y-6">
       <header className="modern-page-header flex flex-wrap items-end justify-between gap-4">
         <div className="space-y-1.5">
-          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Welcome back, {profile.displayName}</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">Welcome back, {profile.displayName}</h1>
           <p className="text-sm text-[var(--color-text-muted)] sm:text-base">Pick a problem, beat the clock, get it Accepted.</p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -78,7 +78,7 @@ export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfil
           <dd className="font-code mt-1 text-2xl font-semibold">{problems ? problems.length : "…"}</dd>
         </div>
         {TIERS.map((tier) => (
-          <div key={tier.id} className="skeuo-card rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 last:hidden lg:last:block">
+          <div key={tier.id} className="skeuo-card rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
             <dt className="text-xs font-medium" style={{ color: `var(--color-${tier.tone})` }}>{tier.label}</dt>
             <dd className="font-code mt-1 text-2xl font-semibold">{problems ? counts[tier.id] : "…"}</dd>
           </div>

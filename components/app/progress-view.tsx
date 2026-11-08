@@ -80,7 +80,7 @@ export function ProgressView() {
     return (
       <div className="flex flex-col items-center justify-center p-12 text-center">
         <div className="w-10 h-10 border-4 border-[var(--color-accent)] border-t-transparent animate-spin mb-4" />
-        <span className="font-mono text-xs text-[var(--color-accent)] animate-pulse">
+        <span className="text-xs text-[var(--color-accent)] animate-pulse">
           Reading local analytics...
         </span>
       </div>
@@ -104,7 +104,7 @@ export function ProgressView() {
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--color-border)] pb-4">
         <div>
-          <h1 className="font-heading text-2xl text-[var(--color-text-main)]">
+          <h1 className="text-3xl font-semibold tracking-tight">
             Progress
           </h1>
           <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
@@ -117,52 +117,52 @@ export function ProgressView() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Metric 1: Profile Initialization */}
         <PixelCard variant="default" className="p-4 border border-[var(--color-border)] space-y-1.5">
-          <span className="font-mono text-xs text-[var(--color-text-dim)] block">
+          <span className="text-xs text-[var(--color-text-dim)] block">
             Profile initialized
           </span>
-          <div className="font-heading text-xl text-[var(--color-text-main)]">
+          <div className="font-semibold text-xl text-[var(--color-text-main)]">
             {createdDate}
           </div>
-          <p className="font-mono text-xs text-[var(--color-text-muted)]">
+          <p className="text-xs text-[var(--color-text-muted)]">
             Updated: {updatedDate}
           </p>
         </PixelCard>
 
         {/* Metric 2: Local Buffers */}
         <PixelCard variant="default" className="p-4 border border-[var(--color-border)] space-y-1.5">
-          <span className="font-mono text-xs text-[var(--color-text-dim)] block">
+          <span className="text-xs text-[var(--color-text-dim)] block">
             Saved draft buffers
           </span>
-          <div className="font-heading text-xl text-[var(--color-accent)]">
+          <div className="font-semibold text-xl text-[var(--color-accent)]">
             {isLoadingDrafts ? "..." : `${drafts.length} of 4 saved`}
           </div>
-          <p className="font-mono text-xs text-[var(--color-text-muted)]">
+          <p className="text-xs text-[var(--color-text-muted)]">
             On this device
           </p>
         </PixelCard>
 
         {/* Metric 3: Curriculum Solved */}
         <PixelCard variant="default" className="p-4 border border-[var(--color-border)] space-y-1.5">
-          <span className="font-mono text-xs text-[var(--color-text-dim)] block">
+          <span className="text-xs text-[var(--color-text-dim)] block">
             Challenges solved
           </span>
-          <div className="font-heading text-xl text-[var(--color-primary-text)]">
+          <div className="font-semibold text-xl text-[var(--color-primary-text)]">
             Not tracked yet
           </div>
-          <p className="font-mono text-xs text-[var(--color-text-muted)]">
+          <p className="text-xs text-[var(--color-text-muted)]">
             Solved problems are not recorded yet
           </p>
         </PixelCard>
 
         {/* Metric 4: Code Executions */}
         <PixelCard variant="default" className="p-4 border border-[var(--color-border)] space-y-1.5">
-          <span className="font-mono text-xs text-[var(--color-text-dim)] block">
+          <span className="text-xs text-[var(--color-text-dim)] block">
             Code runs
           </span>
-          <div className="font-heading text-xl text-[var(--color-primary-text)]">
+          <div className="font-semibold text-xl text-[var(--color-primary-text)]">
             Not tracked yet
           </div>
-          <p className="font-mono text-xs text-[var(--color-text-muted)]">
+          <p className="text-xs text-[var(--color-text-muted)]">
             Runs are not recorded yet
           </p>
         </PixelCard>
@@ -173,7 +173,7 @@ export function ProgressView() {
       <PixelCard variant="default" className="p-5 border border-[var(--color-border)] space-y-4">
         <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-3">
           <div>
-            <h2 className="font-heading text-base text-[var(--color-text-main)]">
+            <h2 className="font-semibold">
               Saved drafts
             </h2>
             <p className="text-xs text-[var(--color-text-dim)]">
@@ -198,14 +198,14 @@ export function ProgressView() {
                     <DotIcon name={LANGUAGE_ICONS[lang]} size={18} color="var(--color-accent)" />
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-heading text-sm text-[var(--color-text-main)]">
+                        <span className="text-sm font-semibold">
                           {LANGUAGE_DISPLAY_NAMES[lang]}
                         </span>
                         {isPreferred && (
                           <PixelBadge>Primary</PixelBadge>
                         )}
                       </div>
-                      <span className="font-mono text-xs text-[var(--color-text-dim)]">
+                      <span className="font-code text-xs text-[var(--color-text-dim)]">
                         {filename}
                       </span>
                     </div>
@@ -214,7 +214,7 @@ export function ProgressView() {
                   <PixelBadge>{draft ? "Edited draft" : "Starter code"}</PixelBadge>
                 </div>
 
-                <div className="pt-2 border-t border-[var(--color-border)]/40 flex items-center justify-between text-xs font-mono">
+                <div className="pt-2 border-t border-[var(--color-border)]/40 flex items-center justify-between text-xs font-code">
                   <span className="text-[var(--color-text-dim)]">
                     {draft
                       ? `${draft.code.length} bytes \u2022 ${new Date(
@@ -234,7 +234,7 @@ export function ProgressView() {
       <PixelCard variant="elevated" className="p-5 border border-[var(--color-border)] space-y-4">
         <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-3">
           <div>
-            <h2 className="font-heading text-base text-[var(--color-text-main)]">
+            <h2 className="font-semibold">
               Curriculum mastery roadmap
             </h2>
             <p className="text-xs text-[var(--color-text-dim)]">
@@ -254,10 +254,10 @@ export function ProgressView() {
                   Stage {node.step}
                 </span>
               </div>
-              <h3 className="font-heading text-sm text-[var(--color-text-main)]">
+              <h3 className="text-sm font-semibold">
                 {node.title}
               </h3>
-              <ul className="space-y-1 text-xs font-mono text-[var(--color-text-muted)]">
+              <ul className="space-y-1 text-xs text-[var(--color-text-muted)]">
                 {node.skills.map((skill, idx) => (
                   <li key={idx} className="flex items-center gap-1.5">
                     <span className="text-[var(--color-border)]">&bull;</span>
@@ -273,7 +273,7 @@ export function ProgressView() {
       {/* Offline Student Report Placeholder */}
       <PixelCard variant="default" className="p-4 sm:p-5 border border-[var(--color-border)] space-y-3">
         <div className="flex items-center justify-between">
-          <span className="font-heading text-xs text-[var(--color-primary-text)]">
+          <span className="font-semibold text-xs text-[var(--color-primary-text)]">
             Offline academic verification &amp; export
           </span>
         </div>
