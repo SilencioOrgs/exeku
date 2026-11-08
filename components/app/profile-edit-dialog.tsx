@@ -1,14 +1,13 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import React, { useState } from "react";
 import type { LocalProfile, ProfileInput, ExperienceLevel, PreferredLanguage } from "@/types/profile";
 import { AVATARS } from "@/lib/avatars";
 import { validateDisplayName } from "@/lib/profile-validation";
 import { PixelAvatar } from "@/components/retro/pixel-avatar";
 import { PixelButton } from "@/components/retro/pixel-button";
-import { PixelBadge } from "@/components/retro/pixel-badge";
 import { DotIcon, type DotIconName } from "@/components/retro/dot-icon";
-import { cn } from "@/lib/utils";
 
 export interface ProfileEditDialogProps {
   isOpen: boolean;
@@ -91,29 +90,24 @@ function ProfileEditModalContent({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-3">
           <div className="flex items-center gap-2">
-            <PixelBadge variant="purple">Edit</PixelBadge>
-            <h3 id="edit-dialog-title" className="font-heading text-lg sm:text-xl text-foreground">
+            <h3 id="edit-dialog-title" className="text-lg font-semibold">
               Edit local profile
             </h3>
           </div>
-          <button
-            onClick={onClose}
-            aria-label="Close dialog"
-            className="text-[var(--color-text-muted)] hover:text-[var(--color-pink)] font-mono text-sm px-2 py-1 border border-transparent hover:border-[var(--color-pink)] transition-colors"
-          >
-            <DotIcon name="close" size={14} aria-hidden="true" />
-          </button>
+          <Button type="button" variant="ghost" size="icon-sm" onClick={onClose} aria-label="Close dialog">
+            <DotIcon name="close" size={15} aria-hidden="true" />
+          </Button>
         </div>
 
         {error && (
-          <div role="alert" className="p-2.5 bg-[var(--color-elevated)] border border-[var(--color-pink)] text-[var(--color-pink)] font-mono text-xs">
+          <div role="alert" className="p-2.5 bg-[var(--color-elevated)] border border-[var(--color-pink)] text-[var(--color-pink)] text-xs">
             {error}
           </div>
         )}
 
         {/* Display Name */}
         <div className="space-y-1.5">
-          <div className="flex justify-between text-xs font-mono">
+          <div className="flex justify-between text-xs">
             <label htmlFor="edit-name" className="text-[var(--color-text-main)]">
               Display Name
             </label>
@@ -127,13 +121,13 @@ function ProfileEditModalContent({
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             maxLength={32}
-            className="w-full px-3 py-2 bg-[var(--color-canvas)] border border-[var(--color-border)] focus:border-[var(--color-accent)] text-foreground font-mono text-sm outline-none transition-colors"
+            className="w-full px-3 py-2 bg-[var(--color-canvas)] border border-[var(--color-border)] focus:border-[var(--color-accent)] text-foreground text-sm outline-none transition-colors"
           />
         </div>
 
         {/* Tagline / Bio */}
         <div className="space-y-1.5">
-          <label htmlFor="edit-bio" className="block text-xs font-mono text-[var(--color-text-muted)]">
+          <label htmlFor="edit-bio" className="block text-xs text-[var(--color-text-muted)]">
             Tagline / Bio (optional)
           </label>
           <input
@@ -142,42 +136,30 @@ function ProfileEditModalContent({
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             maxLength={100}
-            className="w-full px-3 py-2 bg-[var(--color-canvas)] border border-[var(--color-border)] focus:border-[var(--color-primary)] text-foreground font-mono text-sm outline-none transition-colors"
+            className="w-full px-3 py-2 bg-[var(--color-canvas)] border border-[var(--color-border)] focus:border-[var(--color-primary)] text-foreground text-sm outline-none transition-colors"
           />
         </div>
 
         {/* Avatar Selection Grid */}
         <div className="space-y-1.5">
-          <span className="block text-xs font-mono text-[var(--color-text-main)]">
-            Avatar Selection
+          <span className="block text-xs text-[var(--color-text-main)]">
+            Avatar
           </span>
           <div className="grid grid-cols-4 gap-2">
             {AVATARS.map((av) => {
               const isSelected = av.id === avatarId;
               return (
-                <div
+                <Button
                   key={av.id}
-                  role="button"
-                  tabIndex={0}
+                  type="button"
+                  variant="outline"
+                  aria-pressed={isSelected}
                   onClick={() => setAvatarId(av.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      setAvatarId(av.id);
-                    }
-                  }}
-                  className={cn(
-                    "p-2 border cursor-pointer flex flex-col items-center gap-1 bg-[var(--color-canvas)] transition-all select-none",
-                    isSelected
-                      ? "border-[var(--color-accent)] [box-shadow:var(--shadow-card)] [border-radius:var(--radius-card)]"
-                      : "border-[var(--color-border)] hover:border-[var(--color-primary)]"
-                  )}
+                  className="h-auto flex-col gap-1 py-2"
                 >
                   <PixelAvatar avatarId={av.id} size={36} />
-                  <span className="text-xs font-mono text-center truncate w-full text-[var(--color-text-muted)]">
-                    {av.name}
-                  </span>
-                </div>
+                  <span className="w-full truncate text-center text-xs text-[var(--color-text-muted)]">{av.name}</span>
+                </Button>
               );
             })}
           </div>
@@ -185,34 +167,23 @@ function ProfileEditModalContent({
 
         {/* Primary Language */}
         <div className="space-y-1.5">
-          <span className="block text-xs font-mono text-[var(--color-text-main)]">
-            Primary Language
+          <span className="block text-xs text-[var(--color-text-main)]">
+            Primary language
           </span>
           <div className="grid grid-cols-2 gap-2">
             {LANGUAGES.map((lang) => {
               const isSelected = lang.id === preferredLanguage;
               return (
-                <div
+                <Button
                   key={lang.id}
-                  role="button"
-                  tabIndex={0}
+                  type="button"
+                  variant="outline"
+                  aria-pressed={isSelected}
                   onClick={() => setPreferredLanguage(lang.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      setPreferredLanguage(lang.id);
-                    }
-                  }}
-                  className={cn(
-                    "p-2 border cursor-pointer flex items-center gap-2 bg-[var(--color-canvas)] select-none",
-                    isSelected
-                      ? "border-[var(--color-accent)] text-[var(--color-accent)]"
-                      : "border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-primary)]"
-                  )}
+                  className="justify-start"
                 >
-                  <DotIcon name={lang.icon} size={16} />
-                  <span className="text-xs font-mono font-bold">{lang.label}</span>
-                </div>
+                  <DotIcon name={lang.icon} size={15} aria-hidden="true" />{lang.label}
+                </Button>
               );
             })}
           </div>
@@ -220,26 +191,22 @@ function ProfileEditModalContent({
 
         {/* Experience Level */}
         <div className="space-y-1.5">
-          <span className="block text-xs font-mono text-[var(--color-text-main)]">
-            Experience Level
+          <span className="block text-xs text-[var(--color-text-main)]">
+            Experience level
           </span>
           <div className="grid grid-cols-3 gap-2">
             {LEVELS.map((lvl) => {
               const isSelected = lvl.id === experienceLevel;
               return (
-                <button
+                <Button
                   key={lvl.id}
                   type="button"
+                  variant="outline"
+                  aria-pressed={isSelected}
                   onClick={() => setExperienceLevel(lvl.id)}
-                  className={cn(
-                    "py-2 px-1 text-xs font-mono border transition-colors select-none",
-                    isSelected
-                      ? "bg-[var(--color-elevated)] border-[var(--color-primary-text)] text-[var(--color-primary-text)]"
-                      : "bg-[var(--color-canvas)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-primary)]"
-                  )}
                 >
                   {lvl.label}
-                </button>
+                </Button>
               );
             })}
           </div>

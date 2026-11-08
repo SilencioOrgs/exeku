@@ -37,7 +37,7 @@ export function CodingActivity({ profileId }: { profileId: string }) {
     <section className="coding-activity" aria-labelledby="coding-activity-heading">
       <div className="coding-activity-header">
         <div>
-          <h2 id="coding-activity-heading" className="flex items-center gap-2 font-semibold text-base sm:text-lg">
+          <h2 id="coding-activity-heading" className="flex items-center gap-2 font-semibold">
             <DotIcon name="stars" adaptive size={18} aria-hidden="true" />
             Coding activity
           </h2>

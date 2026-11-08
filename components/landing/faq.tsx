@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { PixelBadge } from "@/components/retro/pixel-badge";
 import { DotIcon } from "@/components/retro/dot-icon";
 
 export function FAQ() {
@@ -40,7 +39,7 @@ export function FAQ() {
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-14">
           <div className="mb-3">
-            <PixelBadge variant="purple">Knowledge base</PixelBadge>
+            <p className="font-code text-xs font-medium text-[var(--color-primary-text)]">FAQ</p>
           </div>
           <h2
             className="text-3xl sm:text-4xl md:text-5xl font-bold text-[var(--color-text-main)] mb-4 tracking-tight"
@@ -49,7 +48,7 @@ export function FAQ() {
             Frequently Asked Questions.
           </h2>
           <p className="text-base sm:text-lg text-[var(--color-text-muted)] font-sans">
-            Clear, honest answers about our offline architecture, roadmap, and requirements.
+            Clear, honest answers about how Exeku works and what it needs.
           </p>
         </div>
 

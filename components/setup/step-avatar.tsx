@@ -32,13 +32,7 @@ export function StepAvatar({
     <div className="appearance-stack space-y-6">
       {/* Header */}
       <div>
-        <div className="flex items-center gap-2 mb-2">
-          <PixelBadge variant="pink">Step 02</PixelBadge>
-          <span className="text-xs font-mono text-[var(--color-text-muted)]">
-            Avatar
-          </span>
-        </div>
-        <h2 className="font-heading text-2xl sm:text-3xl text-[var(--color-text-main)]">
+        <h2 className="font-semibold text-2xl sm:text-3xl text-[var(--color-text-main)]">
           Select your avatar
         </h2>
         <p className="text-sm text-[var(--color-text-muted)] mt-1">
@@ -55,14 +49,14 @@ export function StepAvatar({
         />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="font-mono text-base font-bold text-[var(--color-text-main)] truncate">
+            <span className="text-base font-bold text-[var(--color-text-main)] truncate">
               {selectedMeta.name}
             </span>
             <PixelBadge variant="cyan" bracketed={false} className="text-xs py-0 px-1.5">
               Active
             </PixelBadge>
           </div>
-          <p className="text-xs font-mono text-[var(--color-text-muted)] mt-0.5">
+          <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
             {selectedMeta.role}
           </p>
         </div>
@@ -107,13 +101,13 @@ export function StepAvatar({
                 <div className="w-full">
                   <span
                     className={cn(
-                      "block text-xs font-mono font-bold truncate",
+                      "block text-xs font-bold truncate",
                       isSelected ? "text-[var(--color-accent)]" : "text-[var(--color-text-main)]"
                     )}
                   >
                     {avatar.name}
                   </span>
-                  <span className="block text-xs font-mono text-[var(--color-text-muted)] truncate">
+                  <span className="block text-xs text-[var(--color-text-muted)] truncate">
                     {avatar.role}
                   </span>
                 </div>

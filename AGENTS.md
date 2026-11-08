@@ -81,8 +81,11 @@ Student code is strictly untrusted:
 
 The source of truth is `DESIGN.md`. Read it before any UI change. Summary:
 
-- **Theme & Vibe**: Blue and white, shadcn/ui, light (default) and dark mode. Quiet, precise, tool-like. The code editor uses VS Code Light+/Dark+ syntax colors.
-- **Color**: Slate neutrals plus one blue (`--color-primary`). Green/red only for verdicts, errors and destructive actions, always with a word (AC, WA). Use the tokens in `app/globals.css`, never raw hex.
+- **Theme & Vibe**: LeetCode at night. Dark only: black surfaces, one LeetCode orange accent, soft depth (raised cards, subtle keys, orange glow) on every page including the landing page. The code editor uses VS Code Dark+ colors.
+- **Color**: Near-black neutrals, one orange (`--color-primary`), Easy/Medium/Hard colors via `DifficultyBadge`. Green/red only for verdicts, errors and destructive actions, always with a word (AC, WA). Use the tokens in `app/globals.css`, never raw hex.
+- **Landing hero**: competitive programming first: a 3D arena with two students coding head to head under a VS hologram (`lib/three/arena.ts`).
+- **Exeku Lab** (Arduino/MCU simulation, 3D, printable cases) is a separate desktop/mobile app. This website only promotes it (`components/lab/lab-app-banner.tsx`, links in `lib/lab-app.ts`). Keep the web app focused on competitive programming.
+- **Buttons**: always `Button` or `buttonVariants` from `components/ui/button.tsx`; never hand-styled `<button>`s.
 - **Typography**: Geist Sans for UI and headings, Geist Mono for code and numbers. Sentence case. No ALL CAPS labels, no trailing `_` cursors, no `[BRACKET]` labels.
 - **Components**: shadcn/ui primitives in `components/ui` (`Button`, `Dialog`, `Card`, `Input`, `Tooltip`, `Sheet`). lucide-react icons through `DotIcon`.
 - **Fonts are bundled** through the `geist` npm package. The app must work with no internet.

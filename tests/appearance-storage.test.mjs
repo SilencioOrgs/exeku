@@ -15,7 +15,7 @@ test('transactional Apply does not replace canonical preferences when storage fa
 
 test("DEFAULT_APPEARANCE_PREFERENCES - has expected default values", () => {
   assert.equal(DEFAULT_APPEARANCE_PREFERENCES.uiStyle, "minimal-saas");
-  assert.equal(DEFAULT_APPEARANCE_PREFERENCES.colorMode, "light");
+  assert.equal(DEFAULT_APPEARANCE_PREFERENCES.colorMode, "dark");
   assert.equal(DEFAULT_APPEARANCE_PREFERENCES.contrastMode, "standard");
   assert.equal(DEFAULT_APPEARANCE_PREFERENCES.uiFontFamily, "geist-sans");
   assert.equal(DEFAULT_APPEARANCE_PREFERENCES.uiFontScale, 100);
@@ -39,7 +39,7 @@ test("normalizeAppearancePreferences - validates and clamps preferences", () => 
   });
 
   assert.equal(normalized.uiStyle, "minimal-saas");
-  assert.equal(normalized.colorMode, "light");
+  assert.equal(normalized.colorMode, "dark");
   assert.equal(normalized.uiFontScale, 150);
   assert.equal(normalized.brightness, 80);
   assert.equal(normalized.editorFontSize, 20);
@@ -95,13 +95,12 @@ test("AppearanceRepository - in-memory storage fallback works", () => {
   assert.equal(repo.getPreferences().uiStyle, "minimal-saas");
 });
 
-test("AppearanceRepository - resolveEffectiveColorMode resolves system preference correctly", () => {
+test("AppearanceRepository - Exeku is dark only, whatever was saved", () => {
   const repo = new AppearanceRepository({ storage: null });
 
-  assert.equal(repo.resolveEffectiveColorMode("dark", false), "dark");
-  assert.equal(repo.resolveEffectiveColorMode("light", true), "light");
-  assert.equal(repo.resolveEffectiveColorMode("system", true), "dark");
-  assert.equal(repo.resolveEffectiveColorMode("system", false), "light");
+  for (const mode of ["dark", "light", "system"]) {
+    for (const systemDark of [true, false]) assert.equal(repo.resolveEffectiveColorMode(mode, systemDark), "dark");
+  }
 });
 
 test("failed writes keep latest session preferences and report failure", () => {

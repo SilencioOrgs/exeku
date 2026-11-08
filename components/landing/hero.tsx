@@ -1,90 +1,52 @@
 "use client";
 
-import React from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useProfile } from "@/hooks/use-profile";
-import { PixelBadge } from "@/components/retro/pixel-badge";
-import { PixelButton } from "@/components/retro/pixel-button";
+import { buttonVariants } from "@/components/ui/button";
 import { DotIcon } from "@/components/retro/dot-icon";
-import { PixelTerminal } from "./pixel-terminal";
+import { VersusScene } from "./versus-scene";
 
-import { StyleText } from "@/components/appearance/style-text";
+const STATS = [
+  { value: "4", label: "languages judged" },
+  { value: "AC/WA", label: "instant verdicts" },
+  { value: "Timed", label: "challenge mode" },
+];
 
 export function Hero() {
-  const router = useRouter();
   const { profile } = useProfile();
 
   return (
-    <section id="hero" className="relative pt-12 pb-20 md:pt-20 md:pb-28 overflow-hidden">
-      {/* Ambient retro glow backgrounds */}
+    <section id="hero" className="relative overflow-hidden border-b border-[var(--color-border)]">
+      <div aria-hidden="true" className="bg-grid absolute inset-0 opacity-60" />
+      <div aria-hidden="true" className="pointer-events-none absolute top-1/3 left-1/2 h-[620px] w-[900px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgb(255_161_22/0.16),transparent)]" />
+      <VersusScene className="absolute inset-x-0 top-0 h-[54vh] min-h-[340px] md:inset-y-0 md:h-auto" />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 hidden w-[46%] bg-gradient-to-r from-[var(--color-canvas)] via-[var(--color-canvas)]/75 to-transparent md:block" />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent to-[var(--color-canvas)]" />
 
-      <div className="landing-hero-layout max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="landing-hero-copy flex flex-col items-center text-center max-w-4xl mx-auto mb-12 sm:mb-16">
-          {/* Developer-preview status, not a fake metric */}
-          <div className="mb-6 flex flex-wrap items-center justify-center gap-2">
-            <PixelBadge variant="muted">Developer preview</PixelBadge>
-          </div>
-
-          {/* Headline */}
-          <h1
-            className="text-4xl sm:text-6xl md:text-7xl font-semibold tracking-tight text-[var(--color-text-main)] mb-6 leading-[1.1]"
-            style={{ fontFamily: "var(--font-heading-active)" }}
-          >
-            <StyleText arcade="YOUR CODE." clarity="Your code." /> <br className="hidden sm:inline" />
-            <span className="text-[var(--color-accent)]">
-              <StyleText arcade="YOUR MACHINE." clarity="Your machine." />
-            </span>
+      <div className="pointer-events-none relative mx-auto flex min-h-[calc(100svh-4rem)] max-w-7xl items-end px-4 pt-[50vh] pb-14 sm:px-6 md:items-center md:pt-16 lg:px-8">
+        <div className="pointer-events-auto max-w-xl">
+          <h1 className="text-5xl leading-[1.02] font-semibold tracking-tight text-[var(--color-text-main)] sm:text-6xl xl:text-7xl">
+            Out-code<br />your <span className="text-gradient-orange">rival.</span>
           </h1>
-
-          {/* Subtitle */}
-          <p className="text-lg sm:text-xl text-[var(--color-text-muted)] max-w-2xl font-sans leading-relaxed mb-8">
-            An online programming practice, assessment, and competition platform inspired by CodeChum.
-            Solve challenges, run code in isolated sandboxes, and receive instant judging verdicts across Python 3, Java, C++, and C.
+          <p className="mt-6 max-w-md text-lg leading-relaxed text-[var(--color-text-muted)]">
+            Competitive programming practice for students. Same problem, same clock: solve it in Python, Java, C++ or C and let the judge decide, test by test.
           </p>
-
-          {/* Call to action buttons */}
-          <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
-            <PixelButton
-              variant="cyan"
-              size="lg"
-              onClick={() => router.push(profile ? "/app" : "/setup")}
-              className="w-full sm:w-auto"
-            >
-              <DotIcon name="windows" size={16} className="text-[var(--color-accent-foreground)]" />{" "}
-              {profile ? "Launch Workspace" : "Get Started (Setup Profile)"}
-            </PixelButton>
-
-            <PixelButton
-              variant="secondary"
-              size="lg"
-              href="#about"
-              className="w-full sm:w-auto"
-            >
-              About Exeku <DotIcon name="arrowDown" className="w-4 h-4 text-[var(--color-accent)]" />
-            </PixelButton>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <Link href={profile ? "/app/challenges" : "/setup"} className={buttonVariants({ size: "lg", className: "h-11 px-5 text-base" })}>
+              {profile ? "Pick a problem" : "Start practicing"}<DotIcon name="arrowRight" size={16} aria-hidden="true" />
+            </Link>
+            <a href="#practice" className={buttonVariants({ variant: "outline", size: "lg", className: "h-11 px-5 text-base" })}>
+              See how it works<DotIcon name="arrowDown" size={16} aria-hidden="true" />
+            </a>
           </div>
-
-          {/* Core Trust Badges */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-8 mt-10 pt-8 border-t border-[var(--color-border)]/60 w-full max-w-2xl font-mono text-xs text-[var(--color-text-muted)]">
-            <div className="flex items-center justify-center gap-2">
-              <DotIcon name="shield" size={16} className="text-[var(--color-primary-text)]" />
-              <span>Container Sandboxing</span>
-            </div>
-            <div className="flex items-center justify-center gap-2">
-              <DotIcon name="cog" size={16} className="text-[var(--color-accent)]" />
-              <span>Automatic Judging</span>
-            </div>
-            <div className="col-span-2 sm:col-span-1 flex items-center justify-center gap-2">
-              <DotIcon name="powershell" size={16} className="text-[var(--color-primary-text)]" />
-              <span>4 Core Languages</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Centerpiece Pixel Terminal */}
-        <div className="landing-hero-demo max-w-5xl mx-auto">
-
-          <PixelTerminal />
+          <dl className="mt-10 grid max-w-md grid-cols-3 gap-4 border-t border-[var(--color-border)] pt-6">
+            {STATS.map((stat) => (
+              <div key={stat.label}>
+                <dt className="text-xs text-[var(--color-text-muted)]">{stat.label}</dt>
+                <dd className="font-code mt-1 text-xl font-semibold text-[var(--color-text-main)]">{stat.value}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
       </div>
     </section>

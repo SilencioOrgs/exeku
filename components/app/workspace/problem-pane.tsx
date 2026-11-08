@@ -5,6 +5,7 @@ import Link from "next/link";
 import { DotIcon } from "@/components/retro/dot-icon";
 import { Button } from "@/components/ui/button";
 import type { VisibleProblem } from "@/types/problem";
+import { DifficultyBadge } from "../difficulty-badge";
 
 export interface ProblemPaneProps {
   problem: VisibleProblem | null;
@@ -47,8 +48,9 @@ export function ProblemPane({ problem, onUseCustomStdin }: ProblemPaneProps) {
           <h2 className="text-base font-semibold text-[var(--color-text-main)]">{problem.title}</h2>
           <Link href="/app/challenges" className="shrink-0 text-xs text-[var(--color-text-muted)] underline-offset-2 hover:text-[var(--color-text-main)] hover:underline">All problems</Link>
         </div>
-        <p className="font-code text-xs text-[var(--color-text-muted)]">
-          <span className="capitalize">{problem.difficulty}</span> · {problem.timeLimitMs} ms · {Math.round(problem.memoryLimitKb / 1000)} MB
+        <p className="flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
+          <DifficultyBadge difficulty={problem.difficulty} />
+          <span className="font-code">{problem.timeLimitMs} ms · {Math.round(problem.memoryLimitKb / 1000)} MB</span>
         </p>
       </div>
 

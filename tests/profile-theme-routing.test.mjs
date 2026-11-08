@@ -30,7 +30,7 @@ test("application icons use modern stroke icons with legacy DotIcon API retained
 
 test("application uses one modern layout while preserving old appearance records", () => {
   assert.match(read("hooks/use-appearance.tsx"), /root.dataset.uiStyle = "minimal-saas"/);
-  assert.match(read("components/app/appearance-studio.tsx"), /ColorModeChoice/);
+  assert.doesNotMatch(read("components/app/appearance-studio.tsx"), /ColorModeChoice|Light/);
   assert.doesNotMatch(read("components/app/appearance-studio.tsx"), /<StyleSelector|<PaletteSelector/);
   assert.doesNotMatch(read("components/app/command-station.tsx"), /pixel-arcade/);
 });

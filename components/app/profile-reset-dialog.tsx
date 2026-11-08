@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { DotIcon } from "@/components/retro/dot-icon";
 
 import React, { useState } from "react";
@@ -56,28 +57,23 @@ export function ProfileResetDialog({
         <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-3">
           <div className="flex items-center gap-2">
             <PixelBadge variant="pink">Danger</PixelBadge>
-            <h3 id="reset-dialog-title" className="font-heading text-lg sm:text-xl text-[var(--color-pink)]">
+            <h3 id="reset-dialog-title" className="text-lg font-semibold text-[var(--color-pink)]">
               Reset local profile
             </h3>
           </div>
-          <button
-            onClick={onClose}
-            disabled={isDeleting}
-            aria-label="Close dialog"
-            className="text-[var(--color-text-muted)] hover:text-[var(--color-pink)] font-mono text-sm px-2 py-1 transition-colors"
-          >
-            <DotIcon name="close" size={14} aria-hidden="true" />
-          </button>
+          <Button type="button" variant="ghost" size="icon-sm" onClick={onClose} disabled={isDeleting} aria-label="Close dialog">
+            <DotIcon name="close" size={15} aria-hidden="true" />
+          </Button>
         </div>
 
         {error && (
-          <div role="alert" className="p-2.5 bg-[var(--color-elevated)] border border-[var(--color-pink)] text-[var(--color-pink)] font-mono text-xs">
+          <div role="alert" className="p-2.5 bg-[var(--color-elevated)] border border-[var(--color-pink)] text-[var(--color-pink)] text-xs">
             {error}
           </div>
         )}
 
         {/* Warning text */}
-        <div className="space-y-3 text-xs font-mono text-[var(--color-text-muted)]">
+        <div className="space-y-3 text-xs text-[var(--color-text-muted)]">
           <p>
             You are about to permanently delete the local profile for{" "}
             <strong className="text-foreground underline">{profileName}</strong> from this browser&apos;s IndexedDB.
@@ -102,7 +98,7 @@ export function ProfileResetDialog({
             placeholder="Type RESET to confirm"
             autoFocus
             disabled={isDeleting}
-            className="w-full px-3 py-2 bg-[var(--color-canvas)] border border-[var(--color-pink)]/60 focus:border-[var(--color-pink)] text-foreground font-mono text-sm outline-none transition-colors"
+            className="w-full px-3 py-2 bg-[var(--color-canvas)] border border-[var(--color-pink)]/60 focus:border-[var(--color-pink)] text-foreground text-sm outline-none transition-colors"
           />
         </div>
 

@@ -10,7 +10,7 @@ export interface PixelCardProps extends React.HTMLAttributes<HTMLDivElement> {
 export function PixelCard({ children, variant = "default", cornerMarks: _cornerMarks, className, ...props }: PixelCardProps) {
   void _cornerMarks;
   return <div className={cn(
-    "appearance-card relative rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-[var(--panel-padding)] shadow-none transition-colors",
+    "appearance-card relative rounded-[14px] border border-[var(--color-border)] bg-[var(--color-surface)] p-[var(--panel-padding)]",
     variant === "elevated" && "bg-[var(--color-surface)]",
     className,
   )} {...props}>{children}</div>;

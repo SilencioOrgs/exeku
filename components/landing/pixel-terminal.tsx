@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { PixelBadge } from "@/components/retro/pixel-badge";
 import { DotIcon, type DotIconName } from "@/components/retro/dot-icon";
 
 type LanguageKey = "python" | "cpp" | "java";
@@ -129,7 +128,6 @@ export function PixelTerminal() {
 
         <div className="flex items-center gap-2">
           <span className="text-[var(--color-text-muted)] hidden sm:inline">Host: 127.0.0.1</span>
-          <PixelBadge variant="cyan">Dev preview</PixelBadge>
         </div>
       </div>
 
@@ -155,7 +153,7 @@ export function PixelTerminal() {
                 setActiveLang(key);
                 setHasRun(false);
               }}
-              className={`px-3 sm:px-4 py-2 text-xs font-mono font-medium flex items-center gap-2 border-b transition-colors cursor-pointer outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-accent)] ${
+              className={`shrink-0 whitespace-nowrap px-3 sm:px-4 py-2 text-xs font-mono font-medium flex items-center gap-2 border-b transition-colors cursor-pointer outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-accent)] ${
                 isActive
                   ? "border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-elevated)]"
                   : "border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-elevated)]"

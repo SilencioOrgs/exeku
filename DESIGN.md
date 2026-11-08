@@ -1,30 +1,24 @@
 ---
 name: Exeku
-description: Blue-and-white coding practice and judging workspace with a VS Code-style editor. Your Code. Your Machine.
+description: Dark, orange-on-black competitive programming practice and judging in the spirit of LeetCode, with a VS Code-style editor. Your Code. Your Machine.
 colors:
-  canvas: "#f8fafc"
-  surface: "#ffffff"
-  elevated: "#f1f5f9"
-  border: "#e2e8f0"
-  text: "#0f172a"
-  text-muted: "#475569"
-  primary: "#2563eb"
-  primary-hover: "#1d4ed8"
-  primary-foreground: "#ffffff"
-  link: "#1d4ed8"
-  pass: "#15803d"
-  fail: "#b91c1c"
-  dark-canvas: "#0b1120"
-  dark-surface: "#0f172a"
-  dark-elevated: "#1e293b"
-  dark-border: "#334155"
-  dark-text: "#f8fafc"
-  dark-text-muted: "#94a3b8"
-  dark-link: "#60a5fa"
-  dark-pass: "#4ade80"
-  dark-fail: "#f87171"
-  editor-light-bg: "#ffffff"
-  editor-dark-bg: "#1e1e1e"
+  canvas: "#0a0a0a"
+  surface: "#121212"
+  elevated: "#1a1a1a"
+  border: "#262626"
+  text: "#f5f5f4"
+  text-muted: "#a8a29e"
+  primary: "#ffa116"
+  primary-hover: "#ffb340"
+  primary-foreground: "#0a0a0a"
+  link: "#ffb84d"
+  ring: "#ffa116"
+  easy: "#00b8a3"
+  medium: "#ffc01e"
+  hard: "#ff8a9a"
+  pass: "#2cbb5d"
+  fail: "#ff8a9a"
+  editor-bg: "#1e1e1e"
 typography:
   page-title:
     fontFamily: "Geist Sans, sans-serif"
@@ -34,7 +28,7 @@ typography:
     letterSpacing: "-0.025em"
   section-title:
     fontFamily: "Geist Sans, sans-serif"
-    fontSize: "0.875rem"
+    fontSize: "1.125rem"
     fontWeight: 600
     lineHeight: 1.4
   body:
@@ -55,7 +49,9 @@ typography:
 rounded:
   sm: "6px"
   md: "8px"
-  lg: "12px"
+  lg: "14px"
+  xl: "16px"
+  pill: "9999px"
 spacing:
   xs: "4px"
   sm: "8px"
@@ -78,7 +74,7 @@ components:
     rounded: "{rounded.lg}"
     padding: "16px"
   code-editor:
-    backgroundColor: "{colors.surface}"
+    backgroundColor: "{colors.editor-bg}"
     textColor: "{colors.text}"
     typography: "{typography.code}"
 ---
@@ -87,47 +83,66 @@ components:
 
 ## Overview
 
-Exeku is a tool for writing and judging code. The interface is blue and white, built on shadcn/ui, with a light and a dark mode (light is the default). The code editor uses VS Code's Light+ and Dark+ colors so it feels familiar to competitive programmers. Most screens are "Operate" surfaces: scanability and consistency win over expression. The landing page is the only "Persuade" surface.
+Exeku is where students practice competitive programming. It looks like LeetCode at night: black surfaces, one orange accent, Easy/Medium/Hard colors everyone recognizes, and code colored like VS Code Dark+. It is dark only; there is no light theme.
+
+Most screens are "Operate" surfaces (problems, workspace, settings): scanability wins. The landing page is allowed more expression: the 3D versus arena and orange glows.
 
 ## Colors
 
-- Slate neutrals for surfaces and text; one blue (`--color-primary` #2563eb) for primary buttons, links, focus rings and the active nav item. Use the CSS variables, never raw hex in components.
-- Tokens: `--color-canvas`, `--color-surface`, `--color-elevated`, `--color-border`, `--color-text-main`, `--color-text-muted`, `--color-primary`, `--color-primary-text` (links and blue text), `--color-ring`.
-- Green (`--color-mint`) and red (`--color-pink`) are only for meaning: Accepted vs a failed verdict, errors, destructive actions. Verdicts always show the code and the word too (AC Accepted, WA Wrong answer).
-- Code editor colors live in `.code-editor[data-theme-scope]` (`--tok-keyword`, `--tok-string`, ...) and follow VS Code Light+/Dark+, including bracket pair colors.
-- Appearance offers only Light and Dark, plus code font size, text size, high contrast and reduced motion under "More options".
+- Near-black neutrals for surfaces (`--color-canvas` #0a0a0a, `--color-surface` #121212, `--color-elevated` #1a1a1a) and warm white text.
+- One orange (`--color-primary` #ffa116, LeetCode orange) for primary buttons, the active nav item, focus rings, progress and highlights. Orange buttons use black text. Orange text uses `--color-primary-text` (#ffb84d).
+- `.text-gradient-orange` is for one headline word on the landing page, nowhere else.
+- Difficulty: `--color-easy`, `--color-medium`, `--color-hard` with `-bg` chip fills, always with the word via `DifficultyBadge`.
+- Green (`--color-mint`) and red (`--color-pink`) only for verdicts, errors and destructive actions, always with a word (AC Accepted, WA Wrong answer).
+- Tiles (`.tile-*`) are black surfaces lit by a faint orange glow from one corner. `.bg-grid` draws a subtle 48px grid behind 3D scenes and heroes.
+- High contrast mode switches to pure black, white borders and brighter text. Every text/background pair is tested at 4.5:1 (7:1 in high contrast) in `tests/appearance-contrast.test.mjs`.
+- Use the CSS variables, never raw hex, in components (3D materials and illustrations are the exception).
 
 ## Typography
 
-- Geist Sans for UI and headings; Geist Mono for code, input/output, numbers and time. Both ship through the `geist` npm package.
-- Sentence case everywhere. No ALL CAPS labels, no `[BRACKET]` labels, no trailing `_` cursors.
-- Smallest text is 12px (`text-xs`). Do not use 9–11px text.
+- Geist Sans for UI and headings; Geist Mono for code, numbers, test counts and step kickers ("01 · Write"). Both ship through the `geist` npm package.
+- Big, tight headlines on the landing page (`tracking-tight`, up to `text-7xl`); app pages stay at `text-3xl` and below.
+- Sentence case. No ALL CAPS labels, no `[BRACKET]` labels, no trailing `_` cursors, no em dashes in UI copy.
 
 ## Layout
 
-- App shell: sidebar + top bar, content max width 94rem.
-- Workspace: three resizable panes (problem, editor, output) on desktop (`xl` and up), a three-tab switcher below that. Layout modes: split, wide, focus.
-- Spacing on a 4px grid; panes use 8–16px padding.
+- App shell: sidebar (Overview, Challenges, Workspace, Profile, Settings) + top bar.
+- Dashboard: competitive programming first: problem counts by difficulty, the problem set with timed-round buttons, a Timed round card, Continue coding, then a one-line Exeku Lab app strip and coding activity.
+- Problems: LeetCode-style table with difficulty count cards, rounded search and pill filters.
+- Landing: hero (headline left; a 3D arena where two students code head to head under a holographic VS scoreboard), Practice (editor demo), About, Languages, the Exeku Lab app banner, FAQ. No install guide or roadmap on the site.
 
-## Elevation & Depth
+## Depth
 
-Flat. No shadows on cards or buttons. Depth comes from a 1px border and the canvas/surface/elevated steps. Dialogs use a dimmed backdrop.
+- Cards lift with `--shadow-raised` (a hairline top highlight and a soft black drop), 14px radius.
+- Inputs sink with `--shadow-inset` on the canvas color.
+- One button system: `Button` and links styled with `buttonVariants` look identical (cva adds `btn-primary` / `btn-outline` / `btn-ghost` marker classes that `globals.css` styles). Never hand-style a `<button>`; use `Button` with a variant, and `aria-pressed` for toggles and pickers.
+- Buttons are subtle keys: a faint top highlight and a 1px press on `:active`. The orange button glows (`--glow-primary`) on hover. Ghost buttons stay flat.
+- Reduced motion removes the press, the camera glide, auto-rotate and the hero blink.
 
-## Shapes
+## 3D and the Exeku Lab app
 
-Buttons and inputs 8px radius, cards and dialogs 12px, small badges 6px. Borders are always 1px.
+- Arduino/MCU simulation, 3D design and printable cases belong to a separate desktop/mobile app, Exeku Lab. The website only promotes it: `components/lab/lab-app-banner.tsx` (landing showcase and a slim dashboard strip). Download links live in `lib/lab-app.ts`; an empty URL shows "coming soon".
+- 3D on the site: `lib/three/arena.ts` (hero), `lib/three/circuit.ts` (Arduino Uno, breadboard, LED, resistor, wires to real millimetres, used in the Lab banner), `lib/three/stage.ts` (renderer, lighting, shadows, pauses off screen). React wrappers: `components/landing/versus-scene.tsx`, `components/lab/circuit-view.tsx`. three.js loads only when they mount.
+- CAD models (for example from GrabCAD) can replace the Uno or breadboard through `public/models/manifest.json`; check each model's license first.
+- Every 3D view has a `role="img"` label and a text fallback when WebGL is off.
 
 ## Components
 
-- Use `components/ui`: `Button` (default, outline, ghost, secondary, destructive; sizes xs, sm, default, icon), `Dialog`, `Card`, `Input`, `Tooltip`, `Sheet`, `Separator`, `Skeleton`.
-- Code editor: `components/app/code-editor.tsx`, a transparent native `<textarea>` over a highlighted copy (`lib/syntax.ts`), with a line-number gutter and current-line highlight. Tab indents, Shift+Tab outdents, Enter keeps indentation, Ctrl/Cmd+Enter runs, Ctrl/Cmd+Shift+Enter submits, Esc then Tab leaves the editor.
-- Icons: lucide-react via `DotIcon`. Icon-only buttons need `aria-label`.
+- `components/ui`: `Button` (default, outline, ghost, secondary, destructive; `data-variant` drives the key style), `Dialog`, `Card`, `Input`, `Tooltip`, `Sheet`, `Separator`, `Skeleton`.
+- `components/app/difficulty-badge.tsx`: Easy/Medium/Hard chip.
+- Code editor: `components/app/code-editor.tsx`, a transparent native `<textarea>` over a highlighted copy (`lib/syntax.ts`, VS Code Dark+). Tab indents, Shift+Tab outdents, Enter keeps indentation, Ctrl/Cmd+Enter runs, Ctrl/Cmd+Shift+Enter submits, Esc then Tab leaves the editor.
+- Icons: lucide-react via `DotIcon`. Icon-only buttons need `aria-label`. No emoji as icons.
 - Focus: 2px outline in `--color-ring`, 2px offset.
 
 ## Do's and Don'ts
 
-- Do keep one primary action per area (Run is outline, Submit is primary).
-- Do show real data only. Demo results must say "Demo" on the result itself.
-- Don't add extra accent colors, gradients, glows, scanlines, pixel corners or neon. Blue is the only brand color.
-- Don't load anything from a CDN. The app must work offline.
+- Do keep one orange action per area (Run is outline, Submit is primary).
+- Do show real data only. Demo features say "Demo" on the result itself.
+- Don't add decorative status pills ("Online preview", "Live", "V1", "Step 01"). Labels must carry information.
+- Don't add a light theme, a second accent color, neon, scanlines or pixel corners.
+- Don't load anything from a CDN. The app, fonts, three.js and models must work offline.
 - Don't use `alert()`; use a `Dialog`.
+
+## Skills
+
+UI work follows `impeccable` (vendored) and the ux-ui-agent-skills kit (github.com/plugin87/ux-ui-agent-skills, install with `npx ux-ui-agent-skills init`; not vendored).

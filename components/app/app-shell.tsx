@@ -66,7 +66,7 @@ export function AppShell({ children }: AppShellProps) {
       <div role="status" aria-live="polite" className="min-h-screen bg-[var(--color-canvas)] flex flex-col items-center justify-center p-4">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-[var(--color-accent)] border-t-transparent animate-spin" />
-          <span className="font-mono text-xs text-[var(--color-accent)] animate-pulse">
+          <span className="text-xs text-[var(--color-accent)] animate-pulse">
             Loading local workspace...
           </span>
         </div>
