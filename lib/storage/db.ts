@@ -128,11 +128,11 @@ export async function idbPut<T extends { id: string }>(storeName: string, value:
   return new Promise((resolve, reject) => {
     try {
       const tx = db.transaction(storeName, "readwrite");
-      const store = tx.objectStore(storeName);
-      const req = store.put(value);
-
-      req.onsuccess = () => resolve(value);
-      req.onerror = () => reject(req.error);
+      // A successful put request is not a saved record: only a committed transaction is.
+      tx.oncomplete = () => resolve(value);
+      tx.onabort = () => reject(tx.error ?? new Error("Storage transaction aborted"));
+      tx.onerror = () => reject(tx.error ?? new Error("Storage transaction failed"));
+      tx.objectStore(storeName).put(value);
     } catch (err) {
       reject(err);
     }

@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { VerdictBadge } from "./verdict-badge";
 import { isRealVerdict } from "@/lib/verdicts";
 import type { JudgingResult } from "@/lib/judge/judging-service";
-import { JUDGE_START_COMMAND } from "@/lib/execution/judge-help";
+import { JUDGE_SETUP_COMMAND } from "@/lib/execution/judge-help";
 
 
 const DESCRIPTIONS: Record<string, string> = {
@@ -85,7 +85,7 @@ export function SubmissionResultDialog({ open, onOpenChange, result, problemTitl
           </dl>
         )}
         {unavailable && (
-          <code className="font-code block overflow-x-auto rounded-md border border-[var(--color-border)] bg-[var(--color-canvas)] p-2 text-xs">{JUDGE_START_COMMAND}</code>
+          <code className="font-code block overflow-x-auto rounded-md border border-[var(--color-border)] bg-[var(--color-canvas)] p-2 text-xs">{JUDGE_SETUP_COMMAND}</code>
         )}
         <DialogFooter>
           <Button type="button" variant="ghost" onClick={() => { onOpenChange(false); onViewDetails(); }}>View details</Button>

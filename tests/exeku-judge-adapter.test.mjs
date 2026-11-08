@@ -27,6 +27,7 @@ test("health is available only when the judge reports all four languages", async
   const partial = await health(["python", "cpp", "c"]);
   assert.equal(partial.isAvailable, false);
   assert.deepEqual(partial.supportedLanguages, ["python", "cpp", "c"]);
+  assert.deepEqual(partial.missingLanguages, ["java"], "the notice can say which ones");
   assert.equal((await health(undefined)).isAvailable, false);
 });
 

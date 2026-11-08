@@ -46,6 +46,8 @@ export interface SandboxHealth {
   engine: string;
   version?: string;
   supportedLanguages: ExecutionLanguage[];
+  /** Set only when the judge answered, so an empty list means every language is installed. */
+  missingLanguages?: ExecutionLanguage[];
   error?: string;
 }
 

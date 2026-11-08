@@ -215,6 +215,7 @@ export function WorkspaceView() {
     <div className="workspace-view flex min-h-[420px] h-[calc(100dvh-90px)] flex-col gap-2 overflow-hidden">
       {sandboxHealth && !sandboxHealth.isAvailable && !offlineDismissed && !demo.isDemoMode && (
         <SandboxOfflineNotice
+          missingLanguages={sandboxHealth.missingLanguages}
           onEnableDemo={() => demo.setDemoMode(true)}
           onDismiss={() => {
             setOfflineDismissed(true);

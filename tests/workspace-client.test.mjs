@@ -38,6 +38,30 @@ test("results pane labels a result as demo only when the result itself is simula
   assert.doesNotMatch(view, /challengeParam/, "the ?challenge=true auto-start path was removed");
 });
 
+test("a put reports success only after its transaction commits, and rejects if it aborts", async () => {
+  const { idbPut } = await import("../lib/storage/db.ts");
+  const previous = globalThis.window;
+  const tick = () => new Promise((resolve) => setImmediate(resolve));
+  const tx = { objectStore: () => ({ put() { const request = {}; queueMicrotask(() => request.onsuccess?.()); return request; } }) };
+  globalThis.window = { indexedDB: { open() { const request = {}; queueMicrotask(() => request.onsuccess({ target: { result: { transaction: () => tx } } })); return request; } } };
+  try {
+    let settled = false;
+    const saving = idbPut("drafts", { id: "a" }).then((value) => { settled = true; return value; });
+    await tick();
+    assert.equal(settled, false, "the put request finishing is not a commit");
+    tx.oncomplete();
+    assert.deepEqual(await saving, { id: "a" });
+
+    const failing = idbPut("drafts", { id: "b" });
+    await tick();
+    tx.error = new Error("quota exceeded");
+    tx.onabort();
+    await assert.rejects(failing, /quota exceeded/);
+  } finally {
+    if (previous === undefined) delete globalThis.window; else globalThis.window = previous;
+  }
+});
+
 test("IndexedDB connection is opened once and reused", async () => {
   const { idbGet } = await import("../lib/storage/db.ts");
   const previous = globalThis.window;

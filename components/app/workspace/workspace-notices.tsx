@@ -5,15 +5,27 @@ import { Button } from "@/components/ui/button";
 import { AlarmClock, AlertCircle, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-import { JUDGE_START_COMMAND } from "@/lib/execution/judge-help";
+import { JUDGE_SETUP_COMMAND } from "@/lib/execution/judge-help";
+import { LANGUAGE_DISPLAY_NAMES } from "@/lib/workspace-defaults";
+import type { ExecutionLanguage } from "@/types/execution";
 
-export function SandboxOfflineNotice({ onEnableDemo, onDismiss }: { onEnableDemo: () => void; onDismiss: () => void }) {
+export interface SandboxOfflineNoticeProps {
+  /** Set when the judge answered but lacks some languages. */
+  missingLanguages?: ExecutionLanguage[];
+  onEnableDemo: () => void;
+  onDismiss: () => void;
+}
+
+export function SandboxOfflineNotice({ missingLanguages = [], onEnableDemo, onDismiss }: SandboxOfflineNoticeProps) {
   const [copied, setCopied] = useState(false);
+  const help = missingLanguages.length > 0
+    ? `The judge is running but is missing ${missingLanguages.map((lang) => LANGUAGE_DISPLAY_NAMES[lang]).join(", ")}. Run this inside WSL or your judge VM.`
+    : "Start the Exeku judge: run this inside WSL or your judge VM";
   return (
-    <div role="status" className="flex min-w-0 shrink-0 items-center gap-2 rounded-[var(--radius-card)] border border-[var(--color-text-main)] px-2 py-1 text-xs">
+    <div role="status" className="flex min-w-0 shrink-0 flex-wrap items-center gap-2 rounded-[var(--radius-card)] border border-[var(--color-text-main)] px-2 py-1 text-xs">
       <AlertCircle size={14} aria-hidden="true" />
-      <span className="min-w-0 flex-1 truncate"><strong className="font-semibold">Sandbox service unavailable.</strong> Start the Exeku judge to run code.</span>
-      <Button type="button" variant="outline" size="xs" onClick={() => { void navigator.clipboard?.writeText(JUDGE_START_COMMAND); setCopied(true); }}>
+      <span className="min-w-0 flex-1 basis-56"><strong className="font-semibold">Sandbox service unavailable.</strong> {help}</span>
+      <Button type="button" variant="outline" size="xs" title={JUDGE_SETUP_COMMAND} onClick={() => { void navigator.clipboard?.writeText(JUDGE_SETUP_COMMAND); setCopied(true); }}>
         {copied ? "Copied" : "Copy command"}
       </Button>
       <Button type="button" variant="ghost" size="xs" onClick={onEnableDemo}>Try demo mode</Button>

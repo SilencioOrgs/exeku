@@ -151,7 +151,8 @@ export class ExekuJudgeAdapter implements IExecutionAdapter {
       if (!res.ok) return { isAvailable: false, engine: "Exeku judge (unreachable)", supportedLanguages: [], error: `HTTP ${res.status}` };
       const data = (await res.json()) as { version?: string; languages?: string[] };
       const languages = SUPPORTED_EXECUTION_LANGUAGES.filter((lang) => data.languages?.includes(lang));
-      return { isAvailable: languages.length === SUPPORTED_EXECUTION_LANGUAGES.length, engine: "Exeku judge (isolate)", version: data.version, supportedLanguages: languages };
+      const missingLanguages = SUPPORTED_EXECUTION_LANGUAGES.filter((lang) => !languages.includes(lang));
+      return { isAvailable: missingLanguages.length === 0, engine: "Exeku judge (isolate)", version: data.version, supportedLanguages: languages, missingLanguages };
     } catch (err: unknown) {
       return { isAvailable: false, engine: "Exeku judge (offline)", supportedLanguages: [], error: err instanceof Error ? err.message : String(err) };
     } finally {
