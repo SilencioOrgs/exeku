@@ -27,6 +27,8 @@ function languageOf(filename: string) {
 
 const PAD = 12; // matches py-3 / px-3 on the textarea
 const POPUP_CH = 28;
+/** Inline on purpose: the list has to stay readable over the code even if a stylesheet fails to load. */
+const SUGGEST = { bg: "#0a0a0a", border: "#3c3c3c", text: "#d4d4d4", active: "#04395e", match: "#18a3ff", kind: "#9d9d9d" };
 
 interface Suggestions extends CompletionState {
   caret: number;
@@ -224,8 +226,10 @@ export function CodeEditor({ value, onChange, filename }: CodeEditorProps) {
             id={listId}
             role="listbox"
             aria-label="Suggestions"
-            className="code-suggest absolute z-10 m-0 list-none p-1"
-            style={{ top: suggest.top, left: suggest.left, width: `${POPUP_CH}ch` }}
+            style={{
+              position: "absolute", top: suggest.top, left: suggest.left, width: `${POPUP_CH}ch`, zIndex: 10, margin: 0, padding: 4, listStyle: "none",
+              background: SUGGEST.bg, border: `1px solid ${SUGGEST.border}`, borderRadius: 6, boxShadow: "0 6px 18px rgb(0 0 0 / 0.45)", color: SUGGEST.text,
+            }}
           >
             {suggest.items.map((item, i) => (
               <li
@@ -233,8 +237,10 @@ export function CodeEditor({ value, onChange, filename }: CodeEditorProps) {
                 id={`${listId}-${i}`}
                 role="option"
                 aria-selected={i === suggest.index}
-                className={cn("flex cursor-pointer items-center justify-between gap-3 rounded-sm px-2", i === suggest.index && "is-active")}
-                style={{ height: suggest.rowHeight }}
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "0 8px", borderRadius: 3, cursor: "pointer",
+                  height: suggest.rowHeight, background: i === suggest.index ? SUGGEST.active : "transparent",
+                }}
                 // mousedown keeps focus in the textarea; click would blur it first.
                 onMouseDown={(event) => {
                   event.preventDefault();
@@ -242,11 +248,11 @@ export function CodeEditor({ value, onChange, filename }: CodeEditorProps) {
                   if (area) accept(area, item);
                 }}
               >
-                <span className="truncate">
-                  <span className="code-suggest-match">{item.word.slice(0, suggest.prefix.length)}</span>
+                <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  <span style={{ color: SUGGEST.match, fontWeight: 600 }}>{item.word.slice(0, suggest.prefix.length)}</span>
                   {item.word.slice(suggest.prefix.length)}
                 </span>
-                <span className="code-suggest-kind shrink-0 text-xs">{item.kind}</span>
+                <span style={{ color: SUGGEST.kind, flexShrink: 0, fontSize: 12, fontFamily: "var(--font-sans), sans-serif" }}>{item.kind}</span>
               </li>
             ))}
           </ul>

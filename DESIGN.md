@@ -96,7 +96,7 @@ Most screens are "Operate" surfaces (problems, workspace, settings): scanability
 - Green (`--color-mint`) and red (`--color-pink`) only for verdicts, errors and destructive actions, always with a word (AC Accepted, WA Wrong answer).
 - Tiles (`.tile-*`) are black surfaces lit by a faint orange glow from one corner. `.bg-grid` draws a subtle 48px grid behind 3D scenes and heroes.
 - Every text/background pair is tested at 4.5:1 in `tests/appearance-contrast.test.mjs`.
-- Use the CSS variables, never raw hex, in components (3D materials and illustrations are the exception).
+- Use the CSS variables, never raw hex, in components (3D materials, illustrations and the editor's suggestion list, which must stay readable if a stylesheet fails to load, are the exceptions).
 
 ## Typography
 
