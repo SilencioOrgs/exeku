@@ -5,9 +5,9 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 
-const ORANGE = "#ffa116";
+export const ORANGE = "#ffa116";
 
-function mesh(geometry: THREE.BufferGeometry, material: THREE.Material, x = 0, y = 0, z = 0) {
+export function mesh(geometry: THREE.BufferGeometry, material: THREE.Material, x = 0, y = 0, z = 0) {
   const m = new THREE.Mesh(geometry, material);
   m.position.set(x, y, z);
   m.castShadow = true;
@@ -16,7 +16,7 @@ function mesh(geometry: THREE.BufferGeometry, material: THREE.Material, x = 0, y
 }
 
 /** Capsule from a to b, like an arm or a leg. */
-function limb(a: THREE.Vector3, b: THREE.Vector3, radius: number, material: THREE.Material) {
+export function limb(a: THREE.Vector3, b: THREE.Vector3, radius: number, material: THREE.Material) {
   const dir = b.clone().sub(a);
   const length = Math.max(0.01, dir.length() - radius * 2);
   const m = mesh(new THREE.CapsuleGeometry(radius, length, 6, 14), material);
@@ -25,7 +25,7 @@ function limb(a: THREE.Vector3, b: THREE.Vector3, radius: number, material: THRE
   return m;
 }
 
-function canvas(width: number, height: number) {
+export function canvas(width: number, height: number) {
   const el = document.createElement("canvas");
   el.width = width;
   el.height = height;
@@ -95,10 +95,10 @@ function keyboardTexture() {
   return c.texture;
 }
 
-interface PlayerStyle { hoodie: string; pants: string; skin: string; hair: string; headphones: string; lang: "python" | "cpp"; glow: string }
+export interface PlayerStyle { hoodie: string; pants: string; skin: string; hair: string; headphones: string; lang: "python" | "cpp"; glow: string }
 
 /** Seated player at a desk with a laptop, facing +X. Origin is under the chair. */
-function buildPlayer(style: PlayerStyle) {
+export function buildPlayer(style: PlayerStyle) {
   const group = new THREE.Group();
   const std = (color: string, roughness = 0.7, metalness = 0) => new THREE.MeshStandardMaterial({ color, roughness, metalness });
   const hoodie = std(style.hoodie, 0.85), pants = std(style.pants, 0.85), skin = std(style.skin, 0.6);
@@ -183,7 +183,7 @@ function buildPlayer(style: PlayerStyle) {
   return group;
 }
 
-function glowSprite(color: string, size: number) {
+export function glowSprite(color: string, size: number) {
   const c = canvas(128, 128);
   const g = c.ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
   g.addColorStop(0, color);
@@ -195,34 +195,31 @@ function glowSprite(color: string, size: number) {
   return sprite;
 }
 
-function holoPanel(width: number, height: number, scale: number) {
+export function holoPanel(width: number, height: number, scale: number) {
   const c = canvas(width, height);
   const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: c.texture, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }));
   sprite.scale.set((width / height) * scale, scale, 1);
   return { ...c, sprite };
 }
 
-function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+export function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath();
   ctx.roundRect(x, y, w, h, r);
 }
 
-export interface Arena {
-  group: THREE.Group;
-  update(time: number): void;
-}
+/** The same people appear across the hero and the tour. "you" is the player we follow. */
+export const STYLES = {
+  you: { hoodie: "#262628", pants: "#1a1c22", skin: "#8d5a3b", hair: "#120d0a", headphones: "#111111", lang: "python", glow: "#ffb066" },
+  rival: { hoodie: "#d8d4cc", pants: "#2b2f38", skin: "#e2b791", hair: "#3a2516", headphones: "#f2f2f2", lang: "cpp", glow: "#cfe0ff" },
+  mateA: { hoodie: "#3a2a1a", pants: "#1c1c20", skin: "#c68b62", hair: "#0d0d0d", headphones: "#1a1a1a", lang: "cpp", glow: "#ffb066" },
+  mateB: { hoodie: "#1f2a33", pants: "#202227", skin: "#f0c9a5", hair: "#5a3a22", headphones: "#141414", lang: "python", glow: "#ffb066" },
+  foeA: { hoodie: "#bfbab0", pants: "#2e3138", skin: "#a8724c", hair: "#1a120c", headphones: "#e8e8e8", lang: "python", glow: "#cfe0ff" },
+  foeB: { hoodie: "#e6e2da", pants: "#33363d", skin: "#7a4a2e", hair: "#0d0a08", headphones: "#f5f5f5", lang: "cpp", glow: "#cfe0ff" },
+} satisfies Record<string, PlayerStyle>;
 
-export function buildArena(): Arena {
+/** Floor projector with an orange beam and rising particles. */
+export function buildProjector() {
   const group = new THREE.Group();
-  const playerA = buildPlayer({ hoodie: "#262628", pants: "#1a1c22", skin: "#8d5a3b", hair: "#120d0a", headphones: "#111111", lang: "python", glow: "#ffb066" });
-  playerA.position.set(-132, 0, 0);
-  group.add(playerA);
-  const playerB = buildPlayer({ hoodie: "#d8d4cc", pants: "#2b2f38", skin: "#e2b791", hair: "#3a2516", headphones: "#f2f2f2", lang: "cpp", glow: "#cfe0ff" });
-  playerB.position.set(132, 0, 0);
-  playerB.rotation.y = Math.PI;
-  group.add(playerB);
-
-  // Hologram projector.
   const base = new THREE.MeshStandardMaterial({ color: "#161616", roughness: 0.35, metalness: 0.8 });
   group.add(mesh(new THREE.CylinderGeometry(24, 27, 8, 48), base, 0, 4, 0));
   const ringMat = new THREE.MeshStandardMaterial({ color: "#ff8a00", emissive: "#ff7a00", emissiveIntensity: 1.6 });
@@ -233,15 +230,12 @@ export function buildArena(): Arena {
   const floorGlow = glowSprite("rgba(255,161,22,0.55)", 170);
   floorGlow.position.set(0, 1, 0);
   group.add(floorGlow);
-
   const cone = new THREE.Mesh(
     new THREE.CylinderGeometry(58, 9, 150, 48, 1, true),
     new THREE.MeshBasicMaterial({ color: ORANGE, transparent: true, opacity: 0.06, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending }),
   );
   cone.position.y = 84;
   group.add(cone);
-
-  // Rising particles inside the beam.
   const count = 160;
   const seeds = Float32Array.from({ length: count * 3 }, () => Math.random());
   const positions = new Float32Array(count * 3);
@@ -250,11 +244,43 @@ export function buildArena(): Arena {
     new THREE.PointsMaterial({ color: "#ffc061", size: 1.6, transparent: true, opacity: 0.8, depthWrite: false, blending: THREE.AdditiveBlending }),
   );
   group.add(particles);
-
   const light = new THREE.PointLight(ORANGE, 9000, 400, 1.5);
   light.position.set(0, 120, 30);
   group.add(light);
+  return {
+    group,
+    update(time: number) {
+      ring.rotation.z = time * 0.6;
+      for (let i = 0; i < count; i++) {
+        const angle = seeds[i * 3] * Math.PI * 2 + time * 0.3;
+        const height = ((seeds[i * 3 + 1] * 160 + time * 14) % 160) + 10;
+        const radius = seeds[i * 3 + 2] * (9 + (height / 160) * 46);
+        positions[i * 3] = Math.cos(angle) * radius;
+        positions[i * 3 + 1] = height;
+        positions[i * 3 + 2] = Math.sin(angle) * radius;
+      }
+      particles.geometry.attributes.position.needsUpdate = true;
+    },
+  };
+}
 
+export interface Arena {
+  group: THREE.Group;
+  /** `win` pins "you" at 10/10 Accepted (used by the scroll tour). */
+  update(time: number, win?: boolean): void;
+}
+
+export function buildArena(): Arena {
+  const group = new THREE.Group();
+  const playerA = buildPlayer(STYLES.you);
+  playerA.position.set(-132, 0, 0);
+  group.add(playerA);
+  const playerB = buildPlayer(STYLES.rival);
+  playerB.position.set(132, 0, 0);
+  playerB.rotation.y = Math.PI;
+  group.add(playerB);
+  const projector = buildProjector();
+  group.add(projector.group);
   // Scoreboard: VS, both players' tests, timer and problem.
   const vs = holoPanel(512, 256, 44);
   vs.sprite.position.set(0, 128, 0);
@@ -307,7 +333,7 @@ export function buildArena(): Arena {
     ctx.fillText(`${passed}/10`, 36, 210);
     ctx.font = "500 26px sans-serif";
     ctx.fillStyle = "rgba(255,220,170,0.75)";
-    ctx.fillText("tests passed", 36, 250);
+    ctx.fillText(passed >= 10 ? "Accepted" : "tests passed", 36, 250);
     roundRect(ctx, 36, 268, w - 72, 14, 7);
     ctx.fillStyle = "rgba(255,255,255,0.12)";
     ctx.fill();
@@ -338,12 +364,13 @@ export function buildArena(): Arena {
 
   return {
     group,
-    update(time) {
+    update(time, win = false) {
       const second = Math.floor(time);
+      if (win && score.you !== 10) { score.you = 10; redraw(); }
       if (second !== score.last) {
         score.last = second;
         score.seconds = score.seconds > 0 ? score.seconds - 1 : 15 * 60;
-        if (second % 3 === 0) score.you = score.you >= 10 ? 3 : score.you + 1;
+        if (!win && second % 3 === 0) score.you = score.you >= 10 ? 3 : score.you + 1;
         if (second % 4 === 1) score.rival = score.rival >= 10 ? 2 : score.rival + 1;
         redraw();
       }
@@ -354,16 +381,7 @@ export function buildArena(): Arena {
       top.sprite.position.y = 172 + bob * 0.6;
       const flicker = 0.88 + Math.sin(time * 23) * 0.04 + Math.sin(time * 7) * 0.04;
       for (const panel of [vs, left, right, top]) (panel.sprite.material as THREE.SpriteMaterial).opacity = flicker;
-      ring.rotation.z = time * 0.6;
-      for (let i = 0; i < count; i++) {
-        const angle = seeds[i * 3] * Math.PI * 2 + time * 0.3;
-        const height = ((seeds[i * 3 + 1] * 160 + time * 14) % 160) + 10;
-        const radius = seeds[i * 3 + 2] * (9 + (height / 160) * 46);
-        positions[i * 3] = Math.cos(angle) * radius;
-        positions[i * 3 + 1] = height;
-        positions[i * 3 + 2] = Math.sin(angle) * radius;
-      }
-      particles.geometry.attributes.position.needsUpdate = true;
+      projector.update(time);
     },
   };
 }

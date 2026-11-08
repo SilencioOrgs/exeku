@@ -3,6 +3,7 @@ import { DotIcon } from "@/components/retro/dot-icon";
 
 export function Footer() {
   const navLinks = [
+    { label: "Journey", href: "#journey" },
     { label: "About", href: "#about" },
     { label: "Languages", href: "#languages" },
     { label: "Exeku Lab", href: "#lab-app" },

@@ -12,6 +12,8 @@ export interface Stage {
   camera: THREE.PerspectiveCamera;
   renderer: THREE.WebGLRenderer;
   controls: OrbitControls | null;
+  /** Key light; move it and its target to keep shadows near the subject in big scenes. */
+  key: THREE.DirectionalLight;
   /** Called every frame with elapsed seconds, before rendering. */
   onFrame(callback: (time: number, delta: number) => void): void;
   dispose(): void;
@@ -48,7 +50,7 @@ export function createStage(mount: HTMLElement, { orbit = false, autoRotate = fa
   key.shadow.radius = 6;
   key.shadow.bias = -0.0004;
   Object.assign(key.shadow.camera, { left: -shadowExtent, right: shadowExtent, top: shadowExtent, bottom: -shadowExtent, near: 10, far: 600 + shadowExtent * 2 });
-  scene.add(key);
+  scene.add(key, key.target);
   const fill = new THREE.DirectionalLight("#9fb7ff", 0.5);
   fill.position.set(200, 80, -60);
   scene.add(fill);
@@ -106,6 +108,7 @@ export function createStage(mount: HTMLElement, { orbit = false, autoRotate = fa
     camera,
     renderer,
     controls,
+    key,
     onFrame(callback) { callbacks.push(callback); },
     dispose() {
       cancelAnimationFrame(frame);
