@@ -26,5 +26,5 @@ test("workspace offers editor layout modes with the built-in editor", () => {
   assert.match(fs.readFileSync(path.join(root, "components/app/workspace/workspace-toolbar.tsx"), "utf8"), /Cycle editor layout/);
   assert.match(source, /<CodeEditor/);
   const files = fs.readFileSync(path.join(root, "hooks/use-workspace-files.ts"), "utf8");
-  assert.match(files, /recordCodingDay\(profile\.id\)/);
+  assert.match(files, /recordCodingDay\(profileId\)/);
 });

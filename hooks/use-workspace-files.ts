@@ -12,6 +12,7 @@ export type SaveStatus = "SAVED" | "SAVING..." | "MODIFIED";
 
 /** Source files for the active problem and language, autosaved to IndexedDB. */
 export function useWorkspaceFiles(profile: LocalProfile | null, problem: VisibleProblem | null, problemId: string | null) {
+  const profileId = profile?.id;
   const [userSelectedLang, setUserSelectedLang] = useState<PreferredLanguage | null>(null);
   const activeLang = userSelectedLang ?? profile?.preferredLanguage ?? "python";
   const mainFilename = getFilenameForLanguage(activeLang);
@@ -21,6 +22,7 @@ export function useWorkspaceFiles(profile: LocalProfile | null, problem: Visible
   const [activeFile, setActiveFile] = useState(mainFilename);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("SAVED");
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingSaveRef = useRef<(() => Promise<void>) | null>(null);
 
   const code = files.find((file) => file.name === activeFile)?.content ?? "";
   const mainCode = files.find((file) => file.name === mainFilename)?.content ?? "";
@@ -30,7 +32,7 @@ export function useWorkspaceFiles(profile: LocalProfile | null, problem: Visible
 
   // Load the profile's existing single-file or multi-file draft.
   useEffect(() => {
-    if (!profile) return;
+    if (!profileId) return;
     let current = true;
     const loaded = (draftFiles: WorkspaceFile[]) => {
       if (!current) return;
@@ -39,35 +41,57 @@ export function useWorkspaceFiles(profile: LocalProfile | null, problem: Visible
       setActiveFile(mainFilename);
       setSaveStatus("SAVED");
     };
-    draftRepository.getDraft(profile.id, activeLang, problemId)
+    draftRepository.getDraft(profileId, activeLang, problemId)
       .then((draft) => loaded(draft?.files?.length ? draft.files : [{ name: mainFilename, content: draft?.code?.trim() ? draft.code : starter }]))
       .catch(() => loaded([{ name: mainFilename, content: starter }]));
     return () => { current = false; };
-  }, [profile, activeLang, mainFilename, starter, problemId, updateFiles]);
+  }, [profileId, activeLang, mainFilename, starter, problemId, updateFiles]);
 
-  useEffect(() => () => { if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current); }, []);
+  const cancelPendingSave = useCallback(() => {
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    pendingSaveRef.current = null;
+  }, []);
+
+  // Typing waits 600 ms before saving, so leaving the editor or the page must save right away.
+  useEffect(() => {
+    const flush = () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      void pendingSaveRef.current?.();
+    };
+    const flushWhenHidden = () => { if (document.visibilityState === "hidden") flush(); };
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", flushWhenHidden);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      document.removeEventListener("visibilitychange", flushWhenHidden);
+      flush();
+    };
+  }, []);
 
   const saveNow = useCallback((next: WorkspaceFile[]) => {
-    if (!profile) return Promise.resolve();
-    return draftRepository.saveDraft(profile.id, activeLang, next[0]?.content ?? "", next, problemId);
-  }, [profile, activeLang, problemId]);
+    if (!profileId) return Promise.resolve();
+    return draftRepository.saveDraft(profileId, activeLang, next[0]?.content ?? "", next, problemId);
+  }, [profileId, activeLang, problemId]);
 
   const persistFiles = useCallback((next: WorkspaceFile[]) => {
     updateFiles(next);
     setSaveStatus("MODIFIED");
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-    saveTimeoutRef.current = setTimeout(async () => {
-      if (!profile) return;
+    cancelPendingSave();
+    const save = async () => {
+      pendingSaveRef.current = null;
+      if (!profileId) return;
       setSaveStatus("SAVING...");
       try {
         await saveNow(next);
-        recordCodingDay(profile.id);
+        recordCodingDay(profileId);
         setSaveStatus("SAVED");
       } catch {
         setSaveStatus("MODIFIED");
       }
-    }, 600);
-  }, [profile, saveNow, updateFiles]);
+    };
+    pendingSaveRef.current = save;
+    saveTimeoutRef.current = setTimeout(save, 600);
+  }, [profileId, saveNow, updateFiles, cancelPendingSave]);
 
   const setFileContent = useCallback((name: string, content: string) => {
     persistFiles(filesRef.current.map((file) => file.name === name ? { ...file, content } : file));
@@ -75,13 +99,14 @@ export function useWorkspaceFiles(profile: LocalProfile | null, problem: Visible
 
   const switchLanguage = async (next: PreferredLanguage) => {
     if (next === activeLang) return;
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    cancelPendingSave();
     if (saveStatus !== "SAVED") await saveNow(filesRef.current).catch(() => undefined);
     setUserSelectedLang(next);
   };
 
   /** Reset the active file to starter code (or empty for extra files), or every file. */
   const reset = async (all: boolean) => {
+    cancelPendingSave();
     const next = all
       ? [{ name: mainFilename, content: starter }]
       : filesRef.current.map((file) => file.name === activeFile ? { ...file, content: file.name === mainFilename ? starter : "" } : file);
