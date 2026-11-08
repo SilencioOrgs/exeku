@@ -43,9 +43,27 @@ echo "node $(node --version)"
 
 step "Building isolate ${ISOLATE_REF}"
 rm -rf /usr/local/src/isolate
-git clone -q --depth 1 --branch "$ISOLATE_REF" https://github.com/ioi/isolate.git /usr/local/src/isolate
+git -c advice.detachedHead=false clone -q --depth 1 --branch "$ISOLATE_REF" https://github.com/ioi/isolate.git /usr/local/src/isolate
 make -s -C /usr/local/src/isolate isolate isolate-cg-keeper
 make -s -C /usr/local/src/isolate install
+
+# isolate v2 takes its sandbox UIDs from the subuid range of an "isolate" user (same as its Debian package).
+getent group isolate >/dev/null || groupadd --system isolate
+if ! getent passwd isolate >/dev/null; then
+  useradd --gid isolate --home-dir /nonexistent --no-create-home --shell /usr/sbin/nologin isolate
+fi
+add_range() { # $1 = /etc/subuid or /etc/subgid
+  grep -q '^isolate:' "$1" && return
+  local start
+  start=$(awk -F: 'BEGIN{m=100000} {e=$2+$3; if (e>m) m=e} END{print m}' "$1")
+  echo "isolate:${start}:65536" >> "$1"
+}
+add_range /etc/subuid
+add_range /etc/subgid
+# Only root and the isolate group may start sandboxes.
+chgrp isolate /usr/local/bin/isolate
+chmod 4754 /usr/local/bin/isolate
+
 systemctl daemon-reload
 systemctl enable isolate.service >/dev/null
 if ! systemctl restart isolate.service; then
@@ -53,7 +71,7 @@ if ! systemctl restart isolate.service; then
   echo >&2
   echo "isolate needs the cgroup v2 hierarchy at /sys/fs/cgroup. Current mounts:" >&2
   mount | grep cgroup >&2 || true
-  if grep -qi microsoft /proc/version; then
+  if grep -qi microsoft /proc/version && mount | grep -q 'type cgroup '; then
     cat >&2 <<'HINT'
 
 WSL mounts cgroup v1 and v2 side by side by default. Switch it to v2 only:
@@ -76,6 +94,7 @@ for box in $(seq 0 15); do isolate --cg --box-id="$box" --cleanup >/dev/null 2>&
 
 step "Installing the worker to ${INSTALL_DIR}"
 id exeku-judge >/dev/null 2>&1 || useradd --system --no-create-home --shell /usr/sbin/nologin exeku-judge
+usermod -aG isolate exeku-judge
 rm -rf "$INSTALL_DIR"
 mkdir -p "$INSTALL_DIR"
 cp -r "$JUDGE_SRC/src" "$JUDGE_SRC/package.json" "$INSTALL_DIR/"
