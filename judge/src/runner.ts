@@ -2,7 +2,7 @@ import { open, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { classifyRun, parseMeta, type IsolateCli } from "./isolate.ts";
 import type { LanguageSpec } from "./languages.ts";
-import type { CompileResult, RunRequest, RunResponse, TestRun } from "./types.ts";
+import type { CompileResult, Language, RunRequest, RunResponse, RunStatus, TestRun } from "./types.ts";
 
 export const MAX_STDOUT_BYTES = 1024 * 1024;
 export const MAX_STDERR_BYTES = 64 * 1024;
@@ -49,6 +49,11 @@ async function withBox<T>(cli: IsolateCli, boxId: number, fn: (boxDir: string) =
   } finally {
     await cli.cleanup(boxId);
   }
+}
+
+/** The JVM stops itself at its heap limit, before the sandbox's memory limit can, and exits with an error. */
+export function finalStatus(language: Language, status: RunStatus, stderr: string): RunStatus {
+  return language === "java" && status === "RUNTIME_ERROR" && stderr.includes("java.lang.OutOfMemoryError") ? "MEMORY_LIMIT_EXCEEDED" : status;
 }
 
 /** Box files after compiling: the binary or class files the runs need. */
@@ -113,10 +118,12 @@ export async function runJob(request: RunRequest, boxId: number, deps: RunnerDep
         await rm(metaPath, { force: true });
         await cli.run({ boxId, metaPath, limits, argv: runArgv, dirs: spec.dirs, stdin: STDIN, stdout: STDOUT, stderr: STDERR });
         const outcome = classifyRun(parseMeta(await readCapped(metaPath, 16 * 1024)));
+        const stderr = await readCapped(join(boxDir, STDERR), MAX_STDERR_BYTES);
         return {
           ...outcome,
+          status: finalStatus(request.language, outcome.status, stderr),
           stdout: await readCapped(join(boxDir, STDOUT), MAX_STDOUT_BYTES),
-          stderr: await readCapped(join(boxDir, STDERR), MAX_STDERR_BYTES),
+          stderr,
         };
       })
     );

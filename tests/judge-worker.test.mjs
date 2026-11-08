@@ -9,7 +9,7 @@ import { buildLanguageSpecs, detectToolchain, linkedDirsOutside } from "../judge
 import { validateRunRequest } from "../judge/src/validate.ts";
 import { BoxPool, QueueFullError } from "../judge/src/pool.ts";
 import { createJudgeServer } from "../judge/src/app.ts";
-import { collectArtifacts } from "../judge/src/runner.ts";
+import { collectArtifacts, finalStatus } from "../judge/src/runner.ts";
 import { validateExecutionRequest } from "../lib/execution/validation.ts";
 import { validateWorkspaceFilename } from "../components/app/workspace/file-tabs.tsx";
 
@@ -101,6 +101,15 @@ test("compiled output keeps the student's __ files and drops exactly the worker'
   } finally {
     rmSync(box, { recursive: true, force: true });
   }
+});
+
+test("Java running out of heap is a memory verdict, and nothing else is changed by it", () => {
+  const oom = 'Exception in thread "main" java.lang.OutOfMemoryError: Java heap space';
+  assert.equal(finalStatus("java", "RUNTIME_ERROR", oom), "MEMORY_LIMIT_EXCEEDED");
+  assert.equal(finalStatus("java", "RUNTIME_ERROR", "java.lang.NullPointerException"), "RUNTIME_ERROR");
+  assert.equal(finalStatus("python", "RUNTIME_ERROR", oom), "RUNTIME_ERROR", "only the JVM reports it this way");
+  assert.equal(finalStatus("java", "SUCCESS", oom), "SUCCESS", "a caught error in a program that finished is not a failure");
+  assert.equal(finalStatus("java", "TIME_LIMIT_EXCEEDED", oom), "TIME_LIMIT_EXCEEDED");
 });
 
 test("box pool caps concurrency and refuses when the queue is full", async () => {
