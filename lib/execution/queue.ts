@@ -9,29 +9,49 @@ export interface ExecutionQueueOptions {
   maxConcurrency?: number;
   maxQueueLength?: number;
   maxPerClient?: number;
+  maxPerIp?: number;
 }
 
+/** Who a run counts against: `key` for the per-student limit, `ip` for the per-network cap. */
+export interface QueueClient {
+  key: string;
+  ip: string;
+}
+
+const CLIENT_ID = /^[A-Za-z0-9_-]{1,64}$/;
+
 /**
- * Who a request counts against for the per-client limit.
- * shortcut: IP-based, so students behind one school connection share a limit; move the key to the signed-in user id when real accounts exist.
+ * Forwarded addresses can be faked, so they are read only when TRUST_PROXY=1 (Vercel or a proxy that overwrites them).
+ * shortcut: the browser id is self-reported, so only the per-IP cap is a hard limit; move the key to the signed-in user id when accounts exist.
  */
-export function clientKeyFrom(headers: Headers): string {
-  return headers.get("x-forwarded-for")?.split(",")[0].trim() || headers.get("x-real-ip")?.trim() || "local";
+export function clientFrom(headers: Headers, env: Record<string, string | undefined> = process.env): QueueClient {
+  const ip = (env.TRUST_PROXY === "1" && (headers.get("x-forwarded-for")?.split(",")[0].trim() || headers.get("x-real-ip")?.trim())) || "local";
+  const id = headers.get("x-exeku-client")?.trim() ?? "";
+  return { ip, key: CLIENT_ID.test(id) ? `${ip}/${id}` : ip };
+}
+
+/** Adds to a counter, and removes it at zero so the map cannot grow without bound. */
+function adjust(counts: Map<string, number>, key: string, change: number): void {
+  const next = (counts.get(key) ?? 0) + change;
+  if (next > 0) counts.set(key, next);
+  else counts.delete(key);
 }
 
 interface QueuedTask<T> {
   fn: () => Promise<T>;
   resolve: (value: T) => void;
   reject: (reason?: unknown) => void;
-  clientKey?: string;
+  client?: QueueClient;
 }
 
 export class ExecutionQueue {
   private readonly maxConcurrency: number;
   private readonly maxQueueLength: number;
   private readonly maxPerClient: number;
-  /** Active plus waiting runs per client. Entries are removed at zero, so this cannot grow without bound. */
+  private readonly maxPerIp: number;
+  /** Active plus waiting runs. */
   private readonly clientCounts = new Map<string, number>();
+  private readonly ipCounts = new Map<string, number>();
   private activeCount: number = 0;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private queue: QueuedTask<any>[] = [];
@@ -40,12 +60,19 @@ export class ExecutionQueue {
     this.maxConcurrency = options?.maxConcurrency ?? 4;
     this.maxQueueLength = options?.maxQueueLength ?? 50;
     this.maxPerClient = options?.maxPerClient ?? 2;
+    this.maxPerIp = options?.maxPerIp ?? 30;
   }
 
-  async enqueue<T>(task: () => Promise<T>, clientKey?: string): Promise<T> {
-    const held = clientKey ? this.clientCounts.get(clientKey) ?? 0 : 0;
-    if (held >= this.maxPerClient) {
-      throw new QueueFullError(`You already have ${held} runs in progress. Wait for one to finish, then try again.`);
+  async enqueue<T>(task: () => Promise<T>, client?: QueueClient): Promise<T> {
+    if (client) {
+      const held = this.clientCounts.get(client.key) ?? 0;
+      if (held >= this.maxPerClient) {
+        throw new QueueFullError(`You already have ${held} runs in progress. Wait for one to finish, then try again.`);
+      }
+      const onNetwork = this.ipCounts.get(client.ip) ?? 0;
+      if (onNetwork >= this.maxPerIp) {
+        throw new QueueFullError(`This network already has ${onNetwork} runs in progress. Please retry in a few seconds.`);
+      }
     }
 
     if (this.queue.length >= this.maxQueueLength) {
@@ -54,10 +81,13 @@ export class ExecutionQueue {
       );
     }
 
-    if (clientKey) this.clientCounts.set(clientKey, held + 1);
+    if (client) {
+      adjust(this.clientCounts, client.key, 1);
+      adjust(this.ipCounts, client.ip, 1);
+    }
 
     return new Promise<T>((resolve, reject) => {
-      this.queue.push({ fn: task, resolve, reject, clientKey });
+      this.queue.push({ fn: task, resolve, reject, client });
       this.processNext();
     });
   }
@@ -82,16 +112,12 @@ export class ExecutionQueue {
       })
       .finally(() => {
         this.activeCount--;
-        this.releaseClient(nextTask.clientKey);
+        if (nextTask.client) {
+          adjust(this.clientCounts, nextTask.client.key, -1);
+          adjust(this.ipCounts, nextTask.client.ip, -1);
+        }
         this.processNext();
       });
-  }
-
-  private releaseClient(clientKey?: string): void {
-    if (!clientKey) return;
-    const held = (this.clientCounts.get(clientKey) ?? 1) - 1;
-    if (held > 0) this.clientCounts.set(clientKey, held);
-    else this.clientCounts.delete(clientKey);
   }
 
   getStats(): {

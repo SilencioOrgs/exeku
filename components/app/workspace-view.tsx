@@ -44,7 +44,7 @@ export function WorkspaceView() {
   const [offlineDismissed, setOfflineDismissed] = useState(false);
 
   const files = useWorkspaceFiles(profile, problem, problemIdParam);
-  const judge = useJudge();
+  const judge = useJudge(profile?.id);
   const demo = useDemoMode(searchParams.get("demo"));
 
   const [customStdin, setCustomStdin] = useState("");

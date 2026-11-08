@@ -77,7 +77,7 @@ If the smoke test fails on the memory or sandbox checks, your WSL kernel does no
 3. Give it HTTPS without opening the port to everyone:
    - **Cloudflare Tunnel** (no open ports): `cloudflared tunnel` to `http://localhost:4000` on a hostname such as `judge.yourdomain.com`.
    - **Caddy**: open port 443 and use `reverse_proxy localhost:4000`. Caddy gets the certificate itself.
-4. In Vercel, set `JUDGE_SERVICE_URL=https://judge.yourdomain.com` and `JUDGE_TOKEN`.
+4. In Vercel, set `JUDGE_SERVICE_URL=https://judge.yourdomain.com`, `JUDGE_TOKEN` and `TRUST_PROXY=1`.
 
 ## API
 

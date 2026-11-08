@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { readJson } from "@/lib/accounts/read-json";
 import { MAX_BODY_BYTES, validateExecutionRequest } from "@/lib/execution/validation";
 import { defaultJudgingService } from "@/lib/judge/judging-service";
-import { clientKeyFrom, QueueFullError } from "@/lib/execution/queue";
+import { clientFrom, QueueFullError } from "@/lib/execution/queue";
 
 export async function POST(req: Request) {
   try {
@@ -17,7 +17,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
-    const result = await defaultJudgingService.runCode(validation.request, clientKeyFrom(req.headers));
+    const result = await defaultJudgingService.runCode(validation.request, clientFrom(req.headers));
     return NextResponse.json(result);
   } catch (err: unknown) {
     if (err instanceof QueueFullError) {

@@ -7,8 +7,8 @@ import type { PreferredLanguage } from "@/types/profile";
 import type { WorkspaceFile } from "@/types/draft";
 
 /** POST JSON and fail loudly on any non-2xx reply, so `{ error }` bodies never pass as results. */
-export async function postJson<T>(url: string, body: unknown, fetcher: typeof fetch = fetch): Promise<T> {
-  const res = await fetcher(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+export async function postJson<T>(url: string, body: unknown, fetcher: typeof fetch = fetch, headers: Record<string, string> = {}): Promise<T> {
+  const res = await fetcher(url, { method: "POST", headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify(body) });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error((data as { error?: string }).error || `Request failed (HTTP ${res.status}).`);
   return data as T;
@@ -17,7 +17,9 @@ export async function postJson<T>(url: string, body: unknown, fetcher: typeof fe
 interface Source { language: PreferredLanguage; sourceCode: string; files: WorkspaceFile[] }
 
 /** Run and submit state for the workspace. Only real judge replies count as results. */
-export function useJudge() {
+export function useJudge(clientId?: string) {
+  // Lets the server tell students on one school network apart for the fair-use limit.
+  const clientHeaders: Record<string, string> = clientId ? { "x-exeku-client": clientId } : {};
   const [isRunning, setIsRunning] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [executionResult, setExecutionResult] = useState<ExecutionResult | null>(null);
@@ -27,7 +29,7 @@ export function useJudge() {
   const run = async (source: Source & { stdin: string; timeLimitMs: number }) => {
     setIsRunning(true);
     try {
-      setExecutionResult(await postJson<ExecutionResult>("/api/execute", source));
+      setExecutionResult(await postJson<ExecutionResult>("/api/execute", source, fetch, clientHeaders));
     } catch (err) {
       setExecutionResult({ status: "INTERNAL_ERROR", exitCode: null, stdout: "", stderr: err instanceof Error ? err.message : String(err), durationMs: 0 });
     } finally {
@@ -40,7 +42,7 @@ export function useJudge() {
     setIsResultDemo(false);
     let result: JudgingResult;
     try {
-      result = await postJson<JudgingResult>("/api/judge", { problemId, ...source });
+      result = await postJson<JudgingResult>("/api/judge", { problemId, ...source }, fetch, clientHeaders);
     } catch (err) {
       result = {
         problemId, language: source.language, overallVerdict: "INTERNAL_JUDGE_ERROR",

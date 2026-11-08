@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readJson } from "../lib/accounts/read-json.ts";
 import { MAX_BODY_BYTES } from "../lib/execution/validation.ts";
-import { clientKeyFrom, ExecutionQueue, globalExecutionQueue, QueueFullError } from "../lib/execution/queue.ts";
+import { clientFrom, ExecutionQueue, globalExecutionQueue, QueueFullError } from "../lib/execution/queue.ts";
 import { POST as execute } from "../app/api/execute/route.ts";
 import { POST as judge } from "../app/api/judge/route.ts";
 
@@ -12,35 +12,62 @@ const held = () => {
   return { task, release: () => release() };
 };
 const post = (body, headers) => new Request("http://exeku.test/api", { method: "POST", body, headers });
+const student = (name, ip = "school") => ({ ip, key: `${ip}/${name}` });
 
-test("each client gets at most 2 active plus waiting runs, and a finished run frees its slot", async () => {
+test("one student gets at most 2 active plus waiting runs, and a finished run frees a slot", async () => {
   const queue = new ExecutionQueue({ maxConcurrency: 1 });
   const first = held();
   const second = held();
-  const running = queue.enqueue(first.task, "a");
-  const waiting = queue.enqueue(second.task, "a");
+  const running = queue.enqueue(first.task, student("a"));
+  const waiting = queue.enqueue(second.task, student("a"));
 
-  await assert.rejects(queue.enqueue(async () => "x", "a"), (err) => err instanceof QueueFullError && /2 runs in progress/.test(err.message));
-  const other = queue.enqueue(async () => "other", "b");
+  await assert.rejects(queue.enqueue(async () => "x", student("a")), (err) => err instanceof QueueFullError && /2 runs in progress/.test(err.message));
+  const other = queue.enqueue(async () => "other", student("b"));
 
   first.release();
   assert.equal(await running, "done");
   await new Promise((resolve) => setImmediate(resolve));
-  const again = queue.enqueue(async () => "again", "a");
+  const again = queue.enqueue(async () => "again", student("a"));
   second.release();
   assert.deepEqual(await Promise.all([waiting, other, again]), ["done", "other", "again"]);
 });
 
-test("the client key is the first forwarded IP, then x-real-ip, then local", () => {
-  assert.equal(clientKeyFrom(new Headers({ "x-forwarded-for": " 203.0.113.9 , 10.0.0.1", "x-real-ip": "198.51.100.2" })), "203.0.113.9");
-  assert.equal(clientKeyFrom(new Headers({ "x-real-ip": "198.51.100.2" })), "198.51.100.2");
-  assert.equal(clientKeyFrom(new Headers()), "local");
+test("30 students on one IP can all run, and the network stops there", async () => {
+  const queue = new ExecutionQueue({ maxConcurrency: 1 });
+  let open;
+  const gate = new Promise((resolve) => { open = () => resolve("done"); });
+  const runs = Array.from({ length: 30 }, (_, i) => queue.enqueue(() => gate, student(`s${i}`)));
+
+  await assert.rejects(queue.enqueue(async () => "x", student("s30")), (err) => err instanceof QueueFullError && /This network already has 30/.test(err.message));
+  const elsewhere = queue.enqueue(async () => "elsewhere", student("s0", "other-school"));
+
+  open();
+  assert.equal((await Promise.all(runs)).filter((result) => result === "done").length, 30);
+  assert.equal(await elsewhere, "elsewhere");
+});
+
+test("forwarded addresses count only with TRUST_PROXY=1", () => {
+  const forwarded = { "x-forwarded-for": " 203.0.113.9 , 10.0.0.1", "x-real-ip": "198.51.100.2" };
+  const trusted = { TRUST_PROXY: "1" };
+  assert.deepEqual(clientFrom(new Headers(forwarded), {}), { ip: "local", key: "local" }, "a faked header changes nothing");
+  assert.deepEqual(clientFrom(new Headers(forwarded), { TRUST_PROXY: "0" }), { ip: "local", key: "local" });
+  assert.equal(clientFrom(new Headers(forwarded), trusted).ip, "203.0.113.9");
+  assert.equal(clientFrom(new Headers({ "x-real-ip": "198.51.100.2" }), trusted).ip, "198.51.100.2");
+  assert.equal(clientFrom(new Headers(), trusted).ip, "local");
+});
+
+test("the browser id joins the key when it is a short id and is ignored otherwise", () => {
+  const key = (id) => clientFrom(new Headers({ "x-exeku-client": id }), {}).key;
+  assert.equal(key("3f2b8c1e-aaaa-4bbb-8ccc-1234567890ab"), "local/3f2b8c1e-aaaa-4bbb-8ccc-1234567890ab");
+  assert.equal(key("usr_abc123"), "local/usr_abc123");
+  for (const bad of ["x".repeat(65), "a/b", "a b", "<script>"]) assert.equal(key(bad), "local", bad);
+  assert.equal(clientFrom(new Headers(), {}).key, "local");
 });
 
 test("over the per-client limit, Run and Submit answer 429 with a clear message", async () => {
-  const headers = { "x-forwarded-for": "203.0.113.50" };
+  const headers = { "x-exeku-client": "route-test" };
   const blockers = [held(), held()];
-  const running = blockers.map((blocker) => globalExecutionQueue.enqueue(blocker.task, "203.0.113.50"));
+  const running = blockers.map((blocker) => globalExecutionQueue.enqueue(blocker.task, clientFrom(new Headers(headers), {})));
   try {
     const run = await execute(post(JSON.stringify({ language: "python", sourceCode: "print(1)" }), headers));
     assert.equal(run.status, 429);

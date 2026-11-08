@@ -7,7 +7,7 @@ import {
   SUPPORTED_EXECUTION_LANGUAGES,
 } from "@/types/execution";
 import { MAX_BODY_BYTES, validateExecutionRequest } from "@/lib/execution/validation";
-import { clientKeyFrom, QueueFullError } from "@/lib/execution/queue";
+import { clientFrom, QueueFullError } from "@/lib/execution/queue";
 
 export async function POST(req: Request) {
   try {
@@ -85,7 +85,7 @@ export async function POST(req: Request) {
         sourceCode: validation.request.sourceCode,
         files: validation.request.files,
       },
-      clientKeyFrom(req.headers)
+      clientFrom(req.headers)
     );
 
     return NextResponse.json(judgingResult);

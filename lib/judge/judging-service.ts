@@ -7,7 +7,7 @@ import {
 import { getProblemById } from "@/lib/problems/catalog";
 import { compareOutputs } from "@/lib/judge/output-normalizer";
 import { createExecutionAdapter } from "@/lib/execution/engine";
-import { ExecutionQueue, globalExecutionQueue } from "@/lib/execution/queue";
+import { ExecutionQueue, globalExecutionQueue, type QueueClient } from "@/lib/execution/queue";
 import type { ProgrammingProblem } from "@/types/problem";
 
 export type OverallVerdict =
@@ -89,8 +89,8 @@ export class JudgingService {
   /**
    * Executes code with optional standard input through the execution queue.
    */
-  async runCode(request: ExecutionRequest, clientKey?: string): Promise<ExecutionResult> {
-    return this.queue.enqueue(() => this.adapter.execute(request), clientKey);
+  async runCode(request: ExecutionRequest, client?: QueueClient): Promise<ExecutionResult> {
+    return this.queue.enqueue(() => this.adapter.execute(request), client);
   }
 
   /**
@@ -104,7 +104,7 @@ export class JudgingService {
       sourceCode: string;
       files?: { name: string; content: string }[];
     },
-    clientKey?: string
+    client?: QueueClient
   ): Promise<JudgingResult> {
     const problem = getProblemById(problemId);
     if (!problem) {
@@ -136,13 +136,13 @@ export class JudgingService {
     };
     // Engines that support batches compile once and take one queue slot for the whole submission.
     const batch = this.adapter.executeBatch && problem.testCases.length > 0
-      ? await this.queue.enqueue(() => this.adapter.executeBatch!(baseRequest, problem.testCases.map((testCase) => testCase.input)), clientKey)
+      ? await this.queue.enqueue(() => this.adapter.executeBatch!(baseRequest, problem.testCases.map((testCase) => testCase.input)), client)
       : null;
 
     for (const [index, testCase] of problem.testCases.entries()) {
       const execResult = batch
         ? batch[index]
-        : await this.queue.enqueue(() => this.adapter.execute({ ...baseRequest, stdin: testCase.input }), clientKey);
+        : await this.queue.enqueue(() => this.adapter.execute({ ...baseRequest, stdin: testCase.input }), client);
 
       if (execResult.durationMs > maxDurationMs) {
         maxDurationMs = execResult.durationMs;
