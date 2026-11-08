@@ -172,7 +172,7 @@ export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfil
       <LabAppStrip />
 
       <footer className="modern-footnote flex flex-wrap items-center justify-between gap-3">
-        <p><Shield aria-hidden="true" size={16} /> Run and Submit need the local Piston sandbox.</p>
+        <p><Shield aria-hidden="true" size={16} /> Run and Submit need the Exeku judge.</p>
         <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>Edit profile</Button>
       </footer>
       <ProfileEditDialog isOpen={editing} onClose={() => setEditing(false)} profile={profile} onSave={async (updates) => { await onSaveProfile(updates); }} />

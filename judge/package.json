@@ -1,0 +1,14 @@
+{
+  "name": "exeku-judge",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Exeku code runner: compiles and runs submissions inside isolate sandboxes.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.6"
+  },
+  "scripts": {
+    "start": "node --experimental-strip-types --disable-warning=ExperimentalWarning src/server.ts",
+    "check": "node --experimental-strip-types --disable-warning=ExperimentalWarning src/check.ts"
+  }
+}

@@ -2,7 +2,7 @@
  * EXEKU — DEMO PROBLEM SIMULATION SERVICE
  *
  * Provides frontend-only demonstration simulation for evaluating the workspace UI,
- * submission modals, and result flows without requiring a running Piston sandbox.
+ * submission modals, and result flows without requiring a running judge sandbox.
  *
  * HONEST DEMONSTRATION GUARANTEE:
  * - Predefined simulated results are explicitly labeled as "SIMULATED / DEMO".

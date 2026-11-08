@@ -6,7 +6,7 @@ import {
 } from "@/types/execution";
 import { getProblemById } from "@/lib/problems/catalog";
 import { compareOutputs } from "@/lib/judge/output-normalizer";
-import { PistonAdapter } from "@/lib/execution/piston-adapter";
+import { createExecutionAdapter } from "@/lib/execution/engine";
 import { ExecutionQueue, globalExecutionQueue } from "@/lib/execution/queue";
 
 export type OverallVerdict =
@@ -15,6 +15,7 @@ export type OverallVerdict =
   | "COMPILATION_ERROR"
   | "RUNTIME_ERROR"
   | "TIME_LIMIT_EXCEEDED"
+  | "MEMORY_LIMIT_EXCEEDED"
   | "INTERNAL_JUDGE_ERROR"
   | "SERVICE_UNAVAILABLE";
 
@@ -27,6 +28,7 @@ export interface TestCaseVerdict {
     | "WRONG_ANSWER"
     | "TIME_LIMIT_EXCEEDED"
     | "RUNTIME_ERROR"
+    | "MEMORY_LIMIT_EXCEEDED"
     | "COMPILATION_ERROR";
   durationMs: number;
   input?: string;
@@ -59,7 +61,7 @@ export class JudgingService {
   private readonly queue: ExecutionQueue;
 
   constructor(options?: JudgingServiceOptions) {
-    this.adapter = options?.adapter || new PistonAdapter();
+    this.adapter = options?.adapter || createExecutionAdapter();
     this.queue = options?.queue || globalExecutionQueue;
   }
 
@@ -103,19 +105,22 @@ export class JudgingService {
     let compilationError: string | undefined = undefined;
     let overallVerdict: OverallVerdict = "ACCEPTED";
 
-    for (const testCase of problem.testCases) {
-      const execRequest: ExecutionRequest = {
-        language: submission.language,
-        sourceCode: submission.sourceCode,
-        files: submission.files,
-        stdin: testCase.input,
-        timeLimitMs: problem.timeLimitMs,
-        memoryLimitKb: problem.memoryLimitKb,
-      };
+    const baseRequest: ExecutionRequest = {
+      language: submission.language,
+      sourceCode: submission.sourceCode,
+      files: submission.files,
+      timeLimitMs: problem.timeLimitMs,
+      memoryLimitKb: problem.memoryLimitKb,
+    };
+    // Engines that support batches compile once and take one queue slot for the whole submission.
+    const batch = this.adapter.executeBatch && problem.testCases.length > 0
+      ? await this.queue.enqueue(() => this.adapter.executeBatch!(baseRequest, problem.testCases.map((testCase) => testCase.input)))
+      : null;
 
-      const execResult = await this.queue.enqueue(() =>
-        this.adapter.execute(execRequest)
-      );
+    for (const [index, testCase] of problem.testCases.entries()) {
+      const execResult = batch
+        ? batch[index]
+        : await this.queue.enqueue(() => this.adapter.execute({ ...baseRequest, stdin: testCase.input }));
 
       if (execResult.durationMs > maxDurationMs) {
         maxDurationMs = execResult.durationMs;
@@ -138,7 +143,7 @@ export class JudgingService {
 
       // Any other non-verdict status (sandbox HTTP error, unknown state) is the judge's failure,
       // never the student's wrong answer.
-      if (!["SUCCESS", "COMPILATION_ERROR", "TIME_LIMIT_EXCEEDED", "RUNTIME_ERROR"].includes(execResult.status)) {
+      if (!["SUCCESS", "COMPILATION_ERROR", "TIME_LIMIT_EXCEEDED", "MEMORY_LIMIT_EXCEEDED", "RUNTIME_ERROR"].includes(execResult.status)) {
         return {
           problemId,
           language: submission.language,
@@ -187,14 +192,15 @@ export class JudgingService {
         continue;
       }
 
-      // Handle runtime error
-      if (execResult.status === "RUNTIME_ERROR") {
-        if (overallVerdict === "ACCEPTED") overallVerdict = "RUNTIME_ERROR";
+      // Handle runtime error and memory limit (both end the program early)
+      if (execResult.status === "RUNTIME_ERROR" || execResult.status === "MEMORY_LIMIT_EXCEEDED") {
+        const verdict = execResult.status;
+        if (overallVerdict === "ACCEPTED") overallVerdict = verdict;
         testResults.push({
           testCaseId: testCase.id,
           isHidden: testCase.isHidden,
           passed: false,
-          verdict: "RUNTIME_ERROR",
+          verdict,
           durationMs: execResult.durationMs,
           stderr: testCase.isHidden ? undefined : execResult.stderr,
           input: testCase.isHidden ? undefined : testCase.input,

@@ -27,7 +27,7 @@ Exeku provides a high-craft developer aesthetic paired with robust automated cod
 
 ## Operating Context
 
-- **Current Stage:** Local development workspace (`localhost:3000`), local sandbox evaluation via containerized Piston engine (`http://localhost:2000`) or mock adapter.
+- **Current Stage:** Local development workspace (`localhost:3000`), local sandbox evaluation via the Exeku judge worker (`judge/`, isolate sandboxes in WSL2 or a Linux VM, `http://localhost:4000`), Piston, or the mock adapter.
 - **Future Production Stage:** Online-hosted web application with isolated execution microservices, server-authoritative submission queue, and contest infrastructure.
 - **Workflows:**
   - Browsing problem catalogs with difficulty and language filters.
@@ -49,7 +49,7 @@ Exeku provides a high-craft developer aesthetic paired with robust automated cod
   - Dark, orange-on-black shadcn/ui design system in the spirit of LeetCode, with a VS Code Dark+ editor (see `DESIGN.md`).
   - Exeku Lab (Arduino/MCU simulation and 3D) is a separate desktop/mobile app, promoted with a banner on the landing page and dashboard.
 - **Technical Constraints:**
-  - **No Unsafe Execution:** Student code is strictly untrusted. Code execution must run inside an isolated sandbox (Piston/`isolate` container) with enforced CPU limits, memory limits, wall-clock timeouts, restricted filesystem access, and disabled outbound networking. Arbitrary unsandboxed host process execution is strictly prohibited.
+  - **No Unsafe Execution:** Student code is strictly untrusted. Code execution must run inside an isolated sandbox (`isolate` via the `judge/` worker) with enforced CPU limits, memory limits, wall-clock timeouts, restricted filesystem access, and disabled outbound networking. Arbitrary unsandboxed host process execution is strictly prohibited.
   - **Local Development Boundaries:** No public cloud infrastructure (Vercel, Render, Oracle Cloud) or cloud databases are provisioned during this stage. Everything runs and verifies locally.
   - **Data Truth Guarantee:** Only display verified, real execution outputs and stored records. Never fabricate test passes or execution statistics.
   - **Modular Boundaries:** Frontend and execution engine are completely decoupled via standard JSON REST contracts (`POST /api/execute`, `POST /api/judge`).

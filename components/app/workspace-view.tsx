@@ -111,7 +111,7 @@ export function WorkspaceView() {
     fetch("/api/health")
       .then((res) => res.ok ? res.json() : null)
       .then((data) => { if (current && data?.sandbox) setSandboxHealth(data.sandbox); })
-      .catch(() => { if (current) setSandboxHealth({ isAvailable: false, engine: "Piston (unreachable)", supportedLanguages: [] }); });
+      .catch(() => { if (current) setSandboxHealth({ isAvailable: false, engine: "Exeku judge (unreachable)", supportedLanguages: [] }); });
     fetch("/api/problems")
       .then((res) => { if (!res.ok) throw new Error("Catalog unavailable"); return res.json(); })
       .then((data: { problems?: ProblemSummary[] }) => { if (current) setProblemIds((data.problems ?? []).map((entry) => entry.id)); })

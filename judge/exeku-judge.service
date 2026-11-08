@@ -1,0 +1,16 @@
+[Unit]
+Description=Exeku judge (runs submissions in isolate sandboxes)
+After=network.target isolate.service
+Requires=isolate.service
+
+[Service]
+User=exeku-judge
+Group=exeku-judge
+EnvironmentFile=/etc/exeku-judge.env
+WorkingDirectory=/opt/exeku-judge
+ExecStart=/usr/bin/node --experimental-strip-types --disable-warning=ExperimentalWarning src/server.ts
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
