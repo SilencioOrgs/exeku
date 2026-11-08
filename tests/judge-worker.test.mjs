@@ -1,11 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { chmodSync, mkdtempSync, rmSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildRunArgs, classifyRun, createIsolateCli, parseMeta } from "../judge/src/isolate.ts";
-import { buildLanguageSpecs, detectToolchain } from "../judge/src/languages.ts";
+import { buildLanguageSpecs, detectToolchain, linkedDirsOutside } from "../judge/src/languages.ts";
 import { validateRunRequest } from "../judge/src/validate.ts";
 import { BoxPool, QueueFullError } from "../judge/src/pool.ts";
 import { createJudgeServer } from "../judge/src/app.ts";
@@ -40,6 +40,22 @@ test("run arguments enforce limits and only allow threads when asked", () => {
   const jvm = buildRunArgs({ ...base, dirs: ["/etc/java-17-openjdk"], limits: { timeMs: 2000, wallTimeMs: 6000, memoryKb: 262144, fileSizeKb: 8192, processes: 64 } });
   assert.ok(jvm.includes("--processes=64"));
   assert.ok(jvm.includes("--dir=/etc/java-17-openjdk=/etc/java-17-openjdk:maybe"));
+});
+
+test("JDK config links into /etc are found so the sandbox can bind them", () => {
+  const base = mkdtempSync(join(tmpdir(), "jdk-"));
+  try {
+    const etc = join(base, "etc") + "/";
+    mkdirSync(join(etc, "java-17-openjdk", "security"), { recursive: true });
+    writeFileSync(join(etc, "java-17-openjdk", "security", "java.security"), "");
+    const conf = join(base, "jvm", "conf");
+    mkdirSync(join(conf, "security"), { recursive: true });
+    symlinkSync(join(etc, "java-17-openjdk", "security", "java.security"), join(conf, "security", "java.security"));
+    symlinkSync(join(base, "missing"), join(conf, "dangling"));
+    assert.deepEqual(linkedDirsOutside(conf, etc), [join(etc, "java-17-openjdk")]);
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+  }
 });
 
 test("worker validation rejects reserved names and wrong entry files, clamps limits", () => {

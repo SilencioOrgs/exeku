@@ -1,4 +1,4 @@
-import { existsSync, realpathSync } from "node:fs";
+import { existsSync, lstatSync, readdirSync, realpathSync } from "node:fs";
 import { delimiter, dirname, join } from "node:path";
 import type { Language } from "./types.ts";
 
@@ -34,16 +34,36 @@ function findOnPath(name: string, pathEnv = process.env.PATH ?? ""): string | un
   return undefined;
 }
 
+/**
+ * Top-level directories under `outside` that symlinks inside `dir` point to. Ubuntu's JDK keeps
+ * conf/security/java.security as a link into /etc/java-17-openjdk, which the sandbox cannot see.
+ */
+export function linkedDirsOutside(dir: string, outside = "/etc/"): string[] {
+  const found = new Set<string>();
+  const walk = (path: string) => {
+    for (const name of readdirSync(path)) {
+      const child = join(path, name);
+      const info = lstatSync(child);
+      if (info.isSymbolicLink()) {
+        if (!existsSync(child)) continue;
+        const target = realpathSync(child);
+        if (target.startsWith(outside)) found.add(join(outside, target.slice(outside.length).split("/")[0]));
+      } else if (info.isDirectory()) {
+        walk(child);
+      }
+    }
+  };
+  if (existsSync(dir)) {
+    const real = realpathSync(dir);
+    if (real.startsWith(outside)) found.add(join(outside, real.slice(outside.length).split("/")[0]));
+    else walk(dir);
+  }
+  return [...found];
+}
+
 export function detectToolchain(pathEnv?: string): Toolchain {
   const java = findOnPath("java", pathEnv);
-  const javaDirs: string[] = [];
-  if (java) {
-    const conf = join(dirname(dirname(java)), "conf");
-    if (existsSync(conf)) {
-      const real = realpathSync(conf);
-      if (real !== conf) javaDirs.push(real);
-    }
-  }
+  const javaDirs = java ? linkedDirsOutside(join(dirname(dirname(java)), "conf")) : [];
   return {
     python3: findOnPath("python3", pathEnv),
     gcc: findOnPath("gcc", pathEnv),
