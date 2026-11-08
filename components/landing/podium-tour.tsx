@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useAppearance } from "@/hooks/use-appearance";
+import { useNearViewport } from "@/hooks/use-near-viewport";
 import { useProfile } from "@/hooks/use-profile";
 import { buttonVariants } from "@/components/ui/button";
 import { DotIcon } from "@/components/retro/dot-icon";
@@ -38,6 +39,7 @@ export function PodiumTour() {
   const [ready, setReady] = useState(false);
   const { effectiveReducedMotion } = useAppearance();
   const { profile } = useProfile();
+  const near = useNearViewport(sectionRef);
 
   useEffect(() => {
     let frame = 0;
@@ -59,15 +61,15 @@ export function PodiumTour() {
 
   useEffect(() => {
     const mount = mountRef.current;
-    if (!mount) return;
+    if (!mount || !near) return;
     let disposed = false;
     let cleanup = () => {};
     (async () => {
-      const [THREE, { createStage }, { buildArena }, { buildTeamZone, buildPodiumZone }] = await Promise.all([
+      const [THREE, { createStage, mergeStatic, hoistLights }, { buildArena }, { buildTeamZone, buildPodiumZone }] = await Promise.all([
         import("three"), import("@/lib/three/stage"), import("@/lib/three/arena"), import("@/lib/three/journey"),
       ]);
       if (disposed) return;
-      const stage = createStage(mount, { fov: 30, shadowExtent: 280 });
+      const stage = createStage(mount, { fov: 30, shadowExtent: 280, maxPixelRatio: 1.25 });
       stage.scene.environmentIntensity = 0.35;
       const arena = buildArena();
       const team = buildTeamZone();
@@ -75,6 +77,8 @@ export function PodiumTour() {
       const podium = buildPodiumZone();
       podium.group.position.x = ZONE.podium;
       stage.scene.add(arena.group, team.group, podium.group);
+      const zones = [{ x: ZONE.arena, group: arena.group }, { x: ZONE.team, group: team.group }, { x: ZONE.podium, group: podium.group }];
+      for (const zone of zones) { mergeStatic(zone.group); hoistLights(zone.group, stage.scene); }
 
       const pos = new THREE.Vector3(), look = new THREE.Vector3(), lookNow = new THREE.Vector3();
       const a = new THREE.Vector3(), b = new THREE.Vector3();
@@ -114,16 +118,21 @@ export function PodiumTour() {
         // Keep the key light (and its shadows) on whatever zone we are looking at.
         stage.key.target.position.copy(lookNow).setY(0);
         stage.key.position.copy(stage.key.target.position).add(keyOffset);
+        // Only the zone in view (and the next one during a fly-over) is drawn and animated.
+        for (const zone of zones) {
+          const show = Math.abs(lookNow.x - zone.x) < 650;
+          if (zone.group.visible !== show) { zone.group.visible = show; stage.invalidateShadows(); }
+        }
         const t = effectiveReducedMotion ? 0 : time;
-        arena.update(t, p >= 1 / STEPS.length);
-        team.update(t, ease(clamp((p - 0.6) / 0.06)), ease(clamp((p - 0.62) / 0.14)));
-        podium.update(t);
+        if (arena.group.visible) arena.update(t, p >= 1 / STEPS.length);
+        if (team.group.visible) team.update(t, ease(clamp((p - 0.6) / 0.06)), ease(clamp((p - 0.62) / 0.14)));
+        if (podium.group.visible) podium.update(t);
       });
       setReady(true);
       cleanup = () => stage.dispose();
     })();
     return () => { disposed = true; cleanup(); };
-  }, [effectiveReducedMotion]);
+  }, [effectiveReducedMotion, near]);
 
   return (
     <section id="journey" ref={sectionRef} aria-label="From your first match to the podium" className="relative border-b border-[var(--color-border)]" style={{ height: `${STEPS.length * 100}vh` }}>
@@ -148,7 +157,7 @@ export function PodiumTour() {
                   key={s.kicker}
                   inert={i !== step}
                   className={cn(
-                    "col-start-1 row-start-1 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/85 p-5 backdrop-blur transition-all duration-500 md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none",
+                    "col-start-1 row-start-1 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 transition-all duration-500 md:border-0 md:bg-transparent md:p-0",
                     i === step ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-4 opacity-0",
                   )}
                 >

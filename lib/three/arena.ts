@@ -95,7 +95,7 @@ function keyboardTexture() {
   return c.texture;
 }
 
-export interface PlayerStyle { hoodie: string; pants: string; skin: string; hair: string; headphones: string; lang: "python" | "cpp"; glow: string }
+export interface PlayerStyle { hoodie: string; pants: string; skin: string; hair: string; headphones: string; lang: "python" | "cpp" }
 
 /** Seated player at a desk with a laptop, facing +X. Origin is under the chair. */
 export function buildPlayer(style: PlayerStyle) {
@@ -177,9 +177,7 @@ export function buildPlayer(style: PlayerStyle) {
   screen.rotation.y = -Math.PI / 2;
   hinge.add(screen);
   group.add(hinge);
-  const glow = new THREE.PointLight(style.glow, 2600, 120, 1.6);
-  glow.position.set(48, 90, 0);
-  group.add(glow);
+  // No per-laptop light: the screen material glows on its own, and every extra light costs per pixel.
   return group;
 }
 
@@ -209,12 +207,12 @@ export function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w
 
 /** The same people appear across the hero and the tour. "you" is the player we follow. */
 export const STYLES = {
-  you: { hoodie: "#262628", pants: "#1a1c22", skin: "#8d5a3b", hair: "#120d0a", headphones: "#111111", lang: "python", glow: "#ffb066" },
-  rival: { hoodie: "#d8d4cc", pants: "#2b2f38", skin: "#e2b791", hair: "#3a2516", headphones: "#f2f2f2", lang: "cpp", glow: "#cfe0ff" },
-  mateA: { hoodie: "#3a2a1a", pants: "#1c1c20", skin: "#c68b62", hair: "#0d0d0d", headphones: "#1a1a1a", lang: "cpp", glow: "#ffb066" },
-  mateB: { hoodie: "#1f2a33", pants: "#202227", skin: "#f0c9a5", hair: "#5a3a22", headphones: "#141414", lang: "python", glow: "#ffb066" },
-  foeA: { hoodie: "#bfbab0", pants: "#2e3138", skin: "#a8724c", hair: "#1a120c", headphones: "#e8e8e8", lang: "python", glow: "#cfe0ff" },
-  foeB: { hoodie: "#e6e2da", pants: "#33363d", skin: "#7a4a2e", hair: "#0d0a08", headphones: "#f5f5f5", lang: "cpp", glow: "#cfe0ff" },
+  you: { hoodie: "#262628", pants: "#1a1c22", skin: "#8d5a3b", hair: "#120d0a", headphones: "#111111", lang: "python" },
+  rival: { hoodie: "#d8d4cc", pants: "#2b2f38", skin: "#e2b791", hair: "#3a2516", headphones: "#f2f2f2", lang: "cpp" },
+  mateA: { hoodie: "#3a2a1a", pants: "#1c1c20", skin: "#c68b62", hair: "#0d0d0d", headphones: "#1a1a1a", lang: "cpp" },
+  mateB: { hoodie: "#1f2a33", pants: "#202227", skin: "#f0c9a5", hair: "#5a3a22", headphones: "#141414", lang: "python" },
+  foeA: { hoodie: "#bfbab0", pants: "#2e3138", skin: "#a8724c", hair: "#1a120c", headphones: "#e8e8e8", lang: "python" },
+  foeB: { hoodie: "#e6e2da", pants: "#33363d", skin: "#7a4a2e", hair: "#0d0a08", headphones: "#f5f5f5", lang: "cpp" },
 } satisfies Record<string, PlayerStyle>;
 
 /** Floor projector with an orange beam and rising particles. */
@@ -225,6 +223,7 @@ export function buildProjector() {
   const ringMat = new THREE.MeshStandardMaterial({ color: "#ff8a00", emissive: "#ff7a00", emissiveIntensity: 1.6 });
   const ring = mesh(new THREE.TorusGeometry(20, 0.9, 12, 64), ringMat, 0, 8.2, 0);
   ring.rotation.x = Math.PI / 2;
+  ring.userData.dynamic = true;
   group.add(ring);
   group.add(mesh(new THREE.CylinderGeometry(8, 8, 1, 32), ringMat, 0, 8.5, 0));
   const floorGlow = glowSprite("rgba(255,161,22,0.55)", 170);

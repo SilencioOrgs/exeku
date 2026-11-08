@@ -210,6 +210,7 @@ export function buildPodiumZone() {
     group.add(person);
   }
   const trophy = buildTrophy();
+  trophy.userData.dynamic = true;
   trophy.position.set(0, 64 + 187, 0);
   group.add(trophy);
 

@@ -126,6 +126,7 @@ Most screens are "Operate" surfaces (problems, workspace, settings): scanability
 - 3D on the site: `lib/three/arena.ts` (hero, shared players and projector), `lib/three/journey.ts` (team round and podium for the tour), `lib/three/circuit.ts` (Arduino Uno, breadboard, LED, resistor, wires to real millimetres, used in the Lab banner), `lib/three/stage.ts` (renderer, lighting, shadows, pauses off screen). React wrappers: `components/landing/versus-scene.tsx`, `components/lab/circuit-view.tsx`. three.js loads only when they mount.
 - CAD models (for example from GrabCAD) can replace the Uno or breadboard through `public/models/manifest.json`; check each model's license first.
 - Every 3D view has a `role="img"` label and a text fallback when WebGL is off.
+- Performance rules for 3D: no per-object lights (screens and LEDs glow with emissive/basic materials; at most one point light per zone), run `mergeStatic` on built scenes so they render in a few draw calls, mark moving parts with `userData.dynamic`, start offscreen scenes with `useNearViewport`, and hide zones the camera can't see. `createStage` re-renders shadows only when the key light moves, adapts resolution to frame time and falls back to 30 fps on slow devices. No `backdrop-blur` over a 3D canvas.
 
 ## Components
 

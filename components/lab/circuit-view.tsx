@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useAppearance } from "@/hooks/use-appearance";
+import { useNearViewport } from "@/hooks/use-near-viewport";
 import { cn } from "@/lib/utils";
 
 type Loaded = { setLed(on: boolean): void };
@@ -24,11 +25,12 @@ export function CircuitView({ ledOn, interactive = true, view = [120, 120, 175],
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const { effectiveReducedMotion } = useAppearance();
+  const near = useNearViewport(mountRef);
   const [vx, vy, vz] = view;
 
   useEffect(() => {
     const mount = mountRef.current;
-    if (!mount) return;
+    if (!mount || !near) return;
     let disposed = false;
     let cleanup = () => {};
     (async () => {
@@ -65,7 +67,7 @@ export function CircuitView({ ledOn, interactive = true, view = [120, 120, 175],
       }
     })();
     return () => { disposed = true; cleanup(); };
-  }, [interactive, effectiveReducedMotion, vx, vy, vz]);
+  }, [interactive, effectiveReducedMotion, vx, vy, vz, near]);
 
   useEffect(() => {
     ledRef.current = ledOn;

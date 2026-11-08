@@ -18,12 +18,13 @@ export function VersusScene({ className }: { className?: string }) {
     let cleanup = () => {};
     (async () => {
       try {
-        const [THREE, { createStage }, { buildArena }] = await Promise.all([import("three"), import("@/lib/three/stage"), import("@/lib/three/arena")]);
+        const [THREE, { createStage, mergeStatic }, { buildArena }] = await Promise.all([import("three"), import("@/lib/three/stage"), import("@/lib/three/arena")]);
         if (disposed) return;
-        const stage = createStage(mount, { fov: 30, shadowExtent: 260 });
+        const stage = createStage(mount, { fov: 30, shadowExtent: 260, maxPixelRatio: 1.25 });
         stage.scene.environmentIntensity = 0.35;
         const arena = buildArena();
         stage.scene.add(arena.group);
+        mergeStatic(arena.group);
         const target = new THREE.Vector3(0, 98, 0);
         const home = new THREE.Vector3(0, 190, 760);
         const pointer = { x: 0, y: 0 };
