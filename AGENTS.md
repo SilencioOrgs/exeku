@@ -130,7 +130,7 @@ Always invoke skills through verified, installed interfaces.
 For all development tasks, execute and verify:
 - `npm.cmd run lint` (0 errors, 0 warnings)
 - `npx.cmd tsc --noEmit` (0 errors)
-- `npx.cmd tsx --test tests/*.test.mjs` (all tests passing)
+- `npm.cmd test` (all tests passing)
 - `npm.cmd run build` (all routes compiling)
 
 **Integrity Rule**: Never report tests or verification checks as passed unless they were actually executed and confirmed with output evidence.

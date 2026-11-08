@@ -2,7 +2,7 @@ import React from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { BORDER_SCALE, borderSrc } from "@/lib/avatar-borders";
-import { AVATARS, DEFAULT_AVATAR_ID, getAvatar, type AvatarDefinition } from "@/lib/avatars";
+import { AVATARS, DEFAULT_AVATAR_ID, getAvatar } from "@/lib/avatars";
 
 export interface PixelAvatarProps extends React.HTMLAttributes<HTMLDivElement> {
   avatarId: string;
@@ -10,8 +10,6 @@ export interface PixelAvatarProps extends React.HTMLAttributes<HTMLDivElement> {
   size?: number;
   className?: string;
 }
-export type AvatarMeta = AvatarDefinition;
-export const AVATAR_METAS = AVATARS;
 export { DEFAULT_AVATAR_ID, AVATARS };
 
 /** The chosen ninja in a circle, with its optional frame drawn over the edge. */

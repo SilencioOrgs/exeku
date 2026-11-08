@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useProfile } from "@/hooks/use-profile";
 import { PixelCard } from "@/components/retro/pixel-card";
-import { PixelButton } from "@/components/retro/pixel-button";
+import { Button } from "@/components/ui/button";
 import { PixelBadge } from "@/components/retro/pixel-badge";
 import { X } from "lucide-react";
 import { ProfileResetDialog } from "./profile-reset-dialog";
@@ -148,14 +148,9 @@ export function SettingsView() {
             and all saved code scratchpads from IndexedDB. You will be redirected back to the
             onboarding terminal.
           </p>
-          <PixelButton
-            variant="pink"
-            size="md"
-            onClick={() => setIsResetOpen(true)}
-            className="w-full sm:w-auto shrink-0"
-          >
+          <Button type="button" onClick={() => setIsResetOpen(true)} className="w-full sm:w-auto shrink-0">
             Reset local profile <span className="arcade-copy"><X size={14} aria-hidden="true" /></span>
-          </PixelButton>
+          </Button>
         </div>
       </PixelCard>
 

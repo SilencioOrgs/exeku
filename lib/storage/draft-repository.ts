@@ -2,7 +2,6 @@ import type { PreferredLanguage } from "@/types/profile";
 import type { WorkspaceDraft } from "@/types/draft";
 import {
   getFilenameForLanguage,
-  getStarterCode,
 } from "@/lib/workspace-defaults";
 import {
   DRAFT_STORE,
@@ -73,18 +72,6 @@ export class DraftRepository {
     } catch (err) {
       throw new DraftRepositoryError("Failed to save workspace draft", err);
     }
-  }
-
-  /**
-   * Resets the draft back to default starter code.
-   */
-  async resetDraft(
-    profileId: string,
-    lang: PreferredLanguage,
-    problemId?: string | null
-  ): Promise<WorkspaceDraft> {
-    const starterCode = getStarterCode(lang);
-    return await this.saveDraft(profileId, lang, starterCode, undefined, problemId);
   }
 
   /**

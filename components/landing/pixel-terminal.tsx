@@ -137,7 +137,7 @@ export function PixelTerminal() {
         <span className="hidden md:inline text-xs opacity-75">Not a live compiler</span>
       </div>
 
-      {/* Language Switcher Tabs with Doticons */}
+      {/* Language Switcher Tabs */}
       <div className="flex items-center border-b border-[var(--color-border)] bg-[var(--color-canvas)] px-2 sm:px-4 overflow-x-auto">
         {(Object.keys(SNIPPETS) as LanguageKey[]).map((key) => {
           const isActive = activeLang === key;

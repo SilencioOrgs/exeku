@@ -4,7 +4,7 @@ import { X } from "lucide-react";
 
 import React from "react";
 import { PixelCard } from "@/components/retro/pixel-card";
-import { PixelButton } from "@/components/retro/pixel-button";
+import { Button } from "@/components/ui/button";
 import { useChallengeSession } from "@/hooks/use-challenge-session";
 
 export function ChallengeExitGuardModal() {
@@ -52,22 +52,12 @@ export function ChallengeExitGuardModal() {
         </p>
 
         <div className="flex items-center justify-end gap-3 pt-2">
-          <PixelButton
-            variant="ghost"
-            size="sm"
-            onClick={cancelPendingNavigation}
-            className="text-xs"
-          >
+          <Button type="button" variant="ghost" size="sm" onClick={cancelPendingNavigation} className="text-xs">
             Keep working
-          </PixelButton>
-          <PixelButton
-            variant="pink"
-            size="sm"
-            onClick={confirmPendingNavigation}
-            className="text-xs font-semibold"
-          >
+          </Button>
+          <Button type="button" size="sm" onClick={confirmPendingNavigation} className="text-xs font-semibold">
             Exit and forfeit <X size={14} aria-hidden="true" />
-          </PixelButton>
+          </Button>
         </div>
       </PixelCard>
     </div>

@@ -35,15 +35,6 @@ test("draftRepository - keeps drafts separated across languages for the same pro
   assert.equal(cppDraft.filename, "main.cpp");
 });
 
-test("draftRepository - resets draft back to default starter code", async () => {
-  const reset = await draftRepository.resetDraft("user_123", "python");
-  assert.match(reset.code, /Hello, Exeku!/i);
-
-  const reloaded = await draftRepository.getDraft("user_123", "python");
-  assert.ok(reloaded);
-  assert.match(reloaded.code, /Hello, Exeku!/i);
-});
-
 test("draftRepository - deletes all drafts for a profile without touching other profiles", async () => {
   await draftRepository.saveDraft("user_999", "python", 'print("other user")');
 

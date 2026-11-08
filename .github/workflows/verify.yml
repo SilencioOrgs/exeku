@@ -25,7 +25,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Unit tests
-        run: npx --yes tsx --test tests/*.test.mjs
+        run: npm test
       - name: ESLint
         run: npm run lint
       - name: TypeScript

@@ -41,12 +41,3 @@ export interface ProfileInput {
   userType?: UserType;
   borderId?: AvatarBorderId;
 }
-
-export interface AvatarDefinition {
-  id: string;
-  name: string;
-  description: string;
-  accentColor: string;
-  // SVG inner elements or raw path markup
-  renderSvg: (size?: number) => React.ReactNode;
-}

@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 
 import React, { useState } from "react";
-import { PixelButton } from "@/components/retro/pixel-button";
 import { PixelBadge } from "@/components/retro/pixel-badge";
 
 export interface ProfileResetDialogProps {
@@ -104,22 +103,12 @@ export function ProfileResetDialog({
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 pt-3 border-t border-[var(--color-border)]">
-          <PixelButton
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            disabled={isDeleting}
-          >
+          <Button type="button" variant="ghost" size="sm" onClick={onClose} disabled={isDeleting}>
             Cancel
-          </PixelButton>
-          <PixelButton
-            variant="pink"
-            size="sm"
-            onClick={handleReset}
-            disabled={!isConfirmed || isDeleting}
-          >
+          </Button>
+          <Button type="button" size="sm" onClick={handleReset} disabled={!isConfirmed || isDeleting}>
             {isDeleting ? "Deleting…" : "Delete profile"}
-          </PixelButton>
+          </Button>
         </div>
       </div>
     </div>
