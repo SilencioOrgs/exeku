@@ -1,9 +1,10 @@
 "use client";
 
-import { useId, useMemo, useRef, useState, type KeyboardEvent, type SyntheticEvent } from "react";
+import { useId, useMemo, useRef, useState, type ChangeEvent, type KeyboardEvent, type SyntheticEvent } from "react";
 import { useAppearance } from "@/hooks/use-appearance";
 import { resolveEditorAppearance } from "@/lib/editor-appearance";
 import { tokenLines } from "@/lib/syntax";
+import { caretPosition, getCompletions, type Completion, type CompletionState } from "@/lib/completions";
 import { cn } from "@/lib/utils";
 
 const INDENT = "    ";
@@ -24,6 +25,18 @@ function languageOf(filename: string) {
   return ext === "py" ? "python" : ext === "java" ? "java" : ext === "c" ? "c" : "cpp";
 }
 
+const PAD = 12; // matches py-3 / px-3 on the textarea
+const POPUP_CH = 28;
+
+interface Suggestions extends CompletionState {
+  caret: number;
+  index: number;
+  top: number;
+  /** CSS length: caret column in ch, clamped so the list stays inside the editor. */
+  left: string;
+  rowHeight: number;
+}
+
 export interface CodeEditorProps {
   value: string;
   onChange: (value: string) => void;
@@ -41,9 +54,47 @@ export function CodeEditor({ value, onChange, filename }: CodeEditorProps) {
   const gutterRef = useRef<HTMLPreElement>(null);
   const highlightRef = useRef<HTMLPreElement>(null);
   const escapedRef = useRef(false);
+  const acceptingRef = useRef(false);
   const [activeLine, setActiveLine] = useState(0);
+  const [suggest, setSuggest] = useState<Suggestions | null>(null);
   const hintId = useId();
-  const lines = useMemo(() => tokenLines(value, languageOf(filename)), [value, filename]);
+  const listId = useId();
+  const lang = languageOf(filename);
+  const lines = useMemo(() => tokenLines(value, lang), [value, lang]);
+
+  /** Open or update the suggestion list for the word before the caret, placed under that word. */
+  const refresh = (area: HTMLTextAreaElement) => {
+    const caret = area.selectionStart;
+    const found = area.selectionStart === area.selectionEnd ? getCompletions(area.value, caret, lang) : null;
+    if (!found) { setSuggest(null); return; }
+    const rowHeight = parseFloat(getComputedStyle(area).lineHeight) || 20;
+    const { line, column } = caretPosition(area.value, found.start);
+    const lineTop = PAD + line * rowHeight - area.scrollTop;
+    const height = found.items.length * rowHeight + 10;
+    // Below the line when it fits, otherwise above it.
+    const top = lineTop + rowHeight + height <= area.clientHeight ? lineTop + rowHeight : Math.max(0, lineTop - height);
+    // Line the suggested words up with the typed word. The font is monospace, so a column is 1ch;
+    // 13px is the list's border, padding and item padding.
+    const left = `max(0px, min(calc(${PAD - 13 - area.scrollLeft}px + ${column}ch), calc(100% - ${POPUP_CH}ch)))`;
+    setSuggest({ ...found, caret, index: 0, top, left, rowHeight });
+  };
+
+  const accept = (area: HTMLTextAreaElement, item: Completion) => {
+    if (!suggest) return;
+    acceptingRef.current = true;
+    insert(area, item.word, suggest.start, suggest.caret);
+    acceptingRef.current = false;
+    setSuggest(null);
+  };
+
+  const handleChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+    const area = event.target;
+    const typedOneChar = area.value.length === value.length + 1;
+    onChange(area.value);
+    if (acceptingRef.current) return;
+    // Open while typing; keep updating while open (e.g. Backspace); stay quiet on paste or delete.
+    if (typedOneChar || suggest) refresh(area);
+  };
 
   // execCommand keeps the browser's own undo stack; setRangeText is the fallback.
   const insert = (area: HTMLTextAreaElement, text: string, start: number, end: number) => {
@@ -57,10 +108,15 @@ export function CodeEditor({ value, onChange, filename }: CodeEditorProps) {
   const trackCaret = (event: SyntheticEvent<HTMLTextAreaElement>) => {
     const area = event.currentTarget;
     setActiveLine(area.value.slice(0, area.selectionStart).split("\n").length - 1);
+    // Clicking or arrowing away from the word closes the list. Functional update: typing sets a new caret first.
+    const { selectionStart: start, selectionEnd: end } = area;
+    setSuggest((open) => (open && (start !== open.caret || end !== open.caret) ? null : open));
   };
 
   const syncScroll = (event: SyntheticEvent<HTMLTextAreaElement>) => {
     const { scrollTop, scrollLeft } = event.currentTarget;
+    // Keep the list under the caret when typing scrolls the editor.
+    if (suggest) refresh(event.currentTarget);
     if (gutterRef.current) gutterRef.current.scrollTop = scrollTop;
     if (highlightRef.current) { highlightRef.current.scrollTop = scrollTop; highlightRef.current.scrollLeft = scrollLeft; }
   };
@@ -69,6 +125,27 @@ export function CodeEditor({ value, onChange, filename }: CodeEditorProps) {
     const area = event.currentTarget;
     const { selectionStart: start, selectionEnd: end, value: text } = area;
     const plain = !event.ctrlKey && !event.metaKey && !event.altKey;
+
+    // Ctrl+Space asks for suggestions without typing.
+    if (event.key === " " && event.ctrlKey && !event.metaKey && !event.altKey) { event.preventDefault(); refresh(area); return; }
+
+    if (suggest && plain) {
+      const count = suggest.items.length;
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault();
+        const step = event.key === "ArrowDown" ? 1 : -1;
+        setSuggest({ ...suggest, index: (suggest.index + step + count) % count });
+        return;
+      }
+      // Only Tab accepts. Enter stays a newline so "return ans⏎" never turns into another word.
+      if (event.key === "Tab" && !event.shiftKey) {
+        event.preventDefault();
+        accept(area, suggest.items[suggest.index]);
+        return;
+      }
+      if (event.key === "Escape") { event.preventDefault(); setSuggest(null); return; }
+      if (event.key === "Enter") setSuggest(null);
+    }
 
     if (event.key === "Escape") { escapedRef.current = true; return; }
     const escaped = escapedRef.current;
@@ -124,12 +201,16 @@ export function CodeEditor({ value, onChange, filename }: CodeEditorProps) {
         </pre>
         <textarea
           value={value}
-          onChange={(event) => onChange(event.target.value)}
+          onChange={handleChange}
           onKeyDown={handleKeyDown}
           onSelect={trackCaret}
           onScroll={syncScroll}
+          onBlur={() => setSuggest(null)}
           aria-label={`${filename} source code`}
           aria-describedby={hintId}
+          aria-autocomplete="list"
+          aria-controls={suggest ? listId : undefined}
+          aria-activedescendant={suggest ? `${listId}-${suggest.index}` : undefined}
           wrap="off"
           spellCheck={false}
           autoCapitalize="off"
@@ -138,9 +219,41 @@ export function CodeEditor({ value, onChange, filename }: CodeEditorProps) {
           className="code-editor-input relative m-0 block h-full w-full resize-none whitespace-pre border-0 bg-transparent px-3 py-3 outline-none focus-visible:outline-none"
           style={{ font: "inherit", tabSize: 4 }}
         />
+        {suggest && (
+          <ul
+            id={listId}
+            role="listbox"
+            aria-label="Suggestions"
+            className="code-suggest absolute z-10 m-0 list-none p-1"
+            style={{ top: suggest.top, left: suggest.left, width: `${POPUP_CH}ch` }}
+          >
+            {suggest.items.map((item, i) => (
+              <li
+                key={item.word}
+                id={`${listId}-${i}`}
+                role="option"
+                aria-selected={i === suggest.index}
+                className={cn("flex cursor-pointer items-center justify-between gap-3 rounded-sm px-2", i === suggest.index && "is-active")}
+                style={{ height: suggest.rowHeight }}
+                // mousedown keeps focus in the textarea; click would blur it first.
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  const area = event.currentTarget.closest(".code-editor")?.querySelector("textarea");
+                  if (area) accept(area, item);
+                }}
+              >
+                <span className="truncate">
+                  <span className="code-suggest-match">{item.word.slice(0, suggest.prefix.length)}</span>
+                  {item.word.slice(suggest.prefix.length)}
+                </span>
+                <span className="code-suggest-kind shrink-0 text-xs">{item.kind}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
       <span id={hintId} className="sr-only">
-        Tab indents. Press Escape then Tab to leave the editor. Control or Command plus Enter runs the code.
+        Tab indents. Suggestions appear while typing: Tab accepts, arrow keys choose, Escape closes, Control plus Space opens them. Press Escape then Tab to leave the editor. Control or Command plus Enter runs the code.
       </span>
     </div>
   );
