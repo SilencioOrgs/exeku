@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { JudgingService } from "../lib/judge/judging-service.ts";
 import { ExecutionQueue } from "../lib/execution/queue.ts";
-import { PistonAdapter } from "../lib/execution/piston-adapter.ts";
+import { ExekuJudgeAdapter } from "../lib/execution/exeku-judge-adapter.ts";
 import { validateExecutionRequest } from "../lib/execution/validation.ts";
 
 const service = (execute) => new JudgingService({ adapter: { execute, checkHealth: async () => ({}) }, queue: new ExecutionQueue() });
@@ -26,16 +26,21 @@ test("a sandbox HTTP error is a judge error, not a wrong answer", async () => {
   assert.match(result.error, /runtime is unknown/);
 });
 
-test("a compile that was killed (code null, no run stage) is a compile error, not 'sandbox unavailable'", () => {
-  const result = new PistonAdapter().transformPistonResponse({ compile: { stdout: "", stderr: "", code: null, signal: "SIGKILL" } }, 5);
+test("a compile that was killed (no output, no runs) is a compile error, not 'sandbox unavailable'", () => {
+  const [result] = new ExekuJudgeAdapter().transformResponse({ compile: { ok: false, output: "", timeMs: 5 }, runs: [] }, 1);
   assert.equal(result.status, "COMPILATION_ERROR");
-  assert.match(result.compilerOutput, /stopped/);
+  assert.match(result.compilerOutput, /failed/);
 });
 
-test("memory limit reaches Piston in bytes (except the JVM) and is capped at 256 MB", () => {
-  const adapter = new PistonAdapter();
-  assert.equal(adapter.buildPistonPayload({ language: "python", sourceCode: "x", memoryLimitKb: 128000 }).run_memory_limit, 128000 * 1024);
-  assert.equal(adapter.buildPistonPayload({ language: "java", sourceCode: "x", memoryLimitKb: 128000 }).run_memory_limit, undefined);
+test("a run killed by a signal is a runtime error, never SUCCESS", () => {
+  const [result] = new ExekuJudgeAdapter().transformResponse({ compile: null, runs: [{ status: "RUNTIME_ERROR", exitCode: null, stdout: "42", stderr: "", timeMs: 1, memoryKb: 1 }] }, 1);
+  assert.equal(result.status, "RUNTIME_ERROR");
+});
+
+test("memory limit reaches the judge in KB for every language and is capped at 256 MB", () => {
+  const adapter = new ExekuJudgeAdapter();
+  assert.equal(adapter.buildPayload({ language: "python", sourceCode: "x", memoryLimitKb: 128000 }, [""]).memoryLimitKb, 128000);
+  assert.equal(adapter.buildPayload({ language: "java", sourceCode: "x", memoryLimitKb: 128000 }, [""]).memoryLimitKb, 128000);
   const huge = validateExecutionRequest({ language: "c", sourceCode: "int main(){}", memoryLimitKb: 4_000_000 });
   assert.equal(huge.valid && huge.request.memoryLimitKb, 256000);
 });

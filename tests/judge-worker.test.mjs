@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { chmodSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildRunArgs, classifyRun, createIsolateCli, parseMeta } from "../judge/src/isolate.ts";
 import { buildLanguageSpecs, detectToolchain, linkedDirsOutside } from "../judge/src/languages.ts";
@@ -45,7 +45,7 @@ test("run arguments enforce limits and only allow threads when asked", () => {
 test("JDK config links into /etc are found so the sandbox can bind them", () => {
   const base = mkdtempSync(join(tmpdir(), "jdk-"));
   try {
-    const etc = join(base, "etc") + "/";
+    const etc = join(base, "etc") + sep;
     mkdirSync(join(etc, "java-17-openjdk", "security"), { recursive: true });
     writeFileSync(join(etc, "java-17-openjdk", "security", "java.security"), "");
     const conf = join(base, "jvm", "conf");

@@ -1,5 +1,5 @@
 import { existsSync, lstatSync, readdirSync, realpathSync } from "node:fs";
-import { delimiter, dirname, join } from "node:path";
+import { delimiter, dirname, join, sep } from "node:path";
 import type { Language } from "./types.ts";
 
 /** Absolute, symlink-free paths. The sandbox sees /usr, /bin and /lib but not /etc, so alternatives links would break. */
@@ -47,7 +47,7 @@ export function linkedDirsOutside(dir: string, outside = "/etc/"): string[] {
       if (info.isSymbolicLink()) {
         if (!existsSync(child)) continue;
         const target = realpathSync(child);
-        if (target.startsWith(outside)) found.add(join(outside, target.slice(outside.length).split("/")[0]));
+        if (target.startsWith(outside)) found.add(join(outside, target.slice(outside.length).split(sep)[0]));
       } else if (info.isDirectory()) {
         walk(child);
       }
@@ -55,7 +55,7 @@ export function linkedDirsOutside(dir: string, outside = "/etc/"): string[] {
   };
   if (existsSync(dir)) {
     const real = realpathSync(dir);
-    if (real.startsWith(outside)) found.add(join(outside, real.slice(outside.length).split("/")[0]));
+    if (real.startsWith(outside)) found.add(join(outside, real.slice(outside.length).split(sep)[0]));
     else walk(dir);
   }
   return [...found];

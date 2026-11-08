@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { validateExecutionRequest } from "../lib/execution/validation.ts";
-import { PistonAdapter } from "../lib/execution/piston-adapter.ts";
+import { ExekuJudgeAdapter } from "../lib/execution/exeku-judge-adapter.ts";
 import { MockSandboxAdapter } from "../lib/execution/mock-adapter.ts";
 
 test("validateExecutionRequest - validates valid python request", () => {
@@ -91,56 +91,53 @@ test("MockSandboxAdapter - executes mock successful code", async () => {
   assert.equal(res.durationMs, 42);
 });
 
-test("PistonAdapter - maps Java filename to Main.java and parses compiler errors", () => {
-  const adapter = new PistonAdapter({ baseUrl: "http://localhost:2000" });
-  const payload = adapter.buildPistonPayload({
+test("ExekuJudgeAdapter - maps Java filename to Main.java and sends the input and time limit", () => {
+  const adapter = new ExekuJudgeAdapter({ baseUrl: "http://localhost:4000" });
+  const payload = adapter.buildPayload({
     language: "java",
     sourceCode: "public class Main {}",
-    stdin: "123",
     timeLimitMs: 2000,
-  });
+  }, ["123"]);
 
   assert.equal(payload.language, "java");
   assert.equal(payload.files[0].name, "Main.java");
   assert.equal(payload.files[0].content, "public class Main {}");
-  assert.equal(payload.stdin, "123");
-  assert.equal(payload.run_timeout, 2000);
+  assert.deepEqual(payload.stdins, ["123"]);
+  assert.equal(payload.timeLimitMs, 2000);
 });
 
-test("PistonAdapter - transforms compilation failure response", () => {
-  const adapter = new PistonAdapter({ baseUrl: "http://localhost:2000" });
-  const parsed = adapter.transformPistonResponse({
-    compile: {
-      stdout: "",
-      stderr: "Main.java:2: error: ';' expected\n",
-      code: 1,
-      output: "Main.java:2: error: ';' expected\n",
-    },
-    run: {
-      stdout: "",
-      stderr: "",
-      code: 0,
-      output: "",
-    },
-  }, 120);
+test("ExekuJudgeAdapter - a compile error is never SUCCESS, even if runs are present", () => {
+  const adapter = new ExekuJudgeAdapter({ baseUrl: "http://localhost:4000" });
+  const [parsed] = adapter.transformResponse({
+    compile: { ok: false, output: "Main.java:2: error: ';' expected\n", timeMs: 120 },
+    runs: [{ status: "SUCCESS", exitCode: 0, stdout: "42", stderr: "", timeMs: 1, memoryKb: 1 }],
+  }, 1);
 
   assert.equal(parsed.status, "COMPILATION_ERROR");
-  assert.equal(parsed.exitCode, 1);
   assert.equal(parsed.compilerOutput, "Main.java:2: error: ';' expected\n");
+  assert.equal(parsed.durationMs, 120);
 });
 
-test("PistonAdapter - transforms timeout signal into TIME_LIMIT_EXCEEDED", () => {
-  const adapter = new PistonAdapter({ baseUrl: "http://localhost:2000" });
-  const parsed = adapter.transformPistonResponse({
-    run: {
-      stdout: "",
-      stderr: "Process timed out after 2000ms",
-      signal: "SIGKILL",
-      code: null,
-      output: "Process timed out after 2000ms",
-    },
-  }, 2050);
+test("ExekuJudgeAdapter - keeps a timeout as TIME_LIMIT_EXCEEDED", () => {
+  const adapter = new ExekuJudgeAdapter({ baseUrl: "http://localhost:4000" });
+  const [parsed] = adapter.transformResponse({
+    compile: null,
+    runs: [{ status: "TIME_LIMIT_EXCEEDED", exitCode: null, stdout: "", stderr: "", timeMs: 2050, memoryKb: 900, message: "Time limit exceeded." }],
+  }, 1);
 
   assert.equal(parsed.status, "TIME_LIMIT_EXCEEDED");
   assert.equal(parsed.durationMs, 2050);
+  assert.equal(parsed.stderr, "Time limit exceeded.");
+});
+
+test("ExekuJudgeAdapter - a program killed by a signal is never SUCCESS", () => {
+  const adapter = new ExekuJudgeAdapter({ baseUrl: "http://localhost:4000" });
+  const killed = { exitCode: null, stdout: "correct answer\n", stderr: "", timeMs: 5, memoryKb: 900 };
+  const [reported, misreported] = adapter.transformResponse({
+    compile: null,
+    runs: [{ ...killed, status: "RUNTIME_ERROR", message: "Caught fatal signal 11" }, { ...killed, status: "SUCCESS" }],
+  }, 2);
+
+  assert.equal(reported.status, "RUNTIME_ERROR");
+  assert.equal(misreported.status, "RUNTIME_ERROR");
 });

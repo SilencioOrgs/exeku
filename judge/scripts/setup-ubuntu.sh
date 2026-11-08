@@ -129,7 +129,6 @@ cat <<EOF
 
 Exeku judge is running on ${JUDGE_HOST}:${JUDGE_PORT}.
 Put these in Exeku's .env.local:
-  EXECUTION_ENGINE=exeku
   JUDGE_SERVICE_URL=http://<this machine's address>:${JUDGE_PORT}
   JUDGE_TOKEN=${JUDGE_TOKEN}
 EOF

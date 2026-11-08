@@ -27,7 +27,7 @@ Exeku provides a high-craft developer aesthetic paired with robust automated cod
 
 ## Operating Context
 
-- **Current Stage:** Local development workspace (`localhost:3000`), local sandbox evaluation via the Exeku judge worker (`judge/`, isolate sandboxes in WSL2 or a Linux VM, `http://localhost:4000`), Piston, or the mock adapter.
+- **Current Stage:** Local development workspace (`localhost:3000`), local sandbox evaluation via the Exeku judge worker (`judge/`, isolate sandboxes in WSL2 or a Linux VM, `http://localhost:4000`) or the mock adapter.
 - **Future Production Stage:** Online-hosted web application with isolated execution microservices, server-authoritative submission queue, and contest infrastructure.
 - **Workflows:**
   - Browsing problem catalogs with difficulty and language filters.

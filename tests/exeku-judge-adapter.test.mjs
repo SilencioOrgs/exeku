@@ -1,8 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { ExekuJudgeAdapter } from "../lib/execution/exeku-judge-adapter.ts";
-import { createExecutionAdapter, resolveExecutionEngine } from "../lib/execution/engine.ts";
-import { PistonAdapter } from "../lib/execution/piston-adapter.ts";
+import { createExecutionAdapter } from "../lib/execution/engine.ts";
 import { ExecutionQueue, QueueFullError } from "../lib/execution/queue.ts";
 import { JudgingService } from "../lib/judge/judging-service.ts";
 import { getProblemById } from "../lib/problems/catalog.ts";
@@ -18,11 +17,17 @@ const adapterWith = (respond) => {
 };
 const request = { language: "cpp", sourceCode: "int main(){}", timeLimitMs: 2000, memoryLimitKb: 128000 };
 
-test("engine defaults to the Exeku judge; EXECUTION_ENGINE=piston keeps the old container", () => {
-  assert.equal(resolveExecutionEngine({}), "exeku");
-  assert.equal(resolveExecutionEngine({ EXECUTION_ENGINE: "Piston" }), "piston");
+test("the execution engine is the Exeku judge", () => {
   assert.ok(createExecutionAdapter({}) instanceof ExekuJudgeAdapter);
-  assert.ok(createExecutionAdapter({ EXECUTION_ENGINE: "piston" }) instanceof PistonAdapter);
+});
+
+test("health is available only when the judge reports all four languages", async () => {
+  const health = (languages) => adapterWith(() => jsonResponse(200, { version: "1", languages })).adapter.checkHealth();
+  assert.equal((await health(["python", "java", "cpp", "c"])).isAvailable, true);
+  const partial = await health(["python", "cpp", "c"]);
+  assert.equal(partial.isAvailable, false);
+  assert.deepEqual(partial.supportedLanguages, ["python", "cpp", "c"]);
+  assert.equal((await health(undefined)).isAvailable, false);
 });
 
 test("batch request sends the token, the main file first and one stdin per test", async () => {

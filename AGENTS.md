@@ -31,7 +31,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Icons**: lucide-react, imported directly (shared stroke and layout in the `.lucide` rule in `app/globals.css`)
 - **Editor**: Built-in code editor (`components/app/code-editor.tsx`): a native `<textarea>` over a syntax-highlighted copy (`lib/syntax.ts`, VS Code colors). No Monaco, no CDN downloads.
 - **Storage**: IndexedDB local profiles and draft persistence (v2 schema)
-- **Execution Sandbox Target**: Exeku judge worker (`judge/`, `POST /v1/run`) running submissions in `isolate` v2 sandboxes on a Linux host; selected by `EXECUTION_ENGINE` in `lib/execution/engine.ts` (`piston` remains as a fallback adapter). Setup: `judge/README.md`
+- **Execution Sandbox Target**: Exeku judge worker (`judge/`, `POST /v1/run`) running submissions in `isolate` v2 sandboxes on a Linux host (`lib/execution/engine.ts`). Setup: `judge/README.md`
 - **Package Manager**: npm (use `npm.cmd` / `npx.cmd` in Windows PowerShell if execution policies restrict script loading)
 - **Rule**: Preserve existing configuration and dependencies. Never recreate or reinitialize the Next.js project.
 
@@ -64,7 +64,7 @@ Exeku is built with clean ownership boundaries between collaborative modules:
 Student code is strictly untrusted:
 
 1. **No Raw Host Execution**: NEVER execute submitted code directly on the host operating system using unrestricted Node.js `child_process.exec`, PowerShell, or the Next.js server process.
-2. **Sandbox Requirements**: Code execution must run inside an isolated sandbox (the `isolate` sandbox via `judge/`, or Piston) with:
+2. **Sandbox Requirements**: Code execution must run inside an isolated sandbox (the `isolate` sandbox via `judge/`) with:
    - CPU time limits (e.g., 2000ms - 5000ms)
    - Wall-clock timeouts
    - Memory limits (e.g., 128MB - 256MB)

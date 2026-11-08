@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createExecutionAdapter, resolveExecutionEngine } from "@/lib/execution/engine";
+import { createExecutionAdapter } from "@/lib/execution/engine";
 import { globalExecutionQueue } from "@/lib/execution/queue";
 
 export async function GET() {
@@ -9,7 +9,6 @@ export async function GET() {
 
   return NextResponse.json({
     status: "ok",
-    engine: resolveExecutionEngine(),
     sandbox,
     queue: queueStats,
     platform: "Exeku Online Judge (Local Preview)",

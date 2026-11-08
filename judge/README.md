@@ -37,7 +37,6 @@ You need a real Linux kernel, so the judge runs in WSL2 or a VM. Next.js keeps r
    It installs the compilers, Node 22 and isolate, starts the `exeku-judge` service, runs a smoke test and prints your token.
 5. On Windows, create `.env.local` in your Exeku folder:
    ```
-   EXECUTION_ENGINE=exeku
    JUDGE_SERVICE_URL=http://localhost:4000
    JUDGE_TOKEN=<token from step 4>
    ```
@@ -78,7 +77,7 @@ If the smoke test fails on the memory or sandbox checks, your WSL kernel does no
 3. Give it HTTPS without opening the port to everyone:
    - **Cloudflare Tunnel** (no open ports): `cloudflared tunnel` to `http://localhost:4000` on a hostname such as `judge.yourdomain.com`.
    - **Caddy**: open port 443 and use `reverse_proxy localhost:4000`. Caddy gets the certificate itself.
-4. In Vercel, set `EXECUTION_ENGINE=exeku`, `JUDGE_SERVICE_URL=https://judge.yourdomain.com` and `JUDGE_TOKEN`.
+4. In Vercel, set `JUDGE_SERVICE_URL=https://judge.yourdomain.com` and `JUDGE_TOKEN`.
 
 ## API
 

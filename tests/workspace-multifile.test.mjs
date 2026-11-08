@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateExecutionRequest } from "../lib/execution/validation.ts";
-import { PistonAdapter } from "../lib/execution/piston-adapter.ts";
+import { ExekuJudgeAdapter } from "../lib/execution/exeku-judge-adapter.ts";
 import { draftRepository } from "../lib/storage/draft-repository.ts";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -19,11 +19,11 @@ const python = {
   ],
 };
 
-test("workspace multi-file: validates main + companion sources and supports Piston order", () => {
+test("workspace multi-file: validates main + companion sources and keeps the main file first", () => {
   const validated = validateExecutionRequest(python);
   assert.equal(validated.valid, true);
   if (!validated.valid) return;
-  const payload = new PistonAdapter().buildPistonPayload(validated.request);
+  const payload = new ExekuJudgeAdapter().buildPayload(validated.request, [""]);
   assert.deepEqual(payload.files, python.files);
   assert.equal(payload.files[0].name, "main.py");
 });
@@ -40,7 +40,7 @@ test("workspace multi-file: Java main entry remains Main.java", () => {
   const value = validateExecutionRequest(raw);
   assert.equal(value.valid, true);
   if (value.valid) {
-    const payload = new PistonAdapter().buildPistonPayload(value.request);
+    const payload = new ExekuJudgeAdapter().buildPayload(value.request, [""]);
     assert.equal(payload.files[0].name, "Main.java");
     assert.equal(payload.files[1].name, "Helper.java");
   }

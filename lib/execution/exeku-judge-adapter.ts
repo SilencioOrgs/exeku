@@ -86,7 +86,9 @@ export class ExekuJudgeAdapter implements IExecutionAdapter {
       return Array.from({ length: count }, () => this.failure("INTERNAL_ERROR", "The judge returned the wrong number of results."));
     }
     return data.runs.map((run) => {
-      const status = RUN_STATUSES.includes(run.status as ExecutionStatus) ? (run.status as ExecutionStatus) : "INTERNAL_ERROR";
+      const reported = RUN_STATUSES.includes(run.status as ExecutionStatus) ? (run.status as ExecutionStatus) : "INTERNAL_ERROR";
+      // A program killed by a signal has no exit code, so it can never count as a clean run.
+      const status = reported === "SUCCESS" && run.exitCode !== 0 ? "RUNTIME_ERROR" : reported;
       const note = status !== "SUCCESS" && run.message && !run.stderr ? run.message : "";
       return {
         status,
@@ -149,7 +151,7 @@ export class ExekuJudgeAdapter implements IExecutionAdapter {
       if (!res.ok) return { isAvailable: false, engine: "Exeku judge (unreachable)", supportedLanguages: [], error: `HTTP ${res.status}` };
       const data = (await res.json()) as { version?: string; languages?: string[] };
       const languages = SUPPORTED_EXECUTION_LANGUAGES.filter((lang) => data.languages?.includes(lang));
-      return { isAvailable: languages.length > 0, engine: "Exeku judge (isolate)", version: data.version, supportedLanguages: languages };
+      return { isAvailable: languages.length === SUPPORTED_EXECUTION_LANGUAGES.length, engine: "Exeku judge (isolate)", version: data.version, supportedLanguages: languages };
     } catch (err: unknown) {
       return { isAvailable: false, engine: "Exeku judge (offline)", supportedLanguages: [], error: err instanceof Error ? err.message : String(err) };
     } finally {
