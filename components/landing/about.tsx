@@ -19,7 +19,7 @@ export function About() {
       tag: "Secure runtime",
       badgeVariant: "pink",
       description:
-        "Untrusted code is executed inside ephemeral, resource-constrained sandbox containers. Memory limits, CPU quotas, and air-gapped process isolation protect the host system from runaway loops and unsafe operations.",
+        "Untrusted code is executed inside ephemeral, resource-constrained sandbox containers. Memory limits, CPU quotas, and air-gapped process isolation keep runaway loops and unsafe code contained.",
     },
     {
       iconName: "circlePlay",
@@ -31,13 +31,13 @@ export function About() {
         "Deterministic test suite verification with instant grading. Visible test cases provide actionable debugging feedback, while hidden test cases ensure algorithmic rigor and prevent hardcoded answers.",
     },
     {
-      iconName: "windows",
+      iconName: "vscode",
       iconColor: "text-[var(--color-primary-text)]",
-      title: "Local Developer Preview",
-      tag: "Zero lock-in",
+      title: "Runs in the Browser",
+      tag: "Nothing to install",
       badgeVariant: "mint",
       description:
-        "During local developer preview, your profile, settings, and workspace operate directly in your browser and local developer environment without forced cloud logins, third-party trackers, or vendor lock-in.",
+        "Open the site and start coding. Your profile, settings and drafts are saved in your browser, with no forced sign-up and no third-party trackers.",
     },
   ];
 
@@ -56,9 +56,9 @@ export function About() {
             Code. Practice. Compete.
           </h2>
           <p className="text-base sm:text-lg text-[var(--color-text-muted)] font-sans leading-relaxed">
-            Exeku is an online programming practice and assessment platform inspired by CodeChum,
-            currently in local developer preview. We combine instant automated judging, multi-language sandboxes,
-            and competitive programming workflows.
+            Exeku is an online programming practice and assessment platform for students, inspired by CodeChum.
+            It combines instant automated judging, four languages and competitive programming workflows, right in
+            your browser.
           </p>
         </div>
 
@@ -91,20 +91,6 @@ export function About() {
           ))}
         </div>
 
-        {/* Tactical Callout Box */}
-        <div className="mt-12 p-6 bg-[var(--color-elevated)] border border-[var(--color-primary)]/50 pixel-box flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <DotIcon name="shield" size={24} className="text-[var(--color-accent)] shrink-0" />
-            <div>
-              <h4 className="text-[var(--color-text-main)] font-mono font-bold text-sm">
-                Local Developer Preview Architecture
-              </h4>
-              <p className="text-xs sm:text-sm text-[var(--color-text-muted)] font-sans">
-                Zero external cloud dependencies or telemetry tracking during local development. Run the full platform locally with modular sandbox adapters.
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
     </section>
   );

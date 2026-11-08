@@ -122,13 +122,10 @@ export function PixelTerminal() {
             <span className="w-2.5 h-2.5 bg-[var(--color-mint)] inline-block border border-black/60" />
           </div>
           <span className="text-[var(--color-text-main)] font-bold ml-1">
-            exeku-terminal<span className="text-[var(--color-accent)]">_mock</span>
+            Editor demo
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-[var(--color-text-muted)] hidden sm:inline">Host: 127.0.0.1</span>
-        </div>
       </div>
 
       {/* Disclaimer Banner: Strictly labeled as demo */}
@@ -229,10 +226,6 @@ export function PixelTerminal() {
             )}
           </div>
 
-          <div className="text-xs font-mono text-[var(--color-text-muted)] flex items-center gap-2">
-            <DotIcon name="windows" size={13} className="text-[var(--color-mint)]" />
-            <span>Target Architecture: Windows x64</span>
-          </div>
         </div>
 
         {/* Output Console Box */}

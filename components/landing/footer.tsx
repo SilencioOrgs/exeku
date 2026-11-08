@@ -1,5 +1,4 @@
 import React from "react";
-import { PixelBadge } from "@/components/retro/pixel-badge";
 import { DotIcon } from "@/components/retro/dot-icon";
 
 export function Footer() {
@@ -24,21 +23,14 @@ export function Footer() {
                 className="text-2xl font-bold text-[var(--color-text-main)]"
                 style={{ fontFamily: "var(--font-heading-active)" }}
               >
-                exeku<span className="text-[var(--color-accent)]">_</span>
+                exeku
               </span>
             </div>
 
             <p className="text-sm font-sans text-[var(--color-text-muted)] max-w-md leading-relaxed">
-              Your Code. Your Machine. Offline-first programming education platform
-              tailored for Windows computer labs, classrooms, and privacy-first software
-              engineers.
+              Competitive programming practice for students, right in the browser.
             </p>
 
-            <div className="pt-2 flex flex-wrap gap-2">
-              <PixelBadge variant="mint">Offline first</PixelBadge>
-              <PixelBadge variant="cyan">WINDOWS x64</PixelBadge>
-              <PixelBadge variant="pink">Zero telemetry</PixelBadge>
-            </div>
           </div>
 
           {/* Quick Links */}
@@ -78,7 +70,6 @@ export function Footer() {
                   SilencioOrgs/exeku
                 </a>
               </li>
-              <li className="text-[var(--color-text-dim)]">Private Repository (Invite only)</li>
             </ul>
 
             <a
@@ -90,17 +81,8 @@ export function Footer() {
           </div>
         </div>
 
-        {/* System Telemetry Dock */}
-        <div className="pt-8 border-t border-[var(--color-elevated)] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[var(--color-text-dim)]">
-          <div className="flex flex-wrap items-center gap-4">
-            <span>Host: 127.0.0.1</span>
-            <span>Port: 3000</span>
-            <span>Runtime: NODE.JS / Next.js 16</span>
-          </div>
-
-          <div>
-            © 2026 Exeku Contributors. Distributed as a developer preview.
-          </div>
+        <div className="border-t border-[var(--color-border)] pt-8 text-xs text-[var(--color-text-muted)]">
+          © 2026 Exeku
         </div>
       </div>
     </footer>
