@@ -8,7 +8,7 @@ web (Online-First Platform — Currently in Local Developer Preview)
 
 ## Users
 
-- **Primary:** Programming students and learners practicing algorithmic challenges, completing structured lab exercises, and participating in timed programming contests (inspired by CodeChum).
+- **Primary:** Programming students and learners practicing algorithmic challenges, completing structured lab exercises, and participating in timed programming contests.
 - **Secondary:** Instructors, educators, and contest administrators organizing classroom problem sets, automated assessments, and student performance tracking.
 - **Core Job:** Solve programming problems in Python 3, Java, C++, and C with immediate code execution feedback, deterministic automated judging verdicts, test case visibility, and progress analytics.
 
@@ -23,7 +23,7 @@ Exeku is an online-first programming education, practice, and competition platfo
 
 ## Positioning
 
-Exeku provides a high-craft developer aesthetic paired with robust automated code assessment. Inspired by CodeChum, it focuses on core foundational languages (Python 3, Java, C++, C) and supports both individual self-paced problem solving and institutional classroom contests.
+Exeku provides a high-craft developer aesthetic paired with robust automated code assessment. It focuses on core foundational languages (Python 3, Java, C++, C) and supports both individual self-paced problem solving and institutional classroom contests.
 
 ## Operating Context
 

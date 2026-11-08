@@ -12,6 +12,7 @@ export function Navbar() {
 
   const navLinks = [
     { label: "Practice", href: "#practice" },
+    { label: "Journey", href: "#journey" },
     { label: "About", href: "#about" },
     { label: "Languages", href: "#languages" },
     { label: "Exeku Lab", href: "#lab-app" },

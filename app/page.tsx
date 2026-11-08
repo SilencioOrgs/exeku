@@ -1,6 +1,7 @@
 import { Navbar } from "@/components/landing/navbar";
 import { Hero } from "@/components/landing/hero";
 import { Practice } from "@/components/landing/practice";
+import { PodiumTour } from "@/components/landing/podium-tour";
 import { About } from "@/components/landing/about";
 import { Languages } from "@/components/landing/languages";
 import { LabAppShowcase } from "@/components/lab/lab-app-banner";
@@ -14,6 +15,7 @@ export default function Home() {
       <main className="flex-1">
         <Hero />
         <Practice />
+        <PodiumTour />
         <About />
         <Languages />
         <LabAppShowcase />

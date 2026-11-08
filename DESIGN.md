@@ -109,7 +109,8 @@ Most screens are "Operate" surfaces (problems, workspace, settings): scanability
 - App shell: sidebar (Overview, Challenges, Workspace, Profile, Settings) + top bar.
 - Dashboard: competitive programming first: problem counts by difficulty, the problem set with timed-round buttons, a Timed round card, Continue coding, then a one-line Exeku Lab app strip and coding activity.
 - Problems: LeetCode-style table with difficulty count cards, rounded search and pill filters.
-- Landing: hero (headline left; a 3D arena where two students code head to head under a holographic VS scoreboard), Practice (editor demo), About, Languages, the Exeku Lab app banner, FAQ. No install guide or roadmap on the site.
+- Landing: hero (headline left; a 3D arena where two students code head to head under a holographic VS scoreboard), Practice (editor demo), the Journey scroll tour (`#journey`: 1v1 match, Accepted, 3v3 team round, leaderboard climb, podium; same player throughout), About, Languages, the Exeku Lab app banner, FAQ. No install guide or roadmap on the site.
+- Icons are minimal lucide line icons through `DotIcon`. Never emoji.
 
 ## Depth
 
@@ -122,9 +123,10 @@ Most screens are "Operate" surfaces (problems, workspace, settings): scanability
 ## 3D and the Exeku Lab app
 
 - Arduino/MCU simulation, 3D design and printable cases belong to a separate desktop/mobile app, Exeku Lab. The website only promotes it: `components/lab/lab-app-banner.tsx` (landing showcase and a slim dashboard strip). Download links live in `lib/lab-app.ts`; an empty URL shows "coming soon".
-- 3D on the site: `lib/three/arena.ts` (hero), `lib/three/circuit.ts` (Arduino Uno, breadboard, LED, resistor, wires to real millimetres, used in the Lab banner), `lib/three/stage.ts` (renderer, lighting, shadows, pauses off screen). React wrappers: `components/landing/versus-scene.tsx`, `components/lab/circuit-view.tsx`. three.js loads only when they mount.
+- 3D on the site: `lib/three/arena.ts` (hero, shared players and projector), `lib/three/journey.ts` (team round and podium for the tour), `lib/three/circuit.ts` (Arduino Uno, breadboard, LED, resistor, wires to real millimetres, used in the Lab banner), `lib/three/stage.ts` (renderer, lighting, shadows, pauses off screen). React wrappers: `components/landing/versus-scene.tsx`, `components/lab/circuit-view.tsx`. three.js loads only when they mount.
 - CAD models (for example from GrabCAD) can replace the Uno or breadboard through `public/models/manifest.json`; check each model's license first.
 - Every 3D view has a `role="img"` label and a text fallback when WebGL is off.
+- Performance rules for 3D: no per-object lights (screens and LEDs glow with emissive/basic materials; at most one point light per zone), run `mergeStatic` on built scenes so they render in a few draw calls, mark moving parts with `userData.dynamic`, start offscreen scenes with `useNearViewport`, and hide zones the camera can't see. `createStage` re-renders shadows only when the key light moves, adapts resolution to frame time and falls back to 30 fps on slow devices. No `backdrop-blur` over a 3D canvas.
 
 ## Components
 

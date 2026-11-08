@@ -14,7 +14,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 - **Product**: Exeku
 - **Tagline**: Your Code. Your Machine.
-- **Type**: Online-first programming practice, education, and competition platform (inspired by CodeChum)
+- **Type**: Online-first programming practice, education, and competition platform
 - **Current Development Status**: Local Development / Developer Preview (no public deployment to Vercel/Render)
 - **Supported Languages**: Python 3, Java, C++, C
 - **Primary Workflows**: Problem solving, code execution, automated test judging, programming contests, student telemetry
@@ -83,7 +83,7 @@ The source of truth is `DESIGN.md`. Read it before any UI change. Summary:
 
 - **Theme & Vibe**: LeetCode at night. Dark only: black surfaces, one LeetCode orange accent, soft depth (raised cards, subtle keys, orange glow) on every page including the landing page. The code editor uses VS Code Dark+ colors.
 - **Color**: Near-black neutrals, one orange (`--color-primary`), Easy/Medium/Hard colors via `DifficultyBadge`. Green/red only for verdicts, errors and destructive actions, always with a word (AC, WA). Use the tokens in `app/globals.css`, never raw hex.
-- **Landing hero**: competitive programming first: a 3D arena with two students coding head to head under a VS hologram (`lib/three/arena.ts`).
+- **Landing**: competitive programming first: a 3D hero arena with two students coding head to head under a VS hologram (`lib/three/arena.ts`), then a scroll tour following the same player from a 1v1 match to a team round, the leaderboard and the podium (`components/landing/podium-tour.tsx`, `lib/three/journey.ts`). Minimal line icons, no emoji.
 - **Exeku Lab** (Arduino/MCU simulation, 3D, printable cases) is a separate desktop/mobile app. This website only promotes it (`components/lab/lab-app-banner.tsx`, links in `lib/lab-app.ts`). Keep the web app focused on competitive programming.
 - **Buttons**: always `Button` or `buttonVariants` from `components/ui/button.tsx`; never hand-styled `<button>`s.
 - **Typography**: Geist Sans for UI and headings, Geist Mono for code and numbers. Sentence case. No ALL CAPS labels, no trailing `_` cursors, no `[BRACKET]` labels.

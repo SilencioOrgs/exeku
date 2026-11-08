@@ -6,7 +6,7 @@ import {
   Download, FileCode2, FileText, Folder, GitBranch, Info, List, LoaderCircle,
   Lock, Maximize2, Menu, Minus, Monitor, Pencil, Play, Plus, Search,
   Settings, Shield, Smartphone, Sparkles, Star, Terminal, User, Wrench, X,
-  XCircle, RotateCcw, Columns3, type LucideIcon
+  XCircle, RotateCcw, Columns3, Trophy, Users, Swords, ChartNoAxesColumn, type LucideIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -32,7 +32,7 @@ const ICONS: Record<string, LucideIcon> = {
   book: BookOpen, play: Play, clipboard: Clipboard, loader: LoaderCircle,
   lock: Lock, maximize: Maximize2, tools: Wrench, github: GitBranch,
   chevronDown: ChevronDown, xCircle: XCircle, circleClose: XCircle, circlePlus: Plus,
-  reset: RotateCcw, layout: Columns3,
+  reset: RotateCcw, layout: Columns3, trophy: Trophy, users: Users, versus: Swords, ranking: ChartNoAxesColumn,
 };
 export function DotIcon({ name, adaptive: _adaptive, grid: _grid, size = 16, className, "aria-label": label, ...props }: DotIconProps) {
   void _adaptive; void _grid;

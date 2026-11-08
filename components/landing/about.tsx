@@ -25,7 +25,7 @@ export function About() {
       iconName: "circlePlay",
       iconColor: "text-[var(--color-accent)]",
       title: "Automated Assessment",
-      tag: "CodeChum model",
+      tag: "Instant verdicts",
       badgeVariant: "cyan",
       description:
         "Deterministic test suite verification with instant grading. Visible test cases provide actionable debugging feedback, while hidden test cases ensure algorithmic rigor and prevent hardcoded answers.",
@@ -56,7 +56,7 @@ export function About() {
             Code. Practice. Compete.
           </h2>
           <p className="text-base sm:text-lg text-[var(--color-text-muted)] font-sans leading-relaxed">
-            Exeku is an online programming practice and assessment platform for students, inspired by CodeChum.
+            Exeku is an online programming practice and assessment platform for students.
             It combines instant automated judging, four languages and competitive programming workflows, right in
             your browser.
           </p>
