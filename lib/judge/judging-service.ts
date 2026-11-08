@@ -8,6 +8,7 @@ import { getProblemById } from "@/lib/problems/catalog";
 import { compareOutputs } from "@/lib/judge/output-normalizer";
 import { createExecutionAdapter } from "@/lib/execution/engine";
 import { ExecutionQueue, globalExecutionQueue } from "@/lib/execution/queue";
+import type { ProgrammingProblem } from "@/types/problem";
 
 export type OverallVerdict =
   | "ACCEPTED"
@@ -54,6 +55,26 @@ export interface JudgingResult {
 export interface JudgingServiceOptions {
   adapter?: IExecutionAdapter;
   queue?: ExecutionQueue;
+}
+
+/** The only place a test result is built. A hidden test reports its verdict and nothing from its input or the program's output. */
+function testVerdict(
+  testCase: ProgrammingProblem["testCases"][number],
+  verdict: TestCaseVerdict["verdict"],
+  run: ExecutionResult,
+  compilerOutput?: string
+): TestCaseVerdict {
+  return {
+    testCaseId: testCase.id,
+    isHidden: testCase.isHidden,
+    passed: verdict === "PASSED",
+    verdict,
+    durationMs: run.durationMs,
+    compilerOutput,
+    ...(testCase.isHidden
+      ? {}
+      : { input: testCase.input, expectedOutput: testCase.expectedOutput, actualOutput: run.stdout, stderr: run.stderr }),
+  };
 }
 
 export class JudgingService {
@@ -162,83 +183,22 @@ export class JudgingService {
       if (execResult.status === "COMPILATION_ERROR") {
         compilationError = execResult.compilerOutput || execResult.stderr;
         overallVerdict = "COMPILATION_ERROR";
-
-        testResults.push({
-          testCaseId: testCase.id,
-          isHidden: testCase.isHidden,
-          passed: false,
-          verdict: "COMPILATION_ERROR",
-          durationMs: execResult.durationMs,
-          compilerOutput: compilationError,
-          stderr: execResult.stderr,
-        });
+        testResults.push(testVerdict(testCase, "COMPILATION_ERROR", execResult, compilationError));
         break;
       }
 
-      // Handle timeout
-      if (execResult.status === "TIME_LIMIT_EXCEEDED") {
-        if (overallVerdict === "ACCEPTED") overallVerdict = "TIME_LIMIT_EXCEEDED";
-        testResults.push({
-          testCaseId: testCase.id,
-          isHidden: testCase.isHidden,
-          passed: false,
-          verdict: "TIME_LIMIT_EXCEEDED",
-          durationMs: execResult.durationMs,
-          // Redaction: hidden tests expose nothing a program could have printed, stderr included.
-          stderr: testCase.isHidden ? undefined : execResult.stderr,
-          input: testCase.isHidden ? undefined : testCase.input,
-          expectedOutput: testCase.isHidden ? undefined : testCase.expectedOutput,
-          actualOutput: testCase.isHidden ? undefined : execResult.stdout,
-        });
-        continue;
-      }
-
-      // Handle runtime error and memory limit (both end the program early)
-      if (execResult.status === "RUNTIME_ERROR" || execResult.status === "MEMORY_LIMIT_EXCEEDED") {
-        const verdict = execResult.status;
-        if (overallVerdict === "ACCEPTED") overallVerdict = verdict;
-        testResults.push({
-          testCaseId: testCase.id,
-          isHidden: testCase.isHidden,
-          passed: false,
-          verdict,
-          durationMs: execResult.durationMs,
-          stderr: testCase.isHidden ? undefined : execResult.stderr,
-          input: testCase.isHidden ? undefined : testCase.input,
-          expectedOutput: testCase.isHidden ? undefined : testCase.expectedOutput,
-          actualOutput: testCase.isHidden ? undefined : execResult.stdout,
-        });
+      // Handle programs that ended early: timeout, runtime error, memory limit
+      if (execResult.status === "TIME_LIMIT_EXCEEDED" || execResult.status === "RUNTIME_ERROR" || execResult.status === "MEMORY_LIMIT_EXCEEDED") {
+        if (overallVerdict === "ACCEPTED") overallVerdict = execResult.status;
+        testResults.push(testVerdict(testCase, execResult.status, execResult));
         continue;
       }
 
       // Compare output with normalizer
-      const matches = compareOutputs(execResult.stdout, testCase.expectedOutput);
-
-      if (matches) {
-        passedTests++;
-        testResults.push({
-          testCaseId: testCase.id,
-          isHidden: testCase.isHidden,
-          passed: true,
-          verdict: "PASSED",
-          durationMs: execResult.durationMs,
-          input: testCase.isHidden ? undefined : testCase.input,
-          expectedOutput: testCase.isHidden ? undefined : testCase.expectedOutput,
-          actualOutput: testCase.isHidden ? undefined : execResult.stdout,
-        });
-      } else {
-        if (overallVerdict === "ACCEPTED") overallVerdict = "WRONG_ANSWER";
-        testResults.push({
-          testCaseId: testCase.id,
-          isHidden: testCase.isHidden,
-          passed: false,
-          verdict: "WRONG_ANSWER",
-          durationMs: execResult.durationMs,
-          input: testCase.isHidden ? undefined : testCase.input,
-          expectedOutput: testCase.isHidden ? undefined : testCase.expectedOutput,
-          actualOutput: testCase.isHidden ? undefined : execResult.stdout,
-        });
-      }
+      const passed = compareOutputs(execResult.stdout, testCase.expectedOutput);
+      if (passed) passedTests++;
+      else if (overallVerdict === "ACCEPTED") overallVerdict = "WRONG_ANSWER";
+      testResults.push(testVerdict(testCase, passed ? "PASSED" : "WRONG_ANSWER", execResult));
     }
 
     const totalTests = problem.testCases.length;

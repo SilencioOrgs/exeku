@@ -4,6 +4,7 @@ import { JudgingService } from "../lib/judge/judging-service.ts";
 import { ExecutionQueue } from "../lib/execution/queue.ts";
 import { ExekuJudgeAdapter } from "../lib/execution/exeku-judge-adapter.ts";
 import { validateExecutionRequest } from "../lib/execution/validation.ts";
+import { getProblemById } from "../lib/problems/catalog.ts";
 
 const service = (execute) => new JudgingService({ adapter: { execute, checkHealth: async () => ({}) }, queue: new ExecutionQueue() });
 
@@ -15,6 +16,51 @@ test("hidden test input never comes back through stderr, even when a program pri
     assert.ok(hidden.length > 0);
     for (const t of hidden) assert.equal(t.stderr, undefined, status);
     assert.ok(result.testResults.some((t) => !t.isHidden && t.stderr?.startsWith("LEAK:")), "visible tests keep stderr");
+  }
+});
+
+test("no verdict type ever exposes a hidden test's input, expected output, program output or stderr", async () => {
+  const problem = getProblemById("sum-two-integers");
+  const expected = new Map(problem.testCases.map((t) => [t.input, t.expectedOutput]));
+  const leaked = (stdin) => ({ exitCode: 0, stderr: "LEAK:err:" + stdin, durationMs: 1, stdout: "LEAK:out:" + stdin });
+  const runs = {
+    WRONG_ANSWER: (stdin) => ({ ...leaked(stdin), status: "SUCCESS" }),
+    TIME_LIMIT_EXCEEDED: (stdin) => ({ ...leaked(stdin), status: "TIME_LIMIT_EXCEEDED", exitCode: null }),
+    MEMORY_LIMIT_EXCEEDED: (stdin) => ({ ...leaked(stdin), status: "MEMORY_LIMIT_EXCEEDED", exitCode: null }),
+    RUNTIME_ERROR: (stdin) => ({ ...leaked(stdin), status: "RUNTIME_ERROR", exitCode: 1 }),
+    PASSED: (stdin) => ({ ...leaked(stdin), status: "SUCCESS", stdout: expected.get(stdin) }),
+  };
+  for (const [verdict, run] of Object.entries(runs)) {
+    const result = await service(async (req) => run(req.stdin)).judgeSubmission(problem.id, { language: "python", sourceCode: "x" });
+    const hidden = result.testResults.filter((t) => t.isHidden);
+    assert.ok(hidden.length > 0, verdict);
+    for (const t of hidden) {
+      assert.equal(t.verdict, verdict);
+      for (const field of ["input", "expectedOutput", "actualOutput", "stderr"]) assert.equal(field in t, false, `${verdict} leaked ${field}`);
+      assert.doesNotMatch(JSON.stringify(t), /LEAK/, verdict);
+    }
+    const visible = result.testResults.find((t) => !t.isHidden);
+    assert.equal(visible.verdict, verdict);
+    assert.equal(visible.input, problem.testCases.find((t) => t.id === visible.testCaseId).input, "visible tests keep their details");
+  }
+});
+
+test("a compile error on a hidden test exposes only the compiler's output", async () => {
+  const problem = getProblemById("sum-two-integers");
+  const hiddenFirst = { ...problem, testCases: [...problem.testCases].sort((a, b) => Number(b.isHidden) - Number(a.isHidden)) };
+  assert.equal(hiddenFirst.testCases[0].isHidden, true);
+  const original = problem.testCases;
+  problem.testCases = hiddenFirst.testCases;
+  try {
+    const result = await service(async (req) => ({ status: "COMPILATION_ERROR", exitCode: null, stdout: "", stderr: "LEAK:" + req.stdin, compilerOutput: "main.py: bad", durationMs: 1 }))
+      .judgeSubmission(problem.id, { language: "python", sourceCode: "x" });
+    const [only] = result.testResults;
+    assert.equal(only.verdict, "COMPILATION_ERROR");
+    assert.equal(only.compilerOutput, "main.py: bad");
+    assert.equal("stderr" in only, false);
+    assert.doesNotMatch(JSON.stringify(only), /LEAK/);
+  } finally {
+    problem.testCases = original;
   }
 });
 
