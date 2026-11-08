@@ -6,7 +6,7 @@ import { useAppearance } from "@/hooks/use-appearance";
 import { useNearViewport } from "@/hooks/use-near-viewport";
 import { useProfile } from "@/hooks/use-profile";
 import { buttonVariants } from "@/components/ui/button";
-import { DotIcon } from "@/components/retro/dot-icon";
+import { ArrowRight, BadgeCheck, ChartNoAxesColumn, Swords, Trophy, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /** Zones are laid out along X so the camera can fly between them. */
@@ -21,11 +21,11 @@ const SHOTS: Array<{ pos: Vec; look: Vec }> = [
 ];
 
 const STEPS = [
-  { kicker: "01 · Match", icon: "versus", title: "Sit down with your rival", body: "Same problem, same clock. A one-on-one round is the fastest way to find out what you really know." },
-  { kicker: "02 · Solve", icon: "check", title: "Ten out of ten", body: "Read, code, run, submit. Every submission is judged on hidden tests until the verdict says Accepted." },
-  { kicker: "03 · Team up", icon: "users", title: "Bring your team", body: "Three coders, one scoreboard. Split the problem set and share the clock. Team rounds are coming soon." },
-  { kicker: "04 · Climb", icon: "ranking", title: "Climb the leaderboard", body: "Every accepted solution moves your team up the table. Leaderboards are coming soon." },
-  { kicker: "05 · Win", icon: "trophy", title: "Take the podium", body: "Practice here until contest day feels familiar. Then go get the trophy." },
+  { kicker: "01 · Match", icon: Swords, title: "Sit down with your rival", body: "Same problem, same clock. A one-on-one round is the fastest way to find out what you really know." },
+  { kicker: "02 · Solve", icon: BadgeCheck, title: "Ten out of ten", body: "Read, code, run, submit. Every submission is judged on hidden tests until the verdict says Accepted." },
+  { kicker: "03 · Team up", icon: Users, title: "Bring your team", body: "Three coders, one scoreboard. Split the problem set and share the clock. Team rounds are coming soon." },
+  { kicker: "04 · Climb", icon: ChartNoAxesColumn, title: "Climb the leaderboard", body: "Every accepted solution moves your team up the table. Leaderboards are coming soon." },
+  { kicker: "05 · Win", icon: Trophy, title: "Take the podium", body: "Practice here until contest day feels familiar. Then go get the trophy." },
 ] as const;
 
 const ease = (t: number) => t * t * (3 - 2 * t);
@@ -162,13 +162,13 @@ export function PodiumTour() {
                   )}
                 >
                   <p className="font-code flex items-center gap-2 text-xs font-medium text-[var(--color-primary-text)]">
-                    <DotIcon name={s.icon} size={14} aria-hidden="true" />{s.kicker}
+                    <s.icon size={14} aria-hidden="true" />{s.kicker}
                   </p>
                   <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl md:text-5xl">{s.title}</h2>
                   <p className="mt-3 text-base leading-relaxed text-[var(--color-text-muted)] md:text-lg">{s.body}</p>
                   {i === STEPS.length - 1 && (
                     <Link href={profile ? "/app/challenges" : "/setup"} className={buttonVariants({ size: "lg", className: "mt-6" })}>
-                      Start practicing<DotIcon name="arrowRight" size={16} aria-hidden="true" />
+                      Start practicing<ArrowRight size={16} aria-hidden="true" />
                     </Link>
                   )}
                 </article>

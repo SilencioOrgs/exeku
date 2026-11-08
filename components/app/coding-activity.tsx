@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DotIcon } from "@/components/retro/dot-icon";
+import { Star } from "lucide-react";
 import {
   CODING_ACTIVITY_EVENT,
   getActivityCalendar,
@@ -38,7 +38,7 @@ export function CodingActivity({ profileId }: { profileId: string }) {
       <div className="coding-activity-header">
         <div>
           <h2 id="coding-activity-heading" className="flex items-center gap-2 font-semibold">
-            <DotIcon name="stars" adaptive size={18} aria-hidden="true" />
+            <Star size={18} aria-hidden="true" />
             Coding activity
           </h2>
           <p className="text-xs text-[var(--color-text-muted)]">

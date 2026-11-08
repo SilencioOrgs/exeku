@@ -1,6 +1,6 @@
 "use client"
 
-import { DotIcon } from "@/components/retro/dot-icon";
+import { X } from "lucide-react";
 
 import * as React from "react"
 import { Dialog as SheetPrimitive } from "@base-ui/react/dialog"
@@ -71,8 +71,7 @@ function SheetContent({
               />
             }
           >
-            <DotIcon name="close"
-            />
+            <X size={16} />
             <span className="sr-only">Close</span>
           </SheetPrimitive.Close>
         )}

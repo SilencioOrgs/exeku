@@ -58,7 +58,7 @@ try {
       const tx = db.transaction("profiles", "readwrite");
       tx.objectStore("profiles").put({
         id: "route-review", displayName: "Theme Test", avatarId: "pixel-wizard",
-        preferredLanguage: "python", experienceLevel: "beginner",
+        preferredLanguage: "python", experienceLevel: "beginner", userType: "explorer",
         createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
       });
       tx.oncomplete = resolve;
@@ -164,10 +164,7 @@ try {
   newcomer.on("pageerror", error => pageErrors.push(error.message));
   await newcomer.goto(base + "/app");
   await newcomer.waitForURL(base + "/setup");
-  await newcomer.getByLabel(/Display Name/).fill("New Navigator");
-  await newcomer.getByRole("button", { name: /NEXT STEP/ }).click();
-  await newcomer.getByRole("button", { name: /NEXT STEP/ }).click();
-  await newcomer.getByRole("button", { name: /CREATE PROFILE/ }).click();
+  await newcomer.getByRole("button", { name: "Continue on this browser" }).click();
   await newcomer.locator(".dashboard:visible, .modern-overview:visible").waitFor();
   await newcomer.reload();
   await newcomer.locator(".dashboard:visible, .modern-overview:visible").waitFor();

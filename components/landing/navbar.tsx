@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useProfile } from "@/hooks/use-profile";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { DotIcon } from "@/components/retro/dot-icon";
+import { ArrowRight, Menu, Terminal, X } from "lucide-react";
 
 export function Navbar() {
   const { profile } = useProfile();
@@ -29,7 +29,7 @@ export function Navbar() {
             className="flex items-center gap-2 group outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
           >
             <div className="w-8 h-8 rounded-lg bg-[var(--color-primary)] flex items-center justify-center text-[var(--primary-foreground)] shadow-[var(--glow-primary)]">
-              <DotIcon name="powershell" size={16} />
+              <Terminal size={16} />
             </div>
             <span className="font-heading text-xl font-semibold tracking-tight text-foreground transition-colors">
               exeku
@@ -54,7 +54,7 @@ export function Navbar() {
         {/* Action Button & Mobile Menu Toggle */}
         <div className="flex items-center gap-3">
           <Link href={profile ? "/app" : "/setup"} className={buttonVariants({ className: "hidden sm:inline-flex" })}>
-            {profile ? "Open app" : "Get started"}<DotIcon name="arrowRight" size={14} aria-hidden="true" />
+            {profile ? "Open app" : "Get started"}<ArrowRight size={14} aria-hidden="true" />
           </Link>
 
           <Button
@@ -66,7 +66,7 @@ export function Navbar() {
             aria-label="Toggle navigation menu"
             aria-expanded={mobileMenuOpen}
           >
-            <DotIcon name={mobileMenuOpen ? "close" : "burger"} size={18} aria-hidden="true" />
+            {mobileMenuOpen ? <X size={18} aria-hidden="true" /> : <Menu size={18} aria-hidden="true" />}
           </Button>
         </div>
       </div>

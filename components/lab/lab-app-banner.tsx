@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { DotIcon } from "@/components/retro/dot-icon";
+import { Box } from "lucide-react";
 import { useAppearance } from "@/hooks/use-appearance";
 import { LAB_APP } from "@/lib/lab-app";
 import { cn } from "@/lib/utils";
@@ -14,11 +14,11 @@ function DownloadButtons({ size = "default" }: { size?: "default" | "sm" | "lg" 
       {LAB_APP.downloads.map((d, i) =>
         d.url ? (
           <a key={d.id} href={d.url} className={buttonVariants({ variant: i === 0 ? "default" : "outline", size })}>
-            <DotIcon name={d.icon} size={15} aria-hidden="true" />{d.label}
+            <d.icon size={15} aria-hidden="true" />{d.label}
           </a>
         ) : (
           <Button key={d.id} type="button" variant="outline" size={size} disabled title="Coming soon">
-            <DotIcon name={d.icon} size={15} aria-hidden="true" />{d.label} · coming soon
+            <d.icon size={15} aria-hidden="true" />{d.label} · coming soon
           </Button>
         ),
       )}
@@ -30,7 +30,7 @@ function DownloadButtons({ size = "default" }: { size?: "default" | "sm" | "lg" 
 export function LabAppStrip({ className }: { className?: string }) {
   return (
     <aside aria-label={`${LAB_APP.name} app`} className={cn("flex flex-wrap items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3", className)}>
-      <DotIcon name="box" size={18} aria-hidden="true" className="text-[var(--color-primary-text)]" />
+      <Box size={18} aria-hidden="true" className="text-[var(--color-primary-text)]" />
       <p className="min-w-0 flex-1 text-sm">
         <strong className="font-medium">{LAB_APP.name}</strong>
         <span className="text-[var(--color-text-muted)]"> · simulate Arduino and MCU projects in 3D, on desktop and mobile.</span>

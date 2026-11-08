@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { DotIcon } from "@/components/retro/dot-icon";
+import { CheckCircle2, Database, Info, LoaderCircle, Terminal, type LucideIcon } from "lucide-react";
 import { VerdictBadge } from "./verdict-badge";
 import type { ExecutionResult } from "@/types/execution";
 import type { JudgingResult } from "@/lib/judge/judging-service";
@@ -25,10 +25,10 @@ export interface ResultsPaneProps {
   demoNote?: string | null;
 }
 
-const TABS: { id: ResultsTab; label: string; icon: string }[] = [
-  { id: "console", label: "Console", icon: "powershell" },
-  { id: "stdin", label: "Input", icon: "database" },
-  { id: "results", label: "Results", icon: "circleCheck" },
+const TABS: { id: ResultsTab; label: string; icon: LucideIcon }[] = [
+  { id: "console", label: "Console", icon: Terminal },
+  { id: "stdin", label: "Input", icon: Database },
+  { id: "results", label: "Results", icon: CheckCircle2 },
 ];
 
 function Output({ label, text }: { label: string; text: string }) {
@@ -43,7 +43,7 @@ function Output({ label, text }: { label: string; text: string }) {
 function Spinner({ text }: { text: string }) {
   return (
     <div className="flex items-center gap-2 py-4 text-sm text-[var(--color-text-muted)]" role="status">
-      <DotIcon name="loader" size={14} className="animate-spin" aria-hidden="true" />
+      <LoaderCircle size={14} className="animate-spin" aria-hidden="true" />
       {text}
     </div>
   );
@@ -68,7 +68,7 @@ export function ResultsPane({
               activeTab === tab.id ? "bg-[var(--color-elevated)] text-[var(--color-text-main)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]",
             )}
           >
-            <DotIcon name={tab.icon} size={13} aria-hidden="true" />
+            <tab.icon size={13} aria-hidden="true" />
             {tab.label}
             {tab.id === "stdin" && customStdin.length > 0 && <span className="font-code text-[var(--color-text-muted)]">{customStdin.length}B</span>}
             {tab.id === "results" && judgingResult && <VerdictBadge status={judgingResult.overallVerdict} short className="py-0" />}
@@ -78,7 +78,7 @@ export function ResultsPane({
 
       {demoNote && (
         <p className="flex shrink-0 items-center gap-1.5 border-b border-[var(--color-border)] px-3 py-1.5 text-xs text-[var(--color-text-muted)]">
-          <DotIcon name="info" size={12} aria-hidden="true" />{demoNote}
+          <Info size={12} aria-hidden="true" />{demoNote}
         </p>
       )}
 

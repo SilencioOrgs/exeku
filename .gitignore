@@ -42,3 +42,6 @@ next-env.d.ts
 
 # impeccable local state
 .impeccable/questions/
+
+# Brainstorming mockups
+.superpowers/

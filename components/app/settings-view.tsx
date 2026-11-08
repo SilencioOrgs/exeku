@@ -9,18 +9,18 @@ import { PixelCard } from "@/components/retro/pixel-card";
 import { PixelAvatar } from "@/components/retro/pixel-avatar";
 import { PixelButton } from "@/components/retro/pixel-button";
 import { PixelBadge } from "@/components/retro/pixel-badge";
-import { DotIcon, type DotIconName } from "@/components/retro/dot-icon";
+import { Code2, FileCode2, Pencil, X, type LucideIcon } from "lucide-react";
 import { ProfileEditDialog } from "./profile-edit-dialog";
 import { ProfileResetDialog } from "./profile-reset-dialog";
 import { draftRepository } from "@/lib/storage/draft-repository";
 import { LANGUAGE_DISPLAY_NAMES } from "@/lib/workspace-defaults";
 import type { PreferredLanguage } from "@/types/profile";
 
-const LANGUAGE_ICONS: Record<PreferredLanguage, DotIconName> = {
-  python: "python",
-  java: "java",
-  cpp: "cplusplus",
-  c: "file",
+const LANGUAGE_ICONS: Record<PreferredLanguage, LucideIcon> = {
+  python: Code2,
+  java: Code2,
+  cpp: Code2,
+  c: FileCode2,
 };
 
 export function SettingsView() {
@@ -118,7 +118,7 @@ export function SettingsView() {
           </div>
 
           <PixelButton variant="secondary" onClick={() => setIsEditOpen(true)} className="w-full sm:w-auto">
-            <DotIcon name="pencil" size={15} aria-hidden="true" />Edit profile
+            <Pencil size={15} aria-hidden="true" />Edit profile
           </PixelButton>
         </div>
 
@@ -127,11 +127,7 @@ export function SettingsView() {
           <div className="space-y-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-canvas)] p-2.5">
             <span className="text-[var(--color-text-dim)] text-xs">Preferred language</span>
             <div className="flex items-center gap-2 text-foreground">
-              <DotIcon
-                name={LANGUAGE_ICONS[profile.preferredLanguage]}
-                size={14}
-                color="var(--color-accent)"
-              />
+              {React.createElement(LANGUAGE_ICONS[profile.preferredLanguage], { size: 14, color: "var(--color-accent)" })}
               <span>{LANGUAGE_DISPLAY_NAMES[profile.preferredLanguage]}</span>
             </div>
           </div>
@@ -239,7 +235,7 @@ export function SettingsView() {
             onClick={() => setIsResetOpen(true)}
             className="w-full sm:w-auto shrink-0"
           >
-            Reset local profile <span className="arcade-copy"><DotIcon name="close" size={14} aria-hidden="true" /></span>
+            Reset local profile <span className="arcade-copy"><X size={14} aria-hidden="true" /></span>
           </PixelButton>
         </div>
       </PixelCard>

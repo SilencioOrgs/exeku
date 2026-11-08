@@ -1,4 +1,4 @@
-import { DotIcon } from "@/components/retro/dot-icon";
+import { CheckCircle2, XCircle } from "lucide-react";
 import { verdictInfo, isRealVerdict } from "@/lib/verdicts";
 import { cn } from "@/lib/utils";
 
@@ -18,7 +18,7 @@ export function VerdictBadge({ status, short = false, className }: { status: str
         className,
       )}
     >
-      {!short && <DotIcon name={pass ? "circleCheck" : "circleClose"} size={12} aria-hidden="true" />}
+      {!short && (pass ? <CheckCircle2 size={12} aria-hidden="true" /> : <XCircle size={12} aria-hidden="true" />)}
       <span className="font-code">{code}</span>
       {!short && <span>{label}</span>}
       {short && <span className="sr-only">{label}</span>}

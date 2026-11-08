@@ -28,7 +28,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Language**: TypeScript (`tsconfig.json`)
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/turbopack`, `tw-animate-css`, `app/globals.css`)
 - **UI Components**: shadcn/ui configured with Base UI primitives (`@base-ui/react`), Nova preset (`style: "base-nova"`), and Lucide React icons (`components.json`)
-- **Icons**: lucide-react through the `DotIcon` wrapper (`components/retro/dot-icon.tsx`)
+- **Icons**: lucide-react, imported directly (shared stroke and layout in the `.lucide` rule in `app/globals.css`)
 - **Editor**: Built-in code editor (`components/app/code-editor.tsx`): a native `<textarea>` over a syntax-highlighted copy (`lib/syntax.ts`, VS Code colors). No Monaco, no CDN downloads.
 - **Storage**: IndexedDB local profiles and draft persistence (v2 schema)
 - **Execution Sandbox Target**: Piston API (`POST /api/v2/execute`) via isolated container sandbox
@@ -87,7 +87,7 @@ The source of truth is `DESIGN.md`. Read it before any UI change. Summary:
 - **Exeku Lab** (Arduino/MCU simulation, 3D, printable cases) is a separate desktop/mobile app. This website only promotes it (`components/lab/lab-app-banner.tsx`, links in `lib/lab-app.ts`). Keep the web app focused on competitive programming.
 - **Buttons**: always `Button` or `buttonVariants` from `components/ui/button.tsx`; never hand-styled `<button>`s.
 - **Typography**: Geist Sans for UI and headings, Geist Mono for code and numbers. Sentence case. No ALL CAPS labels, no trailing `_` cursors, no `[BRACKET]` labels.
-- **Components**: shadcn/ui primitives in `components/ui` (`Button`, `Dialog`, `Card`, `Input`, `Tooltip`, `Sheet`). lucide-react icons through `DotIcon`.
+- **Components**: shadcn/ui primitives in `components/ui` (`Button`, `Dialog`, `Card`, `Input`, `Tooltip`, `Sheet`). lucide-react icons imported directly.
 - **Fonts are bundled** through the `geist` npm package. The app must work with no internet.
 
 ---

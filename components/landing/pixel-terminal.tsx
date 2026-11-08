@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
-import { DotIcon, type DotIconName } from "@/components/retro/dot-icon";
+import { AlertCircle, ArrowLeft, CheckCircle2, CirclePlay, Code2, type LucideIcon } from "lucide-react";
 
 type LanguageKey = "python" | "cpp" | "java";
 
 interface SnippetData {
   name: string;
   filename: string;
-  iconName: DotIconName;
+  icon: LucideIcon;
   code: string[];
   demoOutput: string[];
 }
@@ -17,7 +17,7 @@ const SNIPPETS: Record<LanguageKey, SnippetData> = {
   python: {
     name: "Python 3",
     filename: "reverse_bits.py",
-    iconName: "python",
+    icon: Code2,
     code: [
       "# Exeku Curriculum: Bitwise Operations",
       "def reverse_bits(n: int) -> int:",
@@ -40,7 +40,7 @@ const SNIPPETS: Record<LanguageKey, SnippetData> = {
   cpp: {
     name: "C++",
     filename: "fast_matrix.cpp",
-    iconName: "cplusplus",
+    icon: Code2,
     code: [
       "// Exeku Curriculum: Cache Locality & SIMD",
       "#include <vector>",
@@ -64,7 +64,7 @@ const SNIPPETS: Record<LanguageKey, SnippetData> = {
   java: {
     name: "Java",
     filename: "BinarySearchTree.java",
-    iconName: "java",
+    icon: Code2,
     code: [
       "// Exeku Curriculum: Self-Balancing Trees",
       "public class BinarySearchTree {",
@@ -131,7 +131,7 @@ export function PixelTerminal() {
       {/* Disclaimer Banner: Strictly labeled as demo */}
       <div className="px-3 sm:px-4 py-1.5 bg-[var(--color-elevated)] border-b border-[var(--color-primary-text)]/40 flex items-center justify-between gap-2 text-xs font-mono text-[var(--color-primary-text)]">
         <div className="flex items-center gap-1.5">
-          <DotIcon name="circleBlock" className="w-3.5 h-3.5 text-[var(--color-primary-text)] shrink-0" />
+          <AlertCircle className="w-3.5 h-3.5 text-[var(--color-primary-text)] shrink-0" />
           <span>Demo animation. Real code runs in the workspace sandbox.</span>
         </div>
         <span className="hidden md:inline text-xs opacity-75">Not a live compiler</span>
@@ -156,11 +156,7 @@ export function PixelTerminal() {
                   : "border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-elevated)]"
               }`}
             >
-              <DotIcon
-                name={snippet.iconName}
-                size={14}
-                className={isActive ? "text-[var(--color-accent)]" : "text-[var(--color-text-muted)]"}
-              />
+              <snippet.icon size={14} className={isActive ? "text-[var(--color-accent)]" : "text-[var(--color-text-muted)]"} />
               <span>{snippet.name}</span>
               <span className="text-xs text-[var(--color-text-dim)]">({snippet.filename})</span>
             </button>
@@ -209,7 +205,7 @@ export function PixelTerminal() {
               disabled={isRunning}
               className="px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-accent-foreground)] font-mono font-bold text-xs flex items-center gap-1.5 transition-all active:translate-x-[1px] active:translate-y-[1px] cursor-pointer disabled:opacity-50"
             >
-              <DotIcon name="circlePlay" size={14} className="text-[var(--color-accent-foreground)]" />
+              <CirclePlay size={14} className="text-[var(--color-accent-foreground)]" />
               {isRunning ? "Simulating..." : "Run Demo"}
             </button>
 
@@ -220,7 +216,7 @@ export function PixelTerminal() {
                 className="px-3 py-2 bg-[var(--color-elevated)] hover:bg-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] font-mono text-xs flex items-center gap-1 border border-[var(--color-border)] cursor-pointer"
                 title="Reset simulation"
               >
-                <DotIcon name="arrowLeft" className="w-3 h-3" />
+                <ArrowLeft className="w-3 h-3" />
                 Reset
               </button>
             )}
@@ -247,7 +243,7 @@ export function PixelTerminal() {
                   }`}
                 >
                   {outLine.includes("✓") && (
-                    <DotIcon name="circleCheck" size={14} className="text-[var(--color-mint)] mt-0.5 shrink-0" />
+                    <CheckCircle2 size={14} className="text-[var(--color-mint)] mt-0.5 shrink-0" />
                   )}
                   <span>{outLine}</span>
                 </div>
@@ -255,7 +251,7 @@ export function PixelTerminal() {
             </div>
           ) : (
             <div className="text-[var(--color-text-dim)] italic">
-              Click &quot;Run Demo <DotIcon name="circlePlay" size={14} aria-hidden="true" />&quot; to see how test results look in the workspace.
+              Click &quot;Run Demo <CirclePlay size={14} aria-hidden="true" />&quot; to see how test results look in the workspace.
             </div>
           )}
         </div>

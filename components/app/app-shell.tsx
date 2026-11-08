@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { useProfile } from "@/hooks/use-profile";
+import { WelcomeDialog } from "./school/welcome-dialog";
 import { AppSidebar } from "./app-sidebar";
 import { AppTopbar } from "./app-topbar";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -29,7 +30,7 @@ function getServerSidebarSnapshot(): boolean {
 
 export function AppShell({ children }: AppShellProps) {
   const router = useRouter();
-  const { profile, isLoading } = useProfile();
+  const { profile, isLoading, updateProfile } = useProfile();
 
   const persistedCollapsed = useSyncExternalStore(
     subscribeSidebar,
@@ -72,6 +73,7 @@ export function AppShell({ children }: AppShellProps) {
         </div>
       </div>
       )}
+      {!blocked && <WelcomeDialog profile={profile} onUpdate={(updates) => updateProfile(profile.id, updates)} />}
       {/* Top Application Bar */}
       {!blocked && <AppTopbar
         profile={profile}

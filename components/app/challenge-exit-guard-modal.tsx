@@ -1,6 +1,6 @@
 "use client";
 
-import { DotIcon } from "@/components/retro/dot-icon";
+import { X } from "lucide-react";
 
 import React from "react";
 import { PixelCard } from "@/components/retro/pixel-card";
@@ -66,7 +66,7 @@ export function ChallengeExitGuardModal() {
             onClick={confirmPendingNavigation}
             className="text-xs font-semibold"
           >
-            Exit and forfeit <DotIcon name="close" size={14} aria-hidden="true" />
+            Exit and forfeit <X size={14} aria-hidden="true" />
           </PixelButton>
         </div>
       </PixelCard>

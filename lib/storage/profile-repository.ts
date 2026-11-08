@@ -79,6 +79,7 @@ export class ProfileRepository {
       experienceLevel: input.experienceLevel,
       preferredLanguage: input.preferredLanguage,
       appearancePreferences: appearanceRepository.getPreferences(),
+      account: input.account,
       createdAt: now,
       updatedAt: now,
     };
@@ -125,6 +126,9 @@ export class ProfileRepository {
       experienceLevel: updates.experienceLevel ?? existing.experienceLevel,
       preferredLanguage:
         updates.preferredLanguage ?? existing.preferredLanguage,
+      account: updates.account ?? existing.account,
+      socialLinks: updates.socialLinks ?? existing.socialLinks,
+      userType: updates.userType ?? existing.userType,
       updatedAt: new Date().toISOString(),
     };
 

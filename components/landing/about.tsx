@@ -1,11 +1,11 @@
 import React from "react";
 import { PixelBadge } from "@/components/retro/pixel-badge";
 import { PixelCard } from "@/components/retro/pixel-card";
-import { DotIcon, type DotIconName } from "@/components/retro/dot-icon";
+import { CirclePlay, Code2, Shield, type LucideIcon } from "lucide-react";
 
 export function About() {
   const pillars: Array<{
-    iconName: DotIconName;
+    icon: LucideIcon;
     iconColor: string;
     title: string;
     tag: string;
@@ -13,7 +13,7 @@ export function About() {
     description: string;
   }> = [
     {
-      iconName: "shield",
+      icon: Shield,
       iconColor: "text-[var(--color-primary-text)]",
       title: "Isolated Sandboxing",
       tag: "Secure runtime",
@@ -22,7 +22,7 @@ export function About() {
         "Untrusted code is executed inside ephemeral, resource-constrained sandbox containers. Memory limits, CPU quotas, and air-gapped process isolation keep runaway loops and unsafe code contained.",
     },
     {
-      iconName: "circlePlay",
+      icon: CirclePlay,
       iconColor: "text-[var(--color-accent)]",
       title: "Automated Assessment",
       tag: "Instant verdicts",
@@ -31,7 +31,7 @@ export function About() {
         "Deterministic test suite verification with instant grading. Visible test cases provide actionable debugging feedback, while hidden test cases ensure algorithmic rigor and prevent hardcoded answers.",
     },
     {
-      iconName: "vscode",
+      icon: Code2,
       iconColor: "text-[var(--color-primary-text)]",
       title: "Runs in the Browser",
       tag: "Nothing to install",
@@ -72,7 +72,7 @@ export function About() {
             >
               <div className="flex items-center justify-between mb-6">
                 <div className="w-12 h-12 bg-[var(--color-elevated)] border border-[var(--color-border)] group-hover:border-[var(--color-accent)] flex items-center justify-center transition-colors">
-                  <DotIcon name={pillar.iconName} size={24} className={pillar.iconColor} />
+                  <pillar.icon size={24} className={pillar.iconColor} />
                 </div>
                 <PixelBadge variant={pillar.badgeVariant}>{pillar.tag}</PixelBadge>
               </div>

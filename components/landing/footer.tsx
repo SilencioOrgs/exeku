@@ -1,5 +1,5 @@
 import React from "react";
-import { DotIcon } from "@/components/retro/dot-icon";
+import { ArrowUp, CirclePlay, GitBranch, Terminal } from "lucide-react";
 
 export function Footer() {
   const navLinks = [
@@ -18,7 +18,7 @@ export function Footer() {
           <div className="md:col-span-2 space-y-4">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 bg-[var(--color-elevated)] border border-[var(--color-primary)] flex items-center justify-center text-[var(--color-accent)]">
-                <DotIcon name="powershell" size={16} />
+                <Terminal size={16} />
               </div>
               <span
                 className="text-2xl font-bold text-[var(--color-text-main)]"
@@ -46,7 +46,7 @@ export function Footer() {
                     href={link.href}
                     className="hover:text-[var(--color-accent)] transition-colors flex items-center gap-1.5"
                   >
-                    <span className="text-[var(--color-primary-text)]"><DotIcon name="circlePlay" size={14} aria-hidden="true" /></span>
+                    <span className="text-[var(--color-primary-text)]"><CirclePlay size={14} aria-hidden="true" /></span>
                     {link.label}
                   </a>
                 </li>
@@ -67,7 +67,7 @@ export function Footer() {
                   rel="noopener noreferrer"
                   className="hover:text-[var(--color-accent)] transition-colors flex items-center gap-1.5"
                 >
-                  <DotIcon name="github" size={14} className="text-[var(--color-accent)]" />
+                  <GitBranch size={14} className="text-[var(--color-accent)]" />
                   SilencioOrgs/exeku
                 </a>
               </li>
@@ -77,7 +77,7 @@ export function Footer() {
               href="#hero"
               className="inline-flex items-center gap-1 text-[var(--color-accent)] hover:underline"
             >
-              <DotIcon name="arrowUp" size={14} className="text-[var(--color-accent)]" /> Back to top
+              <ArrowUp size={14} className="text-[var(--color-accent)]" /> Back to top
             </a>
           </div>
         </div>

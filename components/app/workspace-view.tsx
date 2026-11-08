@@ -8,7 +8,7 @@ import { useChallengeSession } from "@/hooks/use-challenge-session";
 import { useWorkspaceFiles } from "@/hooks/use-workspace-files";
 import { useJudge } from "@/hooks/use-judge";
 import { useDemoMode } from "@/hooks/use-demo-mode";
-import { DotIcon } from "@/components/retro/dot-icon";
+import { FileCode2, List, Terminal, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CodeEditor } from "./code-editor";
 import { ProblemPane } from "./workspace/problem-pane";
@@ -26,10 +26,10 @@ import type { SandboxHealth } from "@/types/execution";
 
 type MobileActivePane = "problem" | "code" | "results";
 
-const MOBILE_TABS: { id: MobileActivePane; label: string; icon: string }[] = [
-  { id: "problem", label: "Problem", icon: "list" },
-  { id: "code", label: "Code", icon: "file" },
-  { id: "results", label: "Output", icon: "powershell" },
+const MOBILE_TABS: { id: MobileActivePane; label: string; icon: LucideIcon }[] = [
+  { id: "problem", label: "Problem", icon: List },
+  { id: "code", label: "Code", icon: FileCode2 },
+  { id: "results", label: "Output", icon: Terminal },
 ];
 
 export function WorkspaceView() {
@@ -259,7 +259,7 @@ export function WorkspaceView() {
               mobileActivePane === tab.id ? "bg-[var(--color-elevated)] text-[var(--color-text-main)]" : "text-[var(--color-text-muted)]",
             )}
           >
-            <DotIcon name={tab.icon} size={13} aria-hidden="true" />{tab.label}
+            <tab.icon size={13} aria-hidden="true" />{tab.label}
             {tab.id === "code" && files.saveStatus !== "SAVED" && <span className="size-1.5 rounded-full bg-[var(--color-text-main)]" aria-label="Unsaved" />}
             {tab.id === "results" && judge.judgingResult && <VerdictBadge status={judge.judgingResult.overallVerdict} short className="py-0" />}
           </button>

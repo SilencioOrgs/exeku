@@ -5,9 +5,10 @@ import React, { useState } from "react";
 import type { LocalProfile, ProfileInput, ExperienceLevel, PreferredLanguage } from "@/types/profile";
 import { AVATARS } from "@/lib/avatars";
 import { validateDisplayName } from "@/lib/profile-validation";
+import { parseGithub, parseLinkedin } from "@/lib/social-links";
 import { PixelAvatar } from "@/components/retro/pixel-avatar";
 import { PixelButton } from "@/components/retro/pixel-button";
-import { DotIcon, type DotIconName } from "@/components/retro/dot-icon";
+import { Code2, FileCode2, X, type LucideIcon } from "lucide-react";
 
 export interface ProfileEditDialogProps {
   isOpen: boolean;
@@ -16,11 +17,11 @@ export interface ProfileEditDialogProps {
   onSave: (updates: Partial<ProfileInput>) => Promise<void>;
 }
 
-const LANGUAGES: { id: PreferredLanguage; label: string; icon: DotIconName }[] = [
-  { id: "python", label: "Python 3", icon: "python" },
-  { id: "java", label: "Java", icon: "java" },
-  { id: "cpp", label: "C++", icon: "cplusplus" },
-  { id: "c", label: "C", icon: "file" },
+const LANGUAGES: { id: PreferredLanguage; label: string; icon: LucideIcon }[] = [
+  { id: "python", label: "Python 3", icon: Code2 },
+  { id: "java", label: "Java", icon: Code2 },
+  { id: "cpp", label: "C++", icon: Code2 },
+  { id: "c", label: "C", icon: FileCode2 },
 ];
 
 const LEVELS: { id: ExperienceLevel; label: string }[] = [
@@ -44,6 +45,8 @@ function ProfileEditModalContent({
   const [avatarId, setAvatarId] = useState(profile.avatarId);
   const [experienceLevel, setExperienceLevel] = useState(profile.experienceLevel);
   const [preferredLanguage, setPreferredLanguage] = useState(profile.preferredLanguage);
+  const [github, setGithub] = useState(profile.socialLinks?.github ?? "");
+  const [linkedin, setLinkedin] = useState(profile.socialLinks?.linkedin ?? "");
 
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,6 +56,12 @@ function ProfileEditModalContent({
   const handleSave = async () => {
     if (!validation.isValid) {
       setError(validation.error || "Invalid display name");
+      return;
+    }
+    const parsedGithub = parseGithub(github);
+    const parsedLinkedin = parseLinkedin(linkedin);
+    if (parsedGithub.error || parsedLinkedin.error) {
+      setError(parsedGithub.error || parsedLinkedin.error || null);
       return;
     }
 
@@ -66,6 +75,7 @@ function ProfileEditModalContent({
         avatarId,
         experienceLevel,
         preferredLanguage,
+        socialLinks: { github: parsedGithub.handle, linkedin: parsedLinkedin.handle },
       });
       onClose();
     } catch (err) {
@@ -95,7 +105,7 @@ function ProfileEditModalContent({
             </h3>
           </div>
           <Button type="button" variant="ghost" size="icon-sm" onClick={onClose} aria-label="Close dialog">
-            <DotIcon name="close" size={15} aria-hidden="true" />
+            <X size={15} aria-hidden="true" />
           </Button>
         </div>
 
@@ -140,6 +150,20 @@ function ProfileEditModalContent({
           />
         </div>
 
+        {/* Social Links */}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <label htmlFor="edit-github" className="block text-xs text-[var(--color-text-muted)]">GitHub username or link (optional)</label>
+            <input id="edit-github" type="text" value={github} onChange={(e) => setGithub(e.target.value)} maxLength={120} autoCapitalize="none" spellCheck={false}
+              className="w-full px-3 py-2 bg-[var(--color-canvas)] border border-[var(--color-border)] focus:border-[var(--color-primary)] text-foreground text-sm outline-none transition-colors" />
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor="edit-linkedin" className="block text-xs text-[var(--color-text-muted)]">LinkedIn name or link (optional)</label>
+            <input id="edit-linkedin" type="text" value={linkedin} onChange={(e) => setLinkedin(e.target.value)} maxLength={160} autoCapitalize="none" spellCheck={false}
+              className="w-full px-3 py-2 bg-[var(--color-canvas)] border border-[var(--color-border)] focus:border-[var(--color-primary)] text-foreground text-sm outline-none transition-colors" />
+          </div>
+        </div>
+
         {/* Avatar Selection Grid */}
         <div className="space-y-1.5">
           <span className="block text-xs text-[var(--color-text-main)]">
@@ -182,7 +206,7 @@ function ProfileEditModalContent({
                   onClick={() => setPreferredLanguage(lang.id)}
                   className="justify-start"
                 >
-                  <DotIcon name={lang.icon} size={15} aria-hidden="true" />{lang.label}
+                  <lang.icon size={15} aria-hidden="true" />{lang.label}
                 </Button>
               );
             })}

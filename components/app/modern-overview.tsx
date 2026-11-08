@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { DotIcon } from "@/components/retro/dot-icon";
+import { AlarmClock, ArrowRight, Code2, Play, Shield } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ProfileEditDialog } from "./profile-edit-dialog";
 import { CodingActivity } from "./coding-activity";
@@ -17,6 +17,7 @@ import type { LocalProfile, ProfileInput } from "@/types/profile";
 import type { WorkspaceDraft } from "@/types/draft";
 
 interface ModernOverviewProps {
+  banner?: ReactNode;
   profile: LocalProfile;
   activeDraft: WorkspaceDraft | null;
   totalDrafts: number;
@@ -30,7 +31,7 @@ const TIERS = [
 ] as const;
 
 /** Competitive programming home: the problem set, a timed round and where you left off. */
-export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfile }: ModernOverviewProps) {
+export function ModernOverview({ banner, profile, activeDraft, totalDrafts, onSaveProfile }: ModernOverviewProps) {
   const router = useRouter();
   const challenge = useChallengeSession();
   const [editing, setEditing] = useState(false);
@@ -57,6 +58,7 @@ export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfil
 
   return (
     <div className="modern-overview space-y-6">
+      {banner}
       <header className="modern-page-header flex flex-wrap items-end justify-between gap-4">
         <div className="space-y-1.5">
           <h1 className="text-3xl font-semibold tracking-tight">Welcome back, {profile.displayName}</h1>
@@ -64,10 +66,10 @@ export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfil
         </div>
         <div className="flex flex-wrap gap-2">
           <Link href="/app/challenges" className={buttonVariants({ size: "lg" })}>
-            Browse problems<DotIcon name="arrowRight" aria-hidden="true" size={16} />
+            Browse problems<ArrowRight aria-hidden="true" size={16} />
           </Link>
           <Link href="/app/workspace" className={buttonVariants({ variant: "outline", size: "lg" })}>
-            <DotIcon name="vscode" aria-hidden="true" size={16} />Open editor
+            <Code2 aria-hidden="true" size={16} />Open editor
           </Link>
         </div>
       </header>
@@ -89,7 +91,7 @@ export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfil
         <section aria-labelledby="problem-set-heading" className="skeuo-card overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] lg:col-span-2">
           <div className="flex items-center justify-between gap-2 border-b border-[var(--color-border)] px-4 py-3">
             <h2 id="problem-set-heading" className="font-semibold">Problem set</h2>
-            <Link href="/app/challenges" className={buttonVariants({ variant: "ghost", size: "sm" })}>View all<DotIcon name="arrowRight" aria-hidden="true" size={14} /></Link>
+            <Link href="/app/challenges" className={buttonVariants({ variant: "ghost", size: "sm" })}>View all<ArrowRight aria-hidden="true" size={14} /></Link>
           </div>
           {problems === null ? (
             <p className="px-4 py-6 text-sm text-[var(--color-text-muted)]">Loading problems…</p>
@@ -106,7 +108,7 @@ export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfil
                   </Link>
                   <DifficultyBadge difficulty={problem.difficulty} />
                   <Button type="button" variant="outline" size="icon-sm" onClick={() => startRound(problem)} aria-label={`Start a timed round on ${problem.title}`} title="Timed round">
-                    <DotIcon name="alarm" size={14} aria-hidden="true" />
+                    <AlarmClock size={14} aria-hidden="true" />
                   </Button>
                 </li>
               ))}
@@ -117,7 +119,7 @@ export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfil
         <div className="flex flex-col gap-4">
           <section aria-labelledby="round-heading" className="skeuo-card tile-peach flex flex-col gap-3 rounded-xl border border-[var(--color-border)] p-4">
             <div className="flex items-center gap-2">
-              <DotIcon name="alarm" size={18} aria-hidden="true" className="text-[var(--color-primary-text)]" />
+              <AlarmClock size={18} aria-hidden="true" className="text-[var(--color-primary-text)]" />
               <h2 id="round-heading" className="font-semibold">Timed round</h2>
             </div>
             {challenge.isTimedActive ? (
@@ -136,7 +138,7 @@ export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfil
                   </p>
                 )}
                 <Button type="button" className="w-full" disabled={!roundProblem} onClick={() => roundProblem && startRound(roundProblem)}>
-                  <DotIcon name="play" size={15} aria-hidden="true" />Start timed round
+                  <Play size={15} aria-hidden="true" />Start timed round
                 </Button>
               </>
             )}
@@ -160,7 +162,7 @@ export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfil
 
       <CodingActivity profileId={profile.id} />
       <footer className="modern-footnote flex flex-wrap items-center justify-between gap-3">
-        <p><DotIcon name="shield" aria-hidden="true" size={16} /> Run and Submit need the local Piston sandbox.</p>
+        <p><Shield aria-hidden="true" size={16} /> Run and Submit need the local Piston sandbox.</p>
         <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>Edit profile</Button>
       </footer>
       <ProfileEditDialog isOpen={editing} onClose={() => setEditing(false)} profile={profile} onSave={async (updates) => { await onSaveProfile(updates); }} />

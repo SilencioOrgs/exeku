@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { DotIcon } from "@/components/retro/dot-icon";
+import { RotateCcw, X } from "lucide-react";
 
 export interface DemoControlsProps {
   onLoadSolved: () => void;
@@ -23,8 +23,8 @@ export function DemoControls({ onLoadSolved, onLoadIncorrect, onResetDemo, onPre
         <Button type="button" variant="outline" size="xs" onClick={onLoadIncorrect}>Load wrong code</Button>
         <Button type="button" variant="ghost" size="xs" onClick={onPreviewAccepted}>Preview accepted</Button>
         <Button type="button" variant="ghost" size="xs" onClick={onPreviewWrongAnswer}>Preview wrong answer</Button>
-        <Button type="button" variant="ghost" size="xs" onClick={onResetDemo}><DotIcon name="reset" size={12} aria-hidden="true" />Reset</Button>
-        <Button type="button" variant="ghost" size="icon-xs" onClick={onExit} aria-label="Turn off demo mode"><DotIcon name="close" size={12} aria-hidden="true" /></Button>
+        <Button type="button" variant="ghost" size="xs" onClick={onResetDemo}><RotateCcw size={12} aria-hidden="true" />Reset</Button>
+        <Button type="button" variant="ghost" size="icon-xs" onClick={onExit} aria-label="Turn off demo mode"><X size={12} aria-hidden="true" /></Button>
       </div>
     </div>
   );

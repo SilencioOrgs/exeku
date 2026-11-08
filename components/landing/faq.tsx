@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { DotIcon } from "@/components/retro/dot-icon";
+import { ArrowDown, ArrowUp } from "lucide-react";
 
 export function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
@@ -71,7 +71,7 @@ export function FAQ() {
                     {faq.q}
                   </span>
                   <div className="p-1 bg-[var(--color-elevated)] border border-[var(--color-border)] text-[var(--color-accent)] shrink-0">
-                    {isOpen ? <DotIcon name="arrowUp" className="w-4 h-4" /> : <DotIcon name="arrowDown" className="w-4 h-4" />}
+                    {isOpen ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
                   </div>
                 </button>
 

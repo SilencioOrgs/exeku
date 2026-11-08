@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { DotIcon } from "@/components/retro/dot-icon";
+import { X } from "lucide-react";
 
 import React, { useState } from "react";
 import { PixelButton } from "@/components/retro/pixel-button";
@@ -62,7 +62,7 @@ export function ProfileResetDialog({
             </h3>
           </div>
           <Button type="button" variant="ghost" size="icon-sm" onClick={onClose} disabled={isDeleting} aria-label="Close dialog">
-            <DotIcon name="close" size={15} aria-hidden="true" />
+            <X size={15} aria-hidden="true" />
           </Button>
         </div>
 

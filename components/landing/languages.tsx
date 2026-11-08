@@ -1,7 +1,7 @@
 import React from "react";
 import { PixelBadge } from "@/components/retro/pixel-badge";
 import { PixelCard } from "@/components/retro/pixel-card";
-import { DotIcon, type DotIconName } from "@/components/retro/dot-icon";
+import { Code2, FileCode2, type LucideIcon } from "lucide-react";
 
 export function Languages() {
   const languages: Array<{
@@ -11,7 +11,7 @@ export function Languages() {
     accentBorder: string;
     accentText: string;
     badgeVariant: "cyan" | "default" | "purple" | "pink";
-    iconName: DotIconName;
+    icon: LucideIcon;
     runtimeNote: string;
     curriculum: string[];
     sample: string;
@@ -23,7 +23,7 @@ export function Languages() {
       accentBorder: "border-[var(--color-accent)]/50",
       accentText: "text-[var(--color-accent)]",
       badgeVariant: "cyan",
-      iconName: "python",
+      icon: Code2,
       runtimeNote: "Interpreted · Python 3",
       curriculum: ["Syntax & Control Flow", "Functions & Recursion", "Algorithm Foundations"],
       sample: "def bubble_sort(arr):\n    n = len(arr)\n    for i in range(n):\n        for j in range(0, n-i-1):\n            if arr[j] > arr[j+1]:\n                arr[j], arr[j+1] = arr[j+1], arr[j]",
@@ -35,7 +35,7 @@ export function Languages() {
       accentBorder: "border-[var(--color-warning)]/50",
       accentText: "text-[var(--color-warning)]",
       badgeVariant: "default",
-      iconName: "java",
+      icon: Code2,
       runtimeNote: "Bytecode · OpenJDK",
       curriculum: ["Classes & Polymorphism", "Collections Framework", "Design Patterns"],
       sample: "public class Node<T> {\n    T data;\n    Node<T> next;\n    public Node(T data) {\n        this.data = data;\n        this.next = null;\n    }\n}",
@@ -47,7 +47,7 @@ export function Languages() {
       accentBorder: "border-[var(--color-primary)]/50",
       accentText: "text-[var(--color-primary-text)]",
       badgeVariant: "purple",
-      iconName: "cplusplus",
+      icon: Code2,
       runtimeNote: "Compiled · GCC / Clang",
       curriculum: ["Pointers & References", "RAII & Smart Pointers", "Templates & Modern C++"],
       sample: "template <typename T>\nvoid quick_sort(std::vector<T>& vec, int low, int high) {\n    if (low < high) {\n        int pi = partition(vec, low, high);\n        quick_sort(vec, low, pi - 1);\n        quick_sort(vec, pi + 1, high);\n    }\n}",
@@ -59,7 +59,7 @@ export function Languages() {
       accentBorder: "border-[var(--color-primary-text)]/50",
       accentText: "text-[var(--color-primary-text)]",
       badgeVariant: "pink",
-      iconName: "file",
+      icon: FileCode2,
       runtimeNote: "Native · C11 / C17",
       curriculum: ["Manual Memory Management", "Structs & Memory Layout", "Bitwise Operations"],
       sample: "int* allocate_array(size_t size) {\n    int* ptr = (int*)malloc(size * sizeof(int));\n    if (ptr == NULL) {\n        return NULL;\n    }\n    return ptr;\n}",
@@ -98,7 +98,7 @@ export function Languages() {
               <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-[var(--color-elevated)] border border-[var(--color-border)] flex items-center justify-center">
-                    <DotIcon name={lang.iconName} size={22} className={lang.accentText} />
+                    <lang.icon size={22} className={lang.accentText} />
                   </div>
                   <div>
                     <h3

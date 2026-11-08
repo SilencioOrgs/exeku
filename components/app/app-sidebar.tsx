@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronLeft, ChevronRight, Code2, LayoutDashboard, ListChecks, Settings2, UserRound, Timer } from "lucide-react";
+import { ChevronLeft, ChevronRight, Code2, LayoutDashboard, ListChecks, Newspaper, Settings2, Trophy, UserRound, Timer, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useChallengeSession } from "@/hooks/use-challenge-session";
 import type { LocalProfile } from "@/types/profile";
@@ -12,10 +12,13 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "overview", label: "Overview", href: "/app", iconName: "overview", index: "01" },
   { id: "challenges", label: "Challenges", href: "/app/challenges", iconName: "challenges", index: "02" },
   { id: "workspace", label: "Workspace", href: "/app/workspace", iconName: "workspace", index: "03" },
-  { id: "profile", label: "Profile", href: "/app/profile", iconName: "profile", index: "04" },
-  { id: "settings", label: "Settings", href: "/app/settings", iconName: "settings", index: "05" },
+  { id: "leaderboard", label: "Leaderboard", href: "/app/leaderboard", iconName: "leaderboard", index: "04" },
+  { id: "blog", label: "Blog", href: "/app/blog", iconName: "blog", index: "05" },
+  { id: "orgs", label: "Organizations", href: "/app/orgs", iconName: "orgs", index: "06" },
+  { id: "profile", label: "Profile", href: "/app/profile", iconName: "profile", index: "07" },
+  { id: "settings", label: "Settings", href: "/app/settings", iconName: "settings", index: "08" },
 ];
-const ICONS = { overview: LayoutDashboard, challenges: ListChecks, workspace: Code2, profile: UserRound, settings: Settings2 };
+const ICONS = { overview: LayoutDashboard, challenges: ListChecks, workspace: Code2, leaderboard: Trophy, blog: Newspaper, orgs: Users, profile: UserRound, settings: Settings2 };
 
 export interface AppSidebarProps {
   profile: LocalProfile | null;

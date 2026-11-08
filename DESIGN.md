@@ -110,7 +110,7 @@ Most screens are "Operate" surfaces (problems, workspace, settings): scanability
 - Dashboard: competitive programming first: problem counts by difficulty, the problem set with timed-round buttons, a Timed round card, Continue coding, then a one-line Exeku Lab app strip and coding activity.
 - Problems: LeetCode-style table with difficulty count cards, rounded search and pill filters.
 - Landing: hero (headline left; a 3D arena where two students code head to head under a holographic VS scoreboard), Practice (editor demo), the Journey scroll tour (`#journey`: 1v1 match, Accepted, 3v3 team round, leaderboard climb, podium; same player throughout), About, Languages, the Exeku Lab app banner, FAQ. No install guide or roadmap on the site.
-- Icons are minimal lucide line icons through `DotIcon`. Never emoji.
+- Icons are minimal lucide line icons. Never emoji. Brand marks lucide doesn't ship (GitHub, LinkedIn, Google) are drawn inline.
 
 ## Depth
 
@@ -118,7 +118,8 @@ Most screens are "Operate" surfaces (problems, workspace, settings): scanability
 - Inputs sink with `--shadow-inset` on the canvas color.
 - One button system: `Button` and links styled with `buttonVariants` look identical (cva adds `btn-primary` / `btn-outline` / `btn-ghost` marker classes that `globals.css` styles). Never hand-style a `<button>`; use `Button` with a variant, and `aria-pressed` for toggles and pickers.
 - Buttons are subtle keys: a faint top highlight and a 1px press on `:active`. The orange button glows (`--glow-primary`) on hover. Ghost buttons stay flat.
-- Reduced motion removes the press, the camera glide, auto-rotate and the hero blink.
+- `/setup` is one Google sign-in card on a black machined panel (`.skeuo-panel`). The profile's School email section uses the same panel with sunken fields (`.skeuo-well`) and a printed school ID (`.id-*`), the only paper-colored object in the product.
+- Reduced motion removes the press, the camera glide, auto-rotate, the ID card settle and the hero blink.
 
 ## 3D and the Exeku Lab app
 
@@ -133,7 +134,7 @@ Most screens are "Operate" surfaces (problems, workspace, settings): scanability
 - `components/ui`: `Button` (default, outline, ghost, secondary, destructive; `data-variant` drives the key style), `Dialog`, `Card`, `Input`, `Tooltip`, `Sheet`, `Separator`, `Skeleton`.
 - `components/app/difficulty-badge.tsx`: Easy/Medium/Hard chip.
 - Code editor: `components/app/code-editor.tsx`, a transparent native `<textarea>` over a highlighted copy (`lib/syntax.ts`, VS Code Dark+). Tab indents, Shift+Tab outdents, Enter keeps indentation, Ctrl/Cmd+Enter runs, Ctrl/Cmd+Shift+Enter submits, Esc then Tab leaves the editor.
-- Icons: lucide-react via `DotIcon`. Icon-only buttons need `aria-label`. No emoji as icons.
+- Icons: lucide-react, imported directly; `.lucide` in `globals.css` sets the 1.8 stroke. Icon-only buttons need `aria-label`. No emoji as icons.
 - Focus: 2px outline in `--color-ring`, 2px offset.
 
 ## Do's and Don'ts

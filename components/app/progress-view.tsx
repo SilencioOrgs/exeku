@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useProfile } from "@/hooks/use-profile";
 import { PixelCard } from "@/components/retro/pixel-card";
 import { PixelBadge } from "@/components/retro/pixel-badge";
-import { DotIcon, type DotIconName } from "@/components/retro/dot-icon";
+import { Code2, FileCode2, type LucideIcon } from "lucide-react";
 import { draftRepository } from "@/lib/storage/draft-repository";
 import {
   ALL_SUPPORTED_LANGUAGES,
@@ -16,11 +16,11 @@ import {
 import type { WorkspaceDraft } from "@/types/draft";
 import type { PreferredLanguage } from "@/types/profile";
 
-const LANGUAGE_ICONS: Record<PreferredLanguage, DotIconName> = {
-  python: "python",
-  java: "java",
-  cpp: "cplusplus",
-  c: "file",
+const LANGUAGE_ICONS: Record<PreferredLanguage, LucideIcon> = {
+  python: Code2,
+  java: Code2,
+  cpp: Code2,
+  c: FileCode2,
 };
 
 const MASTERY_NODES = [
@@ -195,7 +195,7 @@ export function ProgressView() {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2.5">
-                    <DotIcon name={LANGUAGE_ICONS[lang]} size={18} color="var(--color-accent)" />
+                    {React.createElement(LANGUAGE_ICONS[lang], { size: 18, color: "var(--color-accent)" })}
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-semibold">
@@ -283,7 +283,7 @@ export function ProgressView() {
         </p>
         <div className="pt-2">
           <Button type="button" variant="outline" disabled>
-            <DotIcon name="file" size={15} aria-hidden="true" />Export progress report (.json), coming soon
+            <FileCode2 size={15} aria-hidden="true" />Export progress report (.json), coming soon
           </Button>
         </div>
       </PixelCard>

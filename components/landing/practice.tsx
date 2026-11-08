@@ -1,10 +1,10 @@
-import { DotIcon, type DotIconName } from "@/components/retro/dot-icon";
+import { Clock3, List, Shield, type LucideIcon } from "lucide-react";
 import { PixelTerminal } from "./pixel-terminal";
 
-const POINTS: Array<{ icon: DotIconName; title: string; body: string }> = [
-  { icon: "list", title: "Easy, Medium, Hard", body: "A problem list you can scan in a second, filtered by topic and language." },
-  { icon: "shield", title: "Judged in a sandbox", body: "Every submission runs in an isolated container with time and memory limits." },
-  { icon: "clock", title: "Timed challenges", body: "Practice under contest pressure with a countdown and hidden tests." },
+const POINTS: Array<{ icon: LucideIcon; title: string; body: string }> = [
+  { icon: List, title: "Easy, Medium, Hard", body: "A problem list you can scan in a second, filtered by topic and language." },
+  { icon: Shield, title: "Judged in a sandbox", body: "Every submission runs in an isolated container with time and memory limits." },
+  { icon: Clock3, title: "Timed challenges", body: "Practice under contest pressure with a countdown and hidden tests." },
 ];
 
 /** Competitive-programming half of the landing page: the live editor demo. */
@@ -23,7 +23,7 @@ export function Practice() {
               {POINTS.map((point) => (
                 <li key={point.title} className="flex gap-3">
                   <span className="skeuo-key grid size-9 shrink-0 place-items-center rounded-lg bg-[var(--color-elevated)] text-[var(--color-primary-text)]">
-                    <DotIcon name={point.icon} size={16} aria-hidden="true" />
+                    <point.icon size={16} aria-hidden="true" />
                   </span>
                   <span><strong className="block font-medium">{point.title}</strong><span className="text-sm text-[var(--color-text-muted)]">{point.body}</span></span>
                 </li>

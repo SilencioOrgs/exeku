@@ -15,6 +15,7 @@ export interface AppTopbarProps {
 const ROUTE_LABELS: Record<string, string> = {
   "/app": "Overview", "/app/challenges": "Challenges", "/app/workspace": "Workspace",
   "/app/profile": "Profile", "/app/settings": "Settings", "/app/progress": "Progress",
+  "/app/leaderboard": "Leaderboard", "/app/blog": "Blog", "/app/orgs": "Organizations",
 };
 
 export function AppTopbar({ onToggleMobileMenu }: AppTopbarProps) {
@@ -27,7 +28,7 @@ export function AppTopbar({ onToggleMobileMenu }: AppTopbarProps) {
       <Button type="button" variant="ghost" size="icon" className="lg:hidden" aria-label="Open navigation" onClick={onToggleMobileMenu}><Menu size={18} /></Button>
       <Link href="/" onClick={(event) => { if (!requestNavigation("/")) event.preventDefault(); }} className="font-semibold tracking-tight text-[var(--color-text-main)]">exeku</Link>
       <span aria-hidden="true" className="text-[var(--color-text-dim)]">/</span>
-      <span className="truncate text-sm text-[var(--color-text-muted)]">{ROUTE_LABELS[pathname] || "Workspace"}</span>
+      <span className="truncate text-sm text-[var(--color-text-muted)]">{ROUTE_LABELS[pathname] || (pathname.startsWith("/app/blog/") ? "Blog" : pathname.startsWith("/app/orgs/") ? "Organizations" : "Workspace")}</span>
     </div>
     <div className="flex items-center gap-2">
       {isTimedActive && <span className="rounded-md border border-[var(--color-border)] px-2 py-1 text-xs tabular-nums">Challenge {formattedTime}</span>}

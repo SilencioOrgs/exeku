@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { DotIcon } from "@/components/retro/dot-icon";
+import { CheckCircle2, Copy, FileCode2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { VisibleProblem } from "@/types/problem";
 import { DifficultyBadge } from "../difficulty-badge";
@@ -27,7 +27,7 @@ export function ProblemPane({ problem, onUseCustomStdin }: ProblemPaneProps) {
   if (!problem) {
     return (
       <div className="flex h-full min-h-0 items-start gap-2 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-sm text-[var(--color-text-muted)]">
-        <DotIcon name="file" size={14} aria-hidden="true" className="mt-0.5" />
+        <FileCode2 size={14} aria-hidden="true" className="mt-0.5" />
         <span>Free coding. Pick a <Link className="underline underline-offset-2" href="/app/challenges">problem</Link> when you want to submit.</span>
       </div>
     );
@@ -72,7 +72,7 @@ export function ProblemPane({ problem, onUseCustomStdin }: ProblemPaneProps) {
                   <span className="text-xs font-medium">Sample {idx + 1}</span>
                   <div className="flex gap-1">
                     <Button type="button" variant="ghost" size="xs" onClick={() => copy(sample.input, idx)}>
-                      <DotIcon name={copiedIdx === idx ? "circleCheck" : "copy"} size={12} aria-hidden="true" />
+                      {copiedIdx === idx ? <CheckCircle2 size={12} aria-hidden="true" /> : <Copy size={12} aria-hidden="true" />}
                       {copiedIdx === idx ? "Copied" : "Copy"}
                     </Button>
                     <Button type="button" variant="outline" size="xs" onClick={() => onUseCustomStdin(sample.input)}>

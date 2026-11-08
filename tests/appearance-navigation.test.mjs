@@ -23,6 +23,7 @@ function shellHarness(storage, profileState = { profile: { id: 'profile' }, isLo
       if (name === '@/hooks/use-profile') return { useProfile: () => profileState };
       if (name === './app-sidebar') return { AppSidebar: 'AppSidebar' };
       if (name === './app-topbar') return { AppTopbar: 'AppTopbar' };
+      if (name === './school/welcome-dialog') return { WelcomeDialog: 'WelcomeDialog' };
       if (name === '@/components/ui/sheet') return Object.fromEntries(['Sheet', 'SheetContent', 'SheetTitle', 'SheetDescription'].map(key => [key, key]));
       throw Error(name);
     },

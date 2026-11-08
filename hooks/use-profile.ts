@@ -5,9 +5,21 @@ import type { LocalProfile, ProfileInput } from "@/types/profile";
 import { profileRepository, ProfileRepositoryError } from "@/lib/storage/profile-repository";
 
 const PROFILE_CHANGE_EVENT = "exeku:profile-changed";
+// shortcut: logout is a browser flag that keeps the local profile and drafts, replace with a real session sign-out when Supabase lands.
+const SIGNED_OUT_KEY = "exeku:signed-out";
+
+function readSignedOut(): boolean {
+  try { return localStorage.getItem(SIGNED_OUT_KEY) === "true"; }
+  catch { return false; }
+}
 
 export interface UseProfileReturn {
+  /** The signed-in profile: null after logout, even though the data stays saved. */
   profile: LocalProfile | null;
+  /** The profile saved on this browser, signed in or not. */
+  savedProfile: LocalProfile | null;
+  signOut: () => void;
+  resumeSession: () => void;
   isLoading: boolean;
   isSaving: boolean;
   error: string | null;
@@ -20,6 +32,7 @@ export interface UseProfileReturn {
 
 export function useProfile(): UseProfileReturn {
   const [profile, setProfile] = useState<LocalProfile | null>(null);
+  const [signedOut, setSignedOut] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,6 +41,7 @@ export function useProfile(): UseProfileReturn {
     try {
       const active = await profileRepository.getActiveProfile();
       setProfile(active);
+      setSignedOut(readSignedOut());
       setError(null);
     } catch (err) {
       const message =
@@ -49,6 +63,7 @@ export function useProfile(): UseProfileReturn {
         const active = await profileRepository.getActiveProfile();
         if (!ignore) {
           setProfile(active);
+          setSignedOut(readSignedOut());
           setError(null);
         }
       } catch (err) {
@@ -165,8 +180,23 @@ export function useProfile(): UseProfileReturn {
     setError(null);
   }, []);
 
+  const setSession = useCallback((nextSignedOut: boolean) => {
+    try {
+      if (nextSignedOut) localStorage.setItem(SIGNED_OUT_KEY, "true");
+      else localStorage.removeItem(SIGNED_OUT_KEY);
+    } catch { /* Logout still applies to this page when browser storage is denied. */ }
+    setSignedOut(nextSignedOut);
+    notifyChange();
+  }, [notifyChange]);
+
+  const signOut = useCallback(() => setSession(true), [setSession]);
+  const resumeSession = useCallback(() => setSession(false), [setSession]);
+
   return {
-    profile,
+    profile: signedOut ? null : profile,
+    savedProfile: profile,
+    signOut,
+    resumeSession,
     isLoading,
     isSaving,
     error,

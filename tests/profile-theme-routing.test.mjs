@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { DotIcon } from "../components/retro/dot-icon.tsx";
+import { Settings } from "lucide-react";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (name) => fs.readFileSync(path.join(root, name), "utf8");
@@ -17,15 +17,16 @@ test("profile route exists and displays activity without trusting online submiss
   assert.match(read("components/app/app-topbar.tsx"), /"\/app\/profile": "Profile"/);
 });
 
-test("application icons use modern stroke icons with legacy DotIcon API retained", () => {
-  const icon = read("components/retro/dot-icon.tsx");
-  assert.match(icon, /lucide-react/);
-  assert.doesNotMatch(icon, /imageRendering: "pixelated"/);
-  assert.match(icon, /aria-label/);
-  assert.match(read("components/app/profile-view.tsx"), /<DotIcon/);
-  const markup = renderToStaticMarkup(React.createElement(DotIcon, { name: "cog", "aria-label": "Settings" }));
-  assert.match(markup, /aria-label="Settings"/);
-  assert.match(markup, /stroke=/);
+test("application icons come straight from lucide-react and pick up the shared icon style", () => {
+  assert.equal(fs.existsSync(path.join(root, "components/retro/dot-icon.tsx")), false);
+  assert.match(read("components/app/profile-view.tsx"), /from "lucide-react"/);
+  assert.match(read("app/globals.css"), /\.lucide \{[^}]*stroke-width: 1\.8/);
+  const labelled = renderToStaticMarkup(React.createElement(Settings, { "aria-label": "Settings", role: "img" }));
+  assert.match(labelled, /aria-label="Settings"/);
+  assert.doesNotMatch(labelled, /aria-hidden/);
+  const decorative = renderToStaticMarkup(React.createElement(Settings));
+  assert.match(decorative, /class="lucide /);
+  assert.match(decorative, /aria-hidden="true"/);
 });
 
 test("application uses one modern layout while preserving old appearance records", () => {

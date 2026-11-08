@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useProfile } from "@/hooks/use-profile";
 import { buttonVariants } from "@/components/ui/button";
-import { DotIcon } from "@/components/retro/dot-icon";
+import { ArrowDown, ArrowRight } from "lucide-react";
 import { VersusScene } from "./versus-scene";
 
 const STATS = [
@@ -33,10 +33,10 @@ export function Hero() {
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link href={profile ? "/app/challenges" : "/setup"} className={buttonVariants({ size: "lg", className: "h-11 px-5 text-base" })}>
-              {profile ? "Pick a problem" : "Start practicing"}<DotIcon name="arrowRight" size={16} aria-hidden="true" />
+              {profile ? "Pick a problem" : "Start practicing"}<ArrowRight size={16} aria-hidden="true" />
             </Link>
             <a href="#practice" className={buttonVariants({ variant: "outline", size: "lg", className: "h-11 px-5 text-base" })}>
-              See how it works<DotIcon name="arrowDown" size={16} aria-hidden="true" />
+              See how it works<ArrowDown size={16} aria-hidden="true" />
             </a>
           </div>
           <dl className="mt-10 grid max-w-md grid-cols-3 gap-4 border-t border-[var(--color-border)] pt-6">

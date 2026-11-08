@@ -8,7 +8,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DifficultyBadge, difficultyLabel } from "./difficulty-badge";
 import { cn } from "@/lib/utils";
-import { DotIcon, type DotIconName } from "@/components/retro/dot-icon";
+import { AlarmClock, BookOpen, Code2, FileCode2, Search, type LucideIcon } from "lucide-react";
 
 import {
   ALL_SUPPORTED_LANGUAGES,
@@ -20,11 +20,11 @@ import type { ProblemDifficulty, ProblemSummary, VisibleProblem } from "@/types/
 
 type FilterTier = "all" | ProblemDifficulty;
 
-const LANGUAGE_ICONS: Record<PreferredLanguage, DotIconName> = {
-  python: "python",
-  java: "java",
-  cpp: "cplusplus",
-  c: "file",
+const LANGUAGE_ICONS: Record<PreferredLanguage, LucideIcon> = {
+  python: Code2,
+  java: Code2,
+  cpp: Code2,
+  c: FileCode2,
 };
 
 const DIFFICULTY_TABS: { id: FilterTier; label: string }[] = [
@@ -110,7 +110,7 @@ export function ChallengesView() {
       {challenge.isTimedActive && (
         <div className="tile-butter skeuo-card flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--color-border)] p-3 text-sm">
           <span className="flex items-center gap-2">
-            <DotIcon name="alarm" size={16} aria-hidden="true" />
+            <AlarmClock size={16} aria-hidden="true" />
             Timed challenge in progress: <strong>{challenge.session?.problemTitle}</strong>
             <span className="font-code">{challenge.formattedTime} left</span>
           </span>
@@ -121,7 +121,7 @@ export function ChallengesView() {
       <div className="skeuo-card space-y-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative grow basis-full sm:basis-64">
-            <DotIcon name="search" size={15} aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[var(--color-text-muted)]" />
+            <Search size={15} aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[var(--color-text-muted)]" />
             <input
               type="search"
               aria-label="Search problems"
@@ -143,7 +143,7 @@ export function ChallengesView() {
           <button type="button" aria-pressed={selectedLanguage === "all"} onClick={() => setSelectedLanguage("all")} className={chip(selectedLanguage === "all")}>All languages</button>
           {ALL_SUPPORTED_LANGUAGES.map((lang) => (
             <button key={lang} type="button" aria-pressed={selectedLanguage === lang} onClick={() => setSelectedLanguage(lang)} className={chip(selectedLanguage === lang)}>
-              <DotIcon name={LANGUAGE_ICONS[lang]} size={13} aria-hidden="true" />{LANGUAGE_DISPLAY_NAMES[lang]}
+              {React.createElement(LANGUAGE_ICONS[lang], { size: 13 })}{LANGUAGE_DISPLAY_NAMES[lang]}
             </button>
           ))}
         </div>
@@ -183,10 +183,10 @@ export function ChallengesView() {
                   <td className="px-4 py-3">
                     <div className="flex flex-nowrap justify-end gap-1.5">
                       <Button type="button" variant="outline" size="sm" className="hidden sm:inline-flex" onClick={() => setInspectProblemId(prob.id)} aria-label={`Read ${prob.title}`}>
-                        <DotIcon name="book" size={14} aria-hidden="true" /><span className="hidden sm:inline">Read</span>
+                        <BookOpen size={14} aria-hidden="true" /><span className="hidden sm:inline">Read</span>
                       </Button>
                       <Button type="button" variant="outline" size="sm" onClick={() => handleStartTimedChallenge(prob.id, prob.title)} title="Start a 15-minute timed challenge" aria-label={`Start a timed challenge on ${prob.title}`}>
-                        <DotIcon name="alarm" size={14} aria-hidden="true" /><span className="hidden sm:inline">Timed</span>
+                        <AlarmClock size={14} aria-hidden="true" /><span className="hidden sm:inline">Timed</span>
                       </Button>
                       <Link href={`/app/workspace?problem=${encodeURIComponent(prob.id)}`} className={buttonVariants({ size: "sm" })}>Solve</Link>
                     </div>
@@ -219,7 +219,7 @@ export function ChallengesView() {
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => { handleStartTimedChallenge(activeProblemDetail.id, activeProblemDetail.title); setInspectProblemId(null); }}>
-                <DotIcon name="alarm" size={14} aria-hidden="true" />Start timed
+                <AlarmClock size={14} aria-hidden="true" />Start timed
               </Button>
               <Link href={`/app/workspace?problem=${encodeURIComponent(activeProblemDetail.id)}`} className={buttonVariants()}>Solve</Link>
             </DialogFooter>

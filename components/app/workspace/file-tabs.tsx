@@ -1,6 +1,6 @@
 "use client";
 
-import { DotIcon } from "@/components/retro/dot-icon";
+import { FileCode2, Plus, X } from "lucide-react";
 
 import { useRef, useState, type KeyboardEvent } from "react";
 
@@ -103,7 +103,7 @@ export function FileTabs({ language, files, activeName, mainName, saveStatus, on
                 onKeyDown={(e) => moveTab(e, index)}
                 className="font-code inline-flex h-8 items-center gap-1.5 px-2 text-xs"
               >
-                <DotIcon name="file" size={14} aria-hidden="true" />
+                <FileCode2 size={14} aria-hidden="true" />
                 <span>{file.name}</span>
                 {activeName === file.name && saveStatus !== "SAVED" && <span title="Unsaved changes" className="size-1.5 rounded-full bg-[var(--color-text-main)]"><span className="sr-only">Unsaved changes</span></span>}
               </button>
@@ -115,7 +115,7 @@ export function FileTabs({ language, files, activeName, mainName, saveStatus, on
                 aria-label={`Close ${file.name}`}
                 className="mr-1 rounded p-0.5 text-[var(--color-text-muted)] opacity-70 hover:opacity-100 focus-visible:opacity-100 sm:group-hover:opacity-100"
                 onClick={() => close(file)}
-              ><DotIcon name="close" size={12} aria-hidden="true" /></button>
+              ><X size={12} aria-hidden="true" /></button>
             )}
           </div>
         ))}
@@ -134,7 +134,7 @@ export function FileTabs({ language, files, activeName, mainName, saveStatus, on
         <button
           type="button" onClick={() => begin(null)} title="Add source file" aria-label="Add source file"
           disabled={files.length >= 6} className="grid size-8 shrink-0 place-items-center rounded-md text-[var(--color-text-muted)] hover:bg-[var(--color-elevated)] hover:text-[var(--color-text-main)] disabled:opacity-40"
-        ><DotIcon name="circlePlus" size={14} aria-hidden="true" /></button>
+        ><Plus size={14} aria-hidden="true" /></button>
       )}
       {error && <span role="alert" title={error} className="absolute left-0 top-full z-30 mt-1 max-w-60 rounded-md border border-[var(--color-text-main)] bg-[var(--color-surface)] p-1.5 text-xs text-[var(--color-text-main)]">{error}</span>}
     </div>

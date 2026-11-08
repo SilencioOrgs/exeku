@@ -1,18 +1,47 @@
 "use client";
 
 import { Button, buttonVariants } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useProfile } from "@/hooks/use-profile";
 import { draftRepository } from "@/lib/storage/draft-repository";
-import { PixelAvatar } from "@/components/retro/pixel-avatar";
-import { DotIcon } from "@/components/retro/dot-icon";
+import { LogOut, Pencil, Settings } from "lucide-react";
+import { useChallengeSession } from "@/hooks/use-challenge-session";
+import { githubUrl, linkedinUrl } from "@/lib/social-links";
+import { GithubIcon, LinkedinIcon } from "./brand-icons";
 import { CodingActivity } from "./coding-activity";
 import { ProfileEditDialog } from "./profile-edit-dialog";
+import { SchoolEmailSection } from "./school/school-email-section";
 import { LANGUAGE_DISPLAY_NAMES } from "@/lib/workspace-defaults";
 
+function SocialLink({ icon, label, handle, href }: { icon: ReactNode; label: string; handle?: string; href: string }) {
+  return (
+    <div className="skeuo-recess flex min-w-0 items-center gap-3 rounded-xl px-3.5 py-2.5">
+      <span className="text-[var(--color-text-main)]">{icon}</span>
+      <div className="min-w-0">
+        <p className="text-xs text-[var(--color-text-muted)]">{label}</p>
+        {handle ? (
+          <a href={href} target="_blank" rel="noreferrer" className="block truncate text-sm font-medium text-[var(--color-accent)] underline-offset-4 hover:underline">@{handle}</a>
+        ) : (
+          <p className="font-code text-sm text-[var(--color-text-muted)]">NaN</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Readout({ label, value, capitalize }: { label: string; value: ReactNode; capitalize?: boolean }) {
+  return (
+    <div className="skeuo-recess min-w-0 rounded-xl px-3.5 py-2.5">
+      <p className="text-xs text-[var(--color-text-muted)]">{label}</p>
+      <p className={`truncate text-sm font-semibold ${capitalize ? "capitalize" : ""}`}>{value}</p>
+    </div>
+  );
+}
+
 export function ProfileView() {
-  const { profile, updateProfile } = useProfile();
+  const { profile, updateProfile, signOut } = useProfile();
+  const { isTimedActive } = useChallengeSession();
   const [editing, setEditing] = useState(false);
   const [draftCount, setDraftCount] = useState<number | null>(null);
 
@@ -29,43 +58,43 @@ export function ProfileView() {
   if (!profile) return <p role="status" className="p-6 text-sm text-[var(--color-text-muted)]">Loading local profile…</p>;
 
   const joined = new Date(profile.createdAt).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
+  const github = profile.socialLinks?.github;
+  const linkedin = profile.socialLinks?.linkedin;
 
   return (
     <div className="profile-view mx-auto w-full max-w-6xl space-y-6 p-4 sm:p-6 lg:p-8">
       <header className="flex flex-wrap items-center justify-between gap-3">
-        <div><h1 className="text-3xl font-semibold tracking-tight">Profile</h1></div>
-        <Button type="button" variant="outline" onClick={() => setEditing(true)}>
-          <DotIcon name="pencil" size={15} aria-hidden="true" />Edit profile
-        </Button>
+        <h1 className="text-3xl font-semibold tracking-tight">Profile</h1>
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="outline" onClick={() => setEditing(true)}>
+            <Pencil size={15} aria-hidden="true" />Edit profile
+          </Button>
+          <Link href="/app/settings" className={buttonVariants({ variant: "outline" })}>
+            <Settings size={15} aria-hidden="true" />Appearance
+          </Link>
+          <Button type="button" variant="outline" onClick={signOut} disabled={isTimedActive} title={isTimedActive ? "Finish your timed challenge before logging out" : undefined}>
+            <LogOut size={15} aria-hidden="true" />Log out
+          </Button>
+        </div>
       </header>
-      <section aria-label="Your profile" className="profile-panel flex flex-wrap items-center gap-4 p-5 sm:gap-6 sm:p-6">
-        <PixelAvatar avatarId={profile.avatarId} size={72} className="shrink-0" />
-        <div className="min-w-0 flex-1 space-y-1">
-          <h2 className="break-words text-xl font-semibold sm:text-2xl">{profile.displayName}</h2>
-          <p className="text-sm text-[var(--color-text-muted)]">{profile.bio || "Your personal coding workspace"}</p>
-          <p className="text-xs text-[var(--color-text-muted)]">Coding locally since {joined}</p>
+
+      <SchoolEmailSection profile={profile} onSave={async (account) => { await updateProfile(profile.id, { account, userType: "student" }); }}>
+        <h2 className="text-2xl font-semibold tracking-tight break-words sm:text-3xl">{profile.displayName}</h2>
+        <p className="mt-1 text-sm text-[var(--color-text-muted)]">{profile.bio || "Your personal coding workspace"}</p>
+        <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">Coding locally since {joined}</p>
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <SocialLink icon={<GithubIcon />} label="GitHub" handle={github} href={github ? githubUrl(github) : ""} />
+          <SocialLink icon={<LinkedinIcon />} label="LinkedIn" handle={linkedin} href={linkedin ? linkedinUrl(linkedin) : ""} />
         </div>
-        <Link href="/app/settings" className={buttonVariants({ variant: "outline" })}>
-          <DotIcon name="cog" size={15} aria-hidden="true" />Appearance
-        </Link>
-      </section>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="profile-panel p-4 sm:p-5">
-          <p className="text-xs text-[var(--color-text-muted)]">Preferred language</p>
-          <p className="mt-2 text-lg font-semibold">{LANGUAGE_DISPLAY_NAMES[profile.preferredLanguage]}</p>
-          <p className="text-xs capitalize text-[var(--color-text-muted)]">{profile.experienceLevel} experience</p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          <Readout label="Language" value={LANGUAGE_DISPLAY_NAMES[profile.preferredLanguage]} />
+          <Readout label="Experience" value={profile.experienceLevel} capitalize />
+          <Readout label="Saved drafts" value={draftCount === null ? "Unavailable" : draftCount} />
         </div>
-        <div className="profile-panel p-4 sm:p-5">
-          <p className="text-xs text-[var(--color-text-muted)]">Saved workspace drafts</p>
-          <p className="mt-2 text-lg font-semibold">{draftCount === null ? "Unavailable" : draftCount}</p>
-          <Link href="/app/workspace" className={buttonVariants({ variant: "outline", size: "sm", className: "mt-2" })}>Open editor</Link>
-        </div>
-      </div>
+      </SchoolEmailSection>
+
       <CodingActivity profileId={profile.id} />
-      <div className="flex flex-wrap items-center gap-2">
-        <Link className={buttonVariants()} href="/app/challenges"><DotIcon name="list" size={15} aria-hidden="true" />Browse problems</Link>
-        <Link className={buttonVariants({ variant: "outline" })} href="/app/workspace"><DotIcon name="vscode" size={15} aria-hidden="true" />Continue coding</Link>
-      </div>
       <p className="text-xs text-[var(--color-text-muted)]">Activity reflects days with saved edits on this browser only. It is not linked to your GitHub account or a verified competition history.</p>
       <ProfileEditDialog
         isOpen={editing}

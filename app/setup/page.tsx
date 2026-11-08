@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { OnboardingWizard } from "@/components/setup/onboarding-wizard";
+import { SignInCard } from "@/components/setup/sign-in-card";
 
 export const metadata: Metadata = {
-  title: "Profile Setup — Exeku",
-  description: "Set up your local coding profile for offline Python, Java, C++, and C learning.",
+  title: "Sign in — Exeku",
+  description: "Sign in to Exeku and start practicing Python, Java, C++, and C.",
 };
 
 export default function SetupPage() {
-  return <OnboardingWizard />;
+  return <SignInCard />;
 }
