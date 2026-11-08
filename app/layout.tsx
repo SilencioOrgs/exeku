@@ -9,7 +9,7 @@ import { AppearanceProvider } from "@/hooks/use-appearance";
 export const metadata: Metadata = {
   title: "Exeku — Your Code. Your Machine.",
   description:
-    "Online programming practice, assessment, and competition platform inspired by CodeChum (Developer Preview). Master Python 3, Java, C++, and C with isolated sandbox execution and deterministic automated judging.",
+    "Competitive programming practice for students in the browser. Solve problems in Python 3, Java, C++ and C with sandboxed runs and instant judging.",
   icons: {
     icon: "/favicon.ico",
   },
