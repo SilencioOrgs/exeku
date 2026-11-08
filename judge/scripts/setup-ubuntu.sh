@@ -47,7 +47,25 @@ git clone -q --depth 1 --branch "$ISOLATE_REF" https://github.com/ioi/isolate.gi
 make -s -C /usr/local/src/isolate isolate isolate-cg-keeper
 make -s -C /usr/local/src/isolate install
 systemctl daemon-reload
-systemctl enable --now isolate.service
+systemctl enable isolate.service >/dev/null
+if ! systemctl restart isolate.service; then
+  systemctl status isolate.service --no-pager -n 10 || true
+  echo >&2
+  echo "isolate needs the cgroup v2 hierarchy at /sys/fs/cgroup. Current mounts:" >&2
+  mount | grep cgroup >&2 || true
+  if grep -qi microsoft /proc/version; then
+    cat >&2 <<'HINT'
+
+WSL mounts cgroup v1 and v2 side by side by default. Switch it to v2 only:
+  1. In Windows, open %UserProfile%\.wslconfig (create it) and add:
+       [wsl2]
+       kernelCommandLine = cgroup_no_v1=all systemd.unified_cgroup_hierarchy=1
+  2. In PowerShell: wsl --shutdown
+  3. Reopen Ubuntu and run this script again.
+HINT
+  fi
+  exit 1
+fi
 
 # Memory limits do not cover swapped-out pages (isolate manual).
 swapoff -a || true

@@ -23,20 +23,25 @@ You need a real Linux kernel, so the judge runs in WSL2 or a VM. Next.js keeps r
    [boot]
    systemd=true
    ```
-3. Clone the repo inside Ubuntu (not under `/mnt/c`) and run the setup:
+3. Switch WSL to cgroup v2 only (by default it mounts v1 and v2 side by side, and isolate cannot start). In Windows, open `%UserProfile%\.wslconfig` (create it) and add the lines below, then run `wsl --shutdown` and reopen Ubuntu. `mount | grep cgroup` should then show a single `cgroup2 on /sys/fs/cgroup` line.
+   ```
+   [wsl2]
+   kernelCommandLine = cgroup_no_v1=all systemd.unified_cgroup_hierarchy=1
+   ```
+4. Clone the repo inside Ubuntu (not under `/mnt/c`) and run the setup:
    ```
    git clone https://github.com/SilencioOrgs/exeku.git ~/exeku
    cd ~/exeku
    sudo bash judge/scripts/setup-ubuntu.sh
    ```
    It installs the compilers, Node 22 and isolate, starts the `exeku-judge` service, runs a smoke test and prints your token.
-4. On Windows, create `.env.local` in your Exeku folder:
+5. On Windows, create `.env.local` in your Exeku folder:
    ```
    EXECUTION_ENGINE=exeku
    JUDGE_SERVICE_URL=http://localhost:4000
-   JUDGE_TOKEN=<token from step 3>
+   JUDGE_TOKEN=<token from step 4>
    ```
-5. Run `npm run dev`, open a problem and press Run. `http://localhost:3000/api/health` should show `"isAvailable": true`.
+6. Run `npm run dev`, open a problem and press Run. `http://localhost:3000/api/health` should show `"isAvailable": true`.
 
 If the smoke test fails on the memory or sandbox checks, your WSL kernel does not give isolate what it needs. Use option B.
 
