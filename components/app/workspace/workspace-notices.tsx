@@ -5,15 +5,15 @@ import { Button } from "@/components/ui/button";
 import { AlarmClock, AlertCircle, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const PISTON_COMMAND = "docker run -d -p 2000:2000 ghcr.io/engineerman/piston/piston";
+import { JUDGE_START_COMMAND } from "@/lib/execution/judge-help";
 
 export function SandboxOfflineNotice({ onEnableDemo, onDismiss }: { onEnableDemo: () => void; onDismiss: () => void }) {
   const [copied, setCopied] = useState(false);
   return (
     <div role="status" className="flex min-w-0 shrink-0 items-center gap-2 rounded-[var(--radius-card)] border border-[var(--color-text-main)] px-2 py-1 text-xs">
       <AlertCircle size={14} aria-hidden="true" />
-      <span className="min-w-0 flex-1 truncate"><strong className="font-semibold">Sandbox service unavailable.</strong> Start Piston on port 2000 to run code.</span>
-      <Button type="button" variant="outline" size="xs" onClick={() => { void navigator.clipboard?.writeText(PISTON_COMMAND); setCopied(true); }}>
+      <span className="min-w-0 flex-1 truncate"><strong className="font-semibold">Sandbox service unavailable.</strong> Start the Exeku judge to run code.</span>
+      <Button type="button" variant="outline" size="xs" onClick={() => { void navigator.clipboard?.writeText(JUDGE_START_COMMAND); setCopied(true); }}>
         {copied ? "Copied" : "Copy command"}
       </Button>
       <Button type="button" variant="ghost" size="xs" onClick={onEnableDemo}>Try demo mode</Button>

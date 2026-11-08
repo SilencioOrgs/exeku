@@ -51,5 +51,7 @@ export interface SandboxHealth {
 
 export interface IExecutionAdapter {
   execute(request: ExecutionRequest): Promise<ExecutionResult>;
+  /** Optional: compile once and run every stdin, one result per input in order. */
+  executeBatch?(request: ExecutionRequest, stdins: string[]): Promise<ExecutionResult[]>;
   checkHealth(): Promise<SandboxHealth>;
 }

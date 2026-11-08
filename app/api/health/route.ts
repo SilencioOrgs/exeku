@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server";
-import { PistonAdapter } from "@/lib/execution/piston-adapter";
+import { createExecutionAdapter, resolveExecutionEngine } from "@/lib/execution/engine";
 import { globalExecutionQueue } from "@/lib/execution/queue";
 
 export async function GET() {
-  const adapter = new PistonAdapter();
+  const adapter = createExecutionAdapter();
   const sandbox = await adapter.checkHealth();
   const queueStats = globalExecutionQueue.getStats();
 
   return NextResponse.json({
     status: "ok",
+    engine: resolveExecutionEngine(),
     sandbox,
     queue: queueStats,
     platform: "Exeku Online Judge (Local Preview)",

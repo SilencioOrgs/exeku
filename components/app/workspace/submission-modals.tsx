@@ -7,8 +7,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { VerdictBadge } from "./verdict-badge";
 import { isRealVerdict } from "@/lib/verdicts";
 import type { JudgingResult } from "@/lib/judge/judging-service";
+import { JUDGE_START_COMMAND } from "@/lib/execution/judge-help";
 
-const PISTON_COMMAND = "docker run -d -p 2000:2000 ghcr.io/engineerman/piston/piston";
 
 const DESCRIPTIONS: Record<string, string> = {
   ACCEPTED: "Every test passed.",
@@ -16,7 +16,8 @@ const DESCRIPTIONS: Record<string, string> = {
   COMPILATION_ERROR: "The compiler could not build your code. Check the compiler output.",
   RUNTIME_ERROR: "Your program crashed or exited with an error.",
   TIME_LIMIT_EXCEEDED: "Your program ran longer than the time limit.",
-  SERVICE_UNAVAILABLE: "Sandbox service unavailable. Nothing was judged. Start Piston on port 2000, then submit again.",
+  MEMORY_LIMIT_EXCEEDED: "Your program used more memory than the limit.",
+  SERVICE_UNAVAILABLE: "Sandbox service unavailable. Nothing was judged. Start the Exeku judge (see judge/README.md), then submit again.",
   INTERNAL_JUDGE_ERROR: "The judge could not finish. This is not counted against you.",
 };
 
@@ -84,7 +85,7 @@ export function SubmissionResultDialog({ open, onOpenChange, result, problemTitl
           </dl>
         )}
         {unavailable && (
-          <code className="font-code block overflow-x-auto rounded-md border border-[var(--color-border)] bg-[var(--color-canvas)] p-2 text-xs">{PISTON_COMMAND}</code>
+          <code className="font-code block overflow-x-auto rounded-md border border-[var(--color-border)] bg-[var(--color-canvas)] p-2 text-xs">{JUDGE_START_COMMAND}</code>
         )}
         <DialogFooter>
           <Button type="button" variant="ghost" onClick={() => { onOpenChange(false); onViewDetails(); }}>View details</Button>
