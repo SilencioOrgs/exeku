@@ -129,6 +129,7 @@ export class ProfileRepository {
       account: updates.account ?? existing.account,
       socialLinks: updates.socialLinks ?? existing.socialLinks,
       userType: updates.userType ?? existing.userType,
+      borderId: updates.borderId ?? existing.borderId,
       updatedAt: new Date().toISOString(),
     };
 

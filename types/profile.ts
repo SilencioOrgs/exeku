@@ -1,5 +1,6 @@
 import type { StudentAccount } from "./account";
 import type { AppearancePreferences } from "./appearance";
+import type { AvatarBorderId } from "@/lib/avatar-borders";
 
 export type ExperienceLevel = "beginner" | "intermediate" | "advanced";
 
@@ -24,6 +25,7 @@ export interface LocalProfile {
   account?: StudentAccount;
   socialLinks?: SocialLinks;
   userType?: UserType;
+  borderId?: AvatarBorderId;
   createdAt: string;
   updatedAt: string;
 }
@@ -37,6 +39,7 @@ export interface ProfileInput {
   account?: StudentAccount;
   socialLinks?: SocialLinks;
   userType?: UserType;
+  borderId?: AvatarBorderId;
 }
 
 export interface AvatarDefinition {

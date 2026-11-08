@@ -11,11 +11,14 @@ export type ContrastMode = "standard" | "high";
 export type UIFontFamily =
   | "geist-sans"
   | "pixelify-sans"
-  | "system-sans";
+  | "system-sans"
+  | "verdana"
+  | "georgia";
 
 export type EditorFontFamily =
   | "geist-mono"
   | "consolas"
+  | "courier-new"
   | "monospace";
 
 export type LineHeightOption = "compact" | "normal" | "comfortable";
@@ -116,11 +119,14 @@ export const VALID_UI_FONTS: readonly UIFontFamily[] = [
   "geist-sans",
   "pixelify-sans",
   "system-sans",
+  "verdana",
+  "georgia",
 ] as const;
 
 export const VALID_EDITOR_FONTS: readonly EditorFontFamily[] = [
   "geist-mono",
   "consolas",
+  "courier-new",
   "monospace",
 ] as const;
 

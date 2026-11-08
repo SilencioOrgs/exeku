@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { useProfile } from "@/hooks/use-profile";
 import { draftRepository } from "@/lib/storage/draft-repository";
 import type { WorkspaceDraft } from "@/types/draft";
 import { ModernOverview } from "./modern-overview";
 
-export function CommandStation({ banner }: { banner?: ReactNode }) {
+export function CommandStation() {
   const { profile, updateProfile } = useProfile();
   const [activeDraft, setActiveDraft] = useState<WorkspaceDraft | null>(null);
   const [totalDrafts, setTotalDrafts] = useState(0);
@@ -29,6 +29,6 @@ export function CommandStation({ banner }: { banner?: ReactNode }) {
 
   if (!profile) return <p role="status" className="p-8 text-sm text-[var(--color-text-muted)]">Loading workspace…</p>;
 
-  return <ModernOverview banner={banner} profile={profile} activeDraft={activeDraft}
+  return <ModernOverview profile={profile} activeDraft={activeDraft}
     totalDrafts={totalDrafts} onSaveProfile={(updates) => updateProfile(profile.id, updates)} />;
 }

@@ -6,10 +6,9 @@ import { ArrowLeft } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useProfile } from "@/hooks/use-profile";
 import { fetchOrg, orgAction } from "@/lib/orgs/api";
-import { can } from "@/lib/orgs/rules";
+import { can, eventAccessLabel } from "@/lib/orgs/rules";
 import type { OrgDetail } from "@/types/org";
 import { SelectField } from "../school/field";
-import { EventForm, PostForm } from "./org-forms";
 
 const ROLE_LABELS = { president: "President", officer: "Officer", member: "Member" };
 
@@ -48,7 +47,7 @@ export function OrgView({ orgId }: { orgId: string }) {
   if (loadError) return <p role="alert" className="p-8 text-sm text-[var(--color-pink)]">{loadError}</p>;
   if (!detail || !profile) return <p role="status" className="p-8 text-sm text-[var(--color-text-muted)]">Loading organization…</p>;
 
-  const { org, viewerRole, applicationStatus, members, applications, events, posts, sample } = detail;
+  const { org, viewerRole, applicationStatus, members, applications, events, sample } = detail;
   const isStudent = profile.userType === "student" || Boolean(profile.account);
   const canPublish = can(viewerRole, "publish");
   const canManageOfficers = can(viewerRole, "manageOfficers");
@@ -136,25 +135,16 @@ export function OrgView({ orgId }: { orgId: string }) {
           <ul className="space-y-2">
             {events.map((e) => (
               <li key={e.id} className="flex flex-wrap items-center justify-between gap-2">
-                <span className="min-w-0 text-sm"><span className="font-medium">{e.title}</span> <span className="text-[var(--color-text-muted)]">· {e.access === "open" ? "Open to everyone" : `Org only: ${e.orgName}`}</span></span>
+                <span className="min-w-0 text-sm"><span className="font-medium">{e.title}</span> <span className="text-[var(--color-text-muted)]">· {eventAccessLabel(e)}</span></span>
                 {e.featured ? <span className="text-xs text-[var(--color-primary-text)]">On the dashboard</span>
                   : canPublish && <Button size="sm" variant="outline" onClick={() => void run({ action: "feature", eventId: e.id })}>Show on dashboard</Button>}
               </li>
             ))}
           </ul>
         )}
-        {canPublish && <div className="border-t border-[var(--color-border)] pt-4"><EventForm act={act} /></div>}
+        {canPublish && <Link href="/app/events" className={buttonVariants({ variant: "outline" })}>Post an event</Link>}
       </section>
 
-      <section aria-labelledby="posts-heading" className="profile-panel space-y-3 p-5">
-        <h2 id="posts-heading" className="font-semibold">Blog posts</h2>
-        {posts.length === 0 ? <p className="text-sm text-[var(--color-text-muted)]">No posts yet.</p> : (
-          <ul className="space-y-1">
-            {posts.map((p) => <li key={p.slug}><Link href={`/app/blog/${p.slug}`} className="text-sm text-[var(--color-accent)] underline-offset-4 hover:underline">{p.title}</Link></li>)}
-          </ul>
-        )}
-        {canPublish && <div className="border-t border-[var(--color-border)] pt-4"><PostForm act={act} /></div>}
-      </section>
     </div>
   );
 }

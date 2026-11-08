@@ -55,7 +55,7 @@ export function SchoolEmailSection({ profile, onSave, children }: SchoolEmailSec
         )}
       </div>
       <div className="order-first lg:order-none lg:w-60 lg:shrink-0">
-        <IdCard fullName={profile.displayName} school={newSchool?.name ?? form.schoolLabel} campus={newSchool?.campus ?? form.campusLabel} pending={newSchool !== null} avatarId={profile.avatarId} />
+        <IdCard fullName={profile.displayName} school={newSchool?.name ?? form.schoolLabel} campus={newSchool?.campus ?? form.campusLabel} pending={newSchool !== null} avatarId={profile.avatarId} borderId={profile.borderId} serial={`EXK-${profile.id.replace(/[^a-z0-9]/gi, "").slice(0, 8).toUpperCase()}`} />
       </div>
     </section>
   );

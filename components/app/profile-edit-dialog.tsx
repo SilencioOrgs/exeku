@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import React, { useState } from "react";
 import type { LocalProfile, ProfileInput, ExperienceLevel, PreferredLanguage } from "@/types/profile";
 import { AVATARS } from "@/lib/avatars";
+import { AVATAR_BORDERS } from "@/lib/avatar-borders";
 import { validateDisplayName } from "@/lib/profile-validation";
 import { parseGithub, parseLinkedin } from "@/lib/social-links";
 import { PixelAvatar } from "@/components/retro/pixel-avatar";
@@ -43,6 +44,7 @@ function ProfileEditModalContent({
   const [displayName, setDisplayName] = useState(profile.displayName);
   const [bio, setBio] = useState(profile.bio || "");
   const [avatarId, setAvatarId] = useState(profile.avatarId);
+  const [borderId, setBorderId] = useState(profile.borderId ?? "none");
   const [experienceLevel, setExperienceLevel] = useState(profile.experienceLevel);
   const [preferredLanguage, setPreferredLanguage] = useState(profile.preferredLanguage);
   const [github, setGithub] = useState(profile.socialLinks?.github ?? "");
@@ -73,6 +75,7 @@ function ProfileEditModalContent({
         displayName: validation.trimmed,
         bio: bio.trim() || undefined,
         avatarId,
+        borderId,
         experienceLevel,
         preferredLanguage,
         socialLinks: { github: parsedGithub.handle, linkedin: parsedLinkedin.handle },
@@ -181,11 +184,24 @@ function ProfileEditModalContent({
                   onClick={() => setAvatarId(av.id)}
                   className="h-auto flex-col gap-1 py-2"
                 >
-                  <PixelAvatar avatarId={av.id} size={36} />
+                  <PixelAvatar avatarId={av.id} size={48} />
                   <span className="w-full truncate text-center text-xs text-[var(--color-text-muted)]">{av.name}</span>
                 </Button>
               );
             })}
+          </div>
+        </div>
+
+        {/* Avatar Border */}
+        <div className="space-y-1.5">
+          <span className="block text-xs text-[var(--color-text-main)]">Avatar border</span>
+          <div role="group" aria-label="Avatar border" className="grid grid-cols-4 gap-2">
+            {AVATAR_BORDERS.map((border) => (
+              <Button key={border.id} type="button" variant="outline" aria-pressed={border.id === borderId} onClick={() => setBorderId(border.id)} className="h-auto flex-col gap-2.5 pt-4 pb-2">
+                <PixelAvatar avatarId={avatarId} borderId={border.id} size={40} />
+                <span className="w-full truncate text-center text-xs text-[var(--color-text-muted)]">{border.label}</span>
+              </Button>
+            ))}
           </div>
         </div>
 

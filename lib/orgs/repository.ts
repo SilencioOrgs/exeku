@@ -4,7 +4,7 @@ import { isSampleData } from "@/lib/competition/repository";
 import { mockDb } from "@/lib/mock/db";
 import type { FieldErrors } from "@/types/account";
 import type { OrgDetail, OrgPermission, OrgRole, OrgSummary } from "@/types/org";
-import { can, checkEvent, checkPost, slugify } from "./rules";
+import { can, canViewEvent, checkEvent } from "./rules";
 
 export type ActionResult = { ok: true } | { ok: false; status: number; error?: string; fieldErrors?: FieldErrors };
 
@@ -30,8 +30,7 @@ export async function getOrgDetail(orgId: string, viewerId: string): Promise<Org
     applications: can(viewerRole, "reviewApplications")
       ? applications.filter((a) => a.status === "pending").map(({ id, name, program }) => ({ id, name, program }))
       : [],
-    events: mockDb.events.filter((e) => e.orgId === orgId),
-    posts: mockDb.posts.filter((p) => p.orgId === orgId).map(({ slug, title }) => ({ slug, title })),
+    events: mockDb.events.filter((e) => e.orgId === orgId && canViewEvent(e, { campusIds: [], orgIds: viewerRole ? [orgId] : [] })),
     sample: isSampleData,
   };
 }
@@ -76,11 +75,11 @@ export async function performOrgAction(orgId: string, input: unknown): Promise<A
     }
     case "createEvent": {
       if (denied("publish")) return failed(403, "Only officers can create events.");
-      const checked = checkEvent(input);
+      const checked = checkEvent(input, new Date().toISOString().slice(0, 10));
       if (!checked.ok) return { ok: false, status: 422, fieldErrors: checked.fieldErrors };
-      const { title, summary, access, banner, featured } = checked;
+      const { title, summary, startsOn, access, banner, featured } = checked;
       if (featured) mockDb.events.forEach((e) => { e.featured = false; });
-      mockDb.events.unshift({ id: crypto.randomUUID(), orgId, orgName: org.name, title, summary, access, banner, featured });
+      mockDb.events.unshift({ id: crypto.randomUUID(), orgId, orgName: org.name, campusId: org.campusId, campusName: org.campusName, title, summary, startsOn, access, banner, featured });
       return { ok: true };
     }
     case "feature": {
@@ -89,14 +88,6 @@ export async function performOrgAction(orgId: string, input: unknown): Promise<A
       if (!event) return failed(404, "That event wasn't found.");
       mockDb.events.forEach((e) => { e.featured = false; });
       event.featured = true;
-      return { ok: true };
-    }
-    case "createPost": {
-      if (denied("publish")) return failed(403, "Only officers can write posts.");
-      const checked = checkPost(input);
-      if (!checked.ok) return { ok: false, status: 422, fieldErrors: checked.fieldErrors };
-      const { title, paragraphs, excerpt } = checked;
-      mockDb.posts.unshift({ slug: `${slugify(title)}-${mockDb.posts.length + 1}`, orgId, title, excerpt, paragraphs, placements: [], publishedOn: new Date().toISOString().slice(0, 10) });
       return { ok: true };
     }
     default:

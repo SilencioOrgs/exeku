@@ -1,5 +1,6 @@
 import React from "react";
-import { ArrowUp, CirclePlay, GitBranch, Terminal } from "lucide-react";
+import { ArrowUp, CirclePlay, GitBranch } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
 
 export function Footer() {
   const navLinks = [
@@ -17,9 +18,7 @@ export function Footer() {
           {/* Brand Info */}
           <div className="md:col-span-2 space-y-4">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-[var(--color-elevated)] border border-[var(--color-primary)] flex items-center justify-center text-[var(--color-accent)]">
-                <Terminal size={16} />
-              </div>
+              <BrandLogo size={34} />
               <span
                 className="text-2xl font-bold text-[var(--color-text-main)]"
                 style={{ fontFamily: "var(--font-heading-active)" }}

@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronLeft, ChevronRight, Code2, LayoutDashboard, ListChecks, Newspaper, Settings2, Trophy, UserRound, Timer, Users } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Code2, LayoutDashboard, ListChecks, Settings2, Trophy, UserRound, Timer, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { DEFAULT_AVATAR_ID, PixelAvatar } from "@/components/retro/pixel-avatar";
 import { useChallengeSession } from "@/hooks/use-challenge-session";
 import type { LocalProfile } from "@/types/profile";
 
@@ -13,12 +14,12 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "challenges", label: "Challenges", href: "/app/challenges", iconName: "challenges", index: "02" },
   { id: "workspace", label: "Workspace", href: "/app/workspace", iconName: "workspace", index: "03" },
   { id: "leaderboard", label: "Leaderboard", href: "/app/leaderboard", iconName: "leaderboard", index: "04" },
-  { id: "blog", label: "Blog", href: "/app/blog", iconName: "blog", index: "05" },
+  { id: "events", label: "Events", href: "/app/events", iconName: "events", index: "05" },
   { id: "orgs", label: "Organizations", href: "/app/orgs", iconName: "orgs", index: "06" },
   { id: "profile", label: "Profile", href: "/app/profile", iconName: "profile", index: "07" },
   { id: "settings", label: "Settings", href: "/app/settings", iconName: "settings", index: "08" },
 ];
-const ICONS = { overview: LayoutDashboard, challenges: ListChecks, workspace: Code2, leaderboard: Trophy, blog: Newspaper, orgs: Users, profile: UserRound, settings: Settings2 };
+const ICONS = { overview: LayoutDashboard, challenges: ListChecks, workspace: Code2, leaderboard: Trophy, events: CalendarDays, orgs: Users, profile: UserRound, settings: Settings2 };
 
 export interface AppSidebarProps {
   profile: LocalProfile | null;
@@ -34,7 +35,7 @@ export function AppSidebar({ profile, collapsed, onToggleCollapse, onNavigate, c
 
   return <aside aria-label="Application sidebar" className={cn("app-sidebar flex h-full shrink-0 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)] transition-[width] duration-150", collapsed ? "w-[68px]" : "w-56", className)}>
     <div className={cn("flex min-h-16 items-center gap-3 border-b border-[var(--color-border)] px-3", collapsed && "justify-center")}>
-      <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[var(--color-elevated)] text-sm font-semibold text-[var(--color-text-main)]">{profile?.displayName?.slice(0, 1).toUpperCase() || "E"}</span>
+      <PixelAvatar avatarId={profile?.avatarId ?? DEFAULT_AVATAR_ID} borderId={profile?.borderId} size={36} />
       {!collapsed && <div className="min-w-0"><p className="truncate text-sm font-semibold">{profile?.displayName || "Local profile"}</p><p className="truncate text-xs capitalize text-[var(--color-text-muted)]">{profile?.experienceLevel || "Developer preview"}</p></div>}
     </div>
     {isTimedActive && <div className="flex items-center gap-2 border-b border-[var(--color-border)] px-3 py-2 text-xs text-[var(--color-text-muted)]"><Timer size={14} />{!collapsed && <span>Challenge {formattedTime}</span>}</div>}

@@ -3,8 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useProfile } from "@/hooks/use-profile";
+import { BrandLogo } from "@/components/brand-logo";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { ArrowRight, Menu, Terminal, X } from "lucide-react";
+import { ArrowRight, Menu, X } from "lucide-react";
 
 export function Navbar() {
   const { profile } = useProfile();
@@ -28,9 +29,7 @@ export function Navbar() {
             href="#hero"
             className="flex items-center gap-2 group outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
           >
-            <div className="w-8 h-8 rounded-lg bg-[var(--color-primary)] flex items-center justify-center text-[var(--primary-foreground)] shadow-[var(--glow-primary)]">
-              <Terminal size={16} />
-            </div>
+            <BrandLogo size={34} />
             <span className="font-heading text-xl font-semibold tracking-tight text-foreground transition-colors">
               exeku
             </span>

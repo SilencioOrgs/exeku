@@ -49,7 +49,7 @@ test("workspace-three-pane - globals.css ships one dark orange-on-black theme, n
   }
   assert.match(css, /color-scheme: dark/);
   assert.doesNotMatch(css, /color-scheme: light/);
-  assert.match(css, /:root\[data-contrast="high"\]/);
+  assert.doesNotMatch(css, /data-contrast/);
 });
 
 test("workspace-three-pane - components implement responsive classes without horizontal document scroll", () => {

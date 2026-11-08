@@ -1,16 +1,26 @@
-export type EventAccess = "open" | "org-only";
-export type BannerStyle = "ember" | "spotlight" | "graphite";
+import type { BannerId } from "@/lib/banners";
+
+export type EventAccess = "open" | "campus-only" | "org-only";
+
+export interface WinnerPlacement {
+  place: number;
+  name: string;
+  campusName: string;
+}
 
 export interface CompetitionEvent {
   id: string;
   orgId: string;
   orgName: string;
+  campusId: string;
+  campusName: string;
   title: string;
   summary: string;
+  startsOn: string;
   access: EventAccess;
-  banner: BannerStyle;
+  banner: BannerId;
   featured: boolean;
-  resultsSlug?: string;
+  winners?: WinnerPlacement[];
 }
 
 export interface LeaderboardScore {
@@ -23,18 +33,11 @@ export interface LeaderboardScore {
 
 export type LeaderboardEntry = LeaderboardScore & { rank: number };
 
-export interface WinnerPlacement {
-  place: number;
-  name: string;
-  campusName: string;
-}
-
-export interface WinnerPost {
-  slug: string;
-  orgId?: string;
-  title: string;
-  excerpt: string;
-  publishedOn: string;
-  placements: WinnerPlacement[];
-  paragraphs: string[];
+/** What one viewer may see. Campus-only and org-only events are filtered on the server. */
+export interface EventsFeed {
+  events: CompetitionEvent[];
+  postableOrgs: { id: string; name: string }[];
+  previewPeople: { id: string; name: string }[];
+  today: string;
+  sample: boolean;
 }

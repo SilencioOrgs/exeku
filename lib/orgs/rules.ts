@@ -1,42 +1,44 @@
 import { isObject, text } from "@/lib/accounts/rules";
 import type { FieldErrors } from "@/types/account";
-import type { BannerStyle, EventAccess } from "@/types/competition";
+import { isBannerId, type BannerId } from "@/lib/banners";
+import type { CompetitionEvent, EventAccess } from "@/types/competition";
 import type { OrgPermission, OrgRole } from "@/types/org";
 
 /** Presidents can do everything. Officers can do everything except manage other officers. */
 export const can = (role: OrgRole | null, permission: OrgPermission) =>
   role === "president" || (role === "officer" && permission !== "manageOfficers");
 
-const ACCESS: EventAccess[] = ["open", "org-only"];
-const BANNERS: BannerStyle[] = ["ember", "spotlight", "graphite"];
+/** Open events are for everyone. Campus-only and org-only events are shown only to those students. */
+export function canViewEvent(event: Pick<CompetitionEvent, "access" | "campusId" | "orgId">, viewer: { campusIds: string[]; orgIds: string[] }) {
+  if (viewer.orgIds.includes(event.orgId)) return true;
+  if (event.access === "open") return true;
+  return event.access === "campus-only" && viewer.campusIds.includes(event.campusId);
+}
+
+export function eventAccessLabel(event: Pick<CompetitionEvent, "access" | "campusName" | "orgName">) {
+  if (event.access === "open") return "Open to everyone";
+  return event.access === "campus-only" ? `Campus only: ${event.campusName}` : `Org only: ${event.orgName}`;
+}
+
+const ACCESS: EventAccess[] = ["open", "campus-only", "org-only"];
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 type Checked<T> = ({ ok: true } & T) | { ok: false; fieldErrors: FieldErrors };
 
-export function checkEvent(input: unknown): Checked<{ title: string; summary: string; access: EventAccess; banner: BannerStyle; featured: boolean }> {
+export function checkEvent(input: unknown, today: string): Checked<{ title: string; summary: string; startsOn: string; access: EventAccess; banner: BannerId; featured: boolean }> {
   const source = isObject(input) ? input : {};
   const title = text(source, "title");
   const summary = text(source, "summary");
+  const startsOn = text(source, "startsOn");
   const access = ACCESS.find((a) => a === source.access);
-  const banner = BANNERS.find((b) => b === source.banner);
+  const banner = isBannerId(source.banner) ? source.banner : undefined;
   const errors: FieldErrors = {};
   if (title.length < 3 || title.length > 120) errors.title = "Enter a title of 3 to 120 characters.";
   if (summary.length < 3 || summary.length > 300) errors.summary = "Enter a summary of 3 to 300 characters.";
+  if (!ISO_DATE.test(startsOn) || Number.isNaN(Date.parse(startsOn))) errors.startsOn = "Choose the event date.";
+  else if (startsOn < today) errors.startsOn = "Choose today or a later date.";
   if (!access) errors.access = "Choose who can compete.";
   if (!banner) errors.banner = "Choose a banner.";
   if (!access || !banner || Object.keys(errors).length > 0) return { ok: false, fieldErrors: errors };
-  return { ok: true, title, summary, access, banner, featured: source.featured === true };
+  return { ok: true, title, summary, startsOn, access, banner, featured: source.featured === true };
 }
-
-export function checkPost(input: unknown): Checked<{ title: string; paragraphs: string[]; excerpt: string }> {
-  const source = isObject(input) ? input : {};
-  const title = text(source, "title");
-  const body = text(source, "body");
-  const errors: FieldErrors = {};
-  if (title.length < 3 || title.length > 120) errors.title = "Enter a title of 3 to 120 characters.";
-  if (body.length < 10 || body.length > 5000) errors.body = "Write 10 to 5000 characters.";
-  if (Object.keys(errors).length > 0) return { ok: false, fieldErrors: errors };
-  return { ok: true, title, paragraphs: body.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean), excerpt: body.slice(0, 160) };
-}
-
-export const slugify = (title: string) =>
-  title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "post";

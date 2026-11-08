@@ -63,7 +63,7 @@ Exeku provides a high-craft developer aesthetic paired with robust automated cod
 - **Tagline:** "Your Code. Your Machine."
 - **Aesthetic Direction:** LeetCode at night: black surfaces, one orange accent, Easy/Medium/Hard colors, premium 3D hardware renders. Code is colored like VS Code Dark+.
 - **Visual Identity Foundation:** Dark only, LeetCode orange, soft depth (raised cards, subtle keys, orange glow), Geist Sans and Geist Mono. Green/red only for verdicts and errors. Full details in `DESIGN.md`.
-- **Appearance Settings:** Light or dark (light by default), plus code font size, text size, high contrast and reduced motion. The old multi-theme engine was retired.
+- **Appearance Settings:** Dark only, with a choice of interface font, code font, text size, code font size and reduced motion. The old multi-theme engine was retired.
 
 ## Product Principles
 

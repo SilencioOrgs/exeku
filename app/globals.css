@@ -76,15 +76,6 @@
   --metal-light: #d8d8d6;
   --metal-dark: #6b6b69;
 }
-:root[data-contrast="high"] {
-  --color-canvas: #000000; --color-surface: #000000; --color-elevated: #0a0a0a;
-  --color-border: #ffffff; --color-border-subtle: #d4d4d4;
-  --color-text-main: #ffffff; --color-text-muted: #e5e5e5; --color-text-dim: #d4d4d4;
-  --primary-foreground: #000000; --color-ring: #ffffff;
-  --color-accent: #ffd08a; --accent-foreground: #000000; --color-primary-text: #ffd08a;
-  --color-easy: #5eead4; --color-medium: #fde68a; --color-hard: #fecdd3;
-  --color-mint: #bbf7d0; --color-pink: #fecdd3; --color-warning: #fde68a; --color-danger-foreground: #000000;
-}
 :root,
 [data-theme-scope] {
   --color-primary-foreground: var(--primary-foreground);
@@ -190,7 +181,10 @@
 [data-line-height="compact"] { --line-height-base: 1.25; }
 [data-line-height="normal"] { --line-height-base: 1.5; }
 [data-line-height="comfortable"] { --line-height-base: 1.75; }
-[data-ui-font="system-sans"] { --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+/* Interface fonts are system fonts, so the app still works with no internet. */
+[data-ui-font="system-sans"] { --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; --font-heading-active: var(--font-ui); }
+[data-ui-font="verdana"] { --font-ui: Verdana, Geneva, Tahoma, sans-serif; --font-heading-active: var(--font-ui); }
+[data-ui-font="georgia"] { --font-ui: Georgia, "Times New Roman", serif; --font-heading-active: var(--font-ui); }
 [data-density="compact"] { --panel-padding: 0.75rem; --section-gap: 1rem; --nav-padding: 0.5rem; }
 [data-density="spacious"] { --panel-padding: 1.5rem; --section-gap: 2rem; --nav-padding: 0.875rem; }
 
@@ -251,8 +245,6 @@ input::placeholder, textarea::placeholder { color: var(--color-text-dim); opacit
 .appearance-nav-item { padding-block: var(--nav-padding); }
 .appearance-card { padding: var(--panel-padding); }
 .appearance-stack > :not(:last-child) { margin-block-end: var(--section-gap); }
-[data-contrast="high"] .appearance-card { border-width: 2px; }
-[data-contrast="high"] .ui-badge { background-color: var(--color-surface); border-color: currentColor; }
 [data-slot="dialog-content"], [data-slot="sheet-content"] { border-radius: var(--radius-card); }
 [data-slot="dialog-footer"] { border-radius: 0 0 var(--radius-card) var(--radius-card); }
 .modern-icon { display: inline-block; }
@@ -360,14 +352,18 @@ input::placeholder, textarea::placeholder { color: var(--color-text-dim); opacit
 .coding-activity-header p { margin-top:.35rem; }
 .coding-activity-count { color:var(--color-text-muted); font-size:.8rem; }
 .coding-activity-count strong { font-weight:700; font-size:1.1rem; color:var(--color-text-main); }
-.coding-activity-scroll { max-width:100%; overflow-x:auto; padding:.35rem .1rem .75rem; scrollbar-width:thin; }
+.coding-activity-scroll { max-width:100%; overflow-x:auto; scrollbar-width:thin; }
 .coding-activity-scroll:focus-visible { outline:2px solid var(--color-ring); outline-offset:3px; }
-.coding-activity-chart { display:flex; gap:.6rem; align-items:start; width:max-content; min-width:0; }
-.coding-activity-weekdays { display:grid; grid-template-rows:repeat(7,11px); row-gap:3px; color:var(--color-text-muted); font-size:9px; line-height:11px; }
-.coding-activity-grid { display:grid; grid-auto-flow:column; grid-template-rows:repeat(7,11px); grid-auto-columns:11px; gap:3px; }
-.coding-activity-cell { display:block; width:11px; height:11px; background:var(--color-elevated); border:1px solid var(--color-border); border-radius:2px; }
-.coding-activity-cell.is-active { background:var(--color-primary); border-color:var(--color-primary); }
+.coding-activity-chart { min-width:44rem; padding:.85rem; }
+.coding-activity-months, .coding-activity-grid { display:grid; grid-template-columns:2rem repeat(var(--weeks),minmax(0,1fr)); column-gap:3px; }
+.coding-activity-months { margin-bottom:.4rem; color:var(--color-text-muted); font-size:.72rem; line-height:1; }
+.coding-activity-months span { grid-row:1; white-space:nowrap; }
+.coding-activity-grid { grid-auto-flow:column; grid-template-rows:repeat(7,auto); row-gap:3px; }
+.coding-activity-weekday { align-self:center; color:var(--color-text-muted); font-size:.68rem; line-height:1; }
+.coding-activity-cell { display:block; width:100%; aspect-ratio:1; background:var(--color-elevated); border:1px solid var(--color-border); border-radius:3px; }
+.coding-activity-cell.is-active { background:linear-gradient(180deg,var(--color-primary-hover),var(--color-primary)); border-color:var(--color-primary-edge); box-shadow:inset 0 1px 0 rgb(255 255 255 / .35); }
 .coding-activity-cell.is-future { opacity:.12; }
+.coding-activity-cell.is-today { outline:1.5px solid var(--color-text-muted); outline-offset:1px; }
 .coding-activity-footer { display:flex; gap:1rem; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-top:.55rem; color:var(--color-text-muted); font-size:.72rem; }
 .coding-activity-legend { display:inline-flex; align-items:center; gap:.35rem; white-space:nowrap; }
 .coding-activity-legend i { display:inline-block; width:10px; height:10px; background:var(--color-elevated); border:1px solid var(--color-border); border-radius:2px; }
@@ -399,11 +395,11 @@ input::placeholder, textarea::placeholder { color: var(--color-text-dim); opacit
 /* 2026 minimalist interface consolidation: one shadcn-compatible visual language.
    Legacy style/palette selectors remain in preference storage for safe migration. */
 :root :is(h1,h2,h3,h4,.font-heading) {
-  font-family: var(--font-geist-sans), sans-serif;
+  font-family: var(--font-heading-active);
   letter-spacing: -.025em;
 }
 :root .font-mono:not(pre):not(code) {
-  font-family: var(--font-geist-sans), sans-serif;
+  font-family: var(--font-ui);
   letter-spacing: normal;
 }
 :root :is(.appearance-card,.profile-panel,.modern-feature-card) { border-width: 1px; border-radius: 14px; }
@@ -413,17 +409,13 @@ input::placeholder, textarea::placeholder { color: var(--color-text-dim); opacit
 :root .arcade-copy { display: none !important; }
 :root .landing-hero-layout { max-width: 80rem; }
 :root :is(.landing-hero-demo,.app-content) { min-width: 0; }
-:root .coding-activity-cell { border-radius: 3px; }
 :root .modern-page-header { max-width: 100%; }
 /* New Appearance panel: compact, no competing galleries or sticky overlay. */
-.minimal-appearance-studio .minimal-settings-field { display: grid; align-content: start; gap: .45rem; min-width: 0; font-size: .875rem; }
-.minimal-appearance-studio .minimal-settings-field label { font-weight: 500; }
 .minimal-appearance-studio .minimal-settings-select {
   min-width: 0; width: 100%; min-height: 2.5rem; padding: .5rem .75rem;
   background: var(--color-surface); border: 1px solid var(--color-border);
   border-radius: 8px; color: var(--color-text-main); font-size: .875rem;
 }
-.minimal-appearance-studio input[type="range"] { min-height: 1.5rem; }
 .minimal-appearance-studio button:focus-visible, .minimal-appearance-studio select:focus-visible { outline: 2px solid var(--color-ring); outline-offset: 2px; }
 .minimal-appearance-studio .is-compact { max-width: 100%; }
 @media (max-width: 640px) {
@@ -438,12 +430,6 @@ input::placeholder, textarea::placeholder { color: var(--color-text-dim); opacit
    SIGN-IN AND SCHOOL ID: a black machined panel and a printed card.
    ========================================================================= */
 .setup-stage { background: radial-gradient(70% 60% at 88% 0%, rgb(255 161 22 / 0.09), transparent 70%), var(--color-canvas); }
-.setup-logo {
-  display: inline-grid; place-items: center; width: 2rem; height: 2rem; border-radius: 8px; font-size: 1rem;
-  border: 1px solid var(--color-primary-edge); color: var(--primary-foreground);
-  background: linear-gradient(180deg, var(--color-primary-hover), var(--color-primary));
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.45), 0 2px 0 var(--color-key-edge);
-}
 .skeuo-panel {
   border: 1px solid var(--color-border); border-radius: 18px;
   background: linear-gradient(180deg, var(--color-elevated), var(--color-surface) 55%);
@@ -454,8 +440,8 @@ input::placeholder, textarea::placeholder { color: var(--color-text-dim); opacit
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5), 0 2px 0 var(--color-primary-edge), 0 8px 16px -8px var(--key-shadow);
 }
 .skeuo-well {
-  border-color: var(--color-key-edge); color: var(--color-text-main);
-  background: linear-gradient(180deg, var(--color-key-edge), var(--color-canvas));
+  border-color: var(--color-key-edge); color: var(--color-text-main); color-scheme: dark;
+  background: linear-gradient(180deg, var(--color-key-edge), var(--color-canvas)) var(--color-canvas);
   box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.85), 0 1px 0 rgb(255 255 255 / 0.07);
 }
 .skeuo-well:focus-visible { border-color: var(--color-ring); outline: 2px solid var(--color-ring); outline-offset: 1px; }
@@ -482,14 +468,34 @@ select.skeuo-well:disabled { opacity: 0.6; }
   display: flex; justify-content: space-between; padding: 0.5rem 0.875rem; font-size: 0.8125rem; font-weight: 700;
   color: var(--primary-foreground); background: linear-gradient(180deg, var(--color-primary-hover), var(--color-primary));
 }
-.id-card-photo { border-radius: 6px; border-color: var(--id-ink-muted); }
+.id-card { position: relative; }
+.id-qr { width: 4.75rem; padding: 0.125rem 0.125rem 0; }
+.id-qr svg { display: block; width: 100%; height: auto; }
+.id-qr p { margin-top: 0.1875rem; text-align: center; font-size: 0.5625rem; font-weight: 600; white-space: nowrap; color: var(--id-ink-muted); }
+.id-stage { perspective: 900px; cursor: zoom-in; }
+.id-stage-drag { cursor: grab; touch-action: none; }
+.id-stage-drag[data-dragging] { cursor: grabbing; }
+.id-tilt { transform: rotateX(var(--id-rx, 0deg)) rotateY(var(--id-ry, 0deg)); transition: transform 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.15); }
+.id-stage[data-active] .id-tilt { transition-duration: 0.08s; transition-timing-function: linear; }
+.id-stage[data-dragging] .id-tilt { transition: none; }
+.id-foil { position: absolute; inset: 0; pointer-events: none; opacity: 0; mix-blend-mode: soft-light; background: linear-gradient(115deg, transparent 25%, rgb(255 190 110 / 0.9) 45%, rgb(255 255 255 / 0.95) 52%, rgb(255 161 22 / 0.7) 60%, transparent 78%) var(--id-gx, 50%) 0 / 220% 100%; transition: opacity 0.25s; }
+.id-stage[data-active] .id-foil { opacity: 1; }
+.id-zoom { zoom: 1.1; }
+@media (min-width: 24rem) { .id-zoom { zoom: 1.35; } }
+@media (min-width: 40rem) and (min-height: 46rem) { .id-zoom { zoom: 1.7; } }
 .id-barcode { height: 1.25rem; background: repeating-linear-gradient(90deg, var(--id-ink) 0 1px, transparent 1px 3px, var(--id-ink) 3px 5px, transparent 5px 6px); }
 @keyframes id-settle { from { transform: rotate(-5deg); } to { transform: rotate(-1.5deg); } }
 @media (prefers-reduced-motion: reduce) {
   .id-sleeve { animation: none; }
+  .id-tilt { transform: none; transition: none; }
+  .id-foil { display: none; }
 }
 
 /* Event banners officers can choose. Doubled selector: .profile-panel resets the background. */
-.profile-panel.event-banner-ember, .event-banner-ember { background: radial-gradient(120% 140% at 0% 0%, rgb(255 161 22 / 0.2), transparent 60%), var(--color-surface); }
-.profile-panel.event-banner-spotlight, .event-banner-spotlight { background: radial-gradient(70% 160% at 50% -40%, rgb(255 255 255 / 0.14), transparent 70%), var(--color-surface); }
-.profile-panel.event-banner-graphite, .event-banner-graphite { background: linear-gradient(180deg, var(--color-elevated), var(--color-canvas)); }
+/* Banner art behind the dashboard event card: it fades out under the text and stays faint where text spans the card. */
+.banner-art { position: absolute; inset-block: 0; right: 0; width: 70%; height: 100%; object-fit: cover; object-position: center 28%; mask-image: linear-gradient(90deg, transparent, #000 60%); opacity: 0.3; pointer-events: none; }
+@media (min-width: 40rem) { .banner-art { opacity: 1; } }
+
+/* Native dropdown lists don't follow a gradient-backed select, so color every option explicitly. */
+select option, select optgroup { background-color: var(--color-surface); color: var(--color-text-main); }
+select option:disabled { color: var(--color-text-muted); }

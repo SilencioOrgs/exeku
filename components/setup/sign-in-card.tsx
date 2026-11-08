@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/hooks/use-profile";
 import { startGoogleSignIn } from "@/lib/accounts/api";
@@ -52,8 +53,8 @@ export function SignInCard() {
   return (
     <main className="setup-stage grid min-h-svh place-items-center p-4 text-[var(--color-text-main)]">
       <section className="skeuo-panel w-full max-w-sm p-7 text-center sm:p-8">
-        <Link href="/" className="inline-flex items-center gap-2.5 text-xl font-semibold">
-          <span className="setup-logo">E</span>
+        <Link href="/" className="inline-flex flex-col items-center gap-2 text-xl font-semibold">
+          <BrandLogo size={72} />
           exeku
         </Link>
         <h1 className="mt-6 text-2xl font-semibold tracking-tight">Welcome to Exeku</h1>

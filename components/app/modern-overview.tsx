@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AlarmClock, ArrowRight, Code2, Play, Shield } from "lucide-react";
@@ -8,8 +8,11 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { ProfileEditDialog } from "./profile-edit-dialog";
 import { CodingActivity } from "./coding-activity";
 import { DifficultyBadge } from "./difficulty-badge";
+import { EventBanner } from "./competition/event-banner";
+import { TopicFilter } from "./topic-filter";
 import { useChallengeSession } from "@/hooks/use-challenge-session";
 import { LabAppStrip } from "@/components/lab/lab-app-banner";
+import { inTopic, type TopicId } from "@/lib/problems/topics";
 import { tokenize } from "@/lib/syntax";
 import type { ProblemSummary } from "@/types/problem";
 import { getFilenameForLanguage, getStarterCode, LANGUAGE_DISPLAY_NAMES } from "@/lib/workspace-defaults";
@@ -17,7 +20,6 @@ import type { LocalProfile, ProfileInput } from "@/types/profile";
 import type { WorkspaceDraft } from "@/types/draft";
 
 interface ModernOverviewProps {
-  banner?: ReactNode;
   profile: LocalProfile;
   activeDraft: WorkspaceDraft | null;
   totalDrafts: number;
@@ -31,11 +33,12 @@ const TIERS = [
 ] as const;
 
 /** Competitive programming home: the problem set, a timed round and where you left off. */
-export function ModernOverview({ banner, profile, activeDraft, totalDrafts, onSaveProfile }: ModernOverviewProps) {
+export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfile }: ModernOverviewProps) {
   const router = useRouter();
   const challenge = useChallengeSession();
   const [editing, setEditing] = useState(false);
   const [problems, setProblems] = useState<ProblemSummary[] | null>(null);
+  const [topic, setTopic] = useState<TopicId>("all");
 
   useEffect(() => {
     let active = true;
@@ -53,12 +56,13 @@ export function ModernOverview({ banner, profile, activeDraft, totalDrafts, onSa
     challenge.startChallenge(problem.id, problem.title);
     router.push(`/app/workspace?problem=${encodeURIComponent(problem.id)}`);
   };
+  const topicProblems = useMemo(() => (problems ?? []).filter((p) => inTopic(p, topic)), [problems, topic]);
   const filename = getFilenameForLanguage(profile.preferredLanguage);
   const code = (activeDraft?.code?.trim() ? activeDraft.code : getStarterCode(profile.preferredLanguage)).split("\n").slice(0, 7).join("\n");
 
   return (
     <div className="modern-overview space-y-6">
-      {banner}
+      <EventBanner profile={profile} />
       <header className="modern-page-header flex flex-wrap items-end justify-between gap-4">
         <div className="space-y-1.5">
           <h1 className="text-3xl font-semibold tracking-tight">Welcome back, {profile.displayName}</h1>
@@ -73,6 +77,8 @@ export function ModernOverview({ banner, profile, activeDraft, totalDrafts, onSa
           </Link>
         </div>
       </header>
+
+      <CodingActivity profileId={profile.id} />
 
       <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <div className="skeuo-card rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
@@ -93,13 +99,18 @@ export function ModernOverview({ banner, profile, activeDraft, totalDrafts, onSa
             <h2 id="problem-set-heading" className="font-semibold">Problem set</h2>
             <Link href="/app/challenges" className={buttonVariants({ variant: "ghost", size: "sm" })}>View all<ArrowRight aria-hidden="true" size={14} /></Link>
           </div>
+          {problems && problems.length > 0 && (
+            <div className="border-b border-[var(--color-border)] px-4 py-3"><TopicFilter problems={problems} selected={topic} onSelect={setTopic} /></div>
+          )}
           {problems === null ? (
             <p className="px-4 py-6 text-sm text-[var(--color-text-muted)]">Loading problems…</p>
           ) : problems.length === 0 ? (
             <p className="px-4 py-6 text-sm text-[var(--color-text-muted)]">The problem catalog is unavailable right now.</p>
+          ) : topicProblems.length === 0 ? (
+            <p className="px-4 py-6 text-sm text-[var(--color-text-muted)]">No problems in this topic yet.</p>
           ) : (
             <ol>
-              {problems.slice(0, 6).map((problem, i) => (
+              {topicProblems.slice(0, 6).map((problem, i) => (
                 <li key={problem.id} className="flex items-center gap-3 border-b border-[var(--color-border-subtle)] px-4 py-2.5 last:border-0 even:bg-[var(--color-canvas)]/40">
                   <span className="font-code w-5 text-sm text-[var(--color-text-muted)]">{i + 1}</span>
                   <Link href={`/app/workspace?problem=${encodeURIComponent(problem.id)}`} className="min-w-0 flex-1 hover:text-[var(--color-primary-text)]">
@@ -160,7 +171,6 @@ export function ModernOverview({ banner, profile, activeDraft, totalDrafts, onSa
 
       <LabAppStrip />
 
-      <CodingActivity profileId={profile.id} />
       <footer className="modern-footnote flex flex-wrap items-center justify-between gap-3">
         <p><Shield aria-hidden="true" size={16} /> Run and Submit need the local Piston sandbox.</p>
         <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>Edit profile</Button>

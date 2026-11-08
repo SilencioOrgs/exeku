@@ -2,31 +2,19 @@
 
 import { AppearanceStudio } from "./appearance-studio";
 import { StyleText } from "@/components/appearance/style-text";
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useProfile } from "@/hooks/use-profile";
 import { PixelCard } from "@/components/retro/pixel-card";
-import { PixelAvatar } from "@/components/retro/pixel-avatar";
 import { PixelButton } from "@/components/retro/pixel-button";
 import { PixelBadge } from "@/components/retro/pixel-badge";
-import { Code2, FileCode2, Pencil, X, type LucideIcon } from "lucide-react";
-import { ProfileEditDialog } from "./profile-edit-dialog";
+import { X } from "lucide-react";
 import { ProfileResetDialog } from "./profile-reset-dialog";
 import { draftRepository } from "@/lib/storage/draft-repository";
-import { LANGUAGE_DISPLAY_NAMES } from "@/lib/workspace-defaults";
-import type { PreferredLanguage } from "@/types/profile";
-
-const LANGUAGE_ICONS: Record<PreferredLanguage, LucideIcon> = {
-  python: Code2,
-  java: Code2,
-  cpp: Code2,
-  c: FileCode2,
-};
 
 export function SettingsView() {
   const router = useRouter();
-  const { profile, updateProfile, resetProfile } = useProfile();
-  const [isEditOpen, setIsEditOpen] = useState(false);
+  const { profile, resetProfile } = useProfile();
   const [isResetOpen, setIsResetOpen] = useState(false);
   const [draftsCount, setDraftsCount] = useState<number>(0);
 
@@ -63,13 +51,6 @@ export function SettingsView() {
     );
   }
 
-
-  const createdDate = new Date(profile.createdAt).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-
   return (
     <div className="settings-page space-y-6">
       {/* Header Bar */}
@@ -79,74 +60,12 @@ export function SettingsView() {
             Settings
           </h1>
           <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-            Customize your workspace and manage your profile.
+            Customize your workspace.
           </p>
         </div>
       </div>
 
       <AppearanceStudio />
-
-      {/* Profile Identity Card */}
-      <PixelCard
-        variant="elevated"
-        className="p-5 sm:p-6 border border-[var(--color-border)] bg-[var(--color-surface)] space-y-4"
-      >
-        <div className="flex flex-wrap flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex min-w-0 items-start sm:items-center gap-4">
-            <PixelAvatar
-              avatarId={profile.avatarId}
-              size={56}
-              className="shrink-0"
-            />
-            <div className="min-w-0 space-y-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-semibold text-xl text-foreground [overflow-wrap:anywhere]">
-                  <StyleText arcade={<>{profile.displayName.toUpperCase()}</>} clarity={profile.displayName} />
-                </span>
-                <PixelBadge><span className="capitalize">{profile.experienceLevel}</span></PixelBadge>
-              </div>
-              {profile.bio ? (
-                <p className="text-xs text-[var(--color-text-muted)] max-w-lg">
-                  &ldquo;{profile.bio}&rdquo;
-                </p>
-              ) : (
-                <p className="text-xs text-[var(--color-text-dim)]">
-                  No local bio set &bull; Initialized {createdDate}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <PixelButton variant="secondary" onClick={() => setIsEditOpen(true)} className="w-full sm:w-auto">
-            <Pencil size={15} aria-hidden="true" />Edit profile
-          </PixelButton>
-        </div>
-
-        {/* Profile Properties Details */}
-        <div className="pt-3 border-t border-[var(--color-border)] grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-          <div className="space-y-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-canvas)] p-2.5">
-            <span className="text-[var(--color-text-dim)] text-xs">Preferred language</span>
-            <div className="flex items-center gap-2 text-foreground">
-              {React.createElement(LANGUAGE_ICONS[profile.preferredLanguage], { size: 14, color: "var(--color-accent)" })}
-              <span>{LANGUAGE_DISPLAY_NAMES[profile.preferredLanguage]}</span>
-            </div>
-          </div>
-
-          <div className="space-y-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-canvas)] p-2.5">
-            <span className="text-[var(--color-text-dim)] text-xs">Experience level</span>
-            <div className="capitalize text-[var(--color-text-main)]">
-              {profile.experienceLevel}
-            </div>
-          </div>
-
-          <div className="space-y-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-canvas)] p-2.5">
-            <span className="text-[var(--color-text-dim)] text-xs">Profile ID</span>
-            <div className="text-[var(--color-text-muted)] truncate" title={profile.id}>
-              {profile.id}
-            </div>
-          </div>
-        </div>
-      </PixelCard>
 
       {/* Advanced details remain available without overwhelming regular settings. */}
       <details className="settings-advanced">
@@ -241,16 +160,6 @@ export function SettingsView() {
       </PixelCard>
 
       </details>
-
-      {/* Edit Profile Dialog */}
-      <ProfileEditDialog
-        isOpen={isEditOpen}
-        onClose={() => setIsEditOpen(false)}
-        profile={profile}
-        onSave={async (updates) => {
-          await updateProfile(profile.id, updates);
-        }}
-      />
 
       {/* Reset Profile Dialog */}
       <ProfileResetDialog

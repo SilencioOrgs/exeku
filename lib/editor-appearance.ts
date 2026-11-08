@@ -4,6 +4,7 @@ import type { AppearancePreferences } from "@/types/appearance";
 const FONTS = {
   "geist-mono": "var(--font-geist-mono), monospace",
   consolas: "Consolas, 'Liberation Mono', Menlo, Courier, monospace",
+  "courier-new": "'Courier New', Courier, monospace",
   monospace: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
 };
 

@@ -95,7 +95,7 @@ Most screens are "Operate" surfaces (problems, workspace, settings): scanability
 - Difficulty: `--color-easy`, `--color-medium`, `--color-hard` with `-bg` chip fills, always with the word via `DifficultyBadge`.
 - Green (`--color-mint`) and red (`--color-pink`) only for verdicts, errors and destructive actions, always with a word (AC Accepted, WA Wrong answer).
 - Tiles (`.tile-*`) are black surfaces lit by a faint orange glow from one corner. `.bg-grid` draws a subtle 48px grid behind 3D scenes and heroes.
-- High contrast mode switches to pure black, white borders and brighter text. Every text/background pair is tested at 4.5:1 (7:1 in high contrast) in `tests/appearance-contrast.test.mjs`.
+- Every text/background pair is tested at 4.5:1 in `tests/appearance-contrast.test.mjs`.
 - Use the CSS variables, never raw hex, in components (3D materials and illustrations are the exception).
 
 ## Typography
@@ -119,7 +119,11 @@ Most screens are "Operate" surfaces (problems, workspace, settings): scanability
 - One button system: `Button` and links styled with `buttonVariants` look identical (cva adds `btn-primary` / `btn-outline` / `btn-ghost` marker classes that `globals.css` styles). Never hand-style a `<button>`; use `Button` with a variant, and `aria-pressed` for toggles and pickers.
 - Buttons are subtle keys: a faint top highlight and a 1px press on `:active`. The orange button glows (`--glow-primary`) on hover. Ghost buttons stay flat.
 - `/setup` is one Google sign-in card on a black machined panel (`.skeuo-panel`). The profile's School email section uses the same panel with sunken fields (`.skeuo-well`) and a printed school ID (`.id-*`), the only paper-colored object in the product.
-- Reduced motion removes the press, the camera glide, auto-rotate, the ID card settle and the hero blink.
+- Banners are Blender renders in `public/banners/` (source: `design/blender/exeku-banners.blend`), listed in `lib/banners.ts`. Officers pick one per event through `BannerPicker`. New art keeps the left side dark so text stays readable on the dashboard card.
+- Avatars are the eight Blender ninjas (`public/avatars/<id>.webp`) in a circle. Anyone can add a frame from `lib/avatar-borders.ts` (art in `public/borders/`, source `design/blender/exeku-borders.blend`). `PixelAvatar` draws it at 1.4x the avatar, so leave room around avatars.
+- The logo is the Blender keycap (`public/brand/`, source `design/blender/exeku-logo.blend`), always through `BrandLogo`. The favicon is `app/icon.png`.
+- The school ID tilts toward the pointer with a warm foil sheen, and opens larger, where it can be dragged to turn. Its QR code leads to `EXEKU_SOCIAL_URL` in `lib/contact.ts`.
+- Reduced motion removes the press, the camera glide, auto-rotate, the ID card settle and tilt, and the hero blink.
 
 ## 3D and the Exeku Lab app
 

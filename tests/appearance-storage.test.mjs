@@ -123,3 +123,12 @@ test("denied localStorage getter never crashes construction",()=>{
  const old=globalThis.window; globalThis.window={get localStorage(){throw Error("denied")}};
  try {const repo=new AppearanceRepository(); repo.savePreferences({uiStyle:"studio-crm"}); assert.equal(repo.getPreferences().uiStyle,"studio-crm");assert.equal(repo.persistenceStatus,"session");} finally {if(old===undefined)delete globalThis.window;else globalThis.window=old;}
 });
+
+test("the new font choices are saved, and unknown fonts fall back to the defaults", () => {
+  const chosen = normalizeAppearancePreferences({ uiFontFamily: "georgia", editorFontFamily: "courier-new" });
+  assert.equal(chosen.uiFontFamily, "georgia");
+  assert.equal(chosen.editorFontFamily, "courier-new");
+  const unknown = normalizeAppearancePreferences({ uiFontFamily: "comic-sans", editorFontFamily: "<script>" });
+  assert.equal(unknown.uiFontFamily, "geist-sans");
+  assert.equal(unknown.editorFontFamily, "geist-mono");
+});

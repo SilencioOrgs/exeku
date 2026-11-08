@@ -4,8 +4,8 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 const css = readFileSync(new URL('../app/globals.css', import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
 const blocks = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(([, selector, body]) => ({ selector: selector.trim(), values: Object.fromEntries([...body.matchAll(/(--[\w-]+):\s*([^;]+);/g)].map(([, key, value]) => [key, value.replace(/ !important$/, '').trim()])) }));
-function palette(mode, contrast = 'standard') {
-  const attributes = { 'color-mode': mode, contrast };
+function palette(mode) {
+  const attributes = { 'color-mode': mode };
   const values = {};
   for (const { selector, values: next } of blocks) {
     if (selector.startsWith('@') || selector.includes('@theme')) continue;
@@ -30,15 +30,15 @@ function luminance(channels) { return channels.map(value => { const channel = va
 function contrast(a, b) { const x = luminance(a), y = luminance(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
 {
   for (const mode of ['dark']) {
-    for (const setting of ['standard', 'high']) {
-      test('dark only, ' + setting + ' readable surfaces and controls', () => {
-        const get = palette(mode, setting);
+    {
+      test('dark only, readable surfaces and controls', () => {
+        const get = palette(mode);
         for (const factor of [1]) { // brightness setting was retired
           for (const surface of ['canvas', 'surface', 'elevated']) {
             const background = rgb(get('--color-' + surface)).map(channel => Math.min(255, channel * factor));
             for (const token of ['text-main', 'text-muted', 'text-dim', 'accent', 'mint', 'pink', 'primary-text', 'warning']) {
               const ratio = contrast(rgb(get('--color-' + token)), background);
-              assert.ok(ratio >= (setting === 'high' ? 7 : 4.5), token + ' on ' + surface + ' at ' + factor + ': ' + ratio.toFixed(2));
+              assert.ok(ratio >= 4.5, token + ' on ' + surface + ' at ' + factor + ': ' + ratio.toFixed(2));
             }
           }
         }

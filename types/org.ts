@@ -34,6 +34,5 @@ export interface OrgDetail {
   members: OrgMember[];
   applications: OrgApplication[];
   events: CompetitionEvent[];
-  posts: { slug: string; title: string }[];
   sample: boolean;
 }

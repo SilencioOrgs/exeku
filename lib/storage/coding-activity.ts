@@ -83,3 +83,22 @@ export function getActivityCalendar(today: Date = new Date(), activeDays: readon
   }
   return cells;
 }
+
+export function getActivityStreaks(calendar: readonly { active: boolean; future: boolean }[]) {
+  const past = calendar.filter((day) => !day.future);
+  let longest = 0;
+  let run = 0;
+  for (const day of past) {
+    run = day.active ? run + 1 : 0;
+    longest = Math.max(longest, run);
+  }
+  // Not having coded yet today doesn't break a streak.
+  let index = past.length - 1;
+  if (index >= 0 && !past[index].active) index--;
+  let current = 0;
+  while (index >= 0 && past[index].active) {
+    current++;
+    index--;
+  }
+  return { current, longest };
+}
