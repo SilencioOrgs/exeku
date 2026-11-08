@@ -68,8 +68,8 @@ export class JudgingService {
   /**
    * Executes code with optional standard input through the execution queue.
    */
-  async runCode(request: ExecutionRequest): Promise<ExecutionResult> {
-    return this.queue.enqueue(() => this.adapter.execute(request));
+  async runCode(request: ExecutionRequest, clientKey?: string): Promise<ExecutionResult> {
+    return this.queue.enqueue(() => this.adapter.execute(request), clientKey);
   }
 
   /**
@@ -82,7 +82,8 @@ export class JudgingService {
       language: ExecutionLanguage;
       sourceCode: string;
       files?: { name: string; content: string }[];
-    }
+    },
+    clientKey?: string
   ): Promise<JudgingResult> {
     const problem = getProblemById(problemId);
     if (!problem) {
@@ -114,13 +115,13 @@ export class JudgingService {
     };
     // Engines that support batches compile once and take one queue slot for the whole submission.
     const batch = this.adapter.executeBatch && problem.testCases.length > 0
-      ? await this.queue.enqueue(() => this.adapter.executeBatch!(baseRequest, problem.testCases.map((testCase) => testCase.input)))
+      ? await this.queue.enqueue(() => this.adapter.executeBatch!(baseRequest, problem.testCases.map((testCase) => testCase.input)), clientKey)
       : null;
 
     for (const [index, testCase] of problem.testCases.entries()) {
       const execResult = batch
         ? batch[index]
-        : await this.queue.enqueue(() => this.adapter.execute({ ...baseRequest, stdin: testCase.input }));
+        : await this.queue.enqueue(() => this.adapter.execute({ ...baseRequest, stdin: testCase.input }), clientKey);
 
       if (execResult.durationMs > maxDurationMs) {
         maxDurationMs = execResult.durationMs;

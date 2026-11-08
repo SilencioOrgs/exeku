@@ -11,8 +11,8 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const body = await readJson(request);
-  if (body === undefined) return NextResponse.json({ error: "Invalid request." }, { status: 400 });
-  const checked = await checkNewSchool(body, schoolDirectory);
+  if (!body.ok) return NextResponse.json({ error: body.error }, { status: body.status });
+  const checked = await checkNewSchool(body.value, schoolDirectory);
   if (!checked.ok) return NextResponse.json({ fieldErrors: checked.fieldErrors }, { status: 422 });
   return NextResponse.json({ school: checked.school }, { status: 202 });
 }

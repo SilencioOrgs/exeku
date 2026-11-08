@@ -1,17 +1,22 @@
 import { NextResponse } from "next/server";
+import { readJson } from "@/lib/accounts/read-json";
 import { defaultJudgingService } from "@/lib/judge/judging-service";
 import { getProblemById } from "@/lib/problems/catalog";
 import {
   type ExecutionLanguage,
   SUPPORTED_EXECUTION_LANGUAGES,
 } from "@/types/execution";
-import { validateExecutionRequest } from "@/lib/execution/validation";
-import { QueueFullError } from "@/lib/execution/queue";
+import { MAX_BODY_BYTES, validateExecutionRequest } from "@/lib/execution/validation";
+import { clientKeyFrom, QueueFullError } from "@/lib/execution/queue";
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    const parsed = await readJson(req, MAX_BODY_BYTES);
+    if (!parsed.ok) {
+      return NextResponse.json({ error: parsed.error }, { status: parsed.status });
+    }
 
+    const body = parsed.value;
     if (!body || typeof body !== "object") {
       return NextResponse.json(
         { error: "Invalid submission payload: expected JSON object." },
@@ -79,7 +84,8 @@ export async function POST(req: Request) {
         language: execLang,
         sourceCode: validation.request.sourceCode,
         files: validation.request.files,
-      }
+      },
+      clientKeyFrom(req.headers)
     );
 
     return NextResponse.json(judgingResult);

@@ -15,8 +15,8 @@ export async function GET(request: Request, { params }: Context) {
 export async function POST(request: Request, { params }: Context) {
   const { id } = await params;
   const body = await readJson(request);
-  if (body === undefined) return NextResponse.json({ error: "Invalid request." }, { status: 400 });
-  const result = await performOrgAction(id, body);
+  if (!body.ok) return NextResponse.json({ error: body.error }, { status: body.status });
+  const result = await performOrgAction(id, body.value);
   if (!result.ok) return NextResponse.json({ error: result.error, fieldErrors: result.fieldErrors }, { status: result.status });
   return NextResponse.json({ ok: true });
 }

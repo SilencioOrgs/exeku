@@ -4,6 +4,8 @@ import {
   SUPPORTED_EXECUTION_LANGUAGES,
 } from "@/types/execution";
 
+/** Whole request body for Run and Submit: source, companion files and stdin, with room for JSON escaping. */
+export const MAX_BODY_BYTES = 256 * 1024;
 export const MAX_FILES = 6;
 export const MAX_SOURCE_LENGTH = 64 * 1024; // 64KB
 export const MAX_STDIN_LENGTH = 64 * 1024; // 64KB
