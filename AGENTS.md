@@ -87,7 +87,7 @@ The source of truth is `DESIGN.md`. Read it before any UI change. Summary:
 - **Exeku Lab** (Arduino/MCU simulation, 3D, printable cases) is a separate desktop/mobile app. This website only promotes it (`components/lab/lab-app-banner.tsx`, links in `lib/lab-app.ts`). Keep the web app focused on competitive programming.
 - **Buttons**: always `Button` or `buttonVariants` from `components/ui/button.tsx`; never hand-styled `<button>`s.
 - **Typography**: Geist Sans for UI and headings, Geist Mono for code and numbers. Sentence case. No ALL CAPS labels, no trailing `_` cursors, no `[BRACKET]` labels.
-- **Components**: shadcn/ui primitives in `components/ui` (`Button`, `Dialog`, `Card`, `Input`, `Tooltip`, `Sheet`). lucide-react icons imported directly.
+- **Components**: shadcn/ui primitives in `components/ui` (`Button`, `Dialog`, `Input`, `Sheet`). lucide-react icons imported directly.
 - **Fonts are bundled** through the `geist` npm package. The app must work with no internet.
 
 ---

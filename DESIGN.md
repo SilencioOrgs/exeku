@@ -135,7 +135,7 @@ Most screens are "Operate" surfaces (problems, workspace, settings): scanability
 
 ## Components
 
-- `components/ui`: `Button` (default, outline, ghost, secondary, destructive; `data-variant` drives the key style), `Dialog`, `Card`, `Input`, `Tooltip`, `Sheet`, `Separator`, `Skeleton`.
+- `components/ui`: `Button` (default, outline, ghost, secondary, destructive; `data-variant` drives the key style), `Dialog`, `Input`, `Sheet`.
 - `components/app/difficulty-badge.tsx`: Easy/Medium/Hard chip.
 - Code editor: `components/app/code-editor.tsx`, a transparent native `<textarea>` over a highlighted copy (`lib/syntax.ts`, VS Code Dark+). Tab indents, Shift+Tab outdents, Enter keeps indentation, Ctrl/Cmd+Enter runs, Ctrl/Cmd+Shift+Enter submits, Esc then Tab leaves the editor.
 - Icons: lucide-react, imported directly; `.lucide` in `globals.css` sets the 1.8 stroke. Icon-only buttons need `aria-label`. No emoji as icons.
