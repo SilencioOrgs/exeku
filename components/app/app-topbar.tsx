@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Menu, ArrowUpRight } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { BrandLogo } from "@/components/brand-logo";
+import { BrandWordmark } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import { useChallengeSession } from "@/hooks/use-challenge-session";
 import type { LocalProfile } from "@/types/profile";
@@ -27,7 +27,7 @@ export function AppTopbar({ onToggleMobileMenu }: AppTopbarProps) {
     <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 rounded-md bg-[var(--color-surface)] px-3 py-2">Skip to content</a>
     <div className="flex min-w-0 items-center gap-3">
       <Button type="button" variant="ghost" size="icon" className="lg:hidden" aria-label="Open navigation" onClick={onToggleMobileMenu}><Menu size={18} /></Button>
-      <Link href="/" onClick={(event) => { if (!requestNavigation("/")) event.preventDefault(); }} className="flex items-center gap-2 font-semibold tracking-tight text-[var(--color-text-main)]"><BrandLogo size={26} />exeku</Link>
+      <Link href="/" onClick={(event) => { if (!requestNavigation("/")) event.preventDefault(); }} className="shrink-0"><BrandWordmark height={28} /></Link>
       <span aria-hidden="true" className="text-[var(--color-text-dim)]">/</span>
       <span className="truncate text-sm text-[var(--color-text-muted)]">{ROUTE_LABELS[pathname] || (pathname.startsWith("/app/orgs/") ? "Organizations" : "Workspace")}</span>
     </div>

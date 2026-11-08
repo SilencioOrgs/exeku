@@ -3,7 +3,7 @@
 import { useRef, useState, type PointerEvent, type ReactNode } from "react";
 import { ArrowUpRight, Maximize2 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-import { BrandLogo } from "@/components/brand-logo";
+import { BrandWordmark } from "@/components/brand-logo";
 import { PixelAvatar } from "@/components/retro/pixel-avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -27,7 +27,7 @@ function IdFace({ fullName, school, campus, pending, avatarId, borderId, serial 
       <div className="id-clip" />
       <div className="id-sleeve">
         <div className="id-card">
-          <div className="id-card-head"><span className="flex items-center gap-1.5"><BrandLogo size={20} />exeku</span><span>Student</span></div>
+          <div className="id-card-head"><BrandWordmark height={22} /><span>Student</span></div>
           <div className="px-3.5 pt-3 pb-3">
             <div className="flex items-start justify-between">
               <PixelAvatar avatarId={avatarId} borderId={borderId} size={64} className="mt-1" />

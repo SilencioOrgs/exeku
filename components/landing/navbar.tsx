@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useProfile } from "@/hooks/use-profile";
-import { BrandLogo } from "@/components/brand-logo";
+import { BrandWordmark } from "@/components/brand-logo";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ArrowRight, Menu, X } from "lucide-react";
 
@@ -29,10 +29,7 @@ export function Navbar() {
             href="#hero"
             className="flex items-center gap-2 group outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
           >
-            <BrandLogo size={34} />
-            <span className="font-heading text-xl font-semibold tracking-tight text-foreground transition-colors">
-              exeku
-            </span>
+            <BrandWordmark height={38} />
           </a>
 
         </div>
