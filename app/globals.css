@@ -152,6 +152,12 @@
 .code-editor-input:focus-visible { outline: none; }
 .code-editor-input { color: transparent; -webkit-text-fill-color: transparent; caret-color: var(--ed-caret); }
 .code-editor-input::selection { background: var(--ed-selection); color: transparent; -webkit-text-fill-color: transparent; }
+/* Suggestion list: VS Code Dark+ suggest widget. */
+.code-editor { --ed-suggest-bg: #252526; --ed-suggest-border: #454545; --ed-suggest-active: #04395e; --ed-suggest-match: #18a3ff; --ed-suggest-kind: #9d9d9d; }
+.code-suggest { background: var(--ed-suggest-bg); border: 1px solid var(--ed-suggest-border); border-radius: 6px; box-shadow: 0 6px 18px rgb(0 0 0 / 0.45); color: var(--ed-fg); }
+.code-suggest .is-active { background: var(--ed-suggest-active); }
+.code-suggest-match { color: var(--ed-suggest-match); font-weight: 600; }
+.code-suggest-kind { color: var(--ed-suggest-kind); font-family: var(--font-sans); }
 .tok-keyword { color: var(--tok-keyword); }
 .tok-control { color: var(--tok-control); }
 .tok-string { color: var(--tok-string); }
