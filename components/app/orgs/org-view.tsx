@@ -20,17 +20,18 @@ export function OrgView({ orgId }: { orgId: string }) {
   const [actionError, setActionError] = useState<string>();
   const [version, setVersion] = useState(0);
   const viewerId = preview || profile?.id || "";
+  const campusId = preview ? undefined : profile?.account?.school.campusId;
 
   useEffect(() => {
     if (!viewerId) return;
     let live = true;
-    void fetchOrg(orgId, viewerId).then((result) => {
+    void fetchOrg(orgId, viewerId, campusId).then((result) => {
       if (!live) return;
       if (result.ok) { setDetail(result.data); setLoadError(undefined); }
       else setLoadError(result.error ?? "We couldn't load this organization.");
     });
     return () => { live = false; };
-  }, [orgId, viewerId, version]);
+  }, [orgId, viewerId, campusId, version]);
 
   const act = useCallback(async (body: Record<string, unknown>) => {
     const result = await orgAction(orgId, { actorId: viewerId, ...body });

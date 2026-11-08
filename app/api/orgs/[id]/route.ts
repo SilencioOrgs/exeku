@@ -6,8 +6,8 @@ type Context = { params: Promise<{ id: string }> };
 
 export async function GET(request: Request, { params }: Context) {
   const { id } = await params;
-  const viewer = new URL(request.url).searchParams.get("viewer") ?? "";
-  const detail = await getOrgDetail(id, viewer);
+  const { searchParams } = new URL(request.url);
+  const detail = await getOrgDetail(id, searchParams.get("viewer") ?? "", searchParams.get("campus") ?? undefined);
   if (!detail) return NextResponse.json({ error: "That organization doesn't exist." }, { status: 404 });
   return NextResponse.json(detail);
 }

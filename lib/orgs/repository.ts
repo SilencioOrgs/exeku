@@ -1,6 +1,7 @@
 import "server-only";
 import { isObject, text } from "@/lib/accounts/rules";
-import { isSampleData } from "@/lib/competition/repository";
+import { isSampleData, viewerScope } from "@/lib/competition/repository";
+import { todayInManila } from "@/lib/dates";
 import { mockDb } from "@/lib/mock/db";
 import type { FieldErrors } from "@/types/account";
 import type { OrgDetail, OrgPermission, OrgRole, OrgSummary } from "@/types/org";
@@ -13,15 +14,19 @@ const summarize = (org: (typeof mockDb.orgs)[number]): OrgSummary => ({ ...org, 
 const roleOf = (orgId: string, personId: string): OrgRole | null =>
   mockDb.members.find((m) => m.orgId === orgId && m.id === personId)?.role ?? null;
 
+/** Each org has its own dashboard event, so choosing one never touches another org's. */
+const clearFeatured = (orgId: string) => mockDb.events.filter((e) => e.orgId === orgId).forEach((e) => { e.featured = false; });
+
 export async function listOrgs(campusId?: string): Promise<OrgSummary[]> {
   return mockDb.orgs.filter((o) => !campusId || o.campusId === campusId).map(summarize);
 }
 
-export async function getOrgDetail(orgId: string, viewerId: string): Promise<OrgDetail | null> {
+export async function getOrgDetail(orgId: string, viewerId: string, claimedCampusId?: string): Promise<OrgDetail | null> {
   const org = mockDb.orgs.find((o) => o.id === orgId);
   if (!org) return null;
   const viewerRole = roleOf(orgId, viewerId);
   const applications = mockDb.applications.filter((a) => a.orgId === orgId);
+  const scope = viewerScope(viewerId, claimedCampusId);
   return {
     org: summarize(org),
     viewerRole,
@@ -30,7 +35,7 @@ export async function getOrgDetail(orgId: string, viewerId: string): Promise<Org
     applications: can(viewerRole, "reviewApplications")
       ? applications.filter((a) => a.status === "pending").map(({ id, name, program }) => ({ id, name, program }))
       : [],
-    events: mockDb.events.filter((e) => e.orgId === orgId && canViewEvent(e, { campusIds: [], orgIds: viewerRole ? [orgId] : [] })),
+    events: mockDb.events.filter((e) => e.orgId === orgId && canViewEvent(e, scope)),
     sample: isSampleData,
   };
 }
@@ -75,10 +80,10 @@ export async function performOrgAction(orgId: string, input: unknown): Promise<A
     }
     case "createEvent": {
       if (denied("publish")) return failed(403, "Only officers can create events.");
-      const checked = checkEvent(input, new Date().toISOString().slice(0, 10));
+      const checked = checkEvent(input, todayInManila());
       if (!checked.ok) return { ok: false, status: 422, fieldErrors: checked.fieldErrors };
       const { title, summary, startsOn, access, banner, featured } = checked;
-      if (featured) mockDb.events.forEach((e) => { e.featured = false; });
+      if (featured) clearFeatured(orgId);
       mockDb.events.unshift({ id: crypto.randomUUID(), orgId, orgName: org.name, campusId: org.campusId, campusName: org.campusName, title, summary, startsOn, access, banner, featured });
       return { ok: true };
     }
@@ -86,7 +91,7 @@ export async function performOrgAction(orgId: string, input: unknown): Promise<A
       if (denied("publish")) return failed(403, "Only officers can choose the banner.");
       const event = mockDb.events.find((e) => e.orgId === orgId && e.id === text(input, "eventId"));
       if (!event) return failed(404, "That event wasn't found.");
-      mockDb.events.forEach((e) => { e.featured = false; });
+      clearFeatured(orgId);
       event.featured = true;
       return { ok: true };
     }

@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import React, { useState } from "react";
 import type { LocalProfile, ProfileInput, ExperienceLevel, PreferredLanguage } from "@/types/profile";
 import { AVATARS } from "@/lib/avatars";
@@ -8,8 +9,7 @@ import { AVATAR_BORDERS } from "@/lib/avatar-borders";
 import { validateDisplayName } from "@/lib/profile-validation";
 import { parseGithub, parseLinkedin } from "@/lib/social-links";
 import { PixelAvatar } from "@/components/retro/pixel-avatar";
-import { PixelButton } from "@/components/retro/pixel-button";
-import { Code2, FileCode2, X, type LucideIcon } from "lucide-react";
+import { Code2, FileCode2, type LucideIcon } from "lucide-react";
 
 export interface ProfileEditDialogProps {
   isOpen: boolean;
@@ -73,7 +73,7 @@ function ProfileEditModalContent({
     try {
       await onSave({
         displayName: validation.trimmed,
-        bio: bio.trim() || undefined,
+        bio: bio.trim(),
         avatarId,
         borderId,
         experienceLevel,
@@ -90,27 +90,9 @@ function ProfileEditModalContent({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="edit-dialog-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs"
-      onKeyDown={(e) => {
-        if (e.key === "Escape") onClose();
-      }}
-    >
-      <div className="w-full max-w-lg bg-[var(--color-surface)] border border-[var(--color-primary)] [box-shadow:var(--shadow-card)] [border-radius:var(--radius-card)] p-6 space-y-5 text-foreground max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-3">
-          <div className="flex items-center gap-2">
-            <h3 id="edit-dialog-title" className="text-lg font-semibold">
-              Edit local profile
-            </h3>
-          </div>
-          <Button type="button" variant="ghost" size="icon-sm" onClick={onClose} aria-label="Close dialog">
-            <X size={15} aria-hidden="true" />
-          </Button>
-        </div>
+    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="max-h-[90vh] gap-5 overflow-y-auto border border-[var(--color-primary)] bg-[var(--color-surface)] p-6 text-foreground [box-shadow:var(--shadow-card)] [border-radius:var(--radius-card)] sm:max-w-lg">
+        <DialogTitle className="border-b border-[var(--color-border)] pb-3 text-lg font-semibold">Edit local profile</DialogTitle>
 
         {error && (
           <div role="alert" className="p-2.5 bg-[var(--color-elevated)] border border-[var(--color-pink)] text-[var(--color-pink)] text-xs">
@@ -122,7 +104,7 @@ function ProfileEditModalContent({
         <div className="space-y-1.5">
           <div className="flex justify-between text-xs">
             <label htmlFor="edit-name" className="text-[var(--color-text-main)]">
-              Display Name
+              Display name
             </label>
             <span className={validation.isValid ? "text-[var(--color-primary-text)]" : "text-[var(--color-pink)]"}>
               {displayName.length}/32
@@ -141,7 +123,7 @@ function ProfileEditModalContent({
         {/* Tagline / Bio */}
         <div className="space-y-1.5">
           <label htmlFor="edit-bio" className="block text-xs text-[var(--color-text-muted)]">
-            Tagline / Bio (optional)
+            Tagline or bio (optional)
           </label>
           <input
             id="edit-bio"
@@ -254,19 +236,14 @@ function ProfileEditModalContent({
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 pt-3 border-t border-[var(--color-border)]">
-          <PixelButton variant="ghost" size="sm" onClick={onClose} disabled={isSaving}>
+          <Button type="button" variant="ghost" size="sm" onClick={onClose} disabled={isSaving}>
             Cancel
-          </PixelButton>
-          <PixelButton
-            variant="cyan"
-            size="sm"
-            onClick={handleSave}
-            disabled={isSaving}
-          >
+          </Button>
+          <Button type="button" size="sm" onClick={handleSave} disabled={isSaving}>
             {isSaving ? "Saving…" : "Save changes"}
-          </PixelButton>
+          </Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
