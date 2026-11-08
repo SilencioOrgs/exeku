@@ -12,11 +12,12 @@ const MAX_ARTIFACT_BYTES = 64 * 1024 * 1024;
 const COMPILE_LIMITS = { timeMs: 20_000, wallTimeMs: 40_000, memoryKb: 768 * 1024, fileSizeKb: 64 * 1024, processes: 64 };
 const RUN_FILE_SIZE_KB = 8 * 1024;
 
-// Names the worker writes into the box. Submitted files may not start with "__".
-const STDIN = "__stdin.txt";
-const STDOUT = "__stdout.txt";
-const STDERR = "__stderr.txt";
-const COMPILE_OUT = "__compile.txt";
+// Names the worker writes into the box. "~" is never allowed in a submitted file name, so these cannot collide.
+const STDIN = "~stdin";
+const STDOUT = "~stdout";
+const STDERR = "~stderr";
+const COMPILE_OUT = "~compile";
+const WORKER_FILES = new Set([STDIN, STDOUT, STDERR, COMPILE_OUT]);
 
 export interface RunnerDeps {
   cli: IsolateCli;
@@ -51,11 +52,11 @@ async function withBox<T>(cli: IsolateCli, boxId: number, fn: (boxDir: string) =
 }
 
 /** Box files after compiling: the binary or class files the runs need. */
-async function collectArtifacts(boxDir: string): Promise<Map<string, Buffer>> {
+export async function collectArtifacts(boxDir: string): Promise<Map<string, Buffer>> {
   const artifacts = new Map<string, Buffer>();
   let total = 0;
   for (const name of await readdir(boxDir)) {
-    if (name.startsWith("__")) continue;
+    if (WORKER_FILES.has(name)) continue;
     const path = join(boxDir, name);
     const info = await stat(path);
     if (!info.isFile()) continue;

@@ -19,6 +19,7 @@ export function validateWorkspaceFilename(
 ): string | null {
   if (!name.trim()) return "Enter a file name.";
   if (name.length > 24 || !/^[A-Za-z0-9_.-]+$/.test(name)) return "Use 1–24 letters, numbers, dots, dashes, or underscores.";
+  if (name.startsWith(".")) return "File names can't start with a dot.";
   if (!EXTENSIONS[lang].some((ext) => name.toLowerCase().endsWith(ext))) {
     return `File extension must be ${EXTENSIONS[lang].join(" / ")}.`;
   }

@@ -9,6 +9,9 @@ import { buildLanguageSpecs, detectToolchain, linkedDirsOutside } from "../judge
 import { validateRunRequest } from "../judge/src/validate.ts";
 import { BoxPool, QueueFullError } from "../judge/src/pool.ts";
 import { createJudgeServer } from "../judge/src/app.ts";
+import { collectArtifacts } from "../judge/src/runner.ts";
+import { validateExecutionRequest } from "../lib/execution/validation.ts";
+import { validateWorkspaceFilename } from "../components/app/workspace/file-tabs.tsx";
 
 test("isolate meta files map to verdicts, memory before signals", () => {
   const verdict = (text) => classifyRun(parseMeta(text)).status;
@@ -66,11 +69,38 @@ test("worker validation rejects reserved names and wrong entry files, clamps lim
   assert.equal(ok.request.memoryLimitKb, 16 * 1024);
 
   const bad = (body) => validateRunRequest({ language: "python", files: [{ name: "main.py", content: "" }], stdins: [""], ...body }, specs).ok;
-  assert.equal(bad({ files: [{ name: "main.py", content: "" }, { name: "__stdin.txt", content: "" }] }), false);
+  assert.equal(bad({ files: [{ name: "main.py", content: "" }, { name: "~stdin", content: "" }] }), false, "the worker's own file names can never be submitted");
+  assert.equal(bad({ files: [{ name: "main.py", content: "" }, { name: ".hidden.py", content: "" }] }), false);
   assert.equal(bad({ files: [{ name: "../main.py", content: "" }] }), false);
   assert.equal(bad({ files: [{ name: "util.py", content: "" }] }), false);
   assert.equal(bad({ stdins: [] }), false);
   assert.equal(bad({ language: "java" }), false, "a language whose compiler is missing is refused");
+});
+
+test("__init__.py is accepted by the editor, the site and the judge; dot files by none of them", () => {
+  const files = (name) => [{ name: "main.py", content: "x" }, { name, content: "" }];
+  const site = (name) => validateExecutionRequest({ language: "python", sourceCode: "x", files: files(name) });
+  const judge = (name) => validateRunRequest({ language: "python", files: files(name), stdins: [""] }, { python: { mainFile: "main.py" } });
+  const editor = (name) => validateWorkspaceFilename(name, "python", [{ name: "main.py", content: "x" }]);
+
+  assert.equal(site("__init__.py").valid, true);
+  assert.equal(judge("__init__.py").ok, true);
+  assert.equal(editor("__init__.py"), null);
+
+  assert.match(site(".hidden.py").error, /start with a dot/);
+  assert.equal(judge(".hidden.py").ok, false);
+  assert.match(editor(".hidden.py"), /start with a dot/);
+});
+
+test("compiled output keeps the student's __ files and drops exactly the worker's own", async () => {
+  const box = mkdtempSync(join(tmpdir(), "box-"));
+  try {
+    for (const name of ["~stdin", "~stdout", "~stderr", "~compile", "__helper.py", "Main.class"]) writeFileSync(join(box, name), name);
+    mkdirSync(join(box, "__pycache__"));
+    assert.deepEqual([...(await collectArtifacts(box)).keys()].sort(), ["Main.class", "__helper.py"]);
+  } finally {
+    rmSync(box, { recursive: true, force: true });
+  }
 });
 
 test("box pool caps concurrency and refuses when the queue is full", async () => {

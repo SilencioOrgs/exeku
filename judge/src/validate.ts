@@ -31,7 +31,7 @@ export function validateRunRequest(body: unknown, specs: Partial<Record<Language
   for (const entry of raw.files as unknown[]) {
     const file = entry as { name?: unknown; content?: unknown };
     if (typeof file?.name !== "string" || typeof file.content !== "string") return { ok: false, error: "Each file needs a name and content." };
-    if (!FILE_NAME.test(file.name) || file.name.startsWith("__") || file.name.startsWith(".")) {
+    if (!FILE_NAME.test(file.name) || file.name.startsWith(".")) {
       return { ok: false, error: `Invalid file name '${file.name}'.` };
     }
     if (seen.has(file.name.toLowerCase())) return { ok: false, error: "Duplicate file name." };

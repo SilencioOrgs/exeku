@@ -71,6 +71,7 @@ export function validateExecutionRequest(input: unknown): ValidationResult {
       if (typeof entry.name !== "string" || entry.name.length > 24 || !/^[A-Za-z0-9_.-]+$/.test(entry.name)) {
         return { valid: false, error: "Invalid file name (letters, digits, ., _, -; up to 24 characters)." };
       }
+      if (entry.name.startsWith(".")) return { valid: false, error: "File names can't start with a dot." };
       if (typeof entry.content !== "string") return { valid: false, error: "File content must be text." };
       const key = entry.name.toLowerCase();
       if (seen.has(key)) return { valid: false, error: "Duplicate file name." };
