@@ -35,7 +35,8 @@ export function checkEvent(input: unknown, today: string): Checked<{ title: stri
   const errors: FieldErrors = {};
   if (title.length < 3 || title.length > 120) errors.title = "Enter a title of 3 to 120 characters.";
   if (summary.length < 3 || summary.length > 300) errors.summary = "Enter a summary of 3 to 300 characters.";
-  if (!ISO_DATE.test(startsOn) || Number.isNaN(Date.parse(startsOn))) errors.startsOn = "Choose the event date.";
+  // Date.parse quietly rolls 2026-02-31 over to March, so the date must survive a round trip.
+  if (!ISO_DATE.test(startsOn) || Number.isNaN(Date.parse(startsOn)) || new Date(startsOn).toISOString().slice(0, 10) !== startsOn) errors.startsOn = "Choose the event date.";
   else if (startsOn < today) errors.startsOn = "Choose today or a later date.";
   if (!access) errors.access = "Choose who can compete.";
   if (!banner) errors.banner = "Choose a banner.";

@@ -41,6 +41,14 @@ test("events are validated, must be upcoming, and unknown options are rejected",
   assert.equal(checkEvent(null, today).ok, false);
 });
 
+test("impossible calendar dates are refused, real leap days are not", () => {
+  const today = "2026-11-08";
+  const event = { title: "CPE Days", summary: "A contest", access: "open", banner: "podium" };
+  assert.match(checkEvent({ ...event, startsOn: "2027-02-31" }, today).fieldErrors.startsOn, /Choose the event date/);
+  assert.match(checkEvent({ ...event, startsOn: "2027-13-01" }, today).fieldErrors.startsOn, /Choose the event date/);
+  assert.equal(checkEvent({ ...event, startsOn: "2028-02-29" }, today).ok, true);
+});
+
 test("banner art resolves to a shipped file and never echoes an unknown value into the path", () => {
   assert.equal(bannerSrc("podium"), "/banners/podium.webp");
   assert.equal(bannerSrc("../../secret"), "/banners/keycaps.webp");

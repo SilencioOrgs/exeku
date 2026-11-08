@@ -201,6 +201,8 @@ export function ChallengeProvider({ children }: { children: React.ReactNode }) {
   const finishChallenge = useCallback((): boolean => {
     const current = sessionRef.current;
     if (!current) return false;
+    // An expired, forfeited or finished challenge stays that way.
+    if (current.status !== "active" && current.status !== "submitting" && current.status !== "submitted") return false;
     // Requirement: at least 1 submission attempt before ordinary finish
     if (current.submissionCount < 1) {
       return false;
