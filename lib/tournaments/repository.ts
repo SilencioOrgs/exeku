@@ -2,7 +2,7 @@ import "server-only";
 import { isObject, text } from "@/lib/accounts/rules";
 import type { Viewer } from "@/lib/auth/viewer";
 import type { AvatarBorderId } from "@/lib/avatar-borders";
-import { EVENT_COLUMNS, toEvent, viewerScope, type EventRow } from "@/lib/competition/repository";
+import { EVENT_COLUMNS, toEvents, viewerScope, type EventRow } from "@/lib/competition/repository";
 import { db, must } from "@/lib/db/client";
 import { solvesBetween } from "@/lib/judge/solves";
 import { canViewEvent, eventAccessLabel } from "@/lib/orgs/rules";
@@ -28,7 +28,7 @@ async function loadVisible(viewer: Viewer, id: string) {
   if (!UUID.test(id)) return null;
   const row = must(await db().from("events").select(EVENT_COLUMNS).eq("id", id).maybeSingle()) as unknown as EventRow | null;
   if (!row?.starts_at || !row.ends_at) return null;
-  const event = toEvent(row);
+  const [event] = await toEvents([row]);
   if (!canViewEvent(event, await viewerScope(viewer))) return null;
   return { row, event, startsAt: row.starts_at, endsAt: row.ends_at, teamSize: row.team_size ?? 1 };
 }
@@ -63,17 +63,18 @@ export async function getTournament(viewer: Viewer, id: string): Promise<Tournam
       id: team.id,
       name: team.name,
       members: members.filter((m) => m.team_id === team.id).map((m) => ({ id: m.user_id, name: m.profiles.display_name, avatarId: m.profiles.avatar_id, borderId: m.profiles.border_id as AvatarBorderId })),
-      points: standing?.points ?? 0,
-      solved: standing?.solved ?? 0,
+      // Scores stay on the server until the end, so the standings can't be read early.
+      points: status === "ended" ? standing?.points ?? 0 : 0,
+      solved: status === "ended" ? standing?.solved ?? 0 : 0,
       warnings: violations.filter((v) => members.some((m) => m.team_id === team.id && m.user_id === v.user_id)).length,
-      rank: status === "registration" ? undefined : standing?.rank,
+      rank: status === "ended" ? standing?.rank : undefined,
     };
   });
 
   return {
     id, title: event.title, summary: event.summary, accessLabel: eventAccessLabel(event), status, startsAt, endsAt, now: new Date(now).toISOString(),
     teamSize, myTeamId,
-    teams: status === "registration" ? view : view.sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0)),
+    teams: status === "ended" ? view.sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0)) : view,
     problems: open ? event.problems ?? [] : [],
     solvedProblemIds: open ? solves.filter((s) => teamMembers.has(s.userId) && problemIds.includes(s.problemId)).map((s) => s.problemId) : [],
   };
@@ -129,12 +130,16 @@ export async function performTournamentAction(viewer: Viewer, id: string, input:
   }
 }
 
-/** The tournament this student must be locked into right now, if any. */
+/** The tournament this student must be locked into right now, if any. A team that has solved everything is free to go. */
 export async function getActiveTournament(viewer: Viewer): Promise<ActiveTournament | null> {
-  const joined = must(await db().from("tournament_members").select("event_id").eq("user_id", viewer.id)) as { event_id: string }[];
-  for (const { event_id: eventId } of joined) {
-    const row = must(await db().from("events").select("id,title,starts_at,ends_at").eq("id", eventId).maybeSingle()) as { id: string; title: string; starts_at: string | null; ends_at: string | null } | null;
+  const joined = must(await db().from("tournament_members").select("event_id,team_id").eq("user_id", viewer.id)) as { event_id: string; team_id: string }[];
+  for (const { event_id: eventId, team_id: teamId } of joined) {
+    const row = must(await db().from("events").select("id,title,starts_at,ends_at,problem_ids").eq("id", eventId).maybeSingle()) as { id: string; title: string; starts_at: string | null; ends_at: string | null; problem_ids: string[] | null } | null;
     if (!row?.starts_at || !row.ends_at || statusAt(Date.now(), row.starts_at, row.ends_at) !== "live") continue;
+    const team = must(await db().from("tournament_members").select("user_id").eq("team_id", teamId)) as { user_id: string }[];
+    const solved = new Set((await solvesBetween(team.map((m) => m.user_id), row.starts_at, row.ends_at)).map((s) => s.problemId));
+    const problems = row.problem_ids ?? [];
+    if (problems.length > 0 && problems.every((id) => solved.has(id))) continue;
     const violations = must(await db().from("tournament_violations").select("id").eq("event_id", eventId).eq("user_id", viewer.id)) as unknown[];
     return { id: row.id, title: row.title, warnings: violations.length };
   }

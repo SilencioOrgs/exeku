@@ -106,7 +106,7 @@ export class JudgingService {
    * and redacting hidden test case inputs/outputs.
    */
   async judgeSubmission(
-    problemId: string,
+    problemRef: string | ProgrammingProblem,
     submission: {
       language: ExecutionLanguage;
       sourceCode: string;
@@ -114,7 +114,8 @@ export class JudgingService {
     },
     client?: QueueClient
   ): Promise<JudgingResult> {
-    const problem = getProblemById(problemId);
+    const problem = typeof problemRef === "string" ? getProblemById(problemRef) : problemRef;
+    const problemId = typeof problemRef === "string" ? problemRef : problemRef.id;
     if (!problem) {
       return {
         problemId,

@@ -16,7 +16,7 @@ export interface AppTopbarProps {
 const ROUTE_LABELS: Record<string, string> = {
   "/app": "Overview", "/app/challenges": "Challenges", "/app/workspace": "Workspace",
   "/app/profile": "Profile", "/app/settings": "Settings",
-  "/app/leaderboard": "Leaderboard", "/app/events": "Events", "/app/orgs": "Organizations", "/app/friends": "Friends",
+  "/app/leaderboard": "Leaderboard", "/app/events": "Events", "/app/orgs": "Organizations", "/app/friends": "Friends", "/app/admin": "Admin",
 };
 
 export function AppTopbar({ onToggleMobileMenu }: AppTopbarProps) {

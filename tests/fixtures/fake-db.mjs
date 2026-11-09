@@ -18,6 +18,7 @@ export function fakeDb(tables) {
         select: () => builder,
         order: () => builder,
         limit: () => builder,
+        not: (k) => { filters.push((r) => r[k] !== null && r[k] !== undefined); return builder; },
         gte: (k, v) => { filters.push((r) => r[k] >= v); return builder; },
         lte: (k, v) => { filters.push((r) => r[k] <= v); return builder; },
         eq: (k, v) => { filters.push((r) => r[k] === v); return builder; },

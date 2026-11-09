@@ -20,7 +20,7 @@ import { ConfirmDialog, SubmissionResultDialog, TimeExpiredDialog } from "./work
 import { VerdictBadge } from "./workspace/verdict-badge";
 import { getSimulatedAcceptedResult, getSimulatedWrongAnswerResult } from "@/lib/demo/demo-simulation";
 import { isRealVerdict } from "@/lib/verdicts";
-import { fetchEvents } from "@/lib/orgs/api";
+import { fetchEvents, TOURNAMENT_REFRESH_EVENT } from "@/lib/orgs/api";
 import { cn } from "@/lib/utils";
 import type { ProblemSummary, VisibleProblem } from "@/types/problem";
 import type { SandboxHealth } from "@/types/execution";
@@ -177,6 +177,7 @@ export function WorkspaceView() {
     showResults("results");
     const result = await judge.submit(problem.id, source());
     if (!result) return;
+    if (result.overallVerdict === "ACCEPTED") window.dispatchEvent(new Event(TOURNAMENT_REFRESH_EVENT));
     if (result.overallVerdict === "ACCEPTED") setEventRun((run) => run && run.problemIds.includes(problem.id) && !run.solved.includes(problem.id) ? { ...run, solved: [...run.solved, problem.id] } : run);
     // Only real verdicts count; a sandbox outage or judge error is not the student's attempt.
     if (challenge.isTimedActive && isRealVerdict(result.overallVerdict)) challenge.recordSubmissionAttempt(result.overallVerdict);

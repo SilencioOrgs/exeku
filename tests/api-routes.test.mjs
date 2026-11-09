@@ -1,9 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { GET as problemsHandler } from "../app/api/problems/route.ts";
-import { GET as problemDetailHandler } from "../app/api/problems/[id]/route.ts";
-import { loadRoute } from "./fixtures/load-route.mjs";
+import { loadRoute, loadRouteExports } from "./fixtures/load-route.mjs";
 
+const problemsHandler = loadRouteExports("app/api/problems/route.ts").GET;
+const problemDetailHandler = loadRouteExports("app/api/problems/[id]/route.ts").GET;
 const executeHandler = loadRoute("app/api/execute/route.ts");
 const judgeHandler = loadRoute("app/api/judge/route.ts");
 

@@ -11,7 +11,7 @@ import * as judgingService from "../../lib/judge/judging-service.ts";
 import * as catalog from "../../lib/problems/catalog.ts";
 import * as executionTypes from "../../types/execution.ts";
 
-export function loadRoute(path, userId = "user_route") {
+export function loadRouteExports(path, userId = "user_route") {
   const source = readFileSync(new URL(`../../${path}`, import.meta.url), "utf8");
   const output = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText;
   const loaded = { exports: {} };
@@ -24,11 +24,18 @@ export function loadRoute(path, userId = "user_route") {
     "@/lib/judge/judging-service": judgingService,
     "@/lib/judge/record-submission": { recordSubmission: async () => {} },
     "@/lib/problems/catalog": catalog,
+    "@/lib/problems/store": {
+      findProblem: async (id) => catalog.getProblemById(id),
+      findVisibleProblem: async (id) => catalog.getVisibleProblem(id),
+      listProblemSummaries: async (filter) => catalog.getProblemSummaries(filter),
+    },
     "@/types/execution": executionTypes,
   };
   vm.runInNewContext(output, {
-    module: loaded, exports: loaded.exports,
+    module: loaded, exports: loaded.exports, URL, console,
     require: (name) => { if (name in modules) return modules[name]; throw Error(`unexpected import: ${name}`); },
   });
-  return loaded.exports.POST;
+  return loaded.exports;
 }
+
+export const loadRoute = (path, userId) => loadRouteExports(path, userId).POST;

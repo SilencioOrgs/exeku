@@ -31,6 +31,7 @@ function harness() {
     org_members: [member("pres", "president"), member("plain", "member"), member("target", "member")],
     org_applications: [],
     submissions: [],
+    problems: [{ id: "created", title: "Created" }],
     tournament_members: [],
     events: [event("mine", "acoes", "open"), event("night", "acoes", "campus-only"), event("theirs", "other", "open", true)],
   };
@@ -95,9 +96,9 @@ test("the events feed offers posting only to orgs the viewer can publish for", a
 
 test("event problems expose only id and title, and unknown IDs are dropped", async () => {
   const { tables, competition } = harness();
-  tables.events[0].problem_ids = ["known", "gone"];
+  tables.events[0].problem_ids = ["known", "created", "gone"];
   const event = (await competition.getEventsFeed(viewer("pres"))).events.find((e) => e.id === "mine");
-  assert.equal(JSON.stringify(event.problems), '[{"id":"known","title":"Known"}]');
+  assert.equal(JSON.stringify(event.problems), '[{"id":"known","title":"Known"},{"id":"created","title":"Created"}]');
 });
 
 test("a first solve earns points and a milestone; solving again earns none; judge outages are not recorded", async () => {
@@ -114,6 +115,14 @@ test("a first solve earns points and a milestone; solving again earns none; judg
   assert.equal(await recordSubmission(problem, "python", "WRONG_ANSWER"), null);
   assert.equal(await recordSubmission(problem, "python", "SERVICE_UNAVAILABLE"), null);
   assert.equal(tables.submissions.length, 3);
+});
+
+test("a targeted competition is shown only to its campuses and organizations", () => {
+  const event = { access: "campus-only", campusId: "", orgId: "", audience: { campusIds: ["a", "b"], orgIds: ["club"] } };
+  assert.equal(orgRules.canViewEvent(event, { campusIds: ["b"], orgIds: [] }), true);
+  assert.equal(orgRules.canViewEvent(event, { campusIds: [], orgIds: ["club"] }), true);
+  assert.equal(orgRules.canViewEvent(event, { campusIds: ["c"], orgIds: ["other"] }), false);
+  assert.equal(orgRules.canViewEvent({ ...event, access: "open" }, { campusIds: [], orgIds: [] }), false);
 });
 
 test("today follows Manila's calendar, not UTC's", (t) => {

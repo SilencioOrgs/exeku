@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getProblemSummaries } from "@/lib/problems/catalog";
+import { listProblemSummaries } from "@/lib/problems/store";
 
 export async function GET(req: Request) {
   try {
@@ -8,15 +8,9 @@ export async function GET(req: Request) {
     const language = searchParams.get("language") || undefined;
     const search = searchParams.get("search") || undefined;
 
-    const summaries = getProblemSummaries({
-      difficulty,
-      language,
-      search,
-    });
-
-    return NextResponse.json({ problems: summaries });
+    return NextResponse.json({ problems: await listProblemSummaries({ difficulty, language, search }) });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Internal Server Error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("Could not list problems:", err instanceof Error ? err.message : "unknown error");
+    return NextResponse.json({ error: "We couldn't load the problems." }, { status: 500 });
   }
 }

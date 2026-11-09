@@ -39,10 +39,10 @@ export function TextField({ id, label, error, hint, ...props }: TextFieldProps) 
 
 type TextAreaFieldProps = ComponentProps<"textarea"> & { id: string; label: string; error?: string; hint?: string };
 
-export function TextAreaField({ id, label, error, hint, ...props }: TextAreaFieldProps) {
+export function TextAreaField({ id, label, error, hint, className, ...props }: TextAreaFieldProps) {
   return (
     <FieldShell id={id} label={label} error={error} hint={hint}>
-      <textarea id={id} aria-invalid={error ? true : undefined} aria-describedby={describedBy(id, error, hint)} className="skeuo-well w-full rounded-lg border border-input px-2.5 py-2 text-base md:text-sm" {...props} />
+      <textarea id={id} aria-invalid={error ? true : undefined} aria-describedby={describedBy(id, error, hint)} className={`skeuo-well w-full rounded-lg border border-input px-2.5 py-2 text-base md:text-sm ${className ?? ""}`} {...props} />
     </FieldShell>
   );
 }

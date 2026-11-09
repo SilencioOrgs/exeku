@@ -337,8 +337,11 @@ export function getProblemById(id: string): ProgrammingProblem | null {
 
 export function getVisibleProblem(id: string): VisibleProblem | null {
   const full = getProblemById(id);
-  if (!full) return null;
+  return full ? toVisibleProblem(full) : null;
+}
 
+/** Drops hidden tests. Everything sent to a browser goes through here. */
+export function toVisibleProblem(full: ProgrammingProblem): VisibleProblem {
   return {
     id: full.id,
     slug: full.slug,
@@ -366,12 +369,18 @@ export function getVisibleProblem(id: string): VisibleProblem | null {
   };
 }
 
-export function getProblemSummaries(filter?: {
+export interface ProblemFilter {
   difficulty?: string;
   language?: string;
   search?: string;
-}): ProblemSummary[] {
-  return PROBLEM_CATALOG.filter((p) => {
+}
+
+export function getProblemSummaries(filter?: ProblemFilter): ProblemSummary[] {
+  return summarizeProblems(PROBLEM_CATALOG, filter);
+}
+
+export function summarizeProblems(problems: ProgrammingProblem[], filter?: ProblemFilter): ProblemSummary[] {
+  return problems.filter((p) => {
     if (filter?.difficulty && filter.difficulty !== "all") {
       if (p.difficulty !== filter.difficulty) return false;
     }

@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { ArrowLeft, Check, Clock, Crown } from "lucide-react";
 import { BrandLoader } from "@/components/brand-loader";
 import { PixelAvatar } from "@/components/retro/pixel-avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { fetchTournament, tournamentAction } from "@/lib/orgs/api";
+import { fetchTournament, TOURNAMENT_REFRESH_EVENT, tournamentAction } from "@/lib/orgs/api";
 import type { TournamentTeam, TournamentView } from "@/types/tournament";
 import { TextField } from "../school/field";
 
@@ -57,20 +57,35 @@ export function TournamentPage({ id }: { id: string }) {
   const [loadError, setLoadError] = useState<string>();
   const [actionError, setActionError] = useState<string>();
   const [teamName, setTeamName] = useState("");
-  const [version, setVersion] = useState(0);
+  const mounted = useRef(false);
+  const loading = useRef(false);
+  const loadAgain = useRef(false);
+  const lastStatus = useRef<TournamentView["status"]>(undefined);
 
-  useEffect(() => {
-    let live = true;
-    void fetchTournament(id).then((result) => {
-      if (!live) return;
-      if (!result.ok) { setLoadError(result.error ?? "We couldn't load this tournament."); return; }
+  // One request at a time, and each reply is used. Cancelling the previous request on every tick meant a reply slower than a second never arrived.
+  const load = useCallback(async () => {
+    if (loading.current) { loadAgain.current = true; return; }
+    loading.current = true;
+    do {
+      loadAgain.current = false;
+      const result = await fetchTournament(id);
+      if (!mounted.current) continue;
+      if (!result.ok) { setLoadError(result.error ?? "We couldn't load this tournament."); continue; }
       setView(result.data);
       setOffset(Date.parse(result.data.now) - Date.now());
       setTick(Date.now());
       setLoadError(undefined);
-    });
-    return () => { live = false; };
-  }, [id, version]);
+      if (lastStatus.current && lastStatus.current !== result.data.status) window.dispatchEvent(new Event(TOURNAMENT_REFRESH_EVENT));
+      lastStatus.current = result.data.status;
+    } while (loadAgain.current);
+    loading.current = false;
+  }, [id]);
+
+  useEffect(() => {
+    mounted.current = true;
+    queueMicrotask(() => void load());
+    return () => { mounted.current = false; };
+  }, [load]);
 
   const status = view?.status;
   const target = view && (view.status === "registration" ? Date.parse(view.startsAt) : Date.parse(view.endsAt));
@@ -81,10 +96,10 @@ export function TournamentPage({ id }: { id: string }) {
     const timer = setInterval(() => {
       const now = Date.now();
       setTick(now);
-      if (now + offset >= target || Math.floor(now / 1000) % 15 === 0) setVersion((v) => v + 1);
+      if (now + offset >= target || Math.floor(now / 1000) % 15 === 0) void load();
     }, 1000);
     return () => clearInterval(timer);
-  }, [target, status, offset]);
+  }, [target, status, offset, load]);
 
   const back = <Link href="/app/events" className="inline-flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]"><ArrowLeft size={14} aria-hidden="true" />All events</Link>;
   if (loadError && !view) return <div className="mx-auto w-full max-w-4xl space-y-4 p-4 sm:p-6 lg:p-8">{back}<p role="alert" className="text-sm text-[var(--color-pink)]">{loadError}</p></div>;
@@ -93,11 +108,12 @@ export function TournamentPage({ id }: { id: string }) {
   const act = async (body: Record<string, unknown>) => {
     setActionError(undefined);
     const result = await tournamentAction(id, body);
-    if (result.ok) { setVersion((v) => v + 1); setTeamName(""); }
+    if (result.ok) { void load(); setTeamName(""); }
     else setActionError(result.error ?? "That didn't work. Try again.");
   };
   const createTeam = (event: FormEvent) => { event.preventDefault(); void act({ action: "createTeam", name: teamName }); };
   const registration = view.status === "registration";
+  const finished = view.status === "live" && view.problems.length > 0 && view.problems.every((p) => view.solvedProblemIds.includes(p.id));
 
   return (
     <div className="mx-auto w-full max-w-4xl space-y-6 p-4 sm:p-6 lg:p-8">
@@ -143,10 +159,12 @@ export function TournamentPage({ id }: { id: string }) {
           </ol>
         </section>
       )}
-      {view.status === "live" && !view.myTeamId && <p className="profile-panel p-5 text-sm text-[var(--color-text-muted)]">Registration has closed, so you can watch the standings.</p>}
+      {finished && <p className="profile-panel p-5 text-sm">Your team solved every problem, so you&apos;re free to leave full screen. Standings appear when the timer ends.</p>}
+      {view.status === "live" && !view.myTeamId && <p className="profile-panel p-5 text-sm text-[var(--color-text-muted)]">Registration has closed. Standings appear when the timer ends.</p>}
 
       <section className="space-y-3">
-        <h2 className="font-semibold">{registration ? "Registered teams" : "Standings"}</h2>
+        <h2 className="font-semibold">{registration ? "Registered teams" : view.status === "live" ? "Teams" : "Standings"}</h2>
+        {view.status === "live" && <p className="text-xs text-[var(--color-text-muted)]">Scores are hidden until the tournament ends.</p>}
         {view.teams.length === 0
           ? <p className="profile-panel p-5 text-sm text-[var(--color-text-muted)]">No teams yet. Be the first to register.</p>
           : <ul className="space-y-3">{view.teams.map((team) => <TeamCard key={team.id} team={team} view={view} onJoin={(teamId) => void act({ action: "joinTeam", teamId })} />)}</ul>}

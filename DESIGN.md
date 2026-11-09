@@ -121,6 +121,7 @@ Most screens are "Operate" surfaces (problems, workspace, settings): scanability
 - `/setup` is one Google sign-in card on a black machined panel (`.skeuo-panel`). The profile's School email section uses the same panel with sunken fields (`.skeuo-well`) and a printed school ID (`.id-*`), the only paper-colored object in the product.
 - Banners are Blender renders in `public/banners/` (source: `design/blender/exeku-banners.blend`), listed in `lib/banners.ts`. Officers pick one per event through `BannerPicker`. New art keeps the left side dark so text stays readable on the dashboard card.
 - While a student's tournament is live, `TournamentLock` covers the app until they enter full screen, turns off copy and paste, keeps them on the tournament and workspace, and records each departure as a warning on the team's card.
+- Admins create competitions in a four-step guide (details, who can join, problems, review) in `/app/admin`.
 - Tournaments open at `/app/events/<id>`: register a team, watch the countdown, and problems unlock at the start. Gold, silver and bronze (`--medal-*`) appear only for tournament places, as a crown on the E key in Coding activity.
 - Solving a problem for the first time shows a milestone card (`SolveMilestoneCard`) with the E key dropping into place, and leaves an E key on that day of the coding activity chart.
 - Every loading state is `BrandLoader`: the EXEKU keys press in turn. No spinners.

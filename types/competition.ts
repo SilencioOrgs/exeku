@@ -27,6 +27,9 @@ export interface CompetitionEvent {
   tournament?: { startsAt: string; endsAt: string };
   /** A tournament's own solved list, since only answers during its window count. */
   solvedProblemIds?: string[];
+  /** Set when a competition targets chosen campuses and organizations. */
+  audience?: { campusIds: string[]; orgIds: string[] };
+  audienceLabel?: string;
 }
 
 export interface LeaderboardScore {

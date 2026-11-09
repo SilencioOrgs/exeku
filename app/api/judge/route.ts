@@ -3,7 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { readJson } from "@/lib/accounts/read-json";
 import { defaultJudgingService } from "@/lib/judge/judging-service";
 import { recordSubmission } from "@/lib/judge/record-submission";
-import { getProblemById } from "@/lib/problems/catalog";
+import { findProblem } from "@/lib/problems/store";
 import {
   type ExecutionLanguage,
   SUPPORTED_EXECUTION_LANGUAGES,
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const problem = getProblemById(problemId);
+    const problem = await findProblem(problemId);
     if (!problem) {
       return NextResponse.json(
         { error: `Problem with ID '${problemId}' not found.` },
@@ -86,7 +86,7 @@ export async function POST(req: Request) {
     }
 
     const judgingResult = await defaultJudgingService.judgeSubmission(
-      problem.id,
+      problem,
       {
         language: execLang,
         sourceCode: validation.request.sourceCode,

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Maximize, TriangleAlert } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { fetchActiveTournament, tournamentAction } from "@/lib/orgs/api";
+import { fetchActiveTournament, TOURNAMENT_REFRESH_EVENT, tournamentAction } from "@/lib/orgs/api";
 import type { ActiveTournament } from "@/types/tournament";
 
 const POLL_MS = 20000;
@@ -39,8 +39,9 @@ export function TournamentLock() {
       const next = result.data.active;
       setActive(next);
       if (next) setWarnings((count) => Math.max(count, next.warnings));
-      // The tournament just ended, so hand the screen back.
+      // The tournament ended or the team finished, so hand the screen back without counting it as leaving.
       if (wasActive.current && !next) {
+        wasFullscreen.current = false;
         keyboardLock()?.unlock?.();
         if (document.fullscreenElement) void document.exitFullscreen();
       }
@@ -48,7 +49,8 @@ export function TournamentLock() {
     });
     load();
     const timer = setInterval(load, POLL_MS);
-    return () => { live = false; clearInterval(timer); };
+    window.addEventListener(TOURNAMENT_REFRESH_EVENT, load);
+    return () => { live = false; clearInterval(timer); window.removeEventListener(TOURNAMENT_REFRESH_EVENT, load); };
   }, []);
 
   useEffect(() => {

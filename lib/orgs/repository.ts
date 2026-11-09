@@ -1,7 +1,7 @@
 import "server-only";
 import { isObject, text } from "@/lib/accounts/rules";
 import type { Viewer } from "@/lib/auth/viewer";
-import { EVENT_COLUMNS, toEvent, viewerScope, type EventRow } from "@/lib/competition/repository";
+import { EVENT_COLUMNS, toEvents, viewerScope, type EventRow } from "@/lib/competition/repository";
 import { todayInManila } from "@/lib/dates";
 import { db, must } from "@/lib/db/client";
 import type { FieldErrors } from "@/types/account";
@@ -53,7 +53,7 @@ export async function getOrgDetail(orgId: string, viewer: Viewer): Promise<OrgDe
     applications: can(viewerRole, "reviewApplications")
       ? applications.filter((a) => a.status === "pending").map((a) => ({ id: a.id, name: a.profiles.display_name, program: a.program ?? undefined }))
       : [],
-    events: events.map(toEvent).filter((e) => canViewEvent(e, scope)),
+    events: (await toEvents(events)).filter((e) => canViewEvent(e, scope)),
   };
 }
 

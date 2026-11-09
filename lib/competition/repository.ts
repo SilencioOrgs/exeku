@@ -12,25 +12,36 @@ import type { CompetitionEvent, EventAccess, EventsFeed, LeaderboardEntry, Leade
 import type { OrgRole } from "@/types/org";
 import { rankScores } from "./rank";
 
-export const EVENT_COLUMNS = "id,org_id,title,summary,starts_on,access,banner,featured,winners,problem_ids,starts_at,ends_at,team_size,orgs(name,campus_id,campus_name)";
+export const EVENT_COLUMNS = "id,org_id,title,summary,starts_on,access,banner,featured,winners,problem_ids,starts_at,ends_at,team_size,campus_ids,org_ids,audience_label,orgs(name,campus_id,campus_name)";
 
 export interface EventRow {
-  id: string; org_id: string; title: string; summary: string; starts_on: string; access: EventAccess;
+  id: string; org_id: string | null; title: string; summary: string; starts_on: string; access: EventAccess;
   banner: BannerId; featured: boolean; winners: WinnerPlacement[] | null; problem_ids: string[] | null;
   starts_at?: string | null; ends_at?: string | null; team_size?: number | null;
-  orgs: { name: string; campus_id: string; campus_name: string };
+  campus_ids?: string[] | null; org_ids?: string[] | null; audience_label?: string | null;
+  orgs: { name: string; campus_id: string; campus_name: string } | null;
 }
 
-export const toEvent = (r: EventRow): CompetitionEvent => ({
-  id: r.id, orgId: r.org_id, orgName: r.orgs.name, campusId: r.orgs.campus_id, campusName: r.orgs.campus_name,
+const toEvent = (r: EventRow, createdTitles: Map<string, string>): CompetitionEvent => ({
+  id: r.id, orgId: r.org_id ?? "", orgName: r.orgs?.name ?? "Exeku", campusId: r.orgs?.campus_id ?? "", campusName: r.orgs?.campus_name ?? "",
   title: r.title, summary: r.summary, startsOn: r.starts_on, access: r.access, banner: r.banner, featured: r.featured,
   winners: r.winners ?? undefined,
+  audience: r.campus_ids?.length || r.org_ids?.length ? { campusIds: r.campus_ids ?? [], orgIds: r.org_ids ?? [] } : undefined,
+  audienceLabel: r.audience_label ?? undefined,
   tournament: r.starts_at && r.ends_at ? { startsAt: r.starts_at, endsAt: r.ends_at } : undefined,
   problems: (r.problem_ids ?? []).flatMap((id) => {
-    const problem = getProblemById(id);
-    return problem ? [{ id: problem.id, title: problem.title }] : [];
+    const title = getProblemById(id)?.title ?? createdTitles.get(id);
+    return title ? [{ id, title }] : [];
   }),
 });
+
+/** Built-in titles are in code; only problems created in the admin page need a query. */
+export async function toEvents(rows: EventRow[]): Promise<CompetitionEvent[]> {
+  const created = [...new Set(rows.flatMap((r) => r.problem_ids ?? []))].filter((id) => !getProblemById(id));
+  const titles = created.length ? must(await db().from("problems").select("id,title").in("id", created)) as { id: string; title: string }[] : [];
+  const createdTitles = new Map(titles.map((t) => [t.id, t.title]));
+  return rows.map((r) => toEvent(r, createdTitles));
+}
 
 export async function getCampuses(): Promise<Campus[]> {
   return (await schoolDirectory.findSchool("lspu"))?.campuses ?? [];
@@ -65,7 +76,7 @@ export async function getEventsFeed(viewer: Viewer): Promise<EventsFeed> {
   // shortcut: visibility is filtered here after loading every event, upgrade to a SQL filter past a few thousand events.
   const rows = must(await db().from("events").select(EVENT_COLUMNS).order("starts_on", { ascending: false })) as unknown as EventRow[];
   const registered = new Set((must(await db().from("tournament_members").select("event_id").eq("user_id", viewer.id)) as { event_id: string }[]).map((m) => m.event_id));
-  const events = await Promise.all(rows.map(toEvent).filter((e) => canViewEvent(e, scope)).map(async (event) => {
+  const events = await Promise.all((await toEvents(rows)).filter((e) => canViewEvent(e, scope)).map(async (event) => {
     if (!event.tournament) return event;
     // Tournament problems stay locked until it starts, and only for students who registered.
     if (!registered.has(event.id) || Date.now() < Date.parse(event.tournament.startsAt)) return { ...event, problems: [] };

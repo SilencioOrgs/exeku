@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getVisibleProblem } from "@/lib/problems/catalog";
+import { findVisibleProblem } from "@/lib/problems/store";
 
 export async function GET(
   _req: Request,
@@ -7,7 +7,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const problem = getVisibleProblem(id);
+    const problem = await findVisibleProblem(id);
 
     if (!problem) {
       return NextResponse.json({ error: "Problem not found" }, { status: 404 });
@@ -15,7 +15,7 @@ export async function GET(
 
     return NextResponse.json(problem);
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Internal Server Error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("Could not load problem:", err instanceof Error ? err.message : "unknown error");
+    return NextResponse.json({ error: "We couldn't load this problem." }, { status: 500 });
   }
 }

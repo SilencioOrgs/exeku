@@ -98,6 +98,27 @@ test("warnings are counted on the team, only while live and only for members", a
   assert.equal(before.tables.tournament_violations.length, 0);
 });
 
+test("scores stay hidden until the tournament ends", async () => {
+  const live = harness(-5, 30);
+  live.tables.submissions.push({ user_id: "a", problem_id: "p1", points: 100, verdict: "ACCEPTED", created_at: iso(-1) });
+  const during = (await live.repo.getTournament(viewer("a"), ID)).teams[0];
+  assert.deepEqual([during.points, during.solved, during.rank], [0, 0, undefined]);
+  assert.equal((await live.repo.getTournament(viewer("a"), ID)).solvedProblemIds.join(), "p1");
+  const done = harness(-30, -1);
+  done.tables.submissions.push({ user_id: "a", problem_id: "p1", points: 100, verdict: "ACCEPTED", created_at: iso(-5) });
+  const after = (await done.repo.getTournament(viewer("a"), ID)).teams[0];
+  assert.deepEqual([after.points, after.solved, after.rank], [100, 1, 1]);
+});
+
+test("the lock lifts once the team has solved every problem", async () => {
+  const live = harness(-5, 30);
+  const accepted = (problem_id) => ({ user_id: "a", problem_id, points: 100, verdict: "ACCEPTED", created_at: iso(-1) });
+  live.tables.submissions.push(accepted("p1"));
+  assert.equal((await live.repo.getActiveTournament(viewer("a"))).id, ID);
+  live.tables.submissions.push(accepted("p2"));
+  assert.equal(await live.repo.getActiveTournament(viewer("a")), null);
+});
+
 test("medals need a finished tournament, a top 3 place and points", async () => {
   const running = harness(-30, 10);
   running.tables.submissions.push({ user_id: "a", problem_id: "p1", points: 100, verdict: "ACCEPTED", created_at: iso(-5) });

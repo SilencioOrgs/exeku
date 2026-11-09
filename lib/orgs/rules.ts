@@ -9,13 +9,15 @@ export const can = (role: OrgRole | null, permission: OrgPermission) =>
   role === "president" || (role === "officer" && permission !== "manageOfficers");
 
 /** Open events are for everyone. Campus-only and org-only events are shown only to those students. */
-export function canViewEvent(event: Pick<CompetitionEvent, "access" | "campusId" | "orgId">, viewer: { campusIds: string[]; orgIds: string[] }) {
+export function canViewEvent(event: Pick<CompetitionEvent, "access" | "campusId" | "orgId" | "audience">, viewer: { campusIds: string[]; orgIds: string[] }) {
   if (viewer.orgIds.includes(event.orgId)) return true;
+  if (event.audience) return event.audience.campusIds.some((id) => viewer.campusIds.includes(id)) || event.audience.orgIds.some((id) => viewer.orgIds.includes(id));
   if (event.access === "open") return true;
   return event.access === "campus-only" && viewer.campusIds.includes(event.campusId);
 }
 
-export function eventAccessLabel(event: Pick<CompetitionEvent, "access" | "campusName" | "orgName">) {
+export function eventAccessLabel(event: Pick<CompetitionEvent, "access" | "campusName" | "orgName" | "audienceLabel">) {
+  if (event.audienceLabel) return `For ${event.audienceLabel}`;
   if (event.access === "open") return "Open to everyone";
   return event.access === "campus-only" ? `Campus only: ${event.campusName}` : `Org only: ${event.orgName}`;
 }
