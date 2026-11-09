@@ -18,16 +18,10 @@ export interface QueueClient {
   ip: string;
 }
 
-const CLIENT_ID = /^[A-Za-z0-9_-]{1,64}$/;
-
-/**
- * Forwarded addresses can be faked, so they are read only when TRUST_PROXY=1 (Vercel or a proxy that overwrites them).
- * shortcut: the browser id is self-reported, so only the per-IP cap is a hard limit; move the key to the signed-in user id when accounts exist.
- */
-export function clientFrom(headers: Headers, env: Record<string, string | undefined> = process.env): QueueClient {
+/** Forwarded addresses can be faked, so they are read only when TRUST_PROXY=1 (Vercel or a proxy that overwrites them). */
+export function clientFrom(headers: Headers, userId: string, env: Record<string, string | undefined> = process.env): QueueClient {
   const ip = (env.TRUST_PROXY === "1" && (headers.get("x-forwarded-for")?.split(",")[0].trim() || headers.get("x-real-ip")?.trim())) || "local";
-  const id = headers.get("x-exeku-client")?.trim() ?? "";
-  return { ip, key: CLIENT_ID.test(id) ? `${ip}/${id}` : ip };
+  return { ip, key: userId };
 }
 
 /** Adds to a counter, and removes it at zero so the map cannot grow without bound. */

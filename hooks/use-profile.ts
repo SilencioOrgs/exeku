@@ -16,8 +16,6 @@ function readSignedOut(): boolean {
 export interface UseProfileReturn {
   /** The signed-in profile: null after logout, even though the data stays saved. */
   profile: LocalProfile | null;
-  /** The profile saved on this browser, signed in or not. */
-  savedProfile: LocalProfile | null;
   signOut: () => void;
   resumeSession: () => void;
   isLoading: boolean;
@@ -194,7 +192,6 @@ export function useProfile(): UseProfileReturn {
 
   return {
     profile: signedOut ? null : profile,
-    savedProfile: profile,
     signOut,
     resumeSession,
     isLoading,

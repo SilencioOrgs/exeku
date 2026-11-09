@@ -16,6 +16,8 @@ export type UserType = "student" | "explorer";
 
 export interface LocalProfile {
   id: string;
+  /** The signed-in account this profile belongs to, so students sharing a computer stay separate. */
+  ownerId?: string;
   displayName: string;
   bio?: string;
   avatarId: string;
@@ -31,6 +33,7 @@ export interface LocalProfile {
 }
 
 export interface ProfileInput {
+  ownerId?: string;
   displayName: string;
   bio?: string;
   avatarId: string;

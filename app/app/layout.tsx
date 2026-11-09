@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ClerkProvider } from "@clerk/nextjs";
 import { AppShell } from "@/components/app/app-shell";
 import { ChallengeProvider } from "@/hooks/use-challenge-session";
 import { ChallengeExitGuardModal } from "@/components/app/challenge-exit-guard-modal";
@@ -14,9 +15,11 @@ export default function AppLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ChallengeProvider>
-      <AppShell>{children}</AppShell>
-      <ChallengeExitGuardModal />
-    </ChallengeProvider>
+    <ClerkProvider signInUrl="/setup" signUpUrl="/setup">
+      <ChallengeProvider>
+        <AppShell>{children}</AppShell>
+        <ChallengeExitGuardModal />
+      </ChallengeProvider>
+    </ClerkProvider>
   );
 }

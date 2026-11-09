@@ -6,13 +6,6 @@ import { verdictInfo, isRealVerdict } from "../lib/verdicts.ts";
 
 const reply = (status, body) => async () => new Response(JSON.stringify(body), { status });
 
-test("postJson sends extra headers, such as the browser id Run and Submit use", async () => {
-  let sent;
-  await postJson("/api/execute", {}, async (_url, init) => { sent = init.headers; return new Response("{}", { status: 200 }); }, { "x-exeku-client": "abc" });
-  assert.equal(sent["x-exeku-client"], "abc");
-  assert.equal(sent["Content-Type"], "application/json");
-});
-
 test("postJson throws the server error on a non-2xx reply instead of returning it as a result", async () => {
   await assert.rejects(postJson("/api/judge", {}, reply(429, { error: "Execution queue is at full capacity." })), /full capacity/);
   await assert.rejects(postJson("/api/judge", {}, async () => new Response("oops", { status: 500 })), /HTTP 500/);

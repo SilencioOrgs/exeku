@@ -147,7 +147,7 @@ Most screens are "Operate" surfaces (problems, workspace, settings): scanability
 - Do show real data only. Demo features say "Demo" on the result itself.
 - Don't add decorative status pills ("Online preview", "Live", "V1", "Step 01"). Labels must carry information.
 - Don't add a light theme, a second accent color, neon, scanlines or pixel corners.
-- Don't load anything from a CDN. The app, fonts, three.js and models must work offline.
+- Don't load anything from a CDN. The app, fonts, three.js and models must work offline. The one exception is Clerk's sign-in script on `/setup` and `/app`, so never add `ClerkProvider` to the root layout.
 - Don't use `alert()`; use a `Dialog`.
 
 ## Skills

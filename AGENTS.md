@@ -30,6 +30,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **UI Components**: shadcn/ui configured with Base UI primitives (`@base-ui/react`), Nova preset (`style: "base-nova"`), and Lucide React icons (`components.json`)
 - **Icons**: lucide-react, imported directly (shared stroke and layout in the `.lucide` rule in `app/globals.css`)
 - **Editor**: Built-in code editor (`components/app/code-editor.tsx`): a native `<textarea>` over a syntax-highlighted copy (`lib/syntax.ts`, VS Code colors), with word suggestions accepted by Tab (`lib/completions.ts`). No Monaco, no CDN downloads.
+- **Auth**: Clerk with Google only (`proxy.ts`, `lib/auth/access.ts`). `ClerkProvider` is on `/setup` and `/app` only, never the root layout.
 - **Storage**: IndexedDB local profiles and draft persistence (v2 schema)
 - **Execution Sandbox Target**: Exeku judge worker (`judge/`, `POST /v1/run`) running submissions in `isolate` v2 sandboxes on a Linux host (`lib/execution/engine.ts`). Setup: `judge/README.md`
 - **Package Manager**: npm (use `npm.cmd` / `npx.cmd` in Windows PowerShell if execution policies restrict script loading)

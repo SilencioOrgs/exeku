@@ -2,6 +2,7 @@ import { appearanceRepository } from "./appearance-repository";
 import { clearCodingDays } from "./coding-activity";
 import { normalizeAppearancePreferences, type AppearancePreferences } from "@/types/appearance";
 import type { LocalProfile, ProfileInput } from "@/types/profile";
+import { DEFAULT_AVATAR_ID } from "@/lib/avatars";
 import { validateDisplayName } from "@/lib/profile-validation";
 import {
   PROFILE_STORE,
@@ -73,6 +74,7 @@ export class ProfileRepository {
     const now = new Date().toISOString();
     const profile: LocalProfile = {
       id: generateId(),
+      ownerId: input.ownerId,
       displayName: validation.trimmed!,
       bio: input.bio?.trim() || undefined,
       avatarId: input.avatarId,
@@ -89,6 +91,29 @@ export class ProfileRepository {
       return profile;
     } catch (err) {
       throw new ProfileRepositoryError("Failed to save profile to local storage", err);
+    }
+  }
+
+  /**
+   * The signed-in account's profile on this browser: its own, else one from before sign-in existed, else a new one.
+   * The newest updatedAt is the active profile, so this also switches a shared computer to this student.
+   */
+  async claimProfile(ownerId: string, displayName: string): Promise<LocalProfile> {
+    let found: LocalProfile | undefined;
+    try {
+      const profiles = await idbGetAll<LocalProfile>(PROFILE_STORE);
+      found = profiles.find((profile) => profile.ownerId === ownerId) ?? profiles.find((profile) => !profile.ownerId);
+    } catch (err) {
+      throw new ProfileRepositoryError("Failed to read local profiles", err);
+    }
+    if (!found) return this.saveProfile({ ownerId, displayName, avatarId: DEFAULT_AVATAR_ID, experienceLevel: "beginner", preferredLanguage: "python" });
+    try {
+      return await idbUpdate<LocalProfile>(PROFILE_STORE, found.id, (current) => {
+        if (!current) throw new Error("Profile was not found");
+        return { ...current, ownerId, updatedAt: new Date().toISOString() };
+      });
+    } catch (err) {
+      throw new ProfileRepositoryError("Failed to claim local profile", err);
     }
   }
 

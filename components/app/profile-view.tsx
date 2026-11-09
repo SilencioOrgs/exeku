@@ -3,6 +3,8 @@
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useClerk } from "@clerk/nextjs";
 import { useProfile } from "@/hooks/use-profile";
 import { draftRepository } from "@/lib/storage/draft-repository";
 import { LogOut, Pencil, Settings } from "lucide-react";
@@ -41,6 +43,8 @@ function Readout({ label, value, capitalize }: { label: string; value: ReactNode
 
 export function ProfileView() {
   const { profile, updateProfile, signOut } = useProfile();
+  const clerk = useClerk();
+  const router = useRouter();
   const { isTimedActive } = useChallengeSession();
   const [editing, setEditing] = useState(false);
   const [draftCount, setDraftCount] = useState<number | null>(null);
@@ -60,6 +64,11 @@ export function ProfileView() {
   const joined = new Date(profile.createdAt).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
   const github = profile.socialLinks?.github;
   const linkedin = profile.socialLinks?.linkedin;
+  const logOut = async () => {
+    await clerk.signOut();
+    signOut();
+    router.push("/");
+  };
 
   return (
     <div className="profile-view mx-auto w-full max-w-6xl space-y-6 p-4 sm:p-6 lg:p-8">
@@ -72,7 +81,7 @@ export function ProfileView() {
           <Link href="/app/settings" className={buttonVariants({ variant: "outline" })}>
             <Settings size={15} aria-hidden="true" />Appearance
           </Link>
-          <Button type="button" variant="outline" onClick={signOut} disabled={isTimedActive} title={isTimedActive ? "Finish your timed challenge before logging out" : undefined}>
+          <Button type="button" variant="outline" onClick={() => void logOut()} disabled={isTimedActive} title={isTimedActive ? "Finish your timed challenge before logging out" : undefined}>
             <LogOut size={15} aria-hidden="true" />Log out
           </Button>
         </div>

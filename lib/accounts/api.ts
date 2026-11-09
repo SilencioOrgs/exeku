@@ -31,4 +31,3 @@ export const fetchSchools = (location: string) =>
   call<{ schools: SchoolOption[] }>(`/api/schools?location=${encodeURIComponent(location)}`);
 export const requestNewSchool = (school: NewSchoolRequest) => call<{ school: NewSchoolRequest }>("/api/schools", school);
 export const submitSchoolAccount = (input: SchoolAccountRequest) => call<{ account: StudentAccount }>("/api/account/school", input);
-export const startGoogleSignIn = () => call<{ redirectUrl: string }>("/api/auth/google", {});

@@ -32,3 +32,7 @@ jobs:
         run: npx tsc --noEmit
       - name: Production build
         run: npm run build
+        env:
+          # Placeholders in Clerk's key format: the build only needs them to exist.
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_ZXhhbXBsZS5jbGVyay5hY2NvdW50cy5kZXYk
+          CLERK_SECRET_KEY: sk_test_placeholder

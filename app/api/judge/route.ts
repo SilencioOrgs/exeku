@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { readJson } from "@/lib/accounts/read-json";
 import { defaultJudgingService } from "@/lib/judge/judging-service";
 import { getProblemById } from "@/lib/problems/catalog";
@@ -11,6 +12,11 @@ import { clientFrom, QueueFullError } from "@/lib/execution/queue";
 
 export async function POST(req: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Sign in to run code." }, { status: 401 });
+    }
+
     const parsed = await readJson(req, MAX_BODY_BYTES);
     if (!parsed.ok) {
       return NextResponse.json({ error: parsed.error }, { status: parsed.status });
@@ -85,7 +91,7 @@ export async function POST(req: Request) {
         sourceCode: validation.request.sourceCode,
         files: validation.request.files,
       },
-      clientFrom(req.headers)
+      clientFrom(req.headers, userId)
     );
 
     return NextResponse.json(judgingResult);

@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSignIn, useUser } from "@clerk/nextjs";
 import { BrandWordmark } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/hooks/use-profile";
-import { startGoogleSignIn } from "@/lib/accounts/api";
-import { DEFAULT_AVATAR_ID } from "@/lib/avatars";
+import { toDisplayName } from "@/lib/profile-validation";
+import { profileRepository } from "@/lib/storage/profile-repository";
 
 /** Google's required multicolor mark. Brand colors, so these stay outside the design tokens. */
 function GoogleMark() {
@@ -23,30 +24,29 @@ function GoogleMark() {
 
 export function SignInCard() {
   const router = useRouter();
-  const { savedProfile, isLoading, saveProfile, resumeSession } = useProfile();
+  const { signIn } = useSignIn();
+  const { isLoaded, isSignedIn, user } = useUser();
+  const { resumeSession } = useProfile();
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string>();
+  const accountId = isSignedIn ? user.id : null;
+  const accountName = isSignedIn ? toDisplayName(user.fullName || user.primaryEmailAddress?.emailAddress.split("@")[0]) : "";
+
+  // Back from Google: use this account's profile on this browser, then enter the app.
+  useEffect(() => {
+    if (!accountId) return;
+    profileRepository.claimProfile(accountId, accountName)
+      .then(() => { resumeSession(); router.push("/app"); })
+      .catch(() => setNotice("We couldn't save your profile on this browser. Try again."));
+  }, [accountId, accountName, resumeSession, router]);
 
   const signInWithGoogle = async () => {
     setBusy(true);
     setNotice(undefined);
-    const result = await startGoogleSignIn();
-    if (result.ok) return window.location.assign(result.data.redirectUrl);
-    setBusy(false);
-    setNotice(result.error ?? "We couldn't start Google sign-in. Try again.");
-  };
-
-  // shortcut: creates a browser-only profile so the app stays reachable, remove this path once Google sign-in works.
-  const continueLocally = async () => {
-    setBusy(true);
-    setNotice(undefined);
-    try {
-      if (!savedProfile) await saveProfile({ displayName: "Student", avatarId: DEFAULT_AVATAR_ID, experienceLevel: "beginner", preferredLanguage: "python" });
-      resumeSession();
-      router.push("/app");
-    } catch {
+    const { error } = await signIn.sso({ strategy: "oauth_google", redirectCallbackUrl: "/setup/sso-callback", redirectUrl: "/setup" });
+    if (error) {
       setBusy(false);
-      setNotice("We couldn't save your profile on this browser. Try again.");
+      setNotice("We couldn't start Google sign-in. Try again.");
     }
   };
 
@@ -59,15 +59,11 @@ export function SignInCard() {
         <h1 className="mt-6 text-2xl font-semibold tracking-tight">Welcome to Exeku</h1>
         <p className="mt-1 text-sm text-[var(--color-text-muted)]">Sign in to start practicing.</p>
 
-        <Button variant="outline" size="lg" className="mt-6 h-11 w-full gap-2.5 text-sm" disabled={busy} onClick={signInWithGoogle}>
-          <GoogleMark /> Continue with Google
+        <Button variant="outline" size="lg" className="mt-6 h-11 w-full gap-2.5 text-sm" disabled={!isLoaded || busy || Boolean(accountId)} onClick={signInWithGoogle}>
+          <GoogleMark /> {accountId ? "Signing you in…" : "Continue with Google"}
         </Button>
 
         {notice && <p role="alert" className="skeuo-recess mt-4 rounded-xl p-3 text-sm">{notice}</p>}
-
-        <Button variant="ghost" className="mt-3 w-full" disabled={busy || isLoading} onClick={continueLocally}>
-          {savedProfile ? `Continue as ${savedProfile.displayName}` : "Continue on this browser"}
-        </Button>
       </section>
     </main>
   );

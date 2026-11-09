@@ -1,9 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { POST as executeHandler } from "../app/api/execute/route.ts";
-import { POST as judgeHandler } from "../app/api/judge/route.ts";
 import { GET as problemsHandler } from "../app/api/problems/route.ts";
 import { GET as problemDetailHandler } from "../app/api/problems/[id]/route.ts";
+import { loadRoute } from "./fixtures/load-route.mjs";
+
+const executeHandler = loadRoute("app/api/execute/route.ts");
+const judgeHandler = loadRoute("app/api/judge/route.ts");
 
 test("API /api/execute - rejects invalid language payload with 400", async () => {
   const req = new Request("http://localhost:3000/api/execute", {

@@ -3,8 +3,10 @@ import assert from "node:assert/strict";
 import { readJson } from "../lib/accounts/read-json.ts";
 import { MAX_BODY_BYTES } from "../lib/execution/validation.ts";
 import { clientFrom, ExecutionQueue, globalExecutionQueue, QueueFullError } from "../lib/execution/queue.ts";
-import { POST as execute } from "../app/api/execute/route.ts";
-import { POST as judge } from "../app/api/judge/route.ts";
+import { loadRoute } from "./fixtures/load-route.mjs";
+
+const execute = loadRoute("app/api/execute/route.ts");
+const judge = loadRoute("app/api/judge/route.ts");
 
 const held = () => {
   let release;
@@ -49,25 +51,28 @@ test("30 students on one IP can all run, and the network stops there", async () 
 test("forwarded addresses count only with TRUST_PROXY=1", () => {
   const forwarded = { "x-forwarded-for": " 203.0.113.9 , 10.0.0.1", "x-real-ip": "198.51.100.2" };
   const trusted = { TRUST_PROXY: "1" };
-  assert.deepEqual(clientFrom(new Headers(forwarded), {}), { ip: "local", key: "local" }, "a faked header changes nothing");
-  assert.deepEqual(clientFrom(new Headers(forwarded), { TRUST_PROXY: "0" }), { ip: "local", key: "local" });
-  assert.equal(clientFrom(new Headers(forwarded), trusted).ip, "203.0.113.9");
-  assert.equal(clientFrom(new Headers({ "x-real-ip": "198.51.100.2" }), trusted).ip, "198.51.100.2");
-  assert.equal(clientFrom(new Headers(), trusted).ip, "local");
+  assert.deepEqual(clientFrom(new Headers(forwarded), "user_1", {}), { ip: "local", key: "user_1" }, "a faked header changes nothing");
+  assert.deepEqual(clientFrom(new Headers(forwarded), "user_1", { TRUST_PROXY: "0" }), { ip: "local", key: "user_1" });
+  assert.equal(clientFrom(new Headers(forwarded), "user_1", trusted).ip, "203.0.113.9");
+  assert.equal(clientFrom(new Headers({ "x-real-ip": "198.51.100.2" }), "user_1", trusted).ip, "198.51.100.2");
+  assert.equal(clientFrom(new Headers(), "user_1", trusted).ip, "local");
 });
 
-test("the browser id joins the key when it is a short id and is ignored otherwise", () => {
-  const key = (id) => clientFrom(new Headers({ "x-exeku-client": id }), {}).key;
-  assert.equal(key("3f2b8c1e-aaaa-4bbb-8ccc-1234567890ab"), "local/3f2b8c1e-aaaa-4bbb-8ccc-1234567890ab");
-  assert.equal(key("usr_abc123"), "local/usr_abc123");
-  for (const bad of ["x".repeat(65), "a/b", "a b", "<script>"]) assert.equal(key(bad), "local", bad);
-  assert.equal(clientFrom(new Headers(), {}).key, "local");
+test("the limit follows the signed-in user, and nothing the browser sends can change that", () => {
+  assert.equal(clientFrom(new Headers({ "x-exeku-client": "someone-else" }), "user_1", {}).key, "user_1");
+});
+
+test("signed-out visitors can't run or submit code", async () => {
+  for (const path of ["app/api/execute/route.ts", "app/api/judge/route.ts"]) {
+    const response = await loadRoute(path, null)(post(JSON.stringify({ language: "python", sourceCode: "print(1)" })));
+    assert.equal(response.status, 401, path);
+  }
 });
 
 test("over the per-client limit, Run and Submit answer 429 with a clear message", async () => {
-  const headers = { "x-exeku-client": "route-test" };
+  const headers = {};
   const blockers = [held(), held()];
-  const running = blockers.map((blocker) => globalExecutionQueue.enqueue(blocker.task, clientFrom(new Headers(headers), {})));
+  const running = blockers.map((blocker) => globalExecutionQueue.enqueue(blocker.task, clientFrom(new Headers(headers), "user_route", {})));
   try {
     const run = await execute(post(JSON.stringify({ language: "python", sourceCode: "print(1)" }), headers));
     assert.equal(run.status, 429);

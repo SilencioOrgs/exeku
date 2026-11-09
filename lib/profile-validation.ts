@@ -6,6 +6,12 @@ export interface ValidationResult {
 
 const DISPLAY_NAME_REGEX = /^[a-zA-Z0-9_\- ]+$/;
 
+/** A valid display name from a Google account name, which may have accents or symbols. */
+export function toDisplayName(name: string | null | undefined): string {
+  const cleaned = (name ?? "").normalize("NFKD").replace(/[^a-zA-Z0-9_\- ]/g, "").trim().slice(0, 32).trim();
+  return validateDisplayName(cleaned).isValid ? cleaned : "Student";
+}
+
 /**
  * Validates a user display name according to Exeku specifications:
  * - Trim whitespace
