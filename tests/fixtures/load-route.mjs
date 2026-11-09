@@ -22,6 +22,7 @@ export function loadRoute(path, userId = "user_route") {
     "@/lib/execution/validation": validation,
     "@/lib/execution/queue": queue,
     "@/lib/judge/judging-service": judgingService,
+    "@/lib/judge/record-submission": { recordSubmission: async () => {} },
     "@/lib/problems/catalog": catalog,
     "@/types/execution": executionTypes,
   };

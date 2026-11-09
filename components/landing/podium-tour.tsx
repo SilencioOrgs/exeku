@@ -8,6 +8,7 @@ import { useProfile } from "@/hooks/use-profile";
 import { buttonVariants } from "@/components/ui/button";
 import { ArrowRight, BadgeCheck, ChartNoAxesColumn, Swords, Trophy, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BrandLoader } from "@/components/brand-loader";
 
 /** Zones are laid out along X so the camera can fly between them. */
 const ZONE = { arena: 0, team: 900, podium: 1800 } as const;
@@ -139,7 +140,7 @@ export function PodiumTour() {
       <div className="sticky top-0 h-screen overflow-hidden">
         <div aria-hidden="true" className="bg-grid absolute inset-0 opacity-60" />
         <div ref={mountRef} className="absolute inset-0" role="img" aria-label="3D tour: a student codes against a rival, joins a team round, climbs the leaderboard and lifts the trophy on the podium.">
-          {!ready && <span className="absolute inset-0 grid place-items-center text-sm text-[var(--color-text-muted)]">Loading 3D scene…</span>}
+          {!ready && <span className="absolute inset-0 grid place-items-center"><BrandLoader label="Loading 3D scene…" /></span>}
         </div>
         <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-[var(--color-canvas)] via-[var(--color-canvas)]/80 to-transparent md:hidden" />
         <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 hidden w-[56%] bg-gradient-to-r from-[var(--color-canvas)] via-[var(--color-canvas)]/85 to-transparent md:block" />

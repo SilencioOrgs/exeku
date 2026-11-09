@@ -2,13 +2,14 @@
 
 import { useRouter } from "next/navigation";
 import { HandleSSOCallback } from "@clerk/nextjs";
+import { BrandLoader } from "@/components/brand-loader";
 
 export default function SsoCallbackPage() {
   const router = useRouter();
   const backToSetup = () => router.push("/setup");
   return (
     <main className="setup-stage grid min-h-svh place-items-center p-4 text-sm text-[var(--color-text-muted)]">
-      <p role="status">Signing you in…</p>
+      <BrandLoader label="Signing you in…" />
       <HandleSSOCallback
         navigateToApp={({ decorateUrl }) => {
           // Clerk may return a full URL when it has to pass through its own domain.

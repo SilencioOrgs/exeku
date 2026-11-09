@@ -7,6 +7,8 @@ import { WelcomeDialog } from "./school/welcome-dialog";
 import { AppSidebar } from "./app-sidebar";
 import { AppTopbar } from "./app-topbar";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { BrandLoader } from "@/components/brand-loader";
+import { TournamentLock } from "./events/tournament-lock";
 
 export interface AppShellProps {
   children: React.ReactNode;
@@ -64,15 +66,9 @@ export function AppShell({ children }: AppShellProps) {
   return (
     <div className="app-shell h-screen max-h-screen bg-[var(--color-canvas)] text-[var(--color-text-main)] flex flex-col overflow-hidden relative">
       {blocked && (
-      <div role="status" aria-live="polite" className="min-h-screen bg-[var(--color-canvas)] flex flex-col items-center justify-center p-4">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-[var(--color-accent)] border-t-transparent animate-spin" />
-          <span className="text-xs text-[var(--color-accent)] animate-pulse">
-            Loading local workspace...
-          </span>
-        </div>
-      </div>
+      <BrandLoader label="Loading your workspace…" height={40} className="min-h-screen" />
       )}
+      {!blocked && <TournamentLock />}
       {!blocked && <WelcomeDialog profile={profile} onUpdate={(updates) => updateProfile(profile.id, updates)} />}
       {/* Top Application Bar */}
       {!blocked && <AppTopbar

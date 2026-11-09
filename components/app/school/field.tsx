@@ -1,6 +1,6 @@
-import type { ComponentProps, ReactNode } from "react";
-import { ChevronDown } from "lucide-react";
+import type { ChangeEvent, ComponentProps, ReactNode } from "react";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 
 interface FieldShellProps {
   id: string;
@@ -49,16 +49,13 @@ export function TextAreaField({ id, label, error, hint, ...props }: TextAreaFiel
 
 type SelectFieldProps = ComponentProps<"select"> & { id: string; label: string; error?: string };
 
-export function SelectField({ id, label, error, children, ...props }: SelectFieldProps) {
+export function SelectField({ id, label, error, children, value, disabled, onChange }: SelectFieldProps) {
   return (
     <FieldShell id={id} label={label} error={error}>
-      <div className="relative">
-        <select id={id} aria-invalid={error ? true : undefined} aria-describedby={describedBy(id, error)}
-          className="skeuo-well h-10 w-full appearance-none truncate rounded-lg border border-input pr-8 pl-2.5 text-base md:text-sm" {...props}>
-          {children}
-        </select>
-        <ChevronDown size={14} className="pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 text-[var(--color-text-muted)]" />
-      </div>
+      <Select id={id} value={value} disabled={disabled} aria-invalid={error ? true : undefined} aria-describedby={describedBy(id, error)}
+        onChange={(next) => onChange?.({ target: { value: next } } as ChangeEvent<HTMLSelectElement>)}>
+        {children}
+      </Select>
     </FieldShell>
   );
 }

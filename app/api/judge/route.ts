@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { readJson } from "@/lib/accounts/read-json";
 import { defaultJudgingService } from "@/lib/judge/judging-service";
+import { recordSubmission } from "@/lib/judge/record-submission";
 import { getProblemById } from "@/lib/problems/catalog";
 import {
   type ExecutionLanguage,
@@ -94,7 +95,8 @@ export async function POST(req: Request) {
       clientFrom(req.headers, userId)
     );
 
-    return NextResponse.json(judgingResult);
+    const milestone = await recordSubmission(problem, execLang, judgingResult.overallVerdict);
+    return NextResponse.json(milestone ? { ...judgingResult, milestone } : judgingResult);
   } catch (err: unknown) {
     if (err instanceof QueueFullError) {
       return NextResponse.json({ error: err.message }, { status: 429 });

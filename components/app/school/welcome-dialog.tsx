@@ -26,7 +26,7 @@ function OrgStep({ profile, onDone }: { profile: LocalProfile; onDone: () => voi
 
   const apply = async (orgId: string) => {
     setError(undefined);
-    const result = await orgAction(orgId, { action: "apply", actorId: profile.id, name: profile.displayName, program: profile.account?.school.program });
+    const result = await orgAction(orgId, { action: "apply", program: profile.account?.school.program });
     if (result.ok) setApplied((ids) => [...ids, orgId]);
     else setError(result.error ?? "We couldn't send your application. Try again.");
   };

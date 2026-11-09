@@ -39,7 +39,15 @@ export interface TestCaseVerdict {
   stderr?: string;
 }
 
+export interface SolveMilestone {
+  firstSolve: boolean;
+  points: number;
+  solved: number;
+}
+
 export interface JudgingResult {
+  /** Set by the judge route when the answer was accepted and saved. */
+  milestone?: SolveMilestone;
   problemId: string;
   language: ExecutionLanguage;
   overallVerdict: OverallVerdict;

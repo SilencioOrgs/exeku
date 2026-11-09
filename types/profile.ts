@@ -10,6 +10,8 @@ export type PreferredLanguage = "python" | "java" | "cpp" | "c";
 export interface SocialLinks {
   github?: string;
   linkedin?: string;
+  /** A full http(s) link. See parseWebsite. */
+  website?: string;
 }
 
 export type UserType = "student" | "explorer";

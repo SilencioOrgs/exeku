@@ -5,6 +5,7 @@ import { useProfile } from "@/hooks/use-profile";
 import { draftRepository } from "@/lib/storage/draft-repository";
 import type { WorkspaceDraft } from "@/types/draft";
 import { ModernOverview } from "./modern-overview";
+import { BrandLoader } from "@/components/brand-loader";
 
 export function CommandStation() {
   const { profile, updateProfile } = useProfile();
@@ -27,7 +28,7 @@ export function CommandStation() {
     return () => { active = false; };
   }, [profile]);
 
-  if (!profile) return <p role="status" className="p-8 text-sm text-[var(--color-text-muted)]">Loading workspace…</p>;
+  if (!profile) return <BrandLoader label="Loading workspace…" />;
 
   return <ModernOverview profile={profile} activeDraft={activeDraft}
     totalDrafts={totalDrafts} onSaveProfile={(updates) => updateProfile(profile.id, updates)} />;

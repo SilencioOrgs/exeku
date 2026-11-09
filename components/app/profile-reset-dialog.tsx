@@ -97,7 +97,7 @@ export function ProfileResetDialog({
             placeholder="Type RESET to confirm"
             autoFocus
             disabled={isDeleting}
-            className="w-full px-3 py-2 bg-[var(--color-canvas)] border border-[var(--color-pink)]/60 focus:border-[var(--color-pink)] text-foreground text-sm outline-none transition-colors"
+            className="skeuo-well h-10 w-full rounded-lg border border-input px-3 text-sm"
           />
         </div>
 

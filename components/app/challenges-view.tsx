@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlarmClock, ChevronDown, Search } from "lucide-react";
+import { AlarmClock, Search } from "lucide-react";
+import { Select } from "@/components/ui/select";
 import { useChallengeSession } from "@/hooks/use-challenge-session";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { inTopic, SORT_OPTIONS, sortProblems, type SortId, type TopicId } from "@/lib/problems/topics";
@@ -12,19 +13,12 @@ import type { PreferredLanguage } from "@/types/profile";
 import type { ProblemDifficulty, ProblemSummary } from "@/types/problem";
 import { DifficultyBadge, difficultyLabel } from "./difficulty-badge";
 import { TopicFilter } from "./topic-filter";
+import { BrandLoader } from "@/components/brand-loader";
 
 const DIFFICULTIES: ProblemDifficulty[] = ["beginner", "intermediate", "advanced"];
 
 function FilterSelect({ label, value, onChange, children }: { label: string; value: string; onChange: (value: string) => void; children: ReactNode }) {
-  return (
-    <div className="relative">
-      <select aria-label={label} value={value} onChange={(e) => onChange(e.target.value)}
-        className="skeuo-well h-9 w-full appearance-none rounded-lg border border-input pr-8 pl-3 text-sm">
-        {children}
-      </select>
-      <ChevronDown size={14} aria-hidden="true" className="pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 text-[var(--color-text-muted)]" />
-    </div>
-  );
+  return <Select aria-label={label} value={value} onChange={onChange} className="h-9">{children}</Select>;
 }
 
 export function ChallengesView() {
@@ -102,7 +96,7 @@ export function ChallengesView() {
 
       <div className="skeuo-card overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
         {problems === null ? (
-          <p role="status" className="p-10 text-center text-sm text-[var(--color-text-muted)]">Loading problems…</p>
+          <BrandLoader label="Loading problems…" />
         ) : visible.length === 0 ? (
           <div className="p-10 text-center">
             <p className="font-semibold">No problems match</p>

@@ -1,12 +1,13 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Database, Info, LoaderCircle, Terminal, type LucideIcon } from "lucide-react";
+import { CheckCircle2, Database, Info, Terminal, type LucideIcon } from "lucide-react";
 import { VerdictBadge } from "./verdict-badge";
 import type { ExecutionResult } from "@/types/execution";
 import type { JudgingResult } from "@/lib/judge/judging-service";
 import { cn } from "@/lib/utils";
 import { isRealVerdict } from "@/lib/verdicts";
+import { BrandLoader } from "@/components/brand-loader";
 
 export type ResultsTab = "console" | "stdin" | "results";
 
@@ -42,10 +43,7 @@ function Output({ label, text }: { label: string; text: string }) {
 
 function Spinner({ text }: { text: string }) {
   return (
-    <div className="flex items-center gap-2 py-4 text-sm text-[var(--color-text-muted)]" role="status">
-      <LoaderCircle size={14} className="animate-spin" aria-hidden="true" />
-      {text}
-    </div>
+    <BrandLoader label={text} height={24} className="p-6" />
   );
 }
 

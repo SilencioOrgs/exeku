@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAppearance } from "@/hooks/use-appearance";
 import { useNearViewport } from "@/hooks/use-near-viewport";
 import { cn } from "@/lib/utils";
+import { BrandLoader } from "@/components/brand-loader";
 
 type Loaded = { setLed(on: boolean): void };
 
@@ -78,7 +79,7 @@ export function CircuitView({ ledOn, interactive = true, view = [120, 120, 175],
     <div ref={mountRef} role="img" aria-label={label} className={cn("relative w-full overflow-hidden", interactive && "touch-none cursor-grab active:cursor-grabbing", className)}>
       {!ready && (
         <span className="absolute inset-0 grid place-items-center text-sm text-[var(--color-text-muted)]">
-          {failed ? "3D preview needs WebGL, which this browser has turned off." : "Loading 3D parts…"}
+          {failed ? "3D preview needs WebGL, which this browser has turned off." : <BrandLoader label="Loading 3D parts…" />}
         </span>
       )}
     </div>

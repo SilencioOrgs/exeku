@@ -20,6 +20,7 @@ import { ConfirmDialog, SubmissionResultDialog, TimeExpiredDialog } from "./work
 import { VerdictBadge } from "./workspace/verdict-badge";
 import { getSimulatedAcceptedResult, getSimulatedWrongAnswerResult } from "@/lib/demo/demo-simulation";
 import { isRealVerdict } from "@/lib/verdicts";
+import { fetchEvents } from "@/lib/orgs/api";
 import { cn } from "@/lib/utils";
 import type { ProblemSummary, VisibleProblem } from "@/types/problem";
 import type { SandboxHealth } from "@/types/execution";
@@ -66,6 +67,29 @@ export function WorkspaceView() {
   const [forfeitOpen, setForfeitOpen] = useState(false);
   const [finishOpen, setFinishOpen] = useState(false);
   const [expiredDismissed, setExpiredDismissed] = useState(false);
+
+  // This view stays mounted between problems, so a verdict must be cleared when the problem changes.
+  const [resultsFor, setResultsFor] = useState(problemIdParam);
+  if (resultsFor !== problemIdParam) {
+    setResultsFor(problemIdParam);
+    setResultOpen(false);
+    setConfirmSubmitOpen(false);
+    judge.reset();
+  }
+
+  const eventId = searchParams.get("event");
+  const [eventRun, setEventRun] = useState<{ title: string; problemIds: string[]; solved: string[] } | null>(null);
+  useEffect(() => {
+    let current = true;
+    if (!eventId) { queueMicrotask(() => { if (current) setEventRun(null); }); return () => { current = false; }; }
+    void fetchEvents().then((result) => {
+      if (!current || !result.ok) return;
+      const event = result.data.events.find((e) => e.id === eventId);
+      const problemIds = event?.problems?.map((p) => p.id) ?? [];
+      setEventRun(event && problemIds.length > 0 ? { title: event.title, problemIds, solved: (event?.solvedProblemIds ?? result.data.solvedProblemIds).filter((id) => problemIds.includes(id)) } : null);
+    });
+    return () => { current = false; };
+  }, [eventId]);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -152,6 +176,8 @@ export function WorkspaceView() {
     setConfirmSubmitOpen(false);
     showResults("results");
     const result = await judge.submit(problem.id, source());
+    if (!result) return;
+    if (result.overallVerdict === "ACCEPTED") setEventRun((run) => run && run.problemIds.includes(problem.id) && !run.solved.includes(problem.id) ? { ...run, solved: [...run.solved, problem.id] } : run);
     // Only real verdicts count; a sandbox outage or judge error is not the student's attempt.
     if (challenge.isTimedActive && isRealVerdict(result.overallVerdict)) challenge.recordSubmissionAttempt(result.overallVerdict);
     setResultOpen(true);
@@ -204,10 +230,11 @@ export function WorkspaceView() {
 
   const nextProblemId = useMemo(() => {
     if (!problem) return null;
+    if (eventRun) return eventRun.problemIds.find((id) => id !== problem.id && !eventRun.solved.includes(id)) ?? null;
     const index = problemIds.indexOf(problem.id);
     if (index >= 0 && index < problemIds.length - 1) return problemIds[index + 1];
     return problemIds[0] !== problem.id ? (problemIds[0] ?? null) : null;
-  }, [problem, problemIds]);
+  }, [problem, problemIds, eventRun]);
 
   const problemPane = (onSample: (input: string) => void) => <ProblemPane problem={problem} onUseCustomStdin={onSample} />;
 
@@ -387,7 +414,8 @@ export function WorkspaceView() {
           problemTitle={problem.title}
           isDemo={judge.isResultDemo}
           onViewDetails={() => showResults("results")}
-          nextProblemId={nextProblemId}
+          nextHref={nextProblemId ? `/app/workspace?problem=${encodeURIComponent(nextProblemId)}${eventRun ? `&event=${encodeURIComponent(eventId ?? "")}` : ""}` : null}
+          eventProgress={eventRun ? { title: eventRun.title, solved: eventRun.solved.length, total: eventRun.problemIds.length } : null}
         />
       )}
 

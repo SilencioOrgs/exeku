@@ -1,14 +1,36 @@
 import "server-only";
 import { schoolDirectory } from "@/lib/accounts/school-directory";
+import type { Viewer } from "@/lib/auth/viewer";
+import type { BannerId } from "@/lib/banners";
 import { todayInManila } from "@/lib/dates";
-import { mockDb } from "@/lib/mock/db";
+import { db, must } from "@/lib/db/client";
+import { firstSolves, solvesBetween } from "@/lib/judge/solves";
+import { getProblemById } from "@/lib/problems/catalog";
 import { can, canViewEvent } from "@/lib/orgs/rules";
 import type { Campus } from "@/types/account";
-import type { EventsFeed, LeaderboardEntry } from "@/types/competition";
+import type { CompetitionEvent, EventAccess, EventsFeed, LeaderboardEntry, LeaderboardScore, WinnerPlacement } from "@/types/competition";
+import type { OrgRole } from "@/types/org";
 import { rankScores } from "./rank";
 
-// shortcut: reads lib/mock/, replace these bodies with database queries and set isSampleData to false when Supabase lands.
-export const isSampleData = true;
+export const EVENT_COLUMNS = "id,org_id,title,summary,starts_on,access,banner,featured,winners,problem_ids,starts_at,ends_at,team_size,orgs(name,campus_id,campus_name)";
+
+export interface EventRow {
+  id: string; org_id: string; title: string; summary: string; starts_on: string; access: EventAccess;
+  banner: BannerId; featured: boolean; winners: WinnerPlacement[] | null; problem_ids: string[] | null;
+  starts_at?: string | null; ends_at?: string | null; team_size?: number | null;
+  orgs: { name: string; campus_id: string; campus_name: string };
+}
+
+export const toEvent = (r: EventRow): CompetitionEvent => ({
+  id: r.id, orgId: r.org_id, orgName: r.orgs.name, campusId: r.orgs.campus_id, campusName: r.orgs.campus_name,
+  title: r.title, summary: r.summary, startsOn: r.starts_on, access: r.access, banner: r.banner, featured: r.featured,
+  winners: r.winners ?? undefined,
+  tournament: r.starts_at && r.ends_at ? { startsAt: r.starts_at, endsAt: r.ends_at } : undefined,
+  problems: (r.problem_ids ?? []).flatMap((id) => {
+    const problem = getProblemById(id);
+    return problem ? [{ id: problem.id, title: problem.title }] : [];
+  }),
+});
 
 export async function getCampuses(): Promise<Campus[]> {
   return (await schoolDirectory.findSchool("lspu"))?.campuses ?? [];
@@ -16,31 +38,44 @@ export async function getCampuses(): Promise<Campus[]> {
 
 /** Ranks within the scope, so a campus board starts again at 1. */
 export async function getLeaderboard(campusId?: string): Promise<LeaderboardEntry[]> {
-  return rankScores(campusId ? mockDb.scores.filter((s) => s.campusId === campusId) : mockDb.scores);
+  const query = db().from("leaderboard").select("user_id,name,campus_id,campus_name,solved,points");
+  const rows = must(await (campusId ? query.eq("campus_id", campusId) : query)) as
+    { user_id: string; name: string; campus_id: string; campus_name: string; solved: number; points: number }[];
+  const scores: LeaderboardScore[] = rows.map((r) => ({ id: r.user_id, name: r.name, campusId: r.campus_id, campusName: r.campus_name, solved: r.solved, points: r.points }));
+  return rankScores(scores);
+}
+
+type Membership = { org_id: string; role: OrgRole; orgs: { name: string; campus_id: string } };
+
+async function membershipsOf(viewer: Viewer) {
+  return must(await db().from("org_members").select("org_id,role,orgs(name,campus_id)").eq("user_id", viewer.id)) as unknown as Membership[];
 }
 
 /** Which campuses and orgs count for this viewer when deciding what events they can see. */
-export function viewerScope(viewerId: string, claimedCampusId?: string) {
-  const orgIds = mockDb.members.filter((m) => m.id === viewerId).map((m) => m.orgId);
-  const campusIds = [
-    ...(claimedCampusId ? [claimedCampusId] : []),
-    ...mockDb.orgs.filter((o) => orgIds.includes(o.id)).map((o) => o.campusId),
-  ];
-  return { campusIds, orgIds };
-}
+const scopeOf = (viewer: Viewer, memberships: Membership[]) => ({
+  orgIds: memberships.map((m) => m.org_id),
+  campusIds: [...(viewer.campusId ? [viewer.campusId] : []), ...memberships.map((m) => m.orgs.campus_id)],
+});
 
-// shortcut: viewerId and campusId come from the request so roles can be previewed, take them from the signed-in session when Supabase lands.
-export async function getEventsFeed(viewerId: string, claimedCampusId?: string): Promise<EventsFeed> {
-  const memberships = mockDb.members.filter((m) => m.id === viewerId);
-  const scope = viewerScope(viewerId, claimedCampusId);
-  const people = new Map(mockDb.members.map((m) => [m.id, m.name]));
+export const viewerScope = async (viewer: Viewer) => scopeOf(viewer, await membershipsOf(viewer));
+
+export async function getEventsFeed(viewer: Viewer): Promise<EventsFeed> {
+  const memberships = await membershipsOf(viewer);
+  const scope = scopeOf(viewer, memberships);
+  // shortcut: visibility is filtered here after loading every event, upgrade to a SQL filter past a few thousand events.
+  const rows = must(await db().from("events").select(EVENT_COLUMNS).order("starts_on", { ascending: false })) as unknown as EventRow[];
+  const registered = new Set((must(await db().from("tournament_members").select("event_id").eq("user_id", viewer.id)) as { event_id: string }[]).map((m) => m.event_id));
+  const events = await Promise.all(rows.map(toEvent).filter((e) => canViewEvent(e, scope)).map(async (event) => {
+    if (!event.tournament) return event;
+    // Tournament problems stay locked until it starts, and only for students who registered.
+    if (!registered.has(event.id) || Date.now() < Date.parse(event.tournament.startsAt)) return { ...event, problems: [] };
+    const solves = await solvesBetween([viewer.id], event.tournament.startsAt, event.tournament.endsAt);
+    return { ...event, solvedProblemIds: solves.map((s) => s.problemId) };
+  }));
   return {
-    events: [...mockDb.events].filter((e) => canViewEvent(e, scope)).sort((a, b) => b.startsOn.localeCompare(a.startsOn)),
-    postableOrgs: mockDb.orgs
-      .filter((o) => can(memberships.find((m) => m.orgId === o.id)?.role ?? null, "publish"))
-      .map(({ id, name }) => ({ id, name })),
-    previewPeople: isSampleData ? [...people].map(([id, name]) => ({ id, name })) : [],
+    events,
+    postableOrgs: memberships.filter((m) => can(m.role, "publish")).map((m) => ({ id: m.org_id, name: m.orgs.name })),
+    solvedProblemIds: (await firstSolves(viewer.id)).map((s) => s.problemId),
     today: todayInManila(),
-    sample: isSampleData,
   };
 }

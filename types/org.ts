@@ -34,5 +34,4 @@ export interface OrgDetail {
   members: OrgMember[];
   applications: OrgApplication[];
   events: CompetitionEvent[];
-  sample: boolean;
 }

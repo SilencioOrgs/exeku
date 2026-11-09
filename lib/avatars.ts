@@ -67,6 +67,11 @@ export const AVATARS: AvatarDefinition[] = [
 
 export const DEFAULT_AVATAR_ID = "glitch-bot";
 
+const SOLVED_TO_UNLOCK: Record<string, number> = { "byte-skull": 1, "synth-scout": 5, "chip-core": 10, "retro-ninja": 25 };
+
+/** Solved problems needed for this avatar. 0 means everyone has it. */
+export const unlocksAt = (avatarId: string) => SOLVED_TO_UNLOCK[avatarId] ?? 0;
+
 export function getAvatar(avatarId: string): AvatarDefinition {
   return AVATARS.find((a) => a.id === avatarId) ?? AVATARS[0];
 }

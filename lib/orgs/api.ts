@@ -1,10 +1,12 @@
 import { call } from "@/lib/accounts/api";
 import type { EventsFeed } from "@/types/competition";
 import type { OrgDetail, OrgSummary } from "@/types/org";
+import type { ActiveTournament, TournamentView } from "@/types/tournament";
 
 export const fetchOrgs = (campusId: string) => call<{ orgs: OrgSummary[] }>(`/api/orgs?campus=${encodeURIComponent(campusId)}`);
-export const fetchOrg = (orgId: string, viewerId: string, campusId?: string) =>
-  call<OrgDetail>(`/api/orgs/${encodeURIComponent(orgId)}?viewer=${encodeURIComponent(viewerId)}${campusId ? `&campus=${encodeURIComponent(campusId)}` : ""}`);
+export const fetchOrg = (orgId: string) => call<OrgDetail>(`/api/orgs/${encodeURIComponent(orgId)}`);
 export const orgAction = (orgId: string, body: Record<string, unknown>) => call<{ ok: true }>(`/api/orgs/${encodeURIComponent(orgId)}`, body);
-export const fetchEvents = (viewerId: string, campusId?: string) =>
-  call<EventsFeed>(`/api/events?viewer=${encodeURIComponent(viewerId)}${campusId ? `&campus=${encodeURIComponent(campusId)}` : ""}`);
+export const fetchActiveTournament = () => call<{ active: ActiveTournament | null }>("/api/tournaments/active");
+export const fetchTournament = (id: string) => call<TournamentView>(`/api/events/${encodeURIComponent(id)}/tournament`);
+export const tournamentAction = (id: string, body: Record<string, unknown>) => call<{ ok: true }>(`/api/events/${encodeURIComponent(id)}/tournament`, body);
+export const fetchEvents = () => call<EventsFeed>("/api/events");

@@ -18,6 +18,7 @@ import type { ProblemSummary } from "@/types/problem";
 import { getFilenameForLanguage, getStarterCode, LANGUAGE_DISPLAY_NAMES } from "@/lib/workspace-defaults";
 import type { LocalProfile, ProfileInput } from "@/types/profile";
 import type { WorkspaceDraft } from "@/types/draft";
+import { BrandLoader } from "@/components/brand-loader";
 
 interface ModernOverviewProps {
   profile: LocalProfile;
@@ -103,7 +104,7 @@ export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfil
             <div className="border-b border-[var(--color-border)] px-4 py-3"><TopicFilter problems={problems} selected={topic} onSelect={setTopic} /></div>
           )}
           {problems === null ? (
-            <p className="px-4 py-6 text-sm text-[var(--color-text-muted)]">Loading problems…</p>
+            <BrandLoader label="Loading problems…" />
           ) : problems.length === 0 ? (
             <p className="px-4 py-6 text-sm text-[var(--color-text-muted)]">The problem catalog is unavailable right now.</p>
           ) : topicProblems.length === 0 ? (

@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { BrandLoader } from "@/components/brand-loader";
 import { RegisterOrgNote } from "@/components/app/orgs/register-org-note";
-import { SampleNote } from "@/components/app/competition/sample-note";
-import { isSampleData } from "@/lib/competition/repository";
 import { listOrgs } from "@/lib/orgs/repository";
 
 export const metadata: Metadata = {
@@ -37,9 +36,8 @@ export default function OrgsPage() {
       <header className="space-y-1">
         <h1 className="text-3xl font-semibold tracking-tight">Organizations</h1>
         <p className="text-sm text-[var(--color-text-muted)]">Join your school organization to enter its competitions.</p>
-        {isSampleData && <SampleNote />}
       </header>
-      <Suspense fallback={<p role="status" className="text-sm text-[var(--color-text-muted)]">Loading organizations…</p>}>
+      <Suspense fallback={<BrandLoader label="Loading organizations…" />}>
         <OrgList />
       </Suspense>
       <RegisterOrgNote />

@@ -2,14 +2,18 @@
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import type { LocalProfile, ProfileInput, ExperienceLevel, PreferredLanguage } from "@/types/profile";
 import { AVATARS } from "@/lib/avatars";
 import { AVATAR_BORDERS } from "@/lib/avatar-borders";
 import { validateDisplayName } from "@/lib/profile-validation";
-import { parseGithub, parseLinkedin } from "@/lib/social-links";
+import { fetchProgress } from "@/lib/accounts/api";
+import { unlocksAt } from "@/lib/avatars";
+import { parseGithub, parseLinkedin, parseWebsite } from "@/lib/social-links";
+import { Input } from "@/components/ui/input";
+import { TextField } from "./school/field";
 import { PixelAvatar } from "@/components/retro/pixel-avatar";
-import { Code2, FileCode2, type LucideIcon } from "lucide-react";
+import { Code2, FileCode2, Lock, type LucideIcon } from "lucide-react";
 
 export interface ProfileEditDialogProps {
   isOpen: boolean;
@@ -49,11 +53,19 @@ function ProfileEditModalContent({
   const [preferredLanguage, setPreferredLanguage] = useState(profile.preferredLanguage);
   const [github, setGithub] = useState(profile.socialLinks?.github ?? "");
   const [linkedin, setLinkedin] = useState(profile.socialLinks?.linkedin ?? "");
+  const [website, setWebsite] = useState(profile.socialLinks?.website ?? "");
+  const [solved, setSolved] = useState(0);
 
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const validation = validateDisplayName(displayName);
+
+  useEffect(() => {
+    let live = true;
+    void fetchProgress().then((result) => { if (live && result.ok) setSolved(result.data.solved); });
+    return () => { live = false; };
+  }, []);
 
   const handleSave = async () => {
     if (!validation.isValid) {
@@ -62,8 +74,9 @@ function ProfileEditModalContent({
     }
     const parsedGithub = parseGithub(github);
     const parsedLinkedin = parseLinkedin(linkedin);
-    if (parsedGithub.error || parsedLinkedin.error) {
-      setError(parsedGithub.error || parsedLinkedin.error || null);
+    const parsedWebsite = parseWebsite(website);
+    if (parsedGithub.error || parsedLinkedin.error || parsedWebsite.error) {
+      setError(parsedGithub.error || parsedLinkedin.error || parsedWebsite.error || null);
       return;
     }
 
@@ -78,7 +91,7 @@ function ProfileEditModalContent({
         borderId,
         experienceLevel,
         preferredLanguage,
-        socialLinks: { github: parsedGithub.handle, linkedin: parsedLinkedin.handle },
+        socialLinks: { github: parsedGithub.handle, linkedin: parsedLinkedin.handle, website: parsedWebsite.url },
       });
       onClose();
     } catch (err) {
@@ -110,44 +123,19 @@ function ProfileEditModalContent({
               {displayName.length}/32
             </span>
           </div>
-          <input
-            id="edit-name"
-            type="text"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            maxLength={32}
-            className="w-full px-3 py-2 bg-[var(--color-canvas)] border border-[var(--color-border)] focus:border-[var(--color-accent)] text-foreground text-sm outline-none transition-colors"
-          />
+          <Input id="edit-name" type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)} maxLength={32} className="skeuo-well h-10" />
         </div>
 
         {/* Tagline / Bio */}
-        <div className="space-y-1.5">
-          <label htmlFor="edit-bio" className="block text-xs text-[var(--color-text-muted)]">
-            Tagline or bio (optional)
-          </label>
-          <input
-            id="edit-bio"
-            type="text"
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            maxLength={100}
-            className="w-full px-3 py-2 bg-[var(--color-canvas)] border border-[var(--color-border)] focus:border-[var(--color-primary)] text-foreground text-sm outline-none transition-colors"
-          />
-        </div>
+        <TextField id="edit-bio" label="Tagline or bio (optional)" type="text" value={bio} onChange={(e) => setBio(e.target.value)} maxLength={100} />
 
         {/* Social Links */}
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <label htmlFor="edit-github" className="block text-xs text-[var(--color-text-muted)]">GitHub username or link (optional)</label>
-            <input id="edit-github" type="text" value={github} onChange={(e) => setGithub(e.target.value)} maxLength={120} autoCapitalize="none" spellCheck={false}
-              className="w-full px-3 py-2 bg-[var(--color-canvas)] border border-[var(--color-border)] focus:border-[var(--color-primary)] text-foreground text-sm outline-none transition-colors" />
-          </div>
-          <div className="space-y-1.5">
-            <label htmlFor="edit-linkedin" className="block text-xs text-[var(--color-text-muted)]">LinkedIn name or link (optional)</label>
-            <input id="edit-linkedin" type="text" value={linkedin} onChange={(e) => setLinkedin(e.target.value)} maxLength={160} autoCapitalize="none" spellCheck={false}
-              className="w-full px-3 py-2 bg-[var(--color-canvas)] border border-[var(--color-border)] focus:border-[var(--color-primary)] text-foreground text-sm outline-none transition-colors" />
-          </div>
+          <TextField id="edit-github" label="GitHub username or link (optional)" type="text" value={github} onChange={(e) => setGithub(e.target.value)} maxLength={120} autoCapitalize="none" spellCheck={false} />
+          <TextField id="edit-linkedin" label="LinkedIn name or link (optional)" type="text" value={linkedin} onChange={(e) => setLinkedin(e.target.value)} maxLength={160} autoCapitalize="none" spellCheck={false} />
         </div>
+        <TextField id="edit-website" label="Portfolio website (optional)" type="text" inputMode="url" placeholder="yourname.dev" value={website} onChange={(e) => setWebsite(e.target.value)} maxLength={200} autoCapitalize="none" spellCheck={false}
+          hint="Your name, avatar, bio and links are visible to other students." />
 
         {/* Avatar Selection Grid */}
         <div className="space-y-1.5">
@@ -157,17 +145,22 @@ function ProfileEditModalContent({
           <div className="grid grid-cols-4 gap-2">
             {AVATARS.map((av) => {
               const isSelected = av.id === avatarId;
+              const needed = unlocksAt(av.id);
+              const locked = solved < needed && av.id !== profile.avatarId;
               return (
                 <Button
                   key={av.id}
                   type="button"
                   variant="outline"
                   aria-pressed={isSelected}
+                  disabled={locked}
+                  title={locked ? `Solve ${needed} ${needed === 1 ? "problem" : "problems"} to unlock` : undefined}
                   onClick={() => setAvatarId(av.id)}
-                  className="h-auto flex-col gap-1 py-2"
+                  className="relative h-auto flex-col gap-1 py-2"
                 >
-                  <PixelAvatar avatarId={av.id} size={48} />
-                  <span className="w-full truncate text-center text-xs text-[var(--color-text-muted)]">{av.name}</span>
+                  <PixelAvatar avatarId={av.id} size={48} className={locked ? "opacity-40 grayscale" : undefined} />
+                  {locked && <Lock size={14} aria-hidden="true" className="absolute top-2 right-2 text-[var(--color-primary-text)]" />}
+                  <span className="w-full truncate text-center text-xs text-[var(--color-text-muted)]">{locked ? `Solve ${needed}` : av.name}</span>
                 </Button>
               );
             })}

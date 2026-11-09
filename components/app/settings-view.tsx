@@ -11,6 +11,7 @@ import { PixelBadge } from "@/components/retro/pixel-badge";
 import { X } from "lucide-react";
 import { ProfileResetDialog } from "./profile-reset-dialog";
 import { draftRepository } from "@/lib/storage/draft-repository";
+import { BrandLoader } from "@/components/brand-loader";
 
 export function SettingsView() {
   const router = useRouter();
@@ -41,14 +42,7 @@ export function SettingsView() {
   }, [profile]);
 
   if (!profile) {
-    return (
-      <div className="flex flex-col items-center justify-center p-12 text-center">
-        <div className="w-10 h-10 border-4 border-[var(--color-accent)] border-t-transparent animate-spin mb-4" />
-        <span className="text-xs text-[var(--color-accent)] animate-pulse">
-          Reading settings configuration...
-        </span>
-      </div>
-    );
+    return <BrandLoader label="Loading settings…" />;
   }
 
   return (

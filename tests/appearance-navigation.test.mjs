@@ -21,6 +21,8 @@ function shellHarness(storage, profileState = { profile: { id: 'profile' }, isLo
       if (name === 'react/jsx-runtime') return { jsx: (type, props) => ({ type, props }), jsxs: (type, props) => ({ type, props }) };
       if (name === 'next/navigation') return { useRouter: () => ({ replace: path => redirects.push(path) }) };
       if (name === '@/hooks/use-profile') return { useProfile: () => profileState };
+      if (name === '@/components/brand-loader') return { BrandLoader: 'BrandLoader' };
+      if (name === './events/tournament-lock') return { TournamentLock: 'TournamentLock' };
       if (name === './app-sidebar') return { AppSidebar: 'AppSidebar' };
       if (name === './app-topbar') return { AppTopbar: 'AppTopbar' };
       if (name === './school/welcome-dialog') return { WelcomeDialog: 'WelcomeDialog' };

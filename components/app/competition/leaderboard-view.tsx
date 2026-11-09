@@ -2,23 +2,20 @@ import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import type { Campus } from "@/types/account";
 import type { LeaderboardEntry } from "@/types/competition";
-import { SampleNote } from "./sample-note";
 
 export interface LeaderboardViewProps {
   entries: LeaderboardEntry[];
   campuses: Campus[];
   activeCampus?: Campus;
-  sample: boolean;
 }
 
-export function LeaderboardView({ entries, campuses, activeCampus, sample }: LeaderboardViewProps) {
+export function LeaderboardView({ entries, campuses, activeCampus }: LeaderboardViewProps) {
   const filters = [{ id: undefined, name: "Overall" }, ...campuses];
   return (
     <div className="mx-auto w-full max-w-4xl space-y-6 p-4 sm:p-6 lg:p-8">
       <header className="space-y-1">
         <h1 className="text-3xl font-semibold tracking-tight">Leaderboard</h1>
         <p className="text-sm text-[var(--color-text-muted)]">{activeCampus ? activeCampus.name : "All campuses"}</p>
-        {sample && <SampleNote />}
       </header>
 
       <nav aria-label="Leaderboard scope" className="flex flex-wrap gap-2">
@@ -35,7 +32,7 @@ export function LeaderboardView({ entries, campuses, activeCampus, sample }: Lea
       </nav>
 
       {entries.length === 0 ? (
-        <p className="profile-panel p-6 text-sm text-[var(--color-text-muted)]">No results for this campus yet.</p>
+        <p className="profile-panel p-6 text-sm text-[var(--color-text-muted)]">No results yet. Solve a problem to get on the board.</p>
       ) : (
         <div className="profile-panel overflow-x-auto">
           <table className="w-full text-sm">
@@ -50,7 +47,7 @@ export function LeaderboardView({ entries, campuses, activeCampus, sample }: Lea
             </thead>
             <tbody>
               {entries.map((entry) => (
-                <tr key={entry.name} className="border-b border-[var(--color-border-subtle)] last:border-0">
+                <tr key={entry.id} className="border-b border-[var(--color-border-subtle)] last:border-0">
                   <td className={`px-4 py-3 font-code tabular-nums ${entry.rank <= 3 ? "font-semibold text-[var(--color-primary-text)]" : ""}`}>{entry.rank}</td>
                   <td className="px-4 py-3 font-medium">{entry.name}</td>
                   <td className="hidden px-4 py-3 text-[var(--color-text-muted)] sm:table-cell">{entry.campusName}</td>

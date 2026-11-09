@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { VerdictBadge } from "./verdict-badge";
+import { SolveMilestoneCard, type EventProgress } from "./solve-milestone";
 import { isRealVerdict } from "@/lib/verdicts";
 import type { JudgingResult } from "@/lib/judge/judging-service";
 import { JUDGE_SETUP_COMMAND } from "@/lib/execution/judge-help";
@@ -58,10 +59,11 @@ export interface SubmissionResultDialogProps {
   problemTitle: string;
   isDemo: boolean;
   onViewDetails: () => void;
-  nextProblemId: string | null;
+  nextHref: string | null;
+  eventProgress: EventProgress | null;
 }
 
-export function SubmissionResultDialog({ open, onOpenChange, result, problemTitle, isDemo, onViewDetails, nextProblemId }: SubmissionResultDialogProps) {
+export function SubmissionResultDialog({ open, onOpenChange, result, problemTitle, isDemo, onViewDetails, nextHref, eventProgress }: SubmissionResultDialogProps) {
   if (!result) return null;
   const accepted = result.overallVerdict === "ACCEPTED";
   const unavailable = result.overallVerdict === "SERVICE_UNAVAILABLE";
@@ -77,6 +79,7 @@ export function SubmissionResultDialog({ open, onOpenChange, result, problemTitl
           <DialogDescription>{DESCRIPTIONS[result.overallVerdict] ?? "The judge returned an unexpected result."}</DialogDescription>
         </DialogHeader>
         {result.error && !unavailable && <p className="text-sm text-[var(--color-text-main)]">{result.error}</p>}
+        {accepted && <SolveMilestoneCard milestone={result.milestone} event={eventProgress} />}
         {result.totalTests > 0 && isRealVerdict(result.overallVerdict) && (
           <dl className="font-code grid grid-cols-3 gap-2 rounded-md border border-[var(--color-border)] p-3 text-center text-xs">
             <div><dt className="text-[var(--color-text-muted)]">Passed</dt><dd className="text-sm">{result.passedTests}/{result.totalTests}</dd></div>
@@ -89,10 +92,9 @@ export function SubmissionResultDialog({ open, onOpenChange, result, problemTitl
         )}
         <DialogFooter>
           <Button type="button" variant="ghost" onClick={() => { onOpenChange(false); onViewDetails(); }}>View details</Button>
-          <Button type="button" variant={accepted && nextProblemId ? "outline" : "default"} onClick={() => onOpenChange(false)}>Keep coding</Button>
-          {accepted && nextProblemId && (
-            <Link className={buttonVariants()} href={`/app/workspace?problem=${encodeURIComponent(nextProblemId)}`}>Next problem</Link>
-          )}
+          <Button type="button" variant={accepted && nextHref ? "outline" : "default"} onClick={() => onOpenChange(false)}>Keep coding</Button>
+          {accepted && nextHref && <Link className={buttonVariants()} href={nextHref}>Next problem</Link>}
+          {accepted && !nextHref && eventProgress && <Link className={buttonVariants()} href="/app/events">Back to events</Link>}
         </DialogFooter>
       </DialogContent>
     </Dialog>

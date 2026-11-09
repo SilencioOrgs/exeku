@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import { CheckCircle2, CirclePlay, Columns3, Download, FileCode2, RotateCcw, Terminal } from "lucide-react";
 import { FileTabs } from "./file-tabs";
 import { ALL_SUPPORTED_LANGUAGES, LANGUAGE_DISPLAY_NAMES } from "@/lib/workspace-defaults";
@@ -52,14 +53,14 @@ export function WorkspaceToolbar(props: WorkspaceToolbarProps) {
         onRename={props.onRenameFile}
         onClose={props.onCloseFile}
       />
-      <select
+      <Select
         aria-label="Programming language"
         value={props.language}
-        onChange={(e) => props.onLanguageChange(e.target.value as PreferredLanguage)}
-        className="h-8 w-[88px] shrink-0 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-1.5 text-xs text-[var(--color-text-main)] sm:w-[100px]"
+        onChange={(value) => props.onLanguageChange(value as PreferredLanguage)}
+        className="h-8 w-[88px] shrink-0 px-2 text-xs sm:w-[100px]"
       >
         {ALL_SUPPORTED_LANGUAGES.map((lang) => <option key={lang} value={lang}>{LANGUAGE_DISPLAY_NAMES[lang]}</option>)}
-      </select>
+      </Select>
       <Button
         type="button" variant={props.isDemoMode ? "secondary" : "ghost"} size="sm"
         aria-pressed={props.isDemoMode} onClick={props.onToggleDemo}

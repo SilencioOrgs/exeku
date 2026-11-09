@@ -8,36 +8,33 @@ import { useProfile } from "@/hooks/use-profile";
 import { fetchOrg, orgAction } from "@/lib/orgs/api";
 import { can, eventAccessLabel } from "@/lib/orgs/rules";
 import type { OrgDetail } from "@/types/org";
-import { SelectField } from "../school/field";
+import { BrandLoader } from "@/components/brand-loader";
 
 const ROLE_LABELS = { president: "President", officer: "Officer", member: "Member" };
 
 export function OrgView({ orgId }: { orgId: string }) {
   const { profile } = useProfile();
-  const [preview, setPreview] = useState("");
   const [detail, setDetail] = useState<OrgDetail | null>(null);
   const [loadError, setLoadError] = useState<string>();
   const [actionError, setActionError] = useState<string>();
   const [version, setVersion] = useState(0);
-  const viewerId = preview || profile?.id || "";
-  const campusId = preview ? undefined : profile?.account?.school.campusId;
+  const campusId = profile?.account?.school.campusId;
 
   useEffect(() => {
-    if (!viewerId) return;
     let live = true;
-    void fetchOrg(orgId, viewerId, campusId).then((result) => {
+    void fetchOrg(orgId).then((result) => {
       if (!live) return;
       if (result.ok) { setDetail(result.data); setLoadError(undefined); }
       else setLoadError(result.error ?? "We couldn't load this organization.");
     });
     return () => { live = false; };
-  }, [orgId, viewerId, campusId, version]);
+  }, [orgId, campusId, version]);
 
   const act = useCallback(async (body: Record<string, unknown>) => {
-    const result = await orgAction(orgId, { actorId: viewerId, ...body });
+    const result = await orgAction(orgId, body);
     if (result.ok) setVersion((v) => v + 1);
     return result;
-  }, [orgId, viewerId]);
+  }, [orgId]);
 
   const run = async (body: Record<string, unknown>) => {
     setActionError(undefined);
@@ -46,9 +43,9 @@ export function OrgView({ orgId }: { orgId: string }) {
   };
 
   if (loadError) return <p role="alert" className="p-8 text-sm text-[var(--color-pink)]">{loadError}</p>;
-  if (!detail || !profile) return <p role="status" className="p-8 text-sm text-[var(--color-text-muted)]">Loading organization…</p>;
+  if (!detail || !profile) return <BrandLoader label="Loading organization…" />;
 
-  const { org, viewerRole, applicationStatus, members, applications, events, sample } = detail;
+  const { org, viewerRole, applicationStatus, members, applications, events } = detail;
   const isStudent = profile.userType === "student" || Boolean(profile.account);
   const canPublish = can(viewerRole, "publish");
   const canManageOfficers = can(viewerRole, "manageOfficers");
@@ -61,16 +58,7 @@ export function OrgView({ orgId }: { orgId: string }) {
         <div className="min-w-0 space-y-1">
           <h1 className="text-3xl font-semibold tracking-tight">{org.name}</h1>
           <p className="text-sm text-[var(--color-text-muted)]">{org.schoolName} · {org.campusName} · {org.programName}</p>
-          {sample && <p className="text-xs text-[var(--color-text-muted)]">Sample organization for preview.</p>}
         </div>
-        {sample && (
-          <div className="w-56">
-            <SelectField id="preview-as" label="Preview as" value={preview} onChange={(e) => { setActionError(undefined); setPreview(e.target.value); }}>
-              <option value="">You ({profile.displayName})</option>
-              {members.filter((m) => m.id !== profile.id).map((m) => <option key={m.id} value={m.id}>{m.name} ({ROLE_LABELS[m.role]})</option>)}
-            </SelectField>
-          </div>
-        )}
       </header>
 
       {actionError && <p role="alert" className="skeuo-recess rounded-xl p-3 text-sm text-[var(--color-pink)]">{actionError}</p>}
@@ -84,7 +72,7 @@ export function OrgView({ orgId }: { orgId: string }) {
           ) : isStudent ? (
             <>
               <p className="text-sm">Are you a member of {org.name}? Apply so an officer can confirm it.</p>
-              <Button onClick={() => void run({ action: "apply", name: profile.displayName, program: profile.account?.school.program })}>Apply to join</Button>
+              <Button onClick={() => void run({ action: "apply", program: profile.account?.school.program })}>Apply to join</Button>
             </>
           ) : (
             <>

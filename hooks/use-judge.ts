@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { ExecutionResult } from "@/types/execution";
 import type { JudgingResult } from "@/lib/judge/judging-service";
 import type { PreferredLanguage } from "@/types/profile";
@@ -23,19 +23,26 @@ export function useJudge() {
   const [executionResult, setExecutionResult] = useState<ExecutionResult | null>(null);
   const [judgingResult, setJudgingResult] = useState<JudgingResult | null>(null);
   const [isResultDemo, setIsResultDemo] = useState(false);
+  // Bumped when the student moves on, so a late reply can't land on the wrong problem.
+  const generation = useRef(0);
 
   const run = async (source: Source & { stdin: string; timeLimitMs: number }) => {
+    const started = generation.current;
     setIsRunning(true);
+    let result: ExecutionResult;
     try {
-      setExecutionResult(await postJson<ExecutionResult>("/api/execute", source));
+      result = await postJson<ExecutionResult>("/api/execute", source);
     } catch (err) {
-      setExecutionResult({ status: "INTERNAL_ERROR", exitCode: null, stdout: "", stderr: err instanceof Error ? err.message : String(err), durationMs: 0 });
-    } finally {
-      setIsRunning(false);
+      result = { status: "INTERNAL_ERROR", exitCode: null, stdout: "", stderr: err instanceof Error ? err.message : String(err), durationMs: 0 };
     }
+    if (started !== generation.current) return;
+    setExecutionResult(result);
+    setIsRunning(false);
   };
 
-  const submit = async (problemId: string, source: Source): Promise<JudgingResult> => {
+  /** Resolves to null if the student left this problem before the verdict arrived. */
+  const submit = async (problemId: string, source: Source): Promise<JudgingResult | null> => {
+    const started = generation.current;
     setIsSubmitting(true);
     setIsResultDemo(false);
     let result: JudgingResult;
@@ -48,6 +55,7 @@ export function useJudge() {
         error: err instanceof Error ? err.message : String(err),
       };
     }
+    if (started !== generation.current) return null;
     setJudgingResult(result);
     setIsSubmitting(false);
     return result;
@@ -58,5 +66,14 @@ export function useJudge() {
     setIsResultDemo(result !== null);
   };
 
-  return { isRunning, isSubmitting, executionResult, judgingResult, isResultDemo, run, submit, showDemoResult, clearRun: () => setExecutionResult(null) };
+  const reset = () => {
+    generation.current += 1;
+    setIsRunning(false);
+    setIsSubmitting(false);
+    setExecutionResult(null);
+    setJudgingResult(null);
+    setIsResultDemo(false);
+  };
+
+  return { isRunning, isSubmitting, executionResult, judgingResult, isResultDemo, run, submit, showDemoResult, reset, clearRun: () => setExecutionResult(null) };
 }

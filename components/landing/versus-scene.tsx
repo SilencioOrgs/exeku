@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAppearance } from "@/hooks/use-appearance";
 import { cn } from "@/lib/utils";
+import { BrandLoader } from "@/components/brand-loader";
 
 /** Hero scene: two players code head to head under a holographic VS scoreboard. */
 export function VersusScene({ className }: { className?: string }) {
@@ -64,7 +65,7 @@ export function VersusScene({ className }: { className?: string }) {
 
   return (
     <div ref={mountRef} role="img" aria-label="Two students face each other at laptops, coding the same problem. A holographic VS scoreboard between them shows 'You' and 'Rival' tests passed and a countdown timer." className={cn("relative w-full", className)}>
-      {!ready && <span className="absolute inset-0 grid place-items-center text-sm text-[var(--color-text-muted)]">{failed ? "3D scene needs WebGL." : "Loading arena…"}</span>}
+      {!ready && <span className="absolute inset-0 grid place-items-center text-sm text-[var(--color-text-muted)]">{failed ? "3D scene needs WebGL." : <BrandLoader label="Loading arena…" />}</span>}
     </div>
   );
 }

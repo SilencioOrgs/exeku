@@ -12,21 +12,18 @@ import type { CompetitionEvent } from "@/types/competition";
 import type { LocalProfile } from "@/types/profile";
 
 export function EventBanner({ profile }: { profile: LocalProfile }) {
-  const [state, setState] = useState<{ event: CompetitionEvent; sample: boolean } | null>(null);
+  const [event, setEvent] = useState<CompetitionEvent | null>(null);
   const campusId = profile.account?.school.campusId;
 
   useEffect(() => {
     let live = true;
-    void fetchEvents(profile.id, campusId).then((result) => {
-      if (!live || !result.ok) return;
-      const event = result.data.events.find((e) => e.featured);
-      setState(event ? { event, sample: result.data.sample } : null);
+    void fetchEvents().then((result) => {
+      if (live && result.ok) setEvent(result.data.events.find((e) => e.featured) ?? null);
     });
     return () => { live = false; };
-  }, [profile.id, campusId]);
+  }, [campusId]);
 
-  if (!state) return null;
-  const { event, sample } = state;
+  if (!event) return null;
   return (
     <aside aria-label="Event" className="profile-panel relative flex flex-wrap items-center gap-x-4 gap-y-3 overflow-hidden p-4 sm:px-5">
       <Image src={bannerSrc(event.banner)} alt="" width={1500} height={500} sizes="(min-width: 40rem) 70vw, 100vw" className="banner-art" />
@@ -34,7 +31,7 @@ export function EventBanner({ profile }: { profile: LocalProfile }) {
       <div className="relative min-w-0 flex-1 basis-56">
         <p className="font-semibold">{event.title}</p>
         <p className="text-sm text-[var(--color-text-muted)]">{event.summary}</p>
-        <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">{eventAccessLabel(event)}{sample ? " · Sample event" : ""}</p>
+        <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">{eventAccessLabel(event)}</p>
       </div>
       <Link href="/app/events" className={`${buttonVariants({ variant: "outline" })} relative`}>View events<ArrowRight size={14} /></Link>
     </aside>
