@@ -652,4 +652,33 @@ test("3D scroll tour keeps render loop alive across sticky scroll containers and
   assert.doesNotMatch(tourSource, /inert=\{i !== step\}/);
 });
 
+test("landing page uses skeuomorphic sandbox deck with keyboard tab navigation and progressive scroll reveal", () => {
+  const terminalSource = readFileSync(new URL("../components/landing/pixel-terminal.tsx", import.meta.url), "utf8");
+  assert.match(terminalSource, /skeuo-panel/);
+  assert.match(terminalSource, /skeuo-recess/);
+  assert.match(terminalSource, /skeuo-well/);
+  assert.match(terminalSource, /skeuo-switch/);
+  assert.match(terminalSource, /const LANGUAGE_ORDER: LanguageKey\[\] = \["python", "java", "cpp", "c"\]/);
+  assert.match(terminalSource, /event\.key === "ArrowRight"/);
+  assert.match(terminalSource, /aria-live="polite"/);
+  assert.doesNotMatch(terminalSource, /animate-terminal-blink/);
+
+  const revealSource = readFileSync(new URL("../components/landing/scroll-reveal.tsx", import.meta.url), "utf8");
+  assert.match(revealSource, /effectiveReducedMotion/);
+  assert.match(revealSource, /data-reveal=\{revealAttr\}/);
+
+  for (const file of [
+    "../components/landing/hero.tsx",
+    "../components/landing/practice.tsx",
+    "../components/landing/about.tsx",
+    "../components/landing/languages.tsx",
+    "../components/landing/faq.tsx",
+  ]) {
+    const src = readFileSync(new URL(file, import.meta.url), "utf8");
+    assert.match(src, /ScrollReveal/);
+    assert.match(src, /skeuo-panel/);
+  }
+});
+
+
 

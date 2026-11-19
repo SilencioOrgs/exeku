@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ScrollReveal } from "./scroll-reveal";
 
 export function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
@@ -35,33 +36,27 @@ export function FAQ() {
   };
 
   return (
-    <section id="faq" className="py-20 md:py-28 bg-[var(--color-canvas)] border-t border-b border-[var(--color-border)] relative">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto mb-14">
-          <div className="mb-3">
-            <p className="font-code text-xs font-medium text-[var(--color-primary-text)]">FAQ</p>
-          </div>
-          <h2
-            className="text-3xl sm:text-4xl md:text-5xl font-bold text-[var(--color-text-main)] mb-4 tracking-tight"
-            style={{ fontFamily: "var(--font-heading-active)" }}
-          >
+    <section id="faq" className="relative border-t border-b border-[var(--color-border)] bg-[var(--color-canvas)] py-20 md:py-28">
+      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+        <ScrollReveal variant="copy" className="mx-auto mb-14 max-w-2xl text-center">
+          <h2 className="mb-4 text-3xl font-bold tracking-tight text-[var(--color-text-main)] sm:text-4xl md:text-5xl">
             Frequently asked questions.
           </h2>
-          <p className="text-base sm:text-lg text-[var(--color-text-muted)]">
+          <p className="text-base text-[var(--color-text-muted)] sm:text-lg">
             Clear, honest answers about how Exeku works and what it needs.
           </p>
-        </div>
+        </ScrollReveal>
 
-        {/* Accordion List */}
         <div className="space-y-4">
           {faqs.map((faq, idx) => {
             const isOpen = openIndex === idx;
             const panelId = `faq-panel-${idx}`;
             return (
-              <div
-                key={idx}
-                className="overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] transition-colors"
+              <ScrollReveal
+                key={faq.q}
+                variant="panel"
+                delayMs={idx * 55}
+                className="skeuo-panel overflow-hidden"
               >
                 <Button
                   type="button"
@@ -74,17 +69,23 @@ export function FAQ() {
                   <span className="text-base font-semibold text-[var(--color-text-main)] sm:text-lg">
                     {faq.q}
                   </span>
-                  <span aria-hidden="true" className="shrink-0 rounded-md border border-[var(--color-border)] bg-[var(--color-elevated)] p-1 text-[var(--color-accent)]">
-                    {isOpen ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
+                  <span
+                    aria-hidden="true"
+                    className="skeuo-key grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--color-elevated)] text-[var(--color-primary-text)]"
+                  >
+                    {isOpen ? <ArrowUp size={15} /> : <ArrowDown size={15} />}
                   </span>
                 </Button>
 
                 {isOpen && (
-                  <div id={panelId} className="px-4 pb-5 sm:px-5 sm:pb-6 pt-3 text-sm sm:text-base text-[var(--color-text-muted)] border-t border-[var(--color-elevated)] leading-relaxed">
+                  <div
+                    id={panelId}
+                    className="skeuo-well mx-3 mb-3 rounded-xl border p-4 text-sm leading-relaxed text-[var(--color-text-muted)] sm:mx-4 sm:mb-4 sm:p-5 sm:text-base"
+                  >
                     {faq.a}
                   </div>
                 )}
-              </div>
+              </ScrollReveal>
             );
           })}
         </div>
