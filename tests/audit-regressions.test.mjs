@@ -584,3 +584,55 @@ test("ChallengeProvider refuses finishChallenge() after deadline even while stat
   assert.equal(ctx.finishChallenge(), false);
   assert.equal(JSON.parse(store.get(KEY)).status, "expired");
 });
+
+test("schoolDirectory filters locations, schools, and exact or subdomain email domains per query", async () => {
+  const tables = {
+    schools: [
+      { id: "lspu", name: "Laguna State Polytechnic University", short_name: "LSPU", location_id: "laguna", location_name: "Laguna", email_domains: ["lspu.edu.ph"], programs: [], campuses: [{ id: "sc", name: "Santa Cruz" }] },
+      { id: "up", name: "University of the Philippines", short_name: "UP", location_id: "manila", location_name: "Manila", email_domains: ["up.edu.ph"], programs: [], campuses: [] },
+    ],
+  };
+  const accountRules = await import("../lib/accounts/rules.ts");
+  const { schoolDirectory } = loadTs("lib/accounts/school-directory.ts", {
+    "server-only": {},
+    "@/lib/db/client": { db: fakeDb(tables), must },
+    "./rules": accountRules,
+  });
+
+  assert.equal(JSON.stringify(await schoolDirectory.listLocations()), JSON.stringify([{ id: "laguna", name: "Laguna" }, { id: "manila", name: "Manila" }]));
+  assert.deepEqual((await schoolDirectory.listSchools("laguna")).map((s) => s.id), ["lspu"]);
+  assert.equal((await schoolDirectory.findSchool("up"))?.shortName, "UP");
+  assert.equal(await schoolDirectory.findSchool("missing"), null);
+  assert.equal((await schoolDirectory.findSchoolByDomain("lspu.edu.ph"))?.id, "lspu");
+  assert.equal((await schoolDirectory.findSchoolByDomain("student.sc.lspu.edu.ph"))?.id, "lspu");
+  assert.equal(await schoolDirectory.findSchoolByDomain("unknown.edu.ph"), null);
+});
+
+test("listUsers paginates past 500 accounts and joins leaderboard scores across batches", async () => {
+  const profiles = Array.from({ length: 520 }, (_, i) => ({
+    user_id: `u${i}`,
+    display_name: `Student ${i}`,
+    avatar_id: "glitch-bot",
+    border_id: "none",
+    school_email: null,
+    school: null,
+    is_admin: i === 0,
+    created_at: "2026-11-19",
+  }));
+  const leaderboard = [{ user_id: "u519", solved: 4, points: 450 }];
+  const repo = loadTs("lib/admin/repository.ts", {
+    "server-only": {},
+    "@/lib/dates": { todayInManila: () => "2026-11-19" },
+    "@/lib/db/client": { db: fakeDb({ profiles, leaderboard }), must },
+    "@/lib/accounts/rules": { isObject, text },
+    "@/lib/problems/catalog": catalog,
+    "@/lib/problems/rules": problemRules,
+  });
+
+  const users = await repo.listUsers();
+  assert.equal(users.length, 520);
+  const last = users.find((u) => u.id === "u519");
+  assert.equal(last?.solved, 4);
+  assert.equal(last?.points, 450);
+});
+

@@ -82,22 +82,45 @@ export async function maskTournamentProblems(
     (must(await db().from("tournament_members").select("event_id").eq("user_id", viewerId)) as { event_id: string }[]).map((m) => m.event_id),
   );
   const now = Date.now();
-  return Promise.all(events.map(async (event) => {
+  const activeTournaments = events.filter(
+    (event) => event.tournament && registered.has(event.id) && now >= Date.parse(event.tournament.startsAt),
+  );
+  let solves: Awaited<ReturnType<typeof solvesBetween>> = [];
+  if (includeSolves && activeTournaments.length > 0) {
+    const starts = activeTournaments.map((e) => e.tournament!.startsAt).sort();
+    const ends = activeTournaments.map((e) => e.tournament!.endsAt).sort();
+    solves = await solvesBetween([viewerId], starts[0], ends.at(-1)!);
+  }
+  return events.map((event) => {
     if (!event.tournament) return event;
     if (!registered.has(event.id) || now < Date.parse(event.tournament.startsAt)) {
       return { ...event, problems: [] };
     }
     if (!includeSolves) return event;
-    const solves = await solvesBetween([viewerId], event.tournament.startsAt, event.tournament.endsAt);
-    return { ...event, solvedProblemIds: solves.map((s) => s.problemId) };
-  }));
+    const windowStart = Date.parse(event.tournament.startsAt);
+    const windowEnd = Date.parse(event.tournament.endsAt);
+    const solvedInWindow = solves.filter((s) => {
+      if (!s.at) return true;
+      const t = Date.parse(s.at);
+      return t >= windowStart && t <= windowEnd;
+    });
+    return { ...event, solvedProblemIds: solvedInWindow.map((s) => s.problemId) };
+  });
 }
+
+const EVENT_PAGE_SIZE = 1000;
 
 export async function getEventsFeed(viewer: Viewer): Promise<EventsFeed> {
   const memberships = await membershipsOf(viewer);
   const scope = scopeOf(viewer, memberships);
-  // shortcut: visibility is filtered here after loading every event, upgrade to a SQL filter past a few thousand events.
-  const rows = must(await db().from("events").select(EVENT_COLUMNS).order("starts_on", { ascending: false })) as unknown as EventRow[];
+  const rows: EventRow[] = [];
+  for (let from = 0; ; from += EVENT_PAGE_SIZE) {
+    const page = must(
+      await db().from("events").select(EVENT_COLUMNS).order("starts_on", { ascending: false }).range(from, from + EVENT_PAGE_SIZE - 1),
+    ) as unknown as EventRow[];
+    rows.push(...page);
+    if (page.length < EVENT_PAGE_SIZE) break;
+  }
   const visible = (await toEvents(rows)).filter((e) => canViewEvent(e, scope));
   const events = await maskTournamentProblems(visible, viewer.id, true);
   return {

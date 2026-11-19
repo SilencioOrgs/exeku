@@ -6,7 +6,7 @@ import { draftRepository } from "@/lib/storage/draft-repository";
 import { profileRepository, ProfileRepositoryError } from "@/lib/storage/profile-repository";
 
 const PROFILE_CHANGE_EVENT = "exeku:profile-changed";
-// shortcut: logout is a browser flag that keeps the local profile and drafts, replace with a real session sign-out when Supabase lands.
+/** Hides the local cached profile while signed out of Clerk without deleting saved drafts. */
 const SIGNED_OUT_KEY = "exeku:signed-out";
 
 function readSignedOut(): boolean {
