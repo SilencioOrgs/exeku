@@ -139,11 +139,16 @@ export async function performTournamentAction(viewer: Viewer, id: string, input:
       if (mine) return failed(409, "You're already on a team.");
       const teamId = text(input, "teamId");
       if (!teams.some((t) => t.id === teamId)) return failed(404, "That team wasn't found.");
-      // shortcut: two students joining the last slot at the same instant can exceed the size, enforce in SQL for large public tournaments.
       if (members.filter((m) => m.team_id === teamId).length >= found.teamSize) return failed(409, "That team is full.");
       const { error } = await db().from("tournament_members").insert({ event_id: id, team_id: teamId, user_id: viewer.id });
       if (error?.code === UNIQUE_VIOLATION) return failed(409, "You're already on a team.");
+      if (error?.code === "23514") return failed(409, "That team is full.");
       if (error) throw new Error(`Database error: ${error.message}`);
+      const afterJoin = must(await db().from("tournament_members").select("user_id").eq("team_id", teamId)) as { user_id: string }[];
+      if (afterJoin.length > found.teamSize) {
+        await db().from("tournament_members").delete().eq("event_id", id).eq("user_id", viewer.id);
+        return failed(409, "That team is full.");
+      }
       return { ok: true };
     }
     case "leave": {

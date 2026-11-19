@@ -17,19 +17,41 @@ const DUPLICATE_TITLE = "A problem with this title already exists.";
 /** Long enough to register again after a reset. */
 const RESTART_DELAY_MS = 3 * 60 * 1000;
 
-// shortcut: shows the newest 500 accounts with no paging, add paging past a few hundred students.
-const MAX_USERS = 500;
+const USER_PAGE_SIZE = 500;
+
+interface ProfileRow {
+  user_id: string;
+  display_name: string;
+  avatar_id: string;
+  border_id: string;
+  school_email: string | null;
+  school: { campus?: string; program?: string } | null;
+  is_admin: boolean;
+  created_at: string;
+}
 
 /** Admin-only list. Age is left out because nothing here needs it. */
 export async function listUsers(): Promise<AdminUser[]> {
-  const rows = must(await db().from("profiles").select("user_id,display_name,avatar_id,border_id,school_email,school,is_admin,created_at").order("created_at", { ascending: false }).limit(MAX_USERS)) as {
-    user_id: string; display_name: string; avatar_id: string; border_id: string; school_email: string | null; school: { campus?: string; program?: string } | null; is_admin: boolean; created_at: string;
-  }[];
-  const userIds = rows.map((r) => r.user_id);
-  const scores = userIds.length
-    ? (must(await db().from("leaderboard").select("user_id,solved,points").in("user_id", userIds)) as { user_id: string; solved: number; points: number }[])
-    : [];
-  const scoreOf = new Map(scores.map((s) => [s.user_id, s]));
+  const rows: ProfileRow[] = [];
+  for (let from = 0; ; from += USER_PAGE_SIZE) {
+    const page = must(
+      await db()
+        .from("profiles")
+        .select("user_id,display_name,avatar_id,border_id,school_email,school,is_admin,created_at")
+        .order("created_at", { ascending: false })
+        .range(from, from + USER_PAGE_SIZE - 1),
+    ) as ProfileRow[];
+    rows.push(...page);
+    if (page.length < USER_PAGE_SIZE) break;
+  }
+  const scoreOf = new Map<string, { user_id: string; solved: number; points: number }>();
+  for (let i = 0; i < rows.length; i += USER_PAGE_SIZE) {
+    const batchIds = rows.slice(i, i + USER_PAGE_SIZE).map((r) => r.user_id);
+    const batchScores = must(
+      await db().from("leaderboard").select("user_id,solved,points").in("user_id", batchIds),
+    ) as { user_id: string; solved: number; points: number }[];
+    for (const s of batchScores) scoreOf.set(s.user_id, s);
+  }
   return rows.map((r) => ({
     id: r.user_id, name: r.display_name, avatarId: r.avatar_id, borderId: r.border_id, schoolEmail: r.school_email ?? undefined,
     campus: r.school?.campus, program: r.school?.program, solved: scoreOf.get(r.user_id)?.solved ?? 0, points: scoreOf.get(r.user_id)?.points ?? 0,

@@ -27,6 +27,7 @@ export function fakeDb(tables) {
         lte: (k, v) => { filters.push((r) => r[k] !== null && r[k] !== undefined && r[k] <= v); return builder; },
         eq: (k, v) => { filters.push((r) => r[k] === v); return builder; },
         in: (k, list) => { filters.push((r) => list.includes(r[k])); return builder; },
+        overlaps: (k, list) => { filters.push((r) => Array.isArray(r[k]) && r[k].some((item) => list.includes(item))); return builder; },
         ilike: (k, pattern) => { const needle = pattern.replaceAll("%", "").toLowerCase(); filters.push((r) => r[k].toLowerCase().includes(needle)); return builder; },
         insert: (v) => { op = "insert"; payload = v; return builder; },
         upsert: (v) => { op = "upsert"; payload = v; return builder; },
