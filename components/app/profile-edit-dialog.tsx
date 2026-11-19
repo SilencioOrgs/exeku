@@ -142,7 +142,7 @@ function ProfileEditModalContent({
           <span className="block text-xs text-[var(--color-text-main)]">
             Avatar
           </span>
-          <div className="grid grid-cols-4 gap-2">
+          <div role="group" aria-label="Avatar" className="grid grid-cols-4 gap-2">
             {AVATARS.map((av) => {
               const isSelected = av.id === avatarId;
               const needed = unlocksAt(av.id);
@@ -185,7 +185,7 @@ function ProfileEditModalContent({
           <span className="block text-xs text-[var(--color-text-main)]">
             Primary language
           </span>
-          <div className="grid grid-cols-2 gap-2">
+          <div role="group" aria-label="Primary language" className="grid grid-cols-2 gap-2">
             {LANGUAGES.map((lang) => {
               const isSelected = lang.id === preferredLanguage;
               return (
@@ -209,7 +209,7 @@ function ProfileEditModalContent({
           <span className="block text-xs text-[var(--color-text-main)]">
             Experience level
           </span>
-          <div className="grid grid-cols-3 gap-2">
+          <div role="group" aria-label="Experience level" className="grid grid-cols-3 gap-2">
             {LEVELS.map((lvl) => {
               const isSelected = lvl.id === experienceLevel;
               return (

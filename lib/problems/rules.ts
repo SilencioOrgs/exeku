@@ -7,6 +7,8 @@ import type { PreferredLanguage } from "@/types/profile";
 const DIFFICULTIES: ProblemDifficulty[] = ["beginner", "intermediate", "advanced"];
 const MAX_TESTS = 50;
 const MAX_TEST_CHARS = 65536;
+const MAX_TOTAL_TEST_CHARS = 1_500_000;
+export const MAX_PROBLEM_BODY_BYTES = 2 * 1024 * 1024;
 
 export interface NewProblem {
   id: string;
@@ -69,8 +71,10 @@ export function checkNewProblem(input: unknown): { ok: true; problem: NewProblem
     expectedOutput: typeof test.expectedOutput === "string" ? test.expectedOutput : "",
     isHidden: test.isHidden === true,
   }));
+  const totalTestChars = testCases.reduce((sum, t) => sum + t.input.length + t.expectedOutput.length, 0);
   if (testCases.length > MAX_TESTS) errors.testCases = `Use at most ${MAX_TESTS} tests.`;
   else if (testCases.some((t) => t.input.length > MAX_TEST_CHARS || t.expectedOutput.length > MAX_TEST_CHARS)) errors.testCases = "Each test must be under 64 KB.";
+  else if (totalTestChars > MAX_TOTAL_TEST_CHARS) errors.testCases = "Total test case data must stay under 1.5 MB.";
   else if (testCases.some((t) => !t.expectedOutput.trim())) errors.testCases = "Every test needs an expected output.";
   else if (!testCases.some((t) => !t.isHidden) || !testCases.some((t) => t.isHidden)) errors.testCases = "Add at least one sample test and one hidden test.";
 

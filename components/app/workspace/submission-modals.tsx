@@ -30,11 +30,12 @@ export interface ConfirmDialogProps {
   confirmLabel: string;
   onConfirm: () => void;
   cancelLabel?: string;
+  destructive?: boolean;
   children?: ReactNode;
 }
 
 /** One confirm dialog for submit, reset, forfeit and finish. */
-export function ConfirmDialog({ open, onOpenChange, title, description, confirmLabel, onConfirm, cancelLabel = "Cancel", children }: ConfirmDialogProps) {
+export function ConfirmDialog({ open, onOpenChange, title, description, confirmLabel, onConfirm, cancelLabel = "Cancel", destructive = false, children }: ConfirmDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -45,7 +46,7 @@ export function ConfirmDialog({ open, onOpenChange, title, description, confirmL
         {children}
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{cancelLabel}</Button>
-          <Button type="button" onClick={onConfirm}>{confirmLabel}</Button>
+          <Button type="button" variant={destructive ? "destructive" : "default"} onClick={onConfirm}>{confirmLabel}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -67,6 +68,7 @@ export function SubmissionResultDialog({ open, onOpenChange, result, problemTitl
   if (!result) return null;
   const accepted = result.overallVerdict === "ACCEPTED";
   const unavailable = result.overallVerdict === "SERVICE_UNAVAILABLE";
+  const hasPrimaryNext = accepted && Boolean(nextHref || eventProgress);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -92,7 +94,7 @@ export function SubmissionResultDialog({ open, onOpenChange, result, problemTitl
         )}
         <DialogFooter>
           <Button type="button" variant="ghost" onClick={() => { onOpenChange(false); onViewDetails(); }}>View details</Button>
-          <Button type="button" variant={accepted && nextHref ? "outline" : "default"} onClick={() => onOpenChange(false)}>Keep coding</Button>
+          <Button type="button" variant={hasPrimaryNext ? "outline" : "default"} onClick={() => onOpenChange(false)}>Keep coding</Button>
           {accepted && nextHref && <Link className={buttonVariants()} href={nextHref}>Next problem</Link>}
           {accepted && !nextHref && eventProgress && <Link className={buttonVariants()} href="/app/events">Back to events</Link>}
         </DialogFooter>

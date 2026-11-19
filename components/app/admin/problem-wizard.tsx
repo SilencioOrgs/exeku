@@ -124,7 +124,7 @@ export function ProblemWizard({ onCreated, onCancel }: { onCreated: (title: stri
                 </Button>
               ))}
             </div>
-            {errors.supportedLanguages && <p className="text-xs text-[var(--color-pink)]">{errors.supportedLanguages}</p>}
+            {errors.supportedLanguages && <p role="alert" className="text-xs text-[var(--color-pink)]">{errors.supportedLanguages}</p>}
           </div>
         </div>
       )}

@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import ts from "typescript";
 import * as orgRules from "../lib/orgs/rules.ts";
-import { isObject, text } from "../lib/accounts/rules.ts";
+import { isObject, isUuid, text } from "../lib/accounts/rules.ts";
 import { rankTeams } from "../lib/tournaments/standings.ts";
 import { fakeDb, must } from "./fixtures/fake-db.mjs";
 
@@ -38,7 +38,7 @@ function harness(startsIn, endsIn, { access = "campus-only", size = 2 } = {}) {
     "./rank": { rankScores: () => [] }, "@/lib/judge/solves": solves, "@/lib/problems/catalog": { getProblemById: (id) => ({ id, title: id }) },
   });
   const repo = load("lib/tournaments/repository.ts", {
-    "server-only": {}, "@/lib/db/client": database, "@/lib/accounts/rules": { isObject, text }, "@/lib/competition/repository": competition, "@/lib/judge/solves": solves, "@/lib/orgs/rules": orgRules, "./standings": { rankTeams },
+    "server-only": {}, "@/lib/db/client": database, "@/lib/accounts/rules": { isObject, isUuid, text }, "@/lib/competition/repository": competition, "@/lib/judge/solves": solves, "@/lib/orgs/rules": orgRules, "./standings": { rankTeams },
   });
   return { tables, repo, competition };
 }

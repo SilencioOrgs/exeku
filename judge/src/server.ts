@@ -16,7 +16,8 @@ if (token.length < 16) {
 const host = env.JUDGE_HOST || "127.0.0.1";
 const port = Number(env.JUDGE_PORT || 4000);
 const concurrency = Math.max(1, Number(env.JUDGE_CONCURRENCY) || cpus().length);
-const maxWaiting = Math.max(0, Number(env.JUDGE_MAX_QUEUE) || 100);
+const rawQueue = env.JUDGE_MAX_QUEUE;
+const maxWaiting = rawQueue !== undefined && rawQueue !== "" && Number.isFinite(Number(rawQueue)) ? Math.max(0, Math.floor(Number(rawQueue))) : 100;
 const firstBoxId = Number(env.JUDGE_FIRST_BOX_ID || 0);
 
 const cli = createIsolateCli(env.ISOLATE_BIN || "isolate");

@@ -189,16 +189,18 @@
 [data-density="compact"] { --panel-padding: 0.75rem; --section-gap: 1rem; --nav-padding: 0.5rem; }
 [data-density="spacious"] { --panel-padding: 1.5rem; --section-gap: 2rem; --nav-padding: 0.875rem; }
 
-/* Reduced motion: the app setting wins over the OS setting. */
-[data-reduced-motion="true"],
-[data-reduced-motion="true"] *,
-[data-reduced-motion="true"] *::before,
-[data-reduced-motion="true"] *::after {
-  animation-duration: 0.001ms !important;
-  animation-iteration-count: 1 !important;
-  transition-duration: 0.001ms !important;
-  scroll-behavior: auto !important;
+/* Reduced motion: disable continuous/decorative motion without breaking interactive transitions. */
+[data-reduced-motion="true"] {
+  scroll-behavior: auto;
 }
+[data-reduced-motion="true"] :is(.animate-terminal-blink, .wm-key, .wm-loader .wm-key, .id-sleeve, .milestone-key) {
+  animation: none;
+}
+[data-reduced-motion="true"] :is(.skeuo-key, [data-slot="button"], .btn-primary, .btn-outline, .app-sidebar .appearance-nav-item, .modern-problem-row, .coding-activity-cell, .milestone-fill, .id-tilt) {
+  transition: none;
+}
+[data-reduced-motion="true"] .id-tilt { transform: none; }
+[data-reduced-motion="true"] .id-foil { display: none; }
 
 /* =========================================================================
    BASE
@@ -234,6 +236,9 @@
 
 @keyframes terminal-blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
 .animate-terminal-blink { animation: terminal-blink 1s infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .animate-terminal-blink { animation: none; }
+}
 
 :where(h1, h2, h3, h4) { font-family: var(--font-heading-active); text-wrap: balance; letter-spacing: -0.025em; }
 :where(p, label, input, select, textarea, li, dd) { line-height: var(--line-height-base); }
@@ -248,34 +253,24 @@ input::placeholder, textarea::placeholder { color: var(--color-text-dim); opacit
 .appearance-stack > :not(:last-child) { margin-block-end: var(--section-gap); }
 [data-slot="dialog-content"], [data-slot="sheet-content"] { border-radius: var(--radius-card); }
 [data-slot="dialog-footer"] { border-radius: 0 0 var(--radius-card) var(--radius-card); }
-.modern-icon { display: inline-block; }
-:is(.arcade-icon, .arcade-decoration, .arcade-copy, .command-copy, .pixel-corner-mark, .nav-index) { display: none !important; }
-.clarity-copy { display: contents; }
 
 /* =========================================================================
    COMPONENTS
    ========================================================================= */
-/* Style presentation shares content while changing composition and UI personality. */
-.app-content { width: 100%; max-width: 94rem; margin-inline: auto; padding: clamp(1rem, 2.5vw, 2rem); }
-.arcade-copy { display: none; }
-.app-topbar { min-height: 4rem; border-width: 1px; background: var(--color-surface); text-transform: none; }
-:is(.app-topbar, .app-sidebar) .font-mono { font-family: var(--font-ui); letter-spacing: normal; }
-.app-shell .font-mono:not(pre,code,textarea) { font-family: var(--font-ui); letter-spacing: normal; text-transform: none; }
-.app-sidebar { border-width: 1px; }
+.app-content { width: 100%; max-width: 94rem; margin-inline: auto; padding: clamp(1rem, 2.5vw, 2rem); min-width: 0; }
+.app-topbar { min-height: 3.5rem; border-bottom-width: 1px; border-color: var(--color-border); background: var(--color-surface); text-transform: none; }
+.app-sidebar { border-right-width: 1px; border-color: var(--color-border); box-shadow: none; }
 .appearance-nav-item { margin-block: 0.25rem; padding-inline: 1rem; border: 0; font-size: 0.875rem; font-weight: 500; box-shadow: none; }
-.appearance-nav-item[aria-current="page"] { background: color-mix(in srgb, var(--color-primary) 13%, var(--color-surface)); color: var(--color-primary-text); font-weight: 650; }
-.dashboard { container-type: inline-size; }
-.workspace-view > div:first-child { overflow-wrap: anywhere; }
-.dashboard { display: grid; gap: var(--section-gap); }
+.dashboard { container-type: inline-size; display: grid; gap: var(--section-gap); }
 .dashboard > * { min-width: 0; margin-block: 0; }
+.workspace-view > div:first-child { overflow-wrap: anywhere; }
 @media (min-width: 70rem) {
   .dashboard { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
   .app-sidebar { padding: 0.5rem; }
 }
 #hero h1 { text-transform: none; letter-spacing: -0.035em; font-weight: 650; }
-.landing-hero-layout { display: grid; align-items: center; gap: 3rem; }
-.landing-hero-demo { width: 100%; }
-#hero .font-mono { font-family: var(--font-ui); }
+.landing-hero-layout { display: grid; align-items: center; gap: 3rem; max-width: 80rem; }
+.landing-hero-demo { width: 100%; min-width: 0; }
 @media (min-width: 80rem) {
   .landing-hero-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .landing-hero-copy { text-align: left; align-items: flex-start; margin: 0; }
@@ -285,22 +280,15 @@ input::placeholder, textarea::placeholder { color: var(--color-text-dim); opacit
 }
 /* Draft editing is local. This workbench never changes root appearance tokens. */
 .appearance-studio { --studio-border: var(--color-border); min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; padding-block: 0.5rem; overflow-wrap: anywhere; }
-/* Palette selector styling */
-/* The miniature is the same semantic interface in each gallery and live preview. */
 @media (max-width: 48rem) {
   .app-content { padding: 1rem; }
 }
-/* Modern UI polish: Clarity and Command retain shared behavior without arcade presentation. */
-.app-topbar { text-transform:none; border-bottom-width:1px; min-height:3.5rem; }
-.app-sidebar { border-right-width:1px; box-shadow:none; }
 .app-sidebar > div:last-child > div:first-child { display:none; }
 .app-sidebar .appearance-nav-item {
   font-family:var(--font-ui); font-size:.875rem; font-weight:500; border:0;
   border-radius:8px; box-shadow:none; letter-spacing:normal;
 }
-.app-sidebar .appearance-nav-item[aria-current="page"] { background:color-mix(in srgb, var(--color-primary) 18%, var(--color-surface)); color:var(--color-text-main); font-weight:600; box-shadow: inset 0 1px 0 var(--key-highlight), 0 1px 0 var(--color-key-edge); }
 :is(.workspace-view,.challenges-view) .font-heading { font-family:var(--font-ui); font-weight:600; letter-spacing:-.015em; }
-:is(.workspace-view,.challenges-view) .font-mono:not(pre):not(code) { font-family:var(--font-ui); letter-spacing:normal; }
 .settings-advanced {
   border:1px solid var(--color-border); background:var(--color-surface);
   border-radius:var(--radius-card); overflow:hidden;
@@ -312,11 +300,10 @@ input::placeholder, textarea::placeholder { color: var(--color-text-dim); opacit
 .settings-advanced > summary span { color:var(--color-text-muted); font-size:.8rem; font-weight:400; }
 .settings-advanced[open] { padding-bottom:1rem; }
 .settings-advanced > .appearance-card { margin:1rem 1rem 0; }
-.settings-technical-badge { display:none; }
 .settings-page > div:first-child { border-bottom-width:0; }
 .modern-overview { max-width:78rem; margin-inline:auto; }
 .modern-eyebrow { color:var(--color-text-muted); font-size:.75rem; font-weight:550; }
-.modern-feature-card { border:1px solid var(--color-border); box-shadow:none; background:var(--color-surface); border-radius:var(--radius-card); }
+.modern-feature-card { border:1px solid var(--color-border); box-shadow:none; background:var(--color-surface); border-radius:14px; }
 .modern-feature-card [data-slot="card-title"] { font-family:var(--font-ui); font-size:1.1rem; font-weight:600; }
 .modern-card-icon { display:grid; place-items:center; width:2.25rem; height:2.25rem; border:1px solid var(--color-border); border-radius:9px; margin-bottom:.6rem; }
 .modern-card-link { display:inline-flex; align-items:center; gap:.5rem; font-size:.875rem; font-weight:550; }
@@ -364,7 +351,7 @@ input::placeholder, textarea::placeholder { color: var(--color-text-dim); opacit
 .coding-activity-cell.is-future { opacity:.12; }
 .coding-activity-cell.is-today { outline:1.5px solid var(--color-text-muted); outline-offset:1px; }
 .coding-activity-footer { display:flex; gap:1rem; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-top:.55rem; color:var(--color-text-muted); font-size:.72rem; }
-.coding-activity-legend { display:inline-flex; align-items:center; gap:.35rem; white-space:nowrap; }
+.coding-activity-legend { display:inline-flex; flex-wrap:wrap; align-items:center; gap:.35rem; }
 .coding-activity-legend i { display:inline-block; width:10px; height:10px; background:var(--color-elevated); border:1px solid var(--color-border); border-radius:2px; }
 .coding-activity-legend i.is-active { background:var(--color-primary); border-color:var(--color-primary); }
 @media(prefers-reduced-motion:reduce) {
@@ -372,7 +359,7 @@ input::placeholder, textarea::placeholder { color: var(--color-text-dim); opacit
 }
 /* Profile: theme-native identity and truthful coding activity. */
 .profile-view { color:var(--color-text-main); }
-.profile-panel { background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--radius-card); min-width:0; }
+.profile-panel { background:var(--color-surface); border:1px solid var(--color-border); border-radius:14px; min-width:0; }
 /* Workspace-only layout: keep all three panels mounted so editor state persists. */
 .workspace-panes { min-width:0; overflow:hidden; }
 .workspace-resizable-group { display:flex; min-width:0; min-height:0; }
@@ -380,9 +367,11 @@ input::placeholder, textarea::placeholder { color: var(--color-text-dim); opacit
 .workspace-resize-handle { position:relative; width:5px; flex-shrink:0; background:var(--color-border); cursor:col-resize; }
 .workspace-resize-handle:hover, .workspace-resize-handle:focus-visible { background:var(--color-accent); }
 .workspace-panes[data-layout="focus"] .workspace-resize-handle { height:5px; width:100%; cursor:row-resize; }
-.workspace-toolbar { max-height:40px; }
-[data-density="compact"] .workspace-toolbar { height:36px; }
 .workspace-toolbar { border-width:1px; }
+@media (min-width: 640px) and (pointer: fine) {
+  .workspace-toolbar { max-height:40px; }
+  [data-density="compact"] .workspace-toolbar { height:36px; }
+}
 .workspace-toolbar [role="tablist"] { scrollbar-width:thin; }
 @media(max-width:1279px) {
   .workspace-resizable-group { flex-direction:column !important; }
@@ -391,23 +380,11 @@ input::placeholder, textarea::placeholder { color: var(--color-text-dim); opacit
   .workspace-panes[data-mobile-pane="problem"] .workspace-resizable-group > [data-panel]#problem, .workspace-panes[data-mobile-pane="code"] .workspace-resizable-group > [data-panel]#editor, .workspace-panes[data-mobile-pane="results"] .workspace-resizable-group > [data-panel]#results { display:flex !important; flex:1 1 auto !important; width:100% !important; min-height:0 !important; }
   .workspace-resizable-group > [data-panel] > div { flex:1 1 auto; min-width:0; min-height:0; }
 }
-/* 2026 minimalist interface consolidation: one shadcn-compatible visual language.
-   Legacy style/palette selectors remain in preference storage for safe migration. */
 :root :is(h1,h2,h3,h4,.font-heading) {
   font-family: var(--font-heading-active);
   letter-spacing: -.025em;
 }
-:root .font-mono:not(pre):not(code) {
-  font-family: var(--font-ui);
-  letter-spacing: normal;
-}
-:root :is(.appearance-card,.profile-panel,.modern-feature-card) { border-width: 1px; border-radius: 14px; }
-:root :is(.app-sidebar,.app-topbar) { border-color: var(--color-border); }
-:root .appearance-nav-item { border: 0; box-shadow: none; }
-:root :is(.arcade-decoration,.pixel-corner-mark) { display: none !important; }
-:root .arcade-copy { display: none !important; }
-:root .landing-hero-layout { max-width: 80rem; }
-:root :is(.landing-hero-demo,.app-content) { min-width: 0; }
+:root .appearance-card { border-width: 1px; border-radius: 14px; }
 :root .modern-page-header { max-width: 100%; }
 /* New Appearance panel: compact, no competing galleries or sticky overlay. */
 .minimal-appearance-studio .minimal-settings-select {
@@ -422,7 +399,7 @@ input::placeholder, textarea::placeholder { color: var(--color-text-dim); opacit
   .minimal-appearance-studio [role="radiogroup"] label { padding-inline: .4rem; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .minimal-appearance-studio * { transition-duration: 0ms !important; }
+  .minimal-appearance-studio * { transition: none; }
 }
 
 /* =========================================================================

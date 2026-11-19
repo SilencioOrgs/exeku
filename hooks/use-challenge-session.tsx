@@ -147,15 +147,19 @@ export function ChallengeProvider({ children }: { children: React.ReactNode }) {
 
     // Sync on tab focus / wake
     const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
         checkTimer();
       }
     };
-    window.addEventListener("visibilitychange", handleVisibilityChange);
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+    }
 
     return () => {
       clearInterval(interval);
-      window.removeEventListener("visibilitychange", handleVisibilityChange);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+      }
     };
   }, [session]);
 
@@ -174,6 +178,7 @@ export function ChallengeProvider({ children }: { children: React.ReactNode }) {
         lastVerdict: null,
       };
 
+      sessionRef.current = newSession;
       setSession(newSession);
       setRemainingMs(durationMs);
       persistSession(newSession);
@@ -183,19 +188,27 @@ export function ChallengeProvider({ children }: { children: React.ReactNode }) {
   );
 
   const recordSubmissionAttempt = useCallback((verdict?: string) => {
-    setSession((prev) => {
-      if (!prev || (prev.status !== "active" && prev.status !== "submitting" && prev.status !== "submitted")) {
-        return prev;
-      }
-      const updated: ChallengeSession = {
-        ...prev,
-        status: "submitted",
-        submissionCount: prev.submissionCount + 1,
-        lastVerdict: verdict || prev.lastVerdict,
-      };
-      persistSession(updated);
-      return updated;
-    });
+    const prev = sessionRef.current;
+    if (!prev || (prev.status !== "active" && prev.status !== "submitting" && prev.status !== "submitted")) {
+      return;
+    }
+    if (Date.now() >= prev.deadline) {
+      const expired: ChallengeSession = { ...prev, status: "expired", completedAt: Date.now() };
+      sessionRef.current = expired;
+      setSession(expired);
+      setRemainingMs(0);
+      persistSession(expired);
+      return;
+    }
+    const updated: ChallengeSession = {
+      ...prev,
+      status: "submitted",
+      submissionCount: prev.submissionCount + 1,
+      lastVerdict: verdict || prev.lastVerdict,
+    };
+    sessionRef.current = updated;
+    setSession(updated);
+    persistSession(updated);
   }, []);
 
   const finishChallenge = useCallback((): boolean => {
@@ -203,6 +216,14 @@ export function ChallengeProvider({ children }: { children: React.ReactNode }) {
     if (!current) return false;
     // An expired, forfeited or finished challenge stays that way.
     if (current.status !== "active" && current.status !== "submitting" && current.status !== "submitted") return false;
+    if (Date.now() >= current.deadline) {
+      const expired: ChallengeSession = { ...current, status: "expired", completedAt: Date.now() };
+      sessionRef.current = expired;
+      setSession(expired);
+      setRemainingMs(0);
+      persistSession(expired);
+      return false;
+    }
     // Requirement: at least 1 submission attempt before ordinary finish
     if (current.submissionCount < 1) {
       return false;
@@ -213,25 +234,27 @@ export function ChallengeProvider({ children }: { children: React.ReactNode }) {
       status: "completed",
       completedAt: Date.now(),
     };
+    sessionRef.current = finished;
     setSession(finished);
     persistSession(finished);
     return true;
   }, []);
 
   const forfeitChallenge = useCallback(() => {
-    setSession((prev) => {
-      if (!prev) return null;
-      const forfeited: ChallengeSession = {
-        ...prev,
-        status: "forfeited",
-        completedAt: Date.now(),
-      };
-      persistSession(forfeited);
-      return forfeited;
-    });
+    const prev = sessionRef.current;
+    if (!prev) return;
+    const forfeited: ChallengeSession = {
+      ...prev,
+      status: "forfeited",
+      completedAt: Date.now(),
+    };
+    sessionRef.current = forfeited;
+    setSession(forfeited);
+    persistSession(forfeited);
   }, []);
 
   const resetChallenge = useCallback(() => {
+    sessionRef.current = null;
     setSession(null);
     setRemainingMs(0);
     persistSession(null);

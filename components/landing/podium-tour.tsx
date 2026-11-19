@@ -22,11 +22,11 @@ const SHOTS: Array<{ pos: Vec; look: Vec }> = [
 ];
 
 const STEPS = [
-  { kicker: "01 · Match", icon: Swords, title: "Sit down with your rival", body: "Same problem, same clock. A one-on-one round is the fastest way to find out what you really know." },
+  { kicker: "01 · Match", icon: Swords, title: "Sit down with your rival", body: "Same problem, same clock. A timed round is the fastest way to find out what you really know." },
   { kicker: "02 · Solve", icon: BadgeCheck, title: "Ten out of ten", body: "Read, code, run, submit. Every submission is judged on hidden tests until the verdict says Accepted." },
-  { kicker: "03 · Team up", icon: Users, title: "Bring your team", body: "Three coders, one scoreboard. Split the problem set and share the clock. Team rounds are coming soon." },
-  { kicker: "04 · Climb", icon: ChartNoAxesColumn, title: "Climb the leaderboard", body: "Every accepted solution moves your team up the table. Leaderboards are coming soon." },
-  { kicker: "05 · Win", icon: Trophy, title: "Take the podium", body: "Practice here until contest day feels familiar. Then go get the trophy." },
+  { kicker: "03 · Team up", icon: Users, title: "Bring your team", body: "Register a squad for campus and organization tournaments, split the problem set, and share the clock." },
+  { kicker: "04 · Climb", icon: ChartNoAxesColumn, title: "Climb the leaderboard", body: "Every accepted solution adds points to your standing across campus and global leaderboards." },
+  { kicker: "05 · Win", icon: Trophy, title: "Take the podium", body: "Finish in the top three of a live tournament to earn podium medals on your profile." },
 ] as const;
 
 const ease = (t: number) => t * t * (3 - 2 * t);
@@ -38,6 +38,7 @@ export function PodiumTour() {
   const progressRef = useRef(0);
   const [step, setStep] = useState(0);
   const [ready, setReady] = useState(false);
+  const [failed, setFailed] = useState(false);
   const { effectiveReducedMotion } = useAppearance();
   const { profile } = useProfile();
   const near = useNearViewport(sectionRef);
@@ -66,71 +67,75 @@ export function PodiumTour() {
     let disposed = false;
     let cleanup = () => {};
     (async () => {
-      const [THREE, { createStage, mergeStatic, hoistLights }, { buildArena }, { buildTeamZone, buildPodiumZone }] = await Promise.all([
-        import("three"), import("@/lib/three/stage"), import("@/lib/three/arena"), import("@/lib/three/journey"),
-      ]);
-      if (disposed) return;
-      const stage = createStage(mount, { fov: 30, shadowExtent: 280, maxPixelRatio: 1.25 });
-      stage.scene.environmentIntensity = 0.35;
-      const arena = buildArena();
-      const team = buildTeamZone();
-      team.group.position.x = ZONE.team;
-      const podium = buildPodiumZone();
-      podium.group.position.x = ZONE.podium;
-      stage.scene.add(arena.group, team.group, podium.group);
-      const zones = [{ x: ZONE.arena, group: arena.group }, { x: ZONE.team, group: team.group }, { x: ZONE.podium, group: podium.group }];
-      for (const zone of zones) { mergeStatic(zone.group); hoistLights(zone.group, stage.scene); }
+      try {
+        const [THREE, { createStage, mergeStatic, hoistLights }, { buildArena }, { buildTeamZone, buildPodiumZone }] = await Promise.all([
+          import("three"), import("@/lib/three/stage"), import("@/lib/three/arena"), import("@/lib/three/journey"),
+        ]);
+        if (disposed) return;
+        const stage = createStage(mount, { fov: 30, shadowExtent: 280, maxPixelRatio: 1.25 });
+        stage.scene.environmentIntensity = 0.35;
+        const arena = buildArena();
+        const team = buildTeamZone();
+        team.group.position.x = ZONE.team;
+        const podium = buildPodiumZone();
+        podium.group.position.x = ZONE.podium;
+        stage.scene.add(arena.group, team.group, podium.group);
+        const zones = [{ x: ZONE.arena, group: arena.group }, { x: ZONE.team, group: team.group }, { x: ZONE.podium, group: podium.group }];
+        for (const zone of zones) { mergeStatic(zone.group); hoistLights(zone.group, stage.scene); }
 
-      const pos = new THREE.Vector3(), look = new THREE.Vector3(), lookNow = new THREE.Vector3();
-      const a = new THREE.Vector3(), b = new THREE.Vector3();
-      const keyOffset = stage.key.position.clone();
-      // Hold each step's shot, then glide to the next over the last 40% of the step.
-      const shotAt = (p: number) => {
-        const x = p * STEPS.length;
-        const i = Math.min(STEPS.length - 1, Math.floor(x));
-        const j = Math.min(STEPS.length - 1, i + 1);
-        const f = ease(clamp((x - i - 0.6) / 0.4));
-        pos.copy(a.fromArray(SHOTS[i].pos).lerp(b.fromArray(SHOTS[j].pos), f));
-        look.copy(a.fromArray(SHOTS[i].look).lerp(b.fromArray(SHOTS[j].look), f));
-        if (stage.camera.aspect < 1) pos.sub(look).multiplyScalar(1.9 - stage.camera.aspect * 0.6).add(look);
-      };
-      let lastW = 0, lastH = 0;
-      const frameSubject = () => {
-        const { width: w, height: h } = stage.renderer.domElement;
-        if (w === lastW && h === lastH) return;
-        lastW = w; lastH = h;
-        if (window.innerWidth >= 768) stage.camera.setViewOffset(w, h, -w * 0.2, 0, w, h);
-        else stage.camera.setViewOffset(w, h, 0, h * 0.12, w, h);
-      };
-      shotAt(progressRef.current);
-      stage.camera.position.copy(pos);
-      lookNow.copy(look);
+        const pos = new THREE.Vector3(), look = new THREE.Vector3(), lookNow = new THREE.Vector3();
+        const a = new THREE.Vector3(), b = new THREE.Vector3();
+        const keyOffset = stage.key.position.clone();
+        // Hold each step's shot, then glide to the next over the last 40% of the step.
+        const shotAt = (p: number) => {
+          const x = p * STEPS.length;
+          const i = Math.min(STEPS.length - 1, Math.floor(x));
+          const j = Math.min(STEPS.length - 1, i + 1);
+          const f = ease(clamp((x - i - 0.6) / 0.4));
+          pos.copy(a.fromArray(SHOTS[i].pos).lerp(b.fromArray(SHOTS[j].pos), f));
+          look.copy(a.fromArray(SHOTS[i].look).lerp(b.fromArray(SHOTS[j].look), f));
+          if (stage.camera.aspect < 1) pos.sub(look).multiplyScalar(1.9 - stage.camera.aspect * 0.6).add(look);
+        };
+        let lastW = 0, lastH = 0;
+        const frameSubject = () => {
+          const { width: w, height: h } = stage.renderer.domElement;
+          if (w === lastW && h === lastH) return;
+          lastW = w; lastH = h;
+          if (window.innerWidth >= 768) stage.camera.setViewOffset(w, h, -w * 0.2, 0, w, h);
+          else stage.camera.setViewOffset(w, h, 0, h * 0.12, w, h);
+        };
+        shotAt(progressRef.current);
+        stage.camera.position.copy(pos);
+        lookNow.copy(look);
 
-      stage.onFrame((time, delta) => {
-        frameSubject();
-        const p = progressRef.current;
-        shotAt(p);
-        // Podium shot drifts slowly so the scene never looks frozen.
-        if (p > 0.8 && !effectiveReducedMotion) pos.x += Math.sin(time * 0.3) * 60;
-        const k = effectiveReducedMotion ? 1 : 1 - Math.exp(-delta * 4);
-        stage.camera.position.lerp(pos, k);
-        lookNow.lerp(look, k);
-        stage.camera.lookAt(lookNow);
-        // Keep the key light (and its shadows) on whatever zone we are looking at.
-        stage.key.target.position.copy(lookNow).setY(0);
-        stage.key.position.copy(stage.key.target.position).add(keyOffset);
-        // Only the zone in view (and the next one during a fly-over) is drawn and animated.
-        for (const zone of zones) {
-          const show = Math.abs(lookNow.x - zone.x) < 650;
-          if (zone.group.visible !== show) { zone.group.visible = show; stage.invalidateShadows(); }
-        }
-        const t = effectiveReducedMotion ? 0 : time;
-        if (arena.group.visible) arena.update(t, p >= 1 / STEPS.length);
-        if (team.group.visible) team.update(t, ease(clamp((p - 0.6) / 0.06)), ease(clamp((p - 0.62) / 0.14)));
-        if (podium.group.visible) podium.update(t);
-      });
-      setReady(true);
-      cleanup = () => stage.dispose();
+        stage.onFrame((time, delta) => {
+          frameSubject();
+          const p = progressRef.current;
+          shotAt(p);
+          // Podium shot drifts slowly so the scene never looks frozen.
+          if (p > 0.8 && !effectiveReducedMotion) pos.x += Math.sin(time * 0.3) * 60;
+          const k = effectiveReducedMotion ? 1 : 1 - Math.exp(-delta * 4);
+          stage.camera.position.lerp(pos, k);
+          lookNow.lerp(look, k);
+          stage.camera.lookAt(lookNow);
+          // Keep the key light (and its shadows) on whatever zone we are looking at.
+          stage.key.target.position.copy(lookNow).setY(0);
+          stage.key.position.copy(stage.key.target.position).add(keyOffset);
+          // Only the zone in view (and the next one during a fly-over) is drawn and animated.
+          for (const zone of zones) {
+            const show = Math.abs(lookNow.x - zone.x) < 650;
+            if (zone.group.visible !== show) { zone.group.visible = show; stage.invalidateShadows(); }
+          }
+          const t = effectiveReducedMotion ? 0 : time;
+          if (arena.group.visible) arena.update(t, p >= 1 / STEPS.length);
+          if (team.group.visible) team.update(t, ease(clamp((p - 0.6) / 0.06)), ease(clamp((p - 0.62) / 0.14)));
+          if (podium.group.visible) podium.update(t);
+        });
+        setReady(true);
+        cleanup = () => stage.dispose();
+      } catch {
+        if (!disposed) setFailed(true);
+      }
     })();
     return () => { disposed = true; cleanup(); };
   }, [effectiveReducedMotion, near]);
@@ -140,7 +145,11 @@ export function PodiumTour() {
       <div className="sticky top-0 h-screen overflow-hidden">
         <div aria-hidden="true" className="bg-grid absolute inset-0 opacity-60" />
         <div ref={mountRef} className="absolute inset-0" role="img" aria-label="3D tour: a student codes against a rival, joins a team round, climbs the leaderboard and lifts the trophy on the podium.">
-          {!ready && <span className="absolute inset-0 grid place-items-center"><BrandLoader label="Loading 3D scene…" /></span>}
+          {!ready && (
+            <span className="absolute inset-0 grid place-items-center text-sm text-[var(--color-text-muted)]">
+              {failed ? "3D tour needs WebGL, which this browser has turned off." : <BrandLoader label="Loading 3D scene…" />}
+            </span>
+          )}
         </div>
         <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-[var(--color-canvas)] via-[var(--color-canvas)]/80 to-transparent md:hidden" />
         <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 hidden w-[56%] bg-gradient-to-r from-[var(--color-canvas)] via-[var(--color-canvas)]/85 to-transparent md:block" />

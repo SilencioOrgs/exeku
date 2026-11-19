@@ -225,9 +225,13 @@ function buildUno(m: Materials) {
   group.add(instanced([1.0, 0.04, 1.0], m.hole, holes));
 
   // SMD status LEDs. "L" follows pin 13, like the real board.
-  const smd = (x: number, y: number, material: Mat) => group.add(mesh(new THREE.BoxGeometry(1.6, 0.6, 0.8), material, ux(x), top + 0.3, uz(y)));
+  const smd = (x: number, y: number, material: Mat) => {
+    const mLed = mesh(new THREE.BoxGeometry(1.6, 0.6, 0.8), material, ux(x), top + 0.3, uz(y));
+    group.add(mLed);
+    return mLed;
+  };
   const ledL = m.smdLed;
-  smd(25.2, 43.2, ledL);
+  smd(25.2, 43.2, ledL).userData.dynamic = true;
   smd(25.2, 40.2, m.smdLed.clone());
   smd(25.2, 37.8, m.smdLed.clone());
   smd(58.6, 41.6, m.smdPower);

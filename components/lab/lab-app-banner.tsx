@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Box } from "lucide-react";
 import { useAppearance } from "@/hooks/use-appearance";
@@ -43,15 +43,26 @@ export function LabAppStrip({ className }: { className?: string }) {
 /** Landing banner: a live 3D board next to the app pitch. */
 export function LabAppShowcase() {
   const { effectiveReducedMotion } = useAppearance();
+  const sectionRef = useRef<HTMLElement>(null);
+  const [visible, setVisible] = useState(false);
   const [ledOn, setLedOn] = useState(true);
+
   useEffect(() => {
-    if (effectiveReducedMotion) return;
+    const el = sectionRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting));
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (effectiveReducedMotion || !visible) return;
     const id = window.setInterval(() => setLedOn((on) => !on), 700);
     return () => window.clearInterval(id);
-  }, [effectiveReducedMotion]);
+  }, [effectiveReducedMotion, visible]);
 
   return (
-    <section id="lab-app" aria-labelledby="lab-app-heading" className="border-b border-[var(--color-border)] py-20 md:py-24">
+    <section ref={sectionRef} id="lab-app" aria-labelledby="lab-app-heading" className="border-b border-[var(--color-border)] py-20 md:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="skeuo-card tile-peach grid items-center gap-6 overflow-hidden rounded-3xl border border-[var(--color-border)] p-6 sm:p-10 lg:grid-cols-[1fr_1.1fr]">
           <div>

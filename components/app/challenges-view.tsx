@@ -94,7 +94,7 @@ export function ChallengesView() {
         </FilterSelect>
       </div>
 
-      <div className="skeuo-card overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
+      <div className="skeuo-card overflow-x-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
         {problems === null ? (
           <BrandLoader label="Loading problems…" />
         ) : visible.length === 0 ? (

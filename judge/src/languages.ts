@@ -74,7 +74,8 @@ export function detectToolchain(pathEnv?: string): Toolchain {
   };
 }
 
-const withExt = (files: string[], ext: string) => files.filter((name) => name.endsWith(ext));
+const withExt = (files: string[], ext: string) =>
+  files.filter((name) => name.endsWith(ext)).map((name) => `./${name}`);
 
 export function buildLanguageSpecs(tools: Toolchain): Partial<Record<Language, LanguageSpec>> {
   const specs: Partial<Record<Language, LanguageSpec>> = {};

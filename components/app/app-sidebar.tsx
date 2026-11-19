@@ -51,8 +51,8 @@ export function AppSidebar({ profile, collapsed, onToggleCollapse, onNavigate, c
   const [toggled, setToggled] = useState<{ path: string; id: string | null } | null>(null);
   const openId = toggled?.path === pathname ? toggled.id : currentGroup;
 
-  const navLink = (href: string, className: string, children: ReactNode, current: boolean, title?: string) => (
-    <Link href={href} title={title} aria-current={current ? "page" : undefined} className={className}
+  const navLink = (href: string, className: string, children: ReactNode, current: boolean, title?: string, activeGroup?: boolean) => (
+    <Link href={href} title={title} aria-label={title} aria-current={current ? "page" : undefined} data-active={activeGroup || undefined} className={className}
       onClick={(event) => { if (!requestNavigation(href)) event.preventDefault(); else onNavigate?.(); }}>
       {children}
     </Link>
@@ -63,7 +63,12 @@ export function AppSidebar({ profile, collapsed, onToggleCollapse, onNavigate, c
       <PixelAvatar avatarId={profile?.avatarId ?? DEFAULT_AVATAR_ID} borderId={profile?.borderId} size={36} />
       {!collapsed && <div className="min-w-0"><p className="truncate text-sm font-semibold">{profile?.displayName || "Local profile"}</p><p className="truncate text-xs capitalize text-[var(--color-text-muted)]">{profile?.experienceLevel || "Developer preview"}</p></div>}
     </div>
-    {isTimedActive && <div className="flex items-center gap-2 border-b border-[var(--color-border)] px-3 py-2 text-xs text-[var(--color-text-muted)]"><Timer size={14} />{!collapsed && <span>Challenge {formattedTime}</span>}</div>}
+    {isTimedActive && (
+      <div title={collapsed ? `Challenge ${formattedTime}` : undefined} className={cn("flex items-center gap-2 border-b border-[var(--color-border)] px-3 py-2 text-xs text-[var(--color-text-muted)]", collapsed && "justify-center")}>
+        <Timer size={14} aria-hidden="true" />
+        <span className={collapsed ? "sr-only" : undefined}>Challenge {formattedTime}</span>
+      </div>
+    )}
     <nav aria-label="Main navigation" className="min-h-0 flex-1 overflow-y-auto p-2">
       {nav.map((group) => {
         const Icon = group.icon;
@@ -74,7 +79,10 @@ export function AppSidebar({ profile, collapsed, onToggleCollapse, onNavigate, c
         if (group.href) return <div key={group.id}>{navLink(group.href, keyClass, <>{icon}{!collapsed && <span>{group.label}</span>}</>, isCurrent(pathname, group.href), collapsed ? group.label : undefined)}</div>;
 
         // No room for a dropdown when collapsed, so the icon goes straight to the section's first page.
-        if (collapsed) return <div key={group.id}>{navLink(group.items![0].href, keyClass, icon, groupActive, group.label)}</div>;
+        if (collapsed) {
+          const firstHref = group.items![0].href;
+          return <div key={group.id}>{navLink(firstHref, keyClass, icon, isCurrent(pathname, firstHref), group.label, groupActive)}</div>;
+        }
 
         const open = openId === group.id;
         const panelId = `nav-${group.id}`;
@@ -103,7 +111,7 @@ export function AppSidebar({ profile, collapsed, onToggleCollapse, onNavigate, c
     </nav>
     <div className="border-t border-[var(--color-border)] p-2">
       <Button type="button" variant="outline" onClick={onToggleCollapse} aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"} className={cn("h-10 w-full justify-start gap-3 px-3 text-[var(--color-text-muted)]",collapsed && "justify-center px-0")}>
-        {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}{!collapsed && <span>Collapse</span>}
+        {collapsed ? <ChevronRight size={18} aria-hidden="true" /> : <ChevronLeft size={18} aria-hidden="true" />}{!collapsed && <span>Collapse</span>}
       </Button>
     </div>
   </aside>;

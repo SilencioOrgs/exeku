@@ -6,7 +6,7 @@ import {
   getVisibleProblem,
   getProblemSummaries,
 } from "../lib/problems/catalog.ts";
-import { validateProblemSchema } from "../lib/problems/validation.ts";
+import { validateProblemSchema } from "./fixtures/problem-validation.ts";
 
 test("problem catalog - contains 3 initial problems", () => {
   const problems = getAllProblems();

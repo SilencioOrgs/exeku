@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { readJson } from "@/lib/accounts/read-json";
+import { isAdmin } from "@/lib/admin/guard";
 import { defaultJudgingService } from "@/lib/judge/judging-service";
 import { recordSubmission } from "@/lib/judge/record-submission";
 import { findProblem } from "@/lib/problems/store";
@@ -45,7 +46,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const problem = await findProblem(problemId);
+    const problem = await findProblem(problemId, { includeLocked: await isAdmin(userId) });
     if (!problem) {
       return NextResponse.json(
         { error: `Problem with ID '${problemId}' not found.` },
@@ -102,7 +103,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: err.message }, { status: 429 });
     }
 
-    const message = err instanceof Error ? err.message : "Internal Server Error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("Judge route failed:", err instanceof Error ? err.message : "unknown error");
+    return NextResponse.json({ error: "Submission judging failed. Please try again." }, { status: 500 });
   }
 }

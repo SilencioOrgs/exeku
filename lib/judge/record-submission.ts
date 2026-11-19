@@ -15,11 +15,16 @@ export async function recordSubmission(problem: { id: string; difficulty: Proble
     const viewer = await getViewer();
     if (!viewer) return null;
     const accepted = verdict === "ACCEPTED";
-    const before = accepted ? await firstSolves(viewer.id) : [];
-    const firstSolve = accepted && !before.some((s) => s.problemId === problem.id);
     const points = accepted ? POINTS[problem.difficulty] : 0;
-    must(await db().from("submissions").insert({ user_id: viewer.id, problem_id: problem.id, language, verdict, points }));
-    return accepted ? { firstSolve, points: firstSolve ? points : 0, solved: before.length + (firstSolve ? 1 : 0) } : null;
+    const submissionId = crypto.randomUUID();
+    must(await db().from("submissions").insert({ id: submissionId, user_id: viewer.id, problem_id: problem.id, language, verdict, points }));
+    if (!accepted) return null;
+    const earliest = must(
+      await db().from("submissions").select("id").eq("user_id", viewer.id).eq("problem_id", problem.id).eq("verdict", "ACCEPTED").order("created_at").order("id").limit(1),
+    ) as { id: string }[];
+    const firstSolve = earliest[0]?.id === submissionId;
+    const solved = (await firstSolves(viewer.id)).length;
+    return { firstSolve, points: firstSolve ? points : 0, solved };
   } catch (error) {
     console.error("Could not save submission:", error instanceof Error ? error.message : "unknown error");
     return null;

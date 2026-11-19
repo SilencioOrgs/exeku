@@ -15,7 +15,7 @@ export interface ProblemPaneProps {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="space-y-1.5">
-      <h3 className="text-xs font-semibold text-[var(--color-text-main)]">{title}</h3>
+      <h2 className="text-xs font-semibold text-[var(--color-text-main)]">{title}</h2>
       {children}
     </section>
   );
@@ -45,7 +45,7 @@ export function ProblemPane({ problem, onUseCustomStdin }: ProblemPaneProps) {
     <div className="problem-pane flex h-full flex-col overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)]">
       <div className="shrink-0 space-y-1 border-b border-[var(--color-border)] p-3">
         <div className="flex items-start justify-between gap-2">
-          <h2 className="text-base font-semibold text-[var(--color-text-main)]">{problem.title}</h2>
+          <h1 className="text-base font-semibold text-[var(--color-text-main)]">{problem.title}</h1>
           <Link href="/app/challenges" className="shrink-0 text-xs text-[var(--color-text-muted)] underline-offset-2 hover:text-[var(--color-text-main)] hover:underline">All problems</Link>
         </div>
         <p className="flex items-center gap-2 text-xs text-[var(--color-text-muted)]">

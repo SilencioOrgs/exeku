@@ -1,7 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 import React, { useState } from "react";
 import { PixelBadge } from "@/components/retro/pixel-badge";
@@ -23,9 +24,14 @@ export function ProfileResetDialog({
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!isOpen) return null;
-
   const isConfirmed = confirmationInput.trim().toUpperCase() === "RESET";
+
+  const handleClose = () => {
+    if (isDeleting) return;
+    setConfirmationInput("");
+    setError(null);
+    onClose();
+  };
 
   const handleReset = async () => {
     if (!isConfirmed) return;
@@ -42,75 +48,58 @@ export function ProfileResetDialog({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="reset-dialog-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs"
-      onKeyDown={(e) => {
-        if (e.key === "Escape" && !isDeleting) onClose();
-      }}
-    >
-      <div className="w-full max-w-md bg-[var(--color-surface)] border border-[var(--color-pink)] [box-shadow:var(--shadow-card)] [border-radius:var(--radius-card)] p-6 space-y-5 text-foreground">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-3">
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleClose(); }}>
+      <DialogContent className="border-[var(--color-pink)] sm:max-w-md">
+        <DialogHeader className="border-b border-[var(--color-border)] pb-3">
           <div className="flex items-center gap-2">
             <PixelBadge variant="pink">Danger</PixelBadge>
-            <h3 id="reset-dialog-title" className="text-lg font-semibold text-[var(--color-pink)]">
-              Reset local profile
-            </h3>
+            <DialogTitle className="text-[var(--color-pink)]">Reset local profile</DialogTitle>
           </div>
-          <Button type="button" variant="ghost" size="icon-sm" onClick={onClose} disabled={isDeleting} aria-label="Close dialog">
-            <X size={15} aria-hidden="true" />
-          </Button>
-        </div>
+          <DialogDescription className="text-xs">
+            You are about to permanently delete the local profile for{" "}
+            <strong className="text-foreground underline">{profileName}</strong> from this browser&apos;s IndexedDB.
+          </DialogDescription>
+        </DialogHeader>
 
         {error && (
-          <div role="alert" className="p-2.5 bg-[var(--color-elevated)] border border-[var(--color-pink)] text-[var(--color-pink)] text-xs">
+          <div role="alert" className="rounded-lg border border-[var(--color-pink)] bg-[var(--color-elevated)] p-2.5 text-xs text-[var(--color-pink)]">
             {error}
           </div>
         )}
 
-        {/* Warning text */}
         <div className="space-y-3 text-xs text-[var(--color-text-muted)]">
-          <p>
-            You are about to permanently delete the local profile for{" "}
-            <strong className="text-foreground underline">{profileName}</strong> from this browser&apos;s IndexedDB.
-          </p>
-          <div className="p-3 bg-[var(--color-elevated)] border border-[var(--color-pink)]/50 text-[var(--color-pink)] space-y-1">
-            <span className="font-bold block">Permanent consequence</span>
+          <div className="space-y-1 rounded-lg border border-[var(--color-pink)]/50 bg-[var(--color-elevated)] p-3 text-[var(--color-pink)]">
+            <span className="block font-semibold">Permanent consequence</span>
             <p className="text-xs leading-relaxed">
-              This action cannot be undone. All local progress, preferences, and identity records on this device will be erased. Unrelated browser databases will not be touched.
+              This action cannot be undone. All local progress, preferences, and saved code drafts on this device will be erased. Unrelated browser databases will not be touched.
             </p>
           </div>
-          <p>
-            To confirm deletion, type <strong className="text-[var(--color-pink)]">Reset</strong> below:
-          </p>
+          <div className="space-y-1.5">
+            <label htmlFor="reset-profile-confirm" className="block text-xs text-[var(--color-text-muted)]">
+              To confirm deletion, type <strong className="text-[var(--color-pink)]">RESET</strong> below:
+            </label>
+            <Input
+              id="reset-profile-confirm"
+              type="text"
+              value={confirmationInput}
+              onChange={(e) => setConfirmationInput(e.target.value)}
+              placeholder="Type RESET to confirm"
+              autoFocus
+              disabled={isDeleting}
+              className="skeuo-well h-10"
+            />
+          </div>
         </div>
 
-        {/* Confirmation Input */}
-        <div>
-          <input
-            type="text"
-            value={confirmationInput}
-            onChange={(e) => setConfirmationInput(e.target.value)}
-            placeholder="Type RESET to confirm"
-            autoFocus
-            disabled={isDeleting}
-            className="skeuo-well h-10 w-full rounded-lg border border-input px-3 text-sm"
-          />
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center justify-end gap-3 pt-3 border-t border-[var(--color-border)]">
-          <Button type="button" variant="ghost" size="sm" onClick={onClose} disabled={isDeleting}>
+        <DialogFooter className="border-t border-[var(--color-border)] pt-3">
+          <Button type="button" variant="outline" size="sm" onClick={handleClose} disabled={isDeleting}>
             Cancel
           </Button>
-          <Button type="button" size="sm" onClick={handleReset} disabled={!isConfirmed || isDeleting}>
+          <Button type="button" variant="destructive" size="sm" onClick={handleReset} disabled={!isConfirmed || isDeleting}>
             {isDeleting ? "Deleting…" : "Delete profile"}
           </Button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

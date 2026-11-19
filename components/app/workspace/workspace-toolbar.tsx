@@ -41,7 +41,7 @@ export interface WorkspaceToolbarProps {
 export function WorkspaceToolbar(props: WorkspaceToolbarProps) {
   const busy = props.isRunning || props.isSubmitting;
   return (
-    <div className="workspace-toolbar relative z-10 flex h-10 shrink-0 items-center gap-1 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] px-1">
+    <div className="workspace-toolbar relative z-10 flex min-h-10 shrink-0 flex-wrap items-center gap-1 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] px-1 py-1 sm:h-10 sm:flex-nowrap sm:py-0">
       <FileTabs
         language={props.language}
         files={props.files}

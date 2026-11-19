@@ -49,7 +49,7 @@ export async function getCampuses(): Promise<Campus[]> {
 
 /** Ranks within the scope, so a campus board starts again at 1. */
 export async function getLeaderboard(campusId?: string): Promise<LeaderboardEntry[]> {
-  const query = db().from("leaderboard").select("user_id,name,campus_id,campus_name,solved,points");
+  const query = db().from("leaderboard").select("user_id,name,campus_id,campus_name,solved,points").order("points", { ascending: false });
   const rows = must(await (campusId ? query.eq("campus_id", campusId) : query)) as
     { user_id: string; name: string; campus_id: string; campus_name: string; solved: number; points: number }[];
   const scores: LeaderboardScore[] = rows.map((r) => ({ id: r.user_id, name: r.name, campusId: r.campus_id, campusName: r.campus_name, solved: r.solved, points: r.points }));
@@ -70,19 +70,36 @@ const scopeOf = (viewer: Viewer, memberships: Membership[]) => ({
 
 export const viewerScope = async (viewer: Viewer) => scopeOf(viewer, await membershipsOf(viewer));
 
+/** Hides problem lists on tournaments until start time and only exposes them to registered viewers. */
+export async function maskTournamentProblems(
+  events: CompetitionEvent[],
+  viewerId: string,
+  includeSolves = false,
+): Promise<CompetitionEvent[]> {
+  const hasTournament = events.some((event) => Boolean(event.tournament));
+  if (!hasTournament) return events;
+  const registered = new Set(
+    (must(await db().from("tournament_members").select("event_id").eq("user_id", viewerId)) as { event_id: string }[]).map((m) => m.event_id),
+  );
+  const now = Date.now();
+  return Promise.all(events.map(async (event) => {
+    if (!event.tournament) return event;
+    if (!registered.has(event.id) || now < Date.parse(event.tournament.startsAt)) {
+      return { ...event, problems: [] };
+    }
+    if (!includeSolves) return event;
+    const solves = await solvesBetween([viewerId], event.tournament.startsAt, event.tournament.endsAt);
+    return { ...event, solvedProblemIds: solves.map((s) => s.problemId) };
+  }));
+}
+
 export async function getEventsFeed(viewer: Viewer): Promise<EventsFeed> {
   const memberships = await membershipsOf(viewer);
   const scope = scopeOf(viewer, memberships);
   // shortcut: visibility is filtered here after loading every event, upgrade to a SQL filter past a few thousand events.
   const rows = must(await db().from("events").select(EVENT_COLUMNS).order("starts_on", { ascending: false })) as unknown as EventRow[];
-  const registered = new Set((must(await db().from("tournament_members").select("event_id").eq("user_id", viewer.id)) as { event_id: string }[]).map((m) => m.event_id));
-  const events = await Promise.all((await toEvents(rows)).filter((e) => canViewEvent(e, scope)).map(async (event) => {
-    if (!event.tournament) return event;
-    // Tournament problems stay locked until it starts, and only for students who registered.
-    if (!registered.has(event.id) || Date.now() < Date.parse(event.tournament.startsAt)) return { ...event, problems: [] };
-    const solves = await solvesBetween([viewer.id], event.tournament.startsAt, event.tournament.endsAt);
-    return { ...event, solvedProblemIds: solves.map((s) => s.problemId) };
-  }));
+  const visible = (await toEvents(rows)).filter((e) => canViewEvent(e, scope));
+  const events = await maskTournamentProblems(visible, viewer.id, true);
   return {
     events,
     postableOrgs: memberships.filter((m) => can(m.role, "publish")).map((m) => ({ id: m.org_id, name: m.orgs.name })),

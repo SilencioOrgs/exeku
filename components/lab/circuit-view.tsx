@@ -36,12 +36,17 @@ export function CircuitView({ ledOn, interactive = true, view = [120, 120, 175],
     let cleanup = () => {};
     (async () => {
       try {
-        const [{ createStage }, { buildCircuit }, { applyModelOverrides }] = await Promise.all([
+        const [{ createStage, mergeStatic }, { buildCircuit }, { applyModelOverrides }] = await Promise.all([
           import("@/lib/three/stage"), import("@/lib/three/circuit"), import("@/lib/three/overrides"),
         ]);
         if (disposed) return;
         const stage = createStage(mount, { orbit: interactive, autoRotate: !effectiveReducedMotion });
         const circuit = buildCircuit();
+        // Merge inside named sub-parts so CAD overrides can still swap arduino-uno / breadboard cleanly.
+        for (const name of ["arduino-uno", "breadboard"]) {
+          const part = circuit.group.getObjectByName(name);
+          if (part) mergeStatic(part, 8);
+        }
         stage.scene.add(circuit.group);
         const center = circuit.bounds.getCenter(circuit.bounds.min.clone());
         stage.camera.position.set(center.x + vx, vy, center.z + vz);
@@ -57,7 +62,7 @@ export function CircuitView({ ledOn, interactive = true, view = [120, 120, 175],
           });
         }
         stage.camera.lookAt(target);
-        void applyModelOverrides(circuit.group, () => disposed);
+        void applyModelOverrides(circuit.group, () => disposed, () => stage.invalidateShadows());
 
         loadedRef.current = { setLed: (on) => circuit.setLed(on) };
         circuit.setLed(ledRef.current);

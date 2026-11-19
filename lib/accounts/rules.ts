@@ -15,7 +15,9 @@ type Checked<K extends string, T> = ({ ok: true } & Record<K, T>) | { ok: false;
 
 const EMAIL = /^[a-z0-9._%+-]+@[a-z0-9-]+(\.[a-z0-9-]+)+$/;
 const ACADEMIC_DOMAIN = /^([a-z0-9-]+\.)+(edu(\.[a-z]{2})?|ac\.[a-z]{2})$/;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+export const isUuid = (value: string) => UUID_RE.test(value);
 export const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 export const text = (source: Record<string, unknown>, key: string) =>

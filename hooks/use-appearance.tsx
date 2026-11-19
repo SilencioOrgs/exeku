@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { type AppearancePreferences, type UIStyle, type ColorPalette, type ColorMode, DEFAULT_APPEARANCE_PREFERENCES, normalizeAppearancePreferences } from "@/types/appearance";
+import { type AppearancePreferences, DEFAULT_APPEARANCE_PREFERENCES, normalizeAppearancePreferences } from "@/types/appearance";
 import { appearanceRepository, cacheAppearanceSnapshot, APPEARANCE_STORAGE_KEY, APPEARANCE_SNAPSHOT_KEY, type PersistenceStatus } from "@/lib/storage/appearance-repository";
 import { profileRepository } from "@/lib/storage/profile-repository";
 
@@ -16,9 +16,6 @@ export interface AppearanceContextValue {
   persistenceMessage: string | null;
   updatePreferences: (updates: Partial<AppearancePreferences>) => Promise<boolean>;
   resetPreferences: () => Promise<boolean>;
-  setStyle: (style: UIStyle) => Promise<boolean>;
-  setPalette: (palette: ColorPalette) => Promise<boolean>;
-  setColorMode: (mode: ColorMode) => Promise<boolean>;
 }
 
 const AppearanceContext = createContext<AppearanceContextValue | null>(null);
@@ -155,16 +152,13 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
   }, []);
 
   const resetPreferences = useCallback(() => updatePreferences(DEFAULT_APPEARANCE_PREFERENCES), [updatePreferences]);
-  const setStyle = useCallback((uiStyle: UIStyle) => updatePreferences({ uiStyle }), [updatePreferences]);
-  const setPalette = useCallback((colorPalette: ColorPalette) => updatePreferences({ colorPalette }), [updatePreferences]);
-  const setColorMode = useCallback((colorMode: ColorMode) => updatePreferences({ colorMode }), [updatePreferences]);
   const effectiveReducedMotion = preferences.reducedMotion === "system" ? systemReducedMotion : preferences.reducedMotion;
   const persistenceMessage = persistenceStatus === "error"
     ? "Changes were not applied. Local storage failed; your draft is available to retry."
     : persistenceStatus === "session" ? "Changes cannot be applied because persistent browser storage is unavailable."
     : persistenceStatus === "saving" ? "Saving appearance…"
     : persistenceStatus === "loading" ? "Loading appearance…" : "Appearance saved locally.";
-  const contextValue = useMemo<AppearanceContextValue>(() => ({ preferences, preferenceOwner, effectiveColorMode, effectiveReducedMotion, systemColorMode: systemDark ? "dark" : "light", systemReducedMotion, persistenceStatus, persistenceMessage, updatePreferences, resetPreferences, setStyle, setPalette, setColorMode }), [preferences, preferenceOwner, effectiveColorMode, effectiveReducedMotion, systemDark, systemReducedMotion, persistenceStatus, persistenceMessage, updatePreferences, resetPreferences, setStyle, setPalette, setColorMode]);
+  const contextValue = useMemo<AppearanceContextValue>(() => ({ preferences, preferenceOwner, effectiveColorMode, effectiveReducedMotion, systemColorMode: systemDark ? "dark" : "light", systemReducedMotion, persistenceStatus, persistenceMessage, updatePreferences, resetPreferences }), [preferences, preferenceOwner, effectiveColorMode, effectiveReducedMotion, systemDark, systemReducedMotion, persistenceStatus, persistenceMessage, updatePreferences, resetPreferences]);
   return <AppearanceContext.Provider value={contextValue}>{children}</AppearanceContext.Provider>;
 }
 

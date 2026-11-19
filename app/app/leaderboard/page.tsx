@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { BrandLoader } from "@/components/brand-loader";
 import { LeaderboardView } from "@/components/app/competition/leaderboard-view";
+import { getViewer } from "@/lib/auth/viewer";
 import { getCampuses, getLeaderboard } from "@/lib/competition/repository";
 
 export const metadata: Metadata = {
@@ -12,6 +14,8 @@ export const metadata: Metadata = {
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
 async function Leaderboard({ searchParams }: { searchParams: SearchParams }) {
+  const viewer = await getViewer();
+  if (!viewer) redirect("/setup");
   const { campus } = await searchParams;
   const campuses = await getCampuses();
   const activeCampus = campuses.find((c) => c.id === campus);

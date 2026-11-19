@@ -1,7 +1,7 @@
 import "server-only";
-import { isObject, text } from "@/lib/accounts/rules";
+import { isObject, isUuid, text } from "@/lib/accounts/rules";
 import { db, must } from "@/lib/db/client";
-import { listProblemSummaries } from "@/lib/problems/store";
+import { listProblemIds, listProblemSummaries } from "@/lib/problems/store";
 import type { EventsOverview } from "@/types/admin";
 import type { AdminResult } from "./repository";
 import { checkCompetition, checkEventDetails, checkSchedule, checkSet } from "./rules";
@@ -19,7 +19,7 @@ async function loadCampuses() {
 }
 
 export async function getEventsOverview(): Promise<EventsOverview> {
-  const summaries = await listProblemSummaries();
+  const summaries = await listProblemSummaries(undefined, { includeLocked: true });
   const titles = new Map(summaries.map((p) => [p.id, p.title]));
   const sets = must(await db().from("problem_sets").select("id,name,problem_ids").order("name")) as SetRow[];
   const orgs = must(await db().from("orgs").select("id,name").order("name")) as { id: string; name: string }[];
@@ -35,7 +35,7 @@ export async function getEventsOverview(): Promise<EventsOverview> {
 }
 
 export async function createSet(input: unknown): Promise<AdminResult> {
-  const known = new Set((await listProblemSummaries()).map((p) => p.id));
+  const known = new Set(await listProblemIds());
   const checked = checkSet(input, known);
   if (!checked.ok) return failed(422, checked.error);
   const { error } = await db().from("problem_sets").insert({ name: checked.name, problem_ids: checked.problemIds });
@@ -45,7 +45,9 @@ export async function createSet(input: unknown): Promise<AdminResult> {
 }
 
 export async function deleteSet(input: unknown): Promise<AdminResult> {
-  must(await db().from("problem_sets").delete().eq("id", isObject(input) ? text(input, "id") : ""));
+  const id = isObject(input) ? text(input, "id") : "";
+  if (!isUuid(id)) return failed(400, "Invalid problem set ID.");
+  must(await db().from("problem_sets").delete().eq("id", id));
   return { ok: true };
 }
 
@@ -55,15 +57,19 @@ export async function createEvent(input: unknown): Promise<AdminResult> {
   const timing = checkSchedule(input);
   if (!timing.ok) return failed(422, timing.error);
   const source = isObject(input) ? input : {};
-  const set = must(await db().from("problem_sets").select("id,name,problem_ids").eq("id", text(source, "setId")).maybeSingle()) as SetRow | null;
+  const setId = text(source, "setId");
+  if (!isUuid(setId)) return failed(404, "That problem set wasn't found.");
+  const set = must(await db().from("problem_sets").select("id,name,problem_ids").eq("id", setId).maybeSingle()) as SetRow | null;
   if (!set) return failed(404, "That problem set wasn't found.");
-  if (set.problem_ids.length === 0) return failed(422, "That problem set is empty.");
+  const liveIds = new Set(await listProblemIds());
+  const problemIds = set.problem_ids.filter((id) => liveIds.has(id));
+  if (problemIds.length === 0) return failed(422, "That problem set has no active problems.");
   const org = must(await db().from("orgs").select("id").eq("id", text(source, "orgId")).maybeSingle());
   if (!org) return failed(422, "Choose a host organization.");
   const { startsAt, endsAt, startsOn } = timing.schedule;
   must(await db().from("events").insert({
-    org_id: text(source, "orgId"), title: details.title, summary: `${set.problem_ids.length} ${set.problem_ids.length === 1 ? "problem" : "problems"}. Register a team of up to ${details.teamSize}.`,
-    starts_on: startsOn, access: details.access, banner: DEFAULT_BANNER, featured: false, problem_ids: set.problem_ids,
+    org_id: text(source, "orgId"), title: details.title, summary: `${problemIds.length} ${problemIds.length === 1 ? "problem" : "problems"}. Register a team of up to ${details.teamSize}.`,
+    starts_on: startsOn, access: details.access, banner: DEFAULT_BANNER, featured: false, problem_ids: problemIds,
     starts_at: startsAt, ends_at: endsAt, team_size: details.teamSize,
   }));
   return { ok: true };
@@ -71,12 +77,12 @@ export async function createEvent(input: unknown): Promise<AdminResult> {
 
 /** A competition is a timed team event open to everyone or to the chosen campuses and organizations. */
 export async function createCompetition(input: unknown): Promise<AdminResult> {
-  const [summaries, campuses, orgs] = await Promise.all([
-    listProblemSummaries(),
+  const [problemIdsList, campuses, orgs] = await Promise.all([
+    listProblemIds(),
     loadCampuses(),
     db().from("orgs").select("id,name").then((result) => must(result) as { id: string; name: string }[]),
   ]);
-  const checked = checkCompetition(input, { problems: new Set(summaries.map((p) => p.id)), campuses: new Set(campuses.map((c) => c.id)), orgs: new Set(orgs.map((o) => o.id)) });
+  const checked = checkCompetition(input, { problems: new Set(problemIdsList), campuses: new Set(campuses.map((c) => c.id)), orgs: new Set(orgs.map((o) => o.id)) });
   if (!checked.ok) return { ok: false, status: 422, error: Object.values(checked.fieldErrors)[0], fieldErrors: checked.fieldErrors };
 
   const { title, teamSize, everyone, campusIds, orgIds, problemIds, schedule } = checked;
@@ -105,12 +111,16 @@ export async function createCompetition(input: unknown): Promise<AdminResult> {
 export async function rescheduleEvent(input: unknown): Promise<AdminResult> {
   const timing = checkSchedule(input);
   if (!timing.ok) return failed(422, timing.error);
+  const id = isObject(input) ? text(input, "id") : "";
+  if (!isUuid(id)) return failed(400, "Invalid event ID.");
   const { startsAt, endsAt, startsOn } = timing.schedule;
-  must(await db().from("events").update({ starts_at: startsAt, ends_at: endsAt, starts_on: startsOn }).eq("id", isObject(input) ? text(input, "id") : ""));
+  must(await db().from("events").update({ starts_at: startsAt, ends_at: endsAt, starts_on: startsOn }).eq("id", id));
   return { ok: true };
 }
 
 export async function deleteEvent(input: unknown): Promise<AdminResult> {
-  must(await db().from("events").delete().eq("id", isObject(input) ? text(input, "id") : ""));
+  const id = isObject(input) ? text(input, "id") : "";
+  if (!isUuid(id)) return failed(400, "Invalid event ID.");
+  must(await db().from("events").delete().eq("id", id));
   return { ok: true };
 }

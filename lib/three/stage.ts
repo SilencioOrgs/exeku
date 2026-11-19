@@ -57,7 +57,8 @@ export function createStage(mount: HTMLElement, { orbit = false, autoRotate = fa
   const scene = new THREE.Scene();
   const pmrem = new THREE.PMREMGenerator(renderer);
   const room = new RoomEnvironment();
-  scene.environment = pmrem.fromScene(room, 0.04).texture;
+  const envTarget = pmrem.fromScene(room, 0.04);
+  scene.environment = envTarget.texture;
   scene.environmentIntensity = 0.55;
   room.dispose();
 
@@ -104,6 +105,8 @@ export function createStage(mount: HTMLElement, { orbit = false, autoRotate = fa
   const lastKey = new THREE.Vector3(Infinity, 0, 0);
   let frame = 0;
   let visible = true;
+  let running = false;
+  let disposed = false;
   // Adaptive quality: average the time between rendered frames, then trade resolution for speed.
   let sampleTime = 0, samples = 0, halfRate = false, skipThis = false, lastRender = 0;
   const adapt = (now: number) => {
@@ -119,20 +122,28 @@ export function createStage(mount: HTMLElement, { orbit = false, autoRotate = fa
     else return;
     renderer.setPixelRatio(pixelRatio);
   };
-  const loop = (timestamp?: number) => {
-    frame = requestAnimationFrame(loop);
-    timer.update(timestamp);
-    if (!visible) { lastRender = 0; return; }
-    if (halfRate && (skipThis = !skipThis)) return;
-    // Cap large gaps (tab switches) but keep real time on slow devices so camera moves still finish on time.
-    const delta = Math.min(timer.getDelta(), 0.25);
-    for (const callback of callbacks) callback(timer.getElapsed(), delta);
-    controls?.update();
-    if (key.position.distanceToSquared(lastKey) > 1) { lastKey.copy(key.position); renderer.shadowMap.needsUpdate = true; }
-    renderer.render(scene, camera);
-    adapt(performance.now());
+  const schedule = () => {
+    if (!running && visible && !disposed) {
+      running = true;
+      frame = requestAnimationFrame(loop);
+    }
   };
-  loop();
+  const loop = (timestamp?: number) => {
+    running = false;
+    if (disposed || !visible) { lastRender = 0; return; }
+    timer.update(timestamp);
+    if (!halfRate || !(skipThis = !skipThis)) {
+      // Cap large gaps (tab switches) but keep real time on slow devices so camera moves still finish on time.
+      const delta = Math.min(timer.getDelta(), 0.25);
+      for (const callback of callbacks) callback(timer.getElapsed(), delta);
+      controls?.update();
+      if (key.position.distanceToSquared(lastKey) > 1) { lastKey.copy(key.position); renderer.shadowMap.needsUpdate = true; }
+      renderer.render(scene, camera);
+      adapt(performance.now());
+    }
+    schedule();
+  };
+  schedule();
 
   const resize = new ResizeObserver(() => {
     const { clientWidth: w, clientHeight: h } = mount;
@@ -142,7 +153,16 @@ export function createStage(mount: HTMLElement, { orbit = false, autoRotate = fa
     renderer.setSize(w, h);
   });
   resize.observe(mount);
-  const io = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; });
+  const io = new IntersectionObserver(([entry]) => {
+    visible = entry.isIntersecting;
+    if (visible) {
+      lastRender = 0;
+      schedule();
+    } else {
+      cancelAnimationFrame(frame);
+      running = false;
+    }
+  });
   io.observe(mount);
 
   return {
@@ -154,13 +174,16 @@ export function createStage(mount: HTMLElement, { orbit = false, autoRotate = fa
     invalidateShadows() { renderer.shadowMap.needsUpdate = true; },
     onFrame(callback) { callbacks.push(callback); },
     dispose() {
+      disposed = true;
       cancelAnimationFrame(frame);
+      running = false;
       timer.dispose();
       resize.disconnect();
       io.disconnect();
       controls?.dispose();
       disposeTree(scene);
-      scene.environment?.dispose();
+      scene.environment = null;
+      envTarget.dispose();
       pmrem.dispose();
       renderer.dispose();
       renderer.domElement.remove();
@@ -206,6 +229,16 @@ export function mergeStatic(root: THREE.Object3D, shadowRadius = 12) {
   };
   visit(root);
   for (const mesh of merged) mesh.removeFromParent();
+  // Only dispose source geometries that are no longer referenced by any remaining mesh under root.
+  const keptGeometries = new Set<THREE.BufferGeometry>();
+  root.traverse((obj) => { const g = (obj as THREE.Mesh).geometry; if (g) keptGeometries.add(g); });
+  const disposedGeometries = new Set<THREE.BufferGeometry>();
+  for (const mesh of merged) {
+    if (!keptGeometries.has(mesh.geometry) && !disposedGeometries.has(mesh.geometry)) {
+      disposedGeometries.add(mesh.geometry);
+      mesh.geometry.dispose();
+    }
+  }
   for (const { material, cast, geometries } of buckets.values()) {
     const geometry = mergeGeometries(geometries);
     geometries.forEach((g) => g.dispose());

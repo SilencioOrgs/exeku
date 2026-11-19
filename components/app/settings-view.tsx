@@ -1,7 +1,6 @@
 "use client";
 
 import { AppearanceStudio } from "./appearance-studio";
-import { StyleText } from "@/components/appearance/style-text";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useProfile } from "@/hooks/use-profile";
@@ -68,52 +67,47 @@ export function SettingsView() {
       <PixelCard variant="default" className="p-5 sm:p-6 border border-[var(--color-border)] space-y-4">
         <div className="flex flex-wrap gap-3 items-center justify-between border-b border-[var(--color-border)] pb-3">
           <div>
-            <h2 className="font-semibold">
-              <StyleText arcade="Local storage" clarity="Device storage" command="Local storage" />
-            </h2>
+            <h2 className="font-semibold">Device storage</h2>
             <p className="text-xs text-[var(--color-text-dim)]">
-              Real inspection of client storage schemas and data isolation.
+              Browser-side IndexedDB stores for workspace drafts and local preferences.
             </p>
           </div>
-          <span className="flex items-center gap-1.5 text-xs text-[var(--color-primary-text)]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-primary-text)] animate-pulse" />
-            100% Local
-          </span>
+          <span className="text-xs text-[var(--color-text-muted)]">IndexedDB</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
           <div className="p-3 bg-[var(--color-canvas)] border border-[var(--color-border)] space-y-1">
-            <span className="text-[var(--color-text-dim)] text-xs">Database Target</span>
-            <div className="text-foreground font-bold">exeku_local_v1</div>
+            <span className="text-[var(--color-text-dim)] text-xs">Database target</span>
+            <div className="font-code text-foreground font-bold">exeku_local_v1</div>
             <span className="text-[var(--color-primary-text)] text-xs">Version 2 (Active)</span>
           </div>
 
           <div className="p-3 bg-[var(--color-canvas)] border border-[var(--color-border)] space-y-1">
-            <span className="text-[var(--color-text-dim)] text-xs">Profile Store</span>
-            <div className="text-foreground font-bold">profiles</div>
+            <span className="text-[var(--color-text-dim)] text-xs">Profile store</span>
+            <div className="font-code text-foreground font-bold">profiles</div>
             <span className="text-[var(--color-text-muted)] text-xs">1 record mounted</span>
           </div>
 
           <div className="p-3 bg-[var(--color-canvas)] border border-[var(--color-border)] space-y-1">
-            <span className="text-[var(--color-text-dim)] text-xs">Drafts Store</span>
-            <div className="text-foreground font-bold">drafts</div>
+            <span className="text-[var(--color-text-dim)] text-xs">Drafts store</span>
+            <div className="font-code text-foreground font-bold">drafts</div>
             <span className="text-[var(--color-accent)] text-xs">
               {draftsCount} language buffer{draftsCount === 1 ? "" : "s"}
             </span>
           </div>
 
           <div className="p-3 bg-[var(--color-canvas)] border border-[var(--color-border)] space-y-1">
-            <span className="text-[var(--color-text-dim)] text-xs">Telemetry Transmitted</span>
-            <div className="text-[var(--color-primary-text)] font-bold">0 Bytes</div>
-            <span className="text-[var(--color-text-dim)] text-xs">Stored on this device</span>
+            <span className="text-[var(--color-text-dim)] text-xs">Account sync</span>
+            <div className="text-foreground font-bold">Google &amp; server</div>
+            <span className="text-[var(--color-text-dim)] text-xs">Drafts stay on this device</span>
           </div>
         </div>
 
-        {/* Privacy Assurance Notice */}
+        {/* Privacy Notice */}
         <div className="p-3.5 bg-[var(--color-canvas)]/60 border border-[var(--color-border)] text-xs text-[var(--color-text-muted)] leading-relaxed">
-          <strong>Privacy Assurance:</strong> Exeku is an online-first platform in local developer preview. Your profile, appearance settings,
-          and code drafts are stored locally in your browser. Running and submitting code sends the source
-          to the configured isolated sandbox through the application server.
+          <strong>Storage notes:</strong> Your Google sign-in, profile details, submissions, and tournament
+          standings are synced with the Exeku server. Unsubmitted editor drafts and appearance preferences
+          are saved locally in this browser&apos;s IndexedDB.
         </div>
       </PixelCard>
 
@@ -124,26 +118,21 @@ export function SettingsView() {
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--color-pink)]/40 pb-3">
           <div>
-            <h2 className="font-semibold text-[var(--color-pink)]">
-              <StyleText arcade="Danger zone" clarity="Reset local data" />
-            </h2>
+            <h2 className="font-semibold text-[var(--color-pink)]">Reset local data</h2>
             <p className="text-xs text-[var(--color-text-muted)]">
-              Permanently wipe profile records and workspace buffers from this computer.
+              Permanently wipe local profile records and workspace drafts from this browser.
             </p>
           </div>
-          <PixelBadge variant="pink" bracketed>
-            Destructive
-          </PixelBadge>
+          <PixelBadge variant="pink">Destructive</PixelBadge>
         </div>
 
         <div className="flex flex-wrap flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <p className="text-xs text-[var(--color-text-muted)] max-w-xl leading-relaxed">
-            Resetting your profile will permanently erase your local identity, experience settings,
-            and all saved code scratchpads from IndexedDB. You will be redirected back to the
-            onboarding terminal.
+            Resetting your local profile permanently erases your cached profile settings
+            and all saved code scratchpads from IndexedDB on this device, then returns you to setup.
           </p>
-          <Button type="button" onClick={() => setIsResetOpen(true)} className="w-full sm:w-auto shrink-0">
-            Reset local profile <span className="arcade-copy"><X size={14} aria-hidden="true" /></span>
+          <Button type="button" variant="destructive" onClick={() => setIsResetOpen(true)} className="w-full sm:w-auto shrink-0">
+            Reset local profile <X size={14} aria-hidden="true" />
           </Button>
         </div>
       </PixelCard>

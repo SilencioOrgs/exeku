@@ -9,5 +9,5 @@ export default clerkMiddleware(async (auth, req) => {
   if (access === "reject") return NextResponse.json({ error: "Sign in to continue." }, { status: 401 });
 });
 
-// The landing page is left out on purpose, so it never touches Clerk.
-export const config = { matcher: ["/app/:path*", "/setup/:path*", "/api/:path*", "/__clerk/:path*"] };
+// The landing page and /api/health are left out on purpose, so they never touch Clerk.
+export const config = { matcher: ["/app/:path*", "/setup/:path*", "/api/((?!health$).*)", "/__clerk/:path*"] };

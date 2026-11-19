@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { readJson } from "@/lib/accounts/read-json";
 import { checkNewSchool } from "@/lib/accounts/rules";
 import { schoolDirectory } from "@/lib/accounts/school-directory";
@@ -6,6 +7,8 @@ import { getViewer } from "@/lib/auth/viewer";
 import { db, must } from "@/lib/db/client";
 
 export async function GET(request: Request) {
+  const { userId } = await auth();
+  if (!userId) return NextResponse.json({ error: "Sign in to continue." }, { status: 401 });
   const location = new URL(request.url).searchParams.get("location");
   if (location === null) return NextResponse.json({ locations: await schoolDirectory.listLocations() });
   return NextResponse.json({ schools: await schoolDirectory.listSchools(location) });

@@ -96,8 +96,8 @@ export class ExecutionQueue {
 
     this.activeCount++;
 
-    nextTask
-      .fn()
+    Promise.resolve()
+      .then(() => nextTask.fn())
       .then((res) => {
         nextTask.resolve(res);
       })

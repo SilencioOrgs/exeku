@@ -3,15 +3,17 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import ts from "typescript";
-import { isObject, text } from "../lib/accounts/rules.ts";
+import { isObject, isUuid, text } from "../lib/accounts/rules.ts";
 import * as rules from "../lib/admin/rules.ts";
 import { fakeDb, must } from "./fixtures/fake-db.mjs";
 
 const { checkSchedule, checkSet } = rules;
+const SET_ID = "11111111-1111-4111-8111-111111111111";
+const EVENT_ID = "22222222-2222-4222-8222-222222222222";
 
 function harness() {
   const tables = {
-    problem_sets: [{ id: "s1", name: "Warm-up", problem_ids: ["a", "b", "deleted"] }],
+    problem_sets: [{ id: SET_ID, name: "Warm-up", problem_ids: ["a", "b", "deleted"] }],
     orgs: [{ id: "o1", name: "Host" }, { id: "o2", name: "Second" }],
     schools: [{ short_name: "LSPU", campuses: [{ id: "sc", name: "Santa Cruz" }, { id: "sp", name: "San Pablo" }] }],
     events: [],
@@ -20,8 +22,11 @@ function harness() {
   const output = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText;
   const loaded = { exports: {} };
   const modules = {
-    "server-only": {}, "@/lib/accounts/rules": { isObject, text }, "@/lib/db/client": { db: fakeDb(tables), must }, "./rules": rules,
-    "@/lib/problems/store": { listProblemSummaries: async () => [{ id: "a", title: "A", difficulty: "beginner" }, { id: "b", title: "B", difficulty: "advanced" }] },
+    "server-only": {}, "@/lib/accounts/rules": { isObject, isUuid, text }, "@/lib/db/client": { db: fakeDb(tables), must }, "./rules": rules,
+    "@/lib/problems/store": {
+      listProblemIds: async () => ["a", "b"],
+      listProblemSummaries: async () => [{ id: "a", title: "A", difficulty: "beginner" }, { id: "b", title: "B", difficulty: "advanced" }],
+    },
   };
   vm.runInNewContext(output, { module: loaded, exports: loaded.exports, require: (name) => { if (name in modules) return modules[name]; throw Error(`unexpected import: ${name}`); } });
   return { tables, repo: loaded.exports };
@@ -47,13 +52,13 @@ test("a set needs a name and problems that exist", () => {
   assert.equal(checkSet({ name: "", problemIds: ["a"] }, known).ok, false);
 });
 
-test("scheduling a set creates a tournament with its problems and chosen time", async () => {
+test("scheduling a set creates a tournament with its live problems and chosen time", async () => {
   const { tables, repo } = harness();
   const startsAt = later(60);
-  const result = await repo.createEvent({ setId: "s1", orgId: "o1", title: "Friday round", access: "campus-only", startsAt, minutes: 45, teamSize: 2 });
+  const result = await repo.createEvent({ setId: SET_ID, orgId: "o1", title: "Friday round", access: "campus-only", startsAt, minutes: 45, teamSize: 2 });
   assert.equal(result.ok, true);
   const [event] = tables.events;
-  assert.equal(JSON.stringify(event.problem_ids), JSON.stringify(["a", "b", "deleted"]));
+  assert.equal(JSON.stringify(event.problem_ids), JSON.stringify(["a", "b"]));
   assert.equal(event.starts_at, startsAt);
   assert.equal(Date.parse(event.ends_at) - Date.parse(event.starts_at), 45 * 60000);
   assert.equal(event.team_size, 2);
@@ -63,15 +68,15 @@ test("a missing set or host is refused, and nothing is created", async () => {
   const { tables, repo } = harness();
   const base = { title: "Round", access: "open", startsAt: later(60), minutes: 30, teamSize: 3 };
   assert.equal((await repo.createEvent({ ...base, setId: "nope", orgId: "o1" })).status, 404);
-  assert.equal((await repo.createEvent({ ...base, setId: "s1", orgId: "nope" })).status, 422);
+  assert.equal((await repo.createEvent({ ...base, setId: SET_ID, orgId: "nope" })).status, 422);
   assert.equal(tables.events.length, 0);
 });
 
 test("rescheduling changes only the time", async () => {
   const { tables, repo } = harness();
-  tables.events.push({ id: "e", title: "Keep", starts_at: later(1), ends_at: later(31) });
+  tables.events.push({ id: EVENT_ID, title: "Keep", starts_at: later(1), ends_at: later(31) });
   const startsAt = later(120);
-  assert.equal((await repo.rescheduleEvent({ id: "e", startsAt, minutes: 60 })).ok, true);
+  assert.equal((await repo.rescheduleEvent({ id: EVENT_ID, startsAt, minutes: 60 })).ok, true);
   assert.equal(tables.events[0].title, "Keep");
   assert.equal(tables.events[0].starts_at, startsAt);
   assert.equal(Date.parse(tables.events[0].ends_at) - Date.parse(startsAt), 60 * 60000);

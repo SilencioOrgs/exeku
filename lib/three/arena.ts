@@ -355,8 +355,8 @@ export function buildArena(): Arena {
     top.texture.needsUpdate = true;
   };
   const redraw = () => {
-    drawPlayer(left, "YOU", "Python 3", score.you, ORANGE);
-    drawPlayer(right, "RIVAL", "C++", score.rival, "#ffd27a");
+    drawPlayer(left, "You", "Python 3", score.you, ORANGE);
+    drawPlayer(right, "Rival", "C++", score.rival, "#ffd27a");
     drawTop();
   };
   redraw();

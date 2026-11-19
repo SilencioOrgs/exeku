@@ -23,6 +23,8 @@ export function useWorkspaceFiles(profile: LocalProfile | null, problem: Visible
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("SAVED");
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pendingSaveRef = useRef<(() => Promise<void>) | null>(null);
+  const saveVersionRef = useRef(0);
+  const dirtyRef = useRef(false);
 
   const code = files.find((file) => file.name === activeFile)?.content ?? "";
   const mainCode = files.find((file) => file.name === mainFilename)?.content ?? "";
@@ -34,8 +36,9 @@ export function useWorkspaceFiles(profile: LocalProfile | null, problem: Visible
   useEffect(() => {
     if (!profileId) return;
     let current = true;
+    dirtyRef.current = false;
     const loaded = (draftFiles: WorkspaceFile[]) => {
-      if (!current) return;
+      if (!current || dirtyRef.current) return;
       const primary = draftFiles.find((file) => file.name === mainFilename);
       updateFiles([{ name: mainFilename, content: primary?.content ?? starter }, ...draftFiles.filter((file) => file.name !== mainFilename)]);
       setActiveFile(mainFilename);
@@ -44,7 +47,11 @@ export function useWorkspaceFiles(profile: LocalProfile | null, problem: Visible
     draftRepository.getDraft(profileId, activeLang, problemId)
       .then((draft) => loaded(draft?.files?.length ? draft.files : [{ name: mainFilename, content: draft?.code?.trim() ? draft.code : starter }]))
       .catch(() => loaded([{ name: mainFilename, content: starter }]));
-    return () => { current = false; };
+    return () => {
+      current = false;
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      void pendingSaveRef.current?.();
+    };
   }, [profileId, activeLang, mainFilename, starter, problemId, updateFiles]);
 
   const cancelPendingSave = useCallback(() => {
@@ -74,19 +81,21 @@ export function useWorkspaceFiles(profile: LocalProfile | null, problem: Visible
   }, [profileId, activeLang, problemId]);
 
   const persistFiles = useCallback((next: WorkspaceFile[]) => {
+    dirtyRef.current = true;
     updateFiles(next);
     setSaveStatus("MODIFIED");
     cancelPendingSave();
+    const version = ++saveVersionRef.current;
     const save = async () => {
       pendingSaveRef.current = null;
       if (!profileId) return;
-      setSaveStatus("SAVING...");
+      if (saveVersionRef.current === version) setSaveStatus("SAVING...");
       try {
         await saveNow(next);
         recordCodingDay(profileId);
-        setSaveStatus("SAVED");
+        if (saveVersionRef.current === version) setSaveStatus("SAVED");
       } catch {
-        setSaveStatus("MODIFIED");
+        if (saveVersionRef.current === version) setSaveStatus("MODIFIED");
       }
     };
     pendingSaveRef.current = save;
@@ -107,13 +116,15 @@ export function useWorkspaceFiles(profile: LocalProfile | null, problem: Visible
   /** Reset the active file to starter code (or empty for extra files), or every file. */
   const reset = async (all: boolean) => {
     cancelPendingSave();
+    dirtyRef.current = true;
+    const version = ++saveVersionRef.current;
     const next = all
       ? [{ name: mainFilename, content: starter }]
       : filesRef.current.map((file) => file.name === activeFile ? { ...file, content: file.name === mainFilename ? starter : "" } : file);
     await saveNow(next);
     updateFiles(next);
     if (all) setActiveFile(mainFilename);
-    setSaveStatus("SAVED");
+    if (saveVersionRef.current === version) setSaveStatus("SAVED");
   };
 
   return {

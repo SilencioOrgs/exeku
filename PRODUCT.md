@@ -4,7 +4,7 @@
 
 ## Platform
 
-web (Online-First Platform — Currently in Local Developer Preview)
+web
 
 ## Users
 
