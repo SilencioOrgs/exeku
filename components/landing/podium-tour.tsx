@@ -123,7 +123,7 @@ export function PodiumTour() {
           stage.key.position.copy(stage.key.target.position).add(keyOffset);
           // Only the zone in view (and the next one during a fly-over) is drawn and animated.
           for (const zone of zones) {
-            const show = Math.abs(lookNow.x - zone.x) < 650;
+            const show = Math.abs(lookNow.x - zone.x) < 800;
             if (zone.group.visible !== show) { zone.group.visible = show; stage.invalidateShadows(); }
           }
           const t = effectiveReducedMotion ? 0 : time;
@@ -165,7 +165,7 @@ export function PodiumTour() {
               {STEPS.map((s, i) => (
                 <article
                   key={s.kicker}
-                  inert={i !== step}
+                  aria-hidden={i !== step || undefined}
                   className={cn(
                     "col-start-1 row-start-1 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 transition-all duration-500 md:border-0 md:bg-transparent md:p-0",
                     i === step ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-4 opacity-0",
@@ -177,7 +177,11 @@ export function PodiumTour() {
                   <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl md:text-5xl">{s.title}</h2>
                   <p className="mt-3 text-base leading-relaxed text-[var(--color-text-muted)] md:text-lg">{s.body}</p>
                   {i === STEPS.length - 1 && (
-                    <Link href={profile ? "/app/challenges" : "/setup"} className={buttonVariants({ size: "lg", className: "mt-6" })}>
+                    <Link
+                      href={profile ? "/app/challenges" : "/setup"}
+                      tabIndex={i === step ? undefined : -1}
+                      className={buttonVariants({ size: "lg", className: "mt-6" })}
+                    >
                       Start practicing<ArrowRight size={16} aria-hidden="true" />
                     </Link>
                   )}

@@ -636,3 +636,20 @@ test("listUsers paginates past 500 accounts and joins leaderboard scores across 
   assert.equal(last?.points, 450);
 });
 
+test("3D scroll tour keeps render loop alive across sticky scroll containers and updates score bidirectionally", () => {
+  const stageSource = readFileSync(new URL("../lib/three/stage.ts", import.meta.url), "utf8");
+  assert.match(stageSource, /frame = requestAnimationFrame\(loop\)/);
+  assert.match(stageSource, /mount\.getBoundingClientRect\(\)/);
+  assert.match(stageSource, /entries\[entries\.length - 1\]/);
+  assert.doesNotMatch(stageSource, /if \(!running && visible && !disposed\)/);
+
+  const arenaSource = readFileSync(new URL("../lib/three/arena.ts", import.meta.url), "utf8");
+  assert.match(arenaSource, /else if \(!win && wasWin && score\.you === 10\)/);
+
+  const tourSource = readFileSync(new URL("../components/landing/podium-tour.tsx", import.meta.url), "utf8");
+  assert.match(tourSource, /aria-hidden=\{i !== step \|\| undefined\}/);
+  assert.match(tourSource, /tabIndex=\{i === step \? undefined : -1\}/);
+  assert.doesNotMatch(tourSource, /inert=\{i !== step\}/);
+});
+
+

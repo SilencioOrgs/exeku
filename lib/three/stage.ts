@@ -104,9 +104,13 @@ export function createStage(mount: HTMLElement, { orbit = false, autoRotate = fa
   const timer = new THREE.Timer();
   const lastKey = new THREE.Vector3(Infinity, 0, 0);
   let frame = 0;
-  let visible = true;
-  let running = false;
+  let ioVisible = true;
   let disposed = false;
+  const isOnScreen = () => {
+    if (ioVisible) return true;
+    const rect = mount.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.top < window.innerHeight;
+  };
   // Adaptive quality: average the time between rendered frames, then trade resolution for speed.
   let sampleTime = 0, samples = 0, halfRate = false, skipThis = false, lastRender = 0;
   const adapt = (now: number) => {
@@ -122,28 +126,21 @@ export function createStage(mount: HTMLElement, { orbit = false, autoRotate = fa
     else return;
     renderer.setPixelRatio(pixelRatio);
   };
-  const schedule = () => {
-    if (!running && visible && !disposed) {
-      running = true;
-      frame = requestAnimationFrame(loop);
-    }
-  };
   const loop = (timestamp?: number) => {
-    running = false;
-    if (disposed || !visible) { lastRender = 0; return; }
+    if (disposed) return;
+    frame = requestAnimationFrame(loop);
+    if (!isOnScreen()) { lastRender = 0; return; }
+    if (halfRate && (skipThis = !skipThis)) return;
     timer.update(timestamp);
-    if (!halfRate || !(skipThis = !skipThis)) {
-      // Cap large gaps (tab switches) but keep real time on slow devices so camera moves still finish on time.
-      const delta = Math.min(timer.getDelta(), 0.25);
-      for (const callback of callbacks) callback(timer.getElapsed(), delta);
-      controls?.update();
-      if (key.position.distanceToSquared(lastKey) > 1) { lastKey.copy(key.position); renderer.shadowMap.needsUpdate = true; }
-      renderer.render(scene, camera);
-      adapt(performance.now());
-    }
-    schedule();
+    adapt(performance.now());
+    // Cap large gaps (tab switches) but keep real time on slow devices so camera moves still finish on time.
+    const delta = Math.min(Math.max(0, timer.getDelta()), 0.25);
+    for (const callback of callbacks) callback(timer.getElapsed(), delta);
+    controls?.update();
+    if (key.position.distanceToSquared(lastKey) > 1) { lastKey.copy(key.position); renderer.shadowMap.needsUpdate = true; }
+    renderer.render(scene, camera);
   };
-  schedule();
+  loop();
 
   const resize = new ResizeObserver(() => {
     const { clientWidth: w, clientHeight: h } = mount;
@@ -153,15 +150,9 @@ export function createStage(mount: HTMLElement, { orbit = false, autoRotate = fa
     renderer.setSize(w, h);
   });
   resize.observe(mount);
-  const io = new IntersectionObserver(([entry]) => {
-    visible = entry.isIntersecting;
-    if (visible) {
-      lastRender = 0;
-      schedule();
-    } else {
-      cancelAnimationFrame(frame);
-      running = false;
-    }
+  const io = new IntersectionObserver((entries) => {
+    const entry = entries[entries.length - 1];
+    if (entry) ioVisible = entry.isIntersecting;
   });
   io.observe(mount);
 
@@ -176,7 +167,6 @@ export function createStage(mount: HTMLElement, { orbit = false, autoRotate = fa
     dispose() {
       disposed = true;
       cancelAnimationFrame(frame);
-      running = false;
       timer.dispose();
       resize.disconnect();
       io.disconnect();

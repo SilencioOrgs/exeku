@@ -361,11 +361,14 @@ export function buildArena(): Arena {
   };
   redraw();
 
+  let wasWin = false;
   return {
     group,
     update(time, win = false) {
       const second = Math.floor(time);
       if (win && score.you !== 10) { score.you = 10; redraw(); }
+      else if (!win && wasWin && score.you === 10) { score.you = 7; redraw(); }
+      wasWin = win;
       if (second !== score.last) {
         score.last = second;
         score.seconds = score.seconds > 0 ? score.seconds - 1 : 15 * 60;
