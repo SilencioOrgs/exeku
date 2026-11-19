@@ -17,8 +17,10 @@ export function loadRouteExports(path, userId = "user_route") {
   const loaded = { exports: {} };
   const modules = {
     "next/server": { NextResponse },
+    "next/navigation": { unstable_rethrow: () => {} },
     "@clerk/nextjs/server": { auth: async () => ({ userId }) },
     "@/lib/accounts/read-json": readJson,
+    "@/lib/admin/guard": { isAdmin: async () => false },
     "@/lib/execution/validation": validation,
     "@/lib/execution/queue": queue,
     "@/lib/judge/judging-service": judgingService,

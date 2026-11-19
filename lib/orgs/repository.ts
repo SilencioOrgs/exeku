@@ -1,7 +1,7 @@
 import "server-only";
-import { isObject, text } from "@/lib/accounts/rules";
+import { isObject, isUuid, text } from "@/lib/accounts/rules";
 import type { Viewer } from "@/lib/auth/viewer";
-import { EVENT_COLUMNS, toEvents, viewerScope, type EventRow } from "@/lib/competition/repository";
+import { EVENT_COLUMNS, maskTournamentProblems, toEvents, viewerScope, type EventRow } from "@/lib/competition/repository";
 import { todayInManila } from "@/lib/dates";
 import { db, must } from "@/lib/db/client";
 import type { FieldErrors } from "@/types/account";
@@ -45,6 +45,7 @@ export async function getOrgDetail(orgId: string, viewer: Viewer): Promise<OrgDe
   const events = must(await db().from("events").select(EVENT_COLUMNS).eq("org_id", orgId).order("starts_on", { ascending: false })) as unknown as EventRow[];
   const viewerRole = members.find((m) => m.user_id === viewer.id)?.role ?? null;
   const scope = await viewerScope(viewer);
+  const visibleEvents = (await toEvents(events)).filter((e) => canViewEvent(e, scope));
   return {
     org: toSummary(org),
     viewerRole,
@@ -53,7 +54,7 @@ export async function getOrgDetail(orgId: string, viewer: Viewer): Promise<OrgDe
     applications: can(viewerRole, "reviewApplications")
       ? applications.filter((a) => a.status === "pending").map((a) => ({ id: a.id, name: a.profiles.display_name, program: a.program ?? undefined }))
       : [],
-    events: (await toEvents(events)).filter((e) => canViewEvent(e, scope)),
+    events: await maskTournamentProblems(visibleEvents, viewer.id),
   };
 }
 
@@ -76,6 +77,7 @@ export async function performOrgAction(orgId: string, viewer: Viewer, input: unk
     case "decide": {
       if (denied("reviewApplications")) return failed(403, "Only officers can review applications.");
       const applicationId = text(input, "applicationId");
+      if (!isUuid(applicationId)) return failed(404, "That application is no longer pending.");
       const application = must(await db().from("org_applications").select("id,user_id").eq("org_id", orgId).eq("id", applicationId).eq("status", "pending").maybeSingle()) as { id: string; user_id: string } | null;
       if (!application) return failed(404, "That application is no longer pending.");
       if (input.accept === true) {
@@ -102,16 +104,21 @@ export async function performOrgAction(orgId: string, viewer: Viewer, input: unk
       if (!checked.ok) return { ok: false, status: 422, fieldErrors: checked.fieldErrors };
       const { title, summary, startsOn, access, banner, featured } = checked;
       if (featured) await clearFeatured(orgId);
-      must(await db().from("events").insert({ org_id: orgId, title, summary, starts_on: startsOn, access, banner, featured }));
+      const { error } = await db().from("events").insert({ org_id: orgId, title, summary, starts_on: startsOn, access, banner, featured });
+      if (error?.code === UNIQUE_VIOLATION) return failed(409, "Another officer just changed the featured banner. Please try again.");
+      if (error) throw new Error(`Database error: ${error.message}`);
       return { ok: true };
     }
     case "feature": {
       if (denied("publish")) return failed(403, "Only officers can choose the banner.");
       const eventId = text(input, "eventId");
+      if (!isUuid(eventId)) return failed(404, "That event wasn't found.");
       const event = must(await db().from("events").select("id").eq("org_id", orgId).eq("id", eventId).maybeSingle());
       if (!event) return failed(404, "That event wasn't found.");
       await clearFeatured(orgId);
-      must(await db().from("events").update({ featured: true }).eq("org_id", orgId).eq("id", eventId));
+      const { error } = await db().from("events").update({ featured: true }).eq("org_id", orgId).eq("id", eventId);
+      if (error?.code === UNIQUE_VIOLATION) return failed(409, "Another officer just changed the featured banner. Please try again.");
+      if (error) throw new Error(`Database error: ${error.message}`);
       return { ok: true };
     }
     default:

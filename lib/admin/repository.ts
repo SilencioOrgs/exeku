@@ -1,6 +1,7 @@
 import "server-only";
 import type { Viewer } from "@/lib/auth/viewer";
 import { isObject, text } from "@/lib/accounts/rules";
+import { todayInManila } from "@/lib/dates";
 import { db, must } from "@/lib/db/client";
 import { getProblemById } from "@/lib/problems/catalog";
 import { checkNewProblem } from "@/lib/problems/rules";
@@ -24,7 +25,10 @@ export async function listUsers(): Promise<AdminUser[]> {
   const rows = must(await db().from("profiles").select("user_id,display_name,avatar_id,border_id,school_email,school,is_admin,created_at").order("created_at", { ascending: false }).limit(MAX_USERS)) as {
     user_id: string; display_name: string; avatar_id: string; border_id: string; school_email: string | null; school: { campus?: string; program?: string } | null; is_admin: boolean; created_at: string;
   }[];
-  const scores = must(await db().from("leaderboard").select("user_id,solved,points")) as { user_id: string; solved: number; points: number }[];
+  const userIds = rows.map((r) => r.user_id);
+  const scores = userIds.length
+    ? (must(await db().from("leaderboard").select("user_id,solved,points").in("user_id", userIds)) as { user_id: string; solved: number; points: number }[])
+    : [];
   const scoreOf = new Map(scores.map((s) => [s.user_id, s]));
   return rows.map((r) => ({
     id: r.user_id, name: r.display_name, avatarId: r.avatar_id, borderId: r.border_id, schoolEmail: r.school_email ?? undefined,
@@ -80,12 +84,16 @@ export async function resetDatabase(input: unknown, env: { NODE_ENV?: string } =
 
   for (const [table, column] of ACTIVITY_TABLES) must(await db().from(table).delete().not(column, "is", null));
 
-  const tournaments = must(await db().from("events").select("id,starts_at,ends_at").not("starts_at", "is", null)) as { id: string; starts_at: string; ends_at: string }[];
+  const tournaments = must(await db().from("events").select("id,starts_at,ends_at").not("starts_at", "is", null)) as { id: string; starts_at: string; ends_at: string | null }[];
   for (const t of tournaments) {
+    if (!t.ends_at) continue;
+    const durationMs = Date.parse(t.ends_at) - Date.parse(t.starts_at);
+    if (!Number.isFinite(durationMs) || durationMs <= 0) continue;
     const startsAt = Date.now() + RESTART_DELAY_MS;
     must(await db().from("events").update({
       starts_at: new Date(startsAt).toISOString(),
-      ends_at: new Date(startsAt + Date.parse(t.ends_at) - Date.parse(t.starts_at)).toISOString(),
+      ends_at: new Date(startsAt + durationMs).toISOString(),
+      starts_on: todayInManila(new Date(startsAt)),
     }).eq("id", t.id));
   }
 

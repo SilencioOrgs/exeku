@@ -61,7 +61,7 @@ test("hidden tests of a created problem reach the judge but never the browser", 
 
 function admin(tables) {
   return load("lib/admin/repository.ts", {
-    "server-only": {}, "@/lib/db/client": { db: fakeDb(tables), must }, "@/lib/accounts/rules": { isObject, text }, "@/lib/problems/catalog": catalog, "@/lib/problems/rules": { checkNewProblem },
+    "server-only": {}, "@/lib/dates": { todayInManila: () => "2026-11-09" }, "@/lib/db/client": { db: fakeDb(tables), must }, "@/lib/accounts/rules": { isObject, text }, "@/lib/problems/catalog": catalog, "@/lib/problems/rules": { checkNewProblem },
   });
 }
 const seeded = () => ({

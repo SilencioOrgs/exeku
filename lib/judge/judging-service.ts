@@ -130,6 +130,20 @@ export class JudgingService {
       };
     }
 
+    if (problem.testCases.length === 0) {
+      return {
+        problemId,
+        language: submission.language,
+        overallVerdict: "INTERNAL_JUDGE_ERROR",
+        passedTests: 0,
+        totalTests: 0,
+        scorePercentage: 0,
+        maxDurationMs: 0,
+        testResults: [],
+        error: `Problem '${problemId}' has no test cases configured.`,
+      };
+    }
+
     const testResults: TestCaseVerdict[] = [];
     let passedTests = 0;
     let maxDurationMs = 0;
@@ -144,14 +158,31 @@ export class JudgingService {
       memoryLimitKb: problem.memoryLimitKb,
     };
     // Engines that support batches compile once and take one queue slot for the whole submission.
-    const batch = this.adapter.executeBatch && problem.testCases.length > 0
-      ? await this.queue.enqueue(() => this.adapter.executeBatch!(baseRequest, problem.testCases.map((testCase) => testCase.input)), client)
-      : null;
+    // Chunk to the judge worker's 64-input batch limit so larger test suites do not fail with HTTP 400.
+    const MAX_BATCH_INPUTS = 64;
+    let batch: ExecutionResult[] | null = null;
+    if (this.adapter.executeBatch) {
+      const inputs = problem.testCases.map((testCase) => testCase.input);
+      batch = await this.queue.enqueue(async () => {
+        const collected: ExecutionResult[] = [];
+        for (let offset = 0; offset < inputs.length; offset += MAX_BATCH_INPUTS) {
+          const chunk = inputs.slice(offset, offset + MAX_BATCH_INPUTS);
+          const results = await this.adapter.executeBatch!(baseRequest, chunk);
+          collected.push(...results);
+          const first = results[0];
+          if (first && (first.status === "COMPILATION_ERROR" || first.status === "SERVICE_UNAVAILABLE")) {
+            break;
+          }
+        }
+        return collected;
+      }, client);
+    }
 
     for (const [index, testCase] of problem.testCases.entries()) {
       const execResult = batch
         ? batch[index]
         : await this.queue.enqueue(() => this.adapter.execute({ ...baseRequest, stdin: testCase.input }), client);
+      if (!execResult) break;
 
       if (execResult.durationMs > maxDurationMs) {
         maxDurationMs = execResult.durationMs;

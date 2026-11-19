@@ -55,14 +55,18 @@ export function ResultsPane({
     <div className="results-pane flex h-full flex-col overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)]">
       <div role="tablist" aria-label="Output" className="workspace-output-header flex shrink-0 items-center gap-1 overflow-x-auto border-b border-[var(--color-border)] p-1">
         {TABS.map((tab) => (
-          <button
+          <Button
             key={tab.id}
             type="button"
+            variant="ghost"
+            size="sm"
             role="tab"
+            id={`results-tab-${tab.id}`}
+            aria-controls={`results-panel-${tab.id}`}
             aria-selected={activeTab === tab.id}
             onClick={() => onTabChange(tab.id)}
             className={cn(
-              "inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-colors",
+              "h-7 gap-1.5 rounded-md px-2.5 text-xs font-medium",
               activeTab === tab.id ? "bg-[var(--color-elevated)] text-[var(--color-text-main)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]",
             )}
           >
@@ -70,7 +74,7 @@ export function ResultsPane({
             {tab.label}
             {tab.id === "stdin" && customStdin.length > 0 && <span className="font-code text-[var(--color-text-muted)]">{customStdin.length}B</span>}
             {tab.id === "results" && judgingResult && <VerdictBadge status={judgingResult.overallVerdict} short className="py-0" />}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -80,7 +84,12 @@ export function ResultsPane({
         </p>
       )}
 
-      <div className="min-h-0 flex-1 overflow-y-auto bg-[var(--color-canvas)] p-3 text-sm">
+      <div
+        role="tabpanel"
+        id={`results-panel-${activeTab}`}
+        aria-labelledby={`results-tab-${activeTab}`}
+        className="min-h-0 flex-1 overflow-y-auto bg-[var(--color-canvas)] p-3 text-sm"
+      >
         {activeTab === "console" && (
           <div className="space-y-3">
             {!executionResult && !isRunning && (

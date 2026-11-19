@@ -12,7 +12,7 @@ export function Footer() {
   ];
 
   return (
-    <footer className="bg-[var(--color-canvas)] border-t border-[var(--color-border)] text-[var(--color-text-muted)] font-mono text-xs">
+    <footer className="bg-[var(--color-canvas)] border-t border-[var(--color-border)] text-[var(--color-text-muted)] text-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
           {/* Brand Info */}
@@ -21,7 +21,7 @@ export function Footer() {
               <BrandWordmark height={44} />
             </div>
 
-            <p className="text-sm font-sans text-[var(--color-text-muted)] max-w-md leading-relaxed">
+            <p className="text-sm text-[var(--color-text-muted)] max-w-md leading-relaxed">
               Competitive programming practice for students, right in the browser.
             </p>
 
@@ -29,15 +29,15 @@ export function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h4 className="text-[var(--color-text-main)] font-bold text-sm mb-3">
+            <h3 className="text-[var(--color-text-main)] font-semibold text-sm mb-3">
               Navigation
-            </h4>
-            <ul className="space-y-2">
+            </h3>
+            <ul className="space-y-1">
               {navLinks.map((link) => (
                 <li key={link.label}>
                   <a
                     href={link.href}
-                    className="hover:text-[var(--color-accent)] transition-colors flex items-center gap-1.5"
+                    className="hover:text-[var(--color-accent)] transition-colors inline-flex min-h-8 items-center gap-1.5"
                   >
                     <span className="text-[var(--color-primary-text)]"><CirclePlay size={14} aria-hidden="true" /></span>
                     {link.label}
@@ -49,28 +49,28 @@ export function Footer() {
 
           {/* Repository & System */}
           <div>
-            <h4 className="text-[var(--color-text-main)] font-bold text-sm mb-3">
+            <h3 className="text-[var(--color-text-main)] font-semibold text-sm mb-3">
               Repository
-            </h4>
-            <ul className="space-y-2 mb-4">
+            </h3>
+            <ul className="space-y-1 mb-3">
               <li>
                 <a
                   href="https://github.com/SilencioOrgs/exeku"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-[var(--color-accent)] transition-colors flex items-center gap-1.5"
+                  className="hover:text-[var(--color-accent)] transition-colors inline-flex min-h-8 items-center gap-1.5"
                 >
-                  <GitBranch size={14} className="text-[var(--color-accent)]" />
-                  SilencioOrgs/exeku
+                  <GitBranch size={14} aria-hidden="true" className="text-[var(--color-accent)]" />
+                  <span className="font-code">SilencioOrgs/exeku</span>
                 </a>
               </li>
             </ul>
 
             <a
               href="#hero"
-              className="inline-flex items-center gap-1 text-[var(--color-accent)] hover:underline"
+              className="inline-flex min-h-8 items-center gap-1 text-[var(--color-accent)] hover:underline"
             >
-              <ArrowUp size={14} className="text-[var(--color-accent)]" /> Back to top
+              <ArrowUp size={14} aria-hidden="true" className="text-[var(--color-accent)]" /> Back to top
             </a>
           </div>
         </div>

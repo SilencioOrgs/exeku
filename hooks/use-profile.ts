@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { LocalProfile, ProfileInput } from "@/types/profile";
+import { draftRepository } from "@/lib/storage/draft-repository";
 import { profileRepository, ProfileRepositoryError } from "@/lib/storage/profile-repository";
 
 const PROFILE_CHANGE_EVENT = "exeku:profile-changed";
@@ -34,14 +35,19 @@ export function useProfile(): UseProfileReturn {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const mountedRef = useRef(true);
+  const loadRequestRef = useRef(0);
 
   const loadProfile = useCallback(async () => {
+    const requestId = ++loadRequestRef.current;
     try {
       const active = await profileRepository.getActiveProfile();
+      if (!mountedRef.current || loadRequestRef.current !== requestId) return;
       setProfile(active);
       setSignedOut(readSignedOut());
       setError(null);
     } catch (err) {
+      if (!mountedRef.current || loadRequestRef.current !== requestId) return;
       const message =
         err instanceof ProfileRepositoryError || err instanceof Error
           ? err.message
@@ -49,53 +55,37 @@ export function useProfile(): UseProfileReturn {
       setError(message);
       setProfile(null);
     } finally {
-      setIsLoading(false);
+      if (mountedRef.current && loadRequestRef.current === requestId) {
+        setIsLoading(false);
+      }
     }
   }, []);
 
   useEffect(() => {
-    let ignore = false;
-
-    async function init() {
-      try {
-        const active = await profileRepository.getActiveProfile();
-        if (!ignore) {
-          setProfile(active);
-          setSignedOut(readSignedOut());
-          setError(null);
-        }
-      } catch (err) {
-        if (!ignore) {
-          const message =
-            err instanceof ProfileRepositoryError || err instanceof Error
-              ? err.message
-              : "Failed to load local profile";
-          setError(message);
-          setProfile(null);
-        }
-      } finally {
-        if (!ignore) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    init();
+    mountedRef.current = true;
+    queueMicrotask(() => {
+      if (mountedRef.current) void loadProfile();
+    });
 
     const handleProfileChange = () => {
-      loadProfile();
+      void loadProfile();
+    };
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === null || event.key === SIGNED_OUT_KEY) {
+        void loadProfile();
+      }
     };
 
     if (typeof window !== "undefined") {
       window.addEventListener(PROFILE_CHANGE_EVENT, handleProfileChange);
-      window.addEventListener("storage", handleProfileChange);
+      window.addEventListener("storage", handleStorage);
     }
 
     return () => {
-      ignore = true;
+      mountedRef.current = false;
       if (typeof window !== "undefined") {
         window.removeEventListener(PROFILE_CHANGE_EVENT, handleProfileChange);
-        window.removeEventListener("storage", handleProfileChange);
+        window.removeEventListener("storage", handleStorage);
       }
     };
   }, [loadProfile]);
@@ -157,6 +147,7 @@ export function useProfile(): UseProfileReturn {
       setIsSaving(true);
       setError(null);
       try {
+        await draftRepository.deleteProfileDrafts(id);
         await profileRepository.deleteProfile(id);
         setProfile(null);
         notifyChange();

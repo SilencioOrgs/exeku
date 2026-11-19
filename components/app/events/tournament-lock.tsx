@@ -97,15 +97,36 @@ export function TournamentLock() {
   const allowed = activeId !== undefined && (pathname === `/app/events/${activeId}` || pathname.startsWith("/app/workspace"));
   const locked = active !== null && (!fullscreen || !allowed);
 
-  // The page behind the lock must not take typing, including the code editor.
+  // The page behind the lock must not take typing or focus, including the code editor.
   useEffect(() => {
     if (!locked) return;
-    overlay.current?.querySelector<HTMLElement>("a,button")?.focus();
+    const focusables = () => Array.from(overlay.current?.querySelectorAll<HTMLElement>("a[href],button:not([disabled]),[tabindex]:not([tabindex='-1'])") ?? []);
+    focusables()[0]?.focus();
     const stopTyping = (event: KeyboardEvent) => {
-      if (overlay.current?.contains(event.target as Node)) return;
+      const container = overlay.current;
+      if (event.key === "Tab" && container) {
+        const items = focusables();
+        if (items.length > 0) {
+          const first = items[0];
+          const last = items[items.length - 1];
+          const activeEl = document.activeElement as HTMLElement | null;
+          if (event.shiftKey && (activeEl === first || !container.contains(activeEl))) {
+            event.preventDefault();
+            last.focus();
+            return;
+          }
+          if (!event.shiftKey && (activeEl === last || !container.contains(activeEl))) {
+            event.preventDefault();
+            first.focus();
+            return;
+          }
+          return;
+        }
+      }
+      if (container?.contains(event.target as Node)) return;
       event.preventDefault();
       event.stopPropagation();
-      overlay.current?.querySelector<HTMLElement>("a,button")?.focus();
+      focusables()[0]?.focus();
     };
     document.addEventListener("keydown", stopTyping, true);
     return () => document.removeEventListener("keydown", stopTyping, true);
@@ -124,8 +145,8 @@ export function TournamentLock() {
   return (
     <>
       {notice && !locked && (
-        <p role="alert" className="fixed top-3 left-1/2 z-[110] flex -translate-x-1/2 items-center gap-2 rounded-xl border border-[var(--color-pink)] bg-[var(--color-canvas)] px-4 py-2 text-sm">
-          <TriangleAlert size={15} aria-hidden="true" className="text-[var(--color-pink)]" />{notice} {warningText}.
+        <p role="alert" className="fixed top-3 left-1/2 z-[110] flex max-w-[calc(100vw-1.5rem)] -translate-x-1/2 items-center gap-2 rounded-xl border border-[var(--color-pink)] bg-[var(--color-canvas)] px-4 py-2 text-sm">
+          <TriangleAlert size={15} aria-hidden="true" className="shrink-0 text-[var(--color-pink)]" />{notice} {warningText}.
         </p>
       )}
       {locked && (

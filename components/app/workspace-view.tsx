@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { Group, Panel, Separator, useGroupRef } from "react-resizable-panels";
 import { useProfile } from "@/hooks/use-profile";
@@ -10,6 +10,7 @@ import { useJudge } from "@/hooks/use-judge";
 import { useDemoMode } from "@/hooks/use-demo-mode";
 import { FileCode2, List, Terminal, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { CodeEditor } from "./code-editor";
 import { ProblemPane } from "./workspace/problem-pane";
 import { ResultsPane, type ResultsTab } from "./workspace/results-pane";
@@ -218,16 +219,21 @@ export function WorkspaceView() {
     setResultOpen(true);
   };
 
+  const shortcutHandlersRef = useRef({ run: handleRun, submit: handleOpenSubmit });
+  useEffect(() => {
+    shortcutHandlersRef.current = { run: handleRun, submit: handleOpenSubmit };
+  });
+
   useEffect(() => {
     const shortcut = (event: KeyboardEvent) => {
       if (!(event.ctrlKey || event.metaKey) || event.key !== "Enter") return;
       event.preventDefault();
-      if (event.shiftKey) handleOpenSubmit();
-      else handleRun();
+      if (event.shiftKey) shortcutHandlersRef.current.submit();
+      else shortcutHandlersRef.current.run();
     };
     window.addEventListener("keydown", shortcut);
     return () => window.removeEventListener("keydown", shortcut);
-  });
+  }, []);
 
   const nextProblemId = useMemo(() => {
     if (!problem) return null;
@@ -277,21 +283,28 @@ export function WorkspaceView() {
       {/* Pane switcher below desktop widths. */}
       <div role="tablist" aria-label="Workspace panes" className="flex shrink-0 gap-1 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-1 xl:hidden">
         {MOBILE_TABS.map((tab) => (
-          <button
+          <Button
             key={tab.id}
             type="button"
+            variant="ghost"
+            size="sm"
             role="tab"
             aria-selected={mobileActivePane === tab.id}
             onClick={() => setMobileActivePane(tab.id)}
             className={cn(
-              "flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-medium",
+              "h-8 flex-1 gap-1.5 rounded-md py-1.5 text-xs font-medium",
               mobileActivePane === tab.id ? "bg-[var(--color-elevated)] text-[var(--color-text-main)]" : "text-[var(--color-text-muted)]",
             )}
           >
             <tab.icon size={13} aria-hidden="true" />{tab.label}
-            {tab.id === "code" && files.saveStatus !== "SAVED" && <span className="size-1.5 rounded-full bg-[var(--color-text-main)]" aria-label="Unsaved" />}
+            {tab.id === "code" && files.saveStatus !== "SAVED" && (
+              <>
+                <span aria-hidden="true" className="size-1.5 rounded-full bg-[var(--color-text-main)]" />
+                <span className="sr-only">Unsaved changes</span>
+              </>
+            )}
             {tab.id === "results" && judge.judgingResult && <VerdictBadge status={judge.judgingResult.overallVerdict} short className="py-0" />}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -314,16 +327,22 @@ export function WorkspaceView() {
           <Panel id="problem" defaultSize="28%" minSize={layout === "split" ? "20%" : "0%"} collapsible={layout !== "split"} collapsedSize="0%">
             <div className={cn("h-full min-h-0", mobileActivePane === "problem" ? "flex flex-1 flex-col" : "hidden", layout === "focus" ? "xl:hidden" : "xl:flex xl:flex-col")}>
               {layout === "wide" ? (
-                <button
-                  type="button"
-                  className="hidden h-full w-10 items-center justify-center rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] xl:flex"
-                  aria-label="Expand problem pane"
-                  onClick={() => setLayout("split")}
-                ><span className="[writing-mode:vertical-rl]">Problem ›</span></button>
+                <>
+                  <div className="h-full min-h-0 flex-1 xl:hidden">
+                    {problemPane((sample) => { setCustomStdin(sample); showResults("stdin"); })}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="hidden h-full w-10 items-center justify-center rounded-[var(--radius-card)] border-[var(--color-border)] bg-[var(--color-surface)] p-0 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] xl:flex"
+                    aria-label="Expand problem pane"
+                    onClick={() => setLayout("split")}
+                  ><span className="[writing-mode:vertical-rl]">Problem ›</span></Button>
+                </>
               ) : problemPane((sample) => { setCustomStdin(sample); showResults("stdin"); })}
             </div>
           </Panel>
-          <Separator className="workspace-resize-handle" />
+          <Separator aria-label="Resize problem and editor panes" className="workspace-resize-handle" />
 
           <Panel id="editor" defaultSize="48%" minSize={layout === "focus" ? "30%" : "35%"}>
             <div className={cn("h-full min-h-0 flex-col gap-2", mobileActivePane === "code" ? "flex flex-1" : "hidden xl:flex")}>
@@ -363,7 +382,7 @@ export function WorkspaceView() {
               </div>
             </div>
           </Panel>
-          <Separator className="workspace-resize-handle" />
+          <Separator aria-label="Resize editor and output panes" className="workspace-resize-handle" />
 
           <Panel id="results" defaultSize="24%" minSize={layout === "focus" ? "0%" : "18%"} collapsible={layout === "focus"} collapsedSize="0%">
             <div className={cn("h-full min-h-0", mobileActivePane === "results" ? "flex flex-1 flex-col" : "hidden", layout === "focus" && !drawerOpen ? "xl:hidden" : "xl:flex xl:flex-col")}>
@@ -385,14 +404,16 @@ export function WorkspaceView() {
         </Group>
       </div>
 
-      {layout === "focus" && problemSlideOpen && (
-        <div className="fixed inset-0 z-40 flex bg-black/40" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setProblemSlideOpen(false); }}>
-          <section role="dialog" aria-modal="true" aria-label="Problem statement" className="flex h-full w-full max-w-md flex-col gap-2 bg-[var(--color-canvas)] p-3">
-            <Button type="button" variant="ghost" size="sm" className="self-end" onClick={() => setProblemSlideOpen(false)}>Close</Button>
+      <Sheet open={layout === "focus" && problemSlideOpen} onOpenChange={setProblemSlideOpen}>
+        <SheetContent side="left" className="flex w-full max-w-md flex-col gap-2 bg-[var(--color-canvas)] p-3 sm:max-w-md">
+          <SheetHeader className="sr-only">
+            <SheetTitle>Problem statement</SheetTitle>
+          </SheetHeader>
+          <div className="min-h-0 flex-1 pt-8">
             {problemPane((sample) => { setCustomStdin(sample); showResults("stdin"); setProblemSlideOpen(false); })}
-          </section>
-        </div>
-      )}
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {problem && (
         <ConfirmDialog
@@ -441,6 +462,7 @@ export function WorkspaceView() {
         description={<>The timer stops and the challenge is marked as forfeited. Your code stays saved. <span className="font-code">{challenge.formattedTime}</span> left.</>}
         confirmLabel="Forfeit"
         cancelLabel="Keep going"
+        destructive
         onConfirm={() => { challenge.forfeitChallenge(); setForfeitOpen(false); }}
       />
 

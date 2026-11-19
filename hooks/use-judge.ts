@@ -1,14 +1,19 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ExecutionResult } from "@/types/execution";
 import type { JudgingResult } from "@/lib/judge/judging-service";
 import type { PreferredLanguage } from "@/types/profile";
 import type { WorkspaceFile } from "@/types/draft";
 
 /** POST JSON and fail loudly on any non-2xx reply, so `{ error }` bodies never pass as results. */
-export async function postJson<T>(url: string, body: unknown, fetcher: typeof fetch = fetch): Promise<T> {
-  const res = await fetcher(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+export async function postJson<T>(url: string, body: unknown, fetcher: typeof fetch = fetch, signal?: AbortSignal): Promise<T> {
+  const res = await fetcher(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+    ...(signal ? { signal } : {}),
+  });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error((data as { error?: string }).error || `Request failed (HTTP ${res.status}).`);
   return data as T;
@@ -23,16 +28,31 @@ export function useJudge() {
   const [executionResult, setExecutionResult] = useState<ExecutionResult | null>(null);
   const [judgingResult, setJudgingResult] = useState<JudgingResult | null>(null);
   const [isResultDemo, setIsResultDemo] = useState(false);
-  // Bumped when the student moves on, so a late reply can't land on the wrong problem.
+  // Bumped on each new call and reset, so superseded or post-navigation replies can never land.
   const generation = useRef(0);
+  const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => () => {
+    generation.current += 1;
+    abortRef.current?.abort();
+  }, []);
+
+  const nextController = () => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    return { started: ++generation.current, controller };
+  };
 
   const run = async (source: Source & { stdin: string; timeLimitMs: number }) => {
-    const started = generation.current;
+    const { started, controller } = nextController();
     setIsRunning(true);
+    setIsSubmitting(false);
     let result: ExecutionResult;
     try {
-      result = await postJson<ExecutionResult>("/api/execute", source);
+      result = await postJson<ExecutionResult>("/api/execute", source, fetch, controller.signal);
     } catch (err) {
+      if (started !== generation.current) return;
       result = { status: "INTERNAL_ERROR", exitCode: null, stdout: "", stderr: err instanceof Error ? err.message : String(err), durationMs: 0 };
     }
     if (started !== generation.current) return;
@@ -40,15 +60,17 @@ export function useJudge() {
     setIsRunning(false);
   };
 
-  /** Resolves to null if the student left this problem before the verdict arrived. */
+  /** Resolves to null if the student left this problem or superseded the request before the verdict arrived. */
   const submit = async (problemId: string, source: Source): Promise<JudgingResult | null> => {
-    const started = generation.current;
+    const { started, controller } = nextController();
     setIsSubmitting(true);
+    setIsRunning(false);
     setIsResultDemo(false);
     let result: JudgingResult;
     try {
-      result = await postJson<JudgingResult>("/api/judge", { problemId, ...source });
+      result = await postJson<JudgingResult>("/api/judge", { problemId, ...source }, fetch, controller.signal);
     } catch (err) {
+      if (started !== generation.current) return null;
       result = {
         problemId, language: source.language, overallVerdict: "INTERNAL_JUDGE_ERROR",
         passedTests: 0, totalTests: 0, scorePercentage: 0, maxDurationMs: 0, testResults: [],
@@ -68,6 +90,8 @@ export function useJudge() {
 
   const reset = () => {
     generation.current += 1;
+    abortRef.current?.abort();
+    abortRef.current = null;
     setIsRunning(false);
     setIsSubmitting(false);
     setExecutionResult(null);

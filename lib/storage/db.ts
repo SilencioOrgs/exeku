@@ -81,13 +81,11 @@ export async function idbGet<T>(storeName: string, key: string): Promise<T | nul
   return new Promise((resolve, reject) => {
     try {
       const tx = db.transaction(storeName, "readonly");
-      const store = tx.objectStore(storeName);
-      const req = store.get(key);
-
-      req.onsuccess = () => {
-        resolve(req.result !== undefined ? (req.result as T) : null);
-      };
-      req.onerror = () => reject(req.error);
+      tx.onabort = () => reject(tx.error ?? new Error("Storage transaction aborted"));
+      tx.onerror = () => reject(tx.error ?? new Error("Storage transaction failed"));
+      const req = tx.objectStore(storeName).get(key);
+      req.onsuccess = () => resolve(req.result !== undefined ? (req.result as T) : null);
+      req.onerror = () => reject(req.error ?? new Error("Storage read failed"));
     } catch (err) {
       reject(err);
     }
@@ -104,13 +102,11 @@ export async function idbGetAll<T>(storeName: string): Promise<T[]> {
   return new Promise((resolve, reject) => {
     try {
       const tx = db.transaction(storeName, "readonly");
-      const store = tx.objectStore(storeName);
-      const req = store.getAll();
-
-      req.onsuccess = () => {
-        resolve((req.result as T[]) || []);
-      };
-      req.onerror = () => reject(req.error);
+      tx.onabort = () => reject(tx.error ?? new Error("Storage transaction aborted"));
+      tx.onerror = () => reject(tx.error ?? new Error("Storage transaction failed"));
+      const req = tx.objectStore(storeName).getAll();
+      req.onsuccess = () => resolve((req.result as T[]) || []);
+      req.onerror = () => reject(req.error ?? new Error("Storage read failed"));
     } catch (err) {
       reject(err);
     }
@@ -150,11 +146,10 @@ export async function idbDelete(storeName: string, key: string): Promise<void> {
   return new Promise((resolve, reject) => {
     try {
       const tx = db.transaction(storeName, "readwrite");
-      const store = tx.objectStore(storeName);
-      const req = store.delete(key);
-
-      req.onsuccess = () => resolve();
-      req.onerror = () => reject(req.error);
+      tx.oncomplete = () => resolve();
+      tx.onabort = () => reject(tx.error ?? new Error("Storage transaction aborted"));
+      tx.onerror = () => reject(tx.error ?? new Error("Storage transaction failed"));
+      tx.objectStore(storeName).delete(key);
     } catch (err) {
       reject(err);
     }
@@ -172,11 +167,10 @@ export async function idbClear(storeName: string): Promise<void> {
   return new Promise((resolve, reject) => {
     try {
       const tx = db.transaction(storeName, "readwrite");
-      const store = tx.objectStore(storeName);
-      const req = store.clear();
-
-      req.onsuccess = () => resolve();
-      req.onerror = () => reject(req.error);
+      tx.oncomplete = () => resolve();
+      tx.onabort = () => reject(tx.error ?? new Error("Storage transaction aborted"));
+      tx.onerror = () => reject(tx.error ?? new Error("Storage transaction failed"));
+      tx.objectStore(storeName).clear();
     } catch (err) {
       reject(err);
     }

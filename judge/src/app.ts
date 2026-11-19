@@ -19,8 +19,10 @@ export interface JudgeAppOptions {
   log?: (message: string) => void;
 }
 
-function send(res: ServerResponse, status: number, body: unknown) {
-  res.writeHead(status, { "content-type": "application/json", "cache-control": "no-store" });
+function send(res: ServerResponse, status: number, body: unknown, close = false) {
+  const headers: Record<string, string> = { "content-type": "application/json", "cache-control": "no-store" };
+  if (close) headers.connection = "close";
+  res.writeHead(status, headers);
   res.end(JSON.stringify(body));
 }
 
@@ -35,17 +37,31 @@ function readBody(req: IncomingMessage): Promise<string> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
     let size = 0;
+    let settled = false;
     req.on("data", (chunk: Buffer) => {
+      if (settled) return;
       size += chunk.length;
       if (size > MAX_BODY_BYTES) {
+        settled = true;
+        chunks.length = 0;
+        req.pause();
         reject(new Error("too large"));
-        req.destroy();
         return;
       }
       chunks.push(chunk);
     });
-    req.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
-    req.on("error", reject);
+    req.on("end", () => {
+      if (!settled) {
+        settled = true;
+        resolve(Buffer.concat(chunks).toString("utf8"));
+      }
+    });
+    req.on("error", (err) => {
+      if (!settled) {
+        settled = true;
+        reject(err);
+      }
+    });
   });
 }
 
@@ -65,7 +81,7 @@ export function createJudgeServer(options: JudgeAppOptions): Server {
         body = JSON.parse(await readBody(req));
       } catch (err) {
         const tooLarge = err instanceof Error && err.message === "too large";
-        return send(res, tooLarge ? 413 : 400, { error: tooLarge ? "Request is too large." : "Invalid JSON." });
+        return send(res, tooLarge ? 413 : 400, { error: tooLarge ? "Request is too large." : "Invalid JSON." }, tooLarge);
       }
 
       const validation = validateRunRequest(body, specs);

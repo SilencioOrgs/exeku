@@ -3,6 +3,8 @@
 import { FileCode2, Plus, X } from "lucide-react";
 
 import { useRef, useState, type KeyboardEvent } from "react";
+import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "./submission-modals";
 
 import type { PreferredLanguage } from "@/types/profile";
 import type { WorkspaceFile } from "@/types/draft";
@@ -19,7 +21,7 @@ export function validateWorkspaceFilename(
 ): string | null {
   if (!name.trim()) return "Enter a file name.";
   if (name.length > 24 || !/^[A-Za-z0-9_.-]+$/.test(name)) return "Use 1–24 letters, numbers, dots, dashes, or underscores.";
-  if (name.startsWith(".")) return "File names can't start with a dot.";
+  if (name.startsWith(".") || name.startsWith("-")) return "File names can't start with a dot or dash.";
   if (!EXTENSIONS[lang].some((ext) => name.toLowerCase().endsWith(ext))) {
     return `File extension must be ${EXTENSIONS[lang].join(" / ")}.`;
   }
@@ -45,6 +47,7 @@ export function FileTabs({ language, files, activeName, mainName, saveStatus, on
   const [editing, setEditing] = useState<string | null>(null);
   const [draftName, setDraftName] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [pendingClose, setPendingClose] = useState<WorkspaceFile | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const tabsRef = useRef<HTMLDivElement>(null);
 
@@ -64,7 +67,7 @@ export function FileTabs({ language, files, activeName, mainName, saveStatus, on
   };
   const close = (file: WorkspaceFile) => {
     if (file.name === mainName) return;
-    if (file.content.trim() && !window.confirm(`Close ${file.name}? Its content will be removed from this workspace.`)) return;
+    if (file.content.trim()) { setPendingClose(file); return; }
     onClose(file.name);
   };
   const moveTab = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
@@ -91,8 +94,10 @@ export function FileTabs({ language, files, activeName, mainName, saveStatus, on
                 onBlur={cancel}
               />
             ) : (
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 role="tab"
                 id={`filetab-${index}`}
                 aria-selected={activeName === file.name}
@@ -102,21 +107,23 @@ export function FileTabs({ language, files, activeName, mainName, saveStatus, on
                 onDoubleClick={() => { if (file.name !== mainName) begin(file.name); }}
                 onAuxClick={(e) => { if (e.button === 1) close(file); }}
                 onKeyDown={(e) => moveTab(e, index)}
-                className="font-code inline-flex h-8 items-center gap-1.5 px-2 text-xs"
+                className="font-code h-8 gap-1.5 rounded-md px-2 text-xs text-inherit hover:bg-transparent hover:text-inherit"
               >
                 <FileCode2 size={14} aria-hidden="true" />
                 <span>{file.name}</span>
                 {activeName === file.name && saveStatus !== "SAVED" && <span title="Unsaved changes" className="size-1.5 rounded-full bg-[var(--color-text-main)]"><span className="sr-only">Unsaved changes</span></span>}
-              </button>
+              </Button>
             )}
             {file.name !== mainName && editing !== file.name && (
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon-xs"
                 title={`Close ${file.name}`}
                 aria-label={`Close ${file.name}`}
-                className="mr-1 rounded p-0.5 text-[var(--color-text-muted)] opacity-70 hover:opacity-100 focus-visible:opacity-100 sm:group-hover:opacity-100"
+                className="mr-0.5 size-6 text-[var(--color-text-muted)] opacity-75 hover:opacity-100 focus-visible:opacity-100 sm:group-hover:opacity-100"
                 onClick={() => close(file)}
-              ><X size={12} aria-hidden="true" /></button>
+              ><X size={12} aria-hidden="true" /></Button>
             )}
           </div>
         ))}
@@ -130,14 +137,33 @@ export function FileTabs({ language, files, activeName, mainName, saveStatus, on
           className="font-code h-7 w-28 shrink-0 rounded-md border border-[var(--color-text-main)] bg-[var(--color-surface)] px-1.5 text-xs"
           onChange={(e) => { setDraftName(e.target.value); setError(null); }}
           onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") cancel(); }}
+          onBlur={cancel}
         />
       ) : (
-        <button
-          type="button" onClick={() => begin(null)} title="Add source file" aria-label="Add source file"
-          disabled={files.length >= 6} className="grid size-8 shrink-0 place-items-center rounded-md text-[var(--color-text-muted)] hover:bg-[var(--color-elevated)] hover:text-[var(--color-text-main)] disabled:opacity-40"
-        ><Plus size={14} aria-hidden="true" /></button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={() => begin(null)}
+          title="Add source file"
+          aria-label="Add source file"
+          disabled={files.length >= 6}
+          className="shrink-0 text-[var(--color-text-muted)] hover:bg-[var(--color-elevated)] hover:text-[var(--color-text-main)]"
+        ><Plus size={14} aria-hidden="true" /></Button>
       )}
       {error && <span role="alert" title={error} className="absolute left-0 top-full z-30 mt-1 max-w-60 rounded-md border border-[var(--color-text-main)] bg-[var(--color-surface)] p-1.5 text-xs text-[var(--color-text-main)]">{error}</span>}
+      <ConfirmDialog
+        open={Boolean(pendingClose)}
+        onOpenChange={(open) => { if (!open) setPendingClose(null); }}
+        title={pendingClose ? `Close ${pendingClose.name}?` : "Close file?"}
+        description="Its content will be removed from this workspace."
+        confirmLabel="Close file"
+        destructive
+        onConfirm={() => {
+          if (pendingClose) onClose(pendingClose.name);
+          setPendingClose(null);
+        }}
+      />
     </div>
   );
 }

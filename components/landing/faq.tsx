@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { ArrowDown, ArrowUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
@@ -9,11 +10,11 @@ export function FAQ() {
   const faqs = [
     {
       q: "Do I need to install anything?",
-      a: "No. Exeku runs in your browser. Open the site, create a profile and start solving.",
+      a: "No. Exeku runs in your browser. Sign in with Google, finish setup, and start solving.",
     },
     {
-      q: "Do I need an account?",
-      a: "Not right now. Your profile, settings and code drafts are saved in your browser, so there is no sign-up form. Clearing your browser data removes them.",
+      q: "How does my account work?",
+      a: "Sign in with Google on the setup page to join leaderboards, organizations, and campus tournaments. Your unsubmitted code drafts and appearance settings stay saved locally in your browser.",
     },
     {
       q: "Which languages can I use?",
@@ -45,9 +46,9 @@ export function FAQ() {
             className="text-3xl sm:text-4xl md:text-5xl font-bold text-[var(--color-text-main)] mb-4 tracking-tight"
             style={{ fontFamily: "var(--font-heading-active)" }}
           >
-            Frequently Asked Questions.
+            Frequently asked questions.
           </h2>
-          <p className="text-base sm:text-lg text-[var(--color-text-muted)] font-sans">
+          <p className="text-base sm:text-lg text-[var(--color-text-muted)]">
             Clear, honest answers about how Exeku works and what it needs.
           </p>
         </div>
@@ -56,27 +57,30 @@ export function FAQ() {
         <div className="space-y-4">
           {faqs.map((faq, idx) => {
             const isOpen = openIndex === idx;
+            const panelId = `faq-panel-${idx}`;
             return (
               <div
                 key={idx}
-                className="border border-[var(--color-border)] bg-[var(--color-surface)] transition-colors"
+                className="overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] transition-colors"
               >
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
                   onClick={() => toggle(idx)}
-                  className="w-full p-4 sm:p-5 flex items-center justify-between text-left gap-4 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                  className="h-auto w-full justify-between gap-4 rounded-none p-4 text-left whitespace-normal sm:p-5"
                   aria-expanded={isOpen}
+                  aria-controls={panelId}
                 >
                   <span className="text-base font-semibold text-[var(--color-text-main)] sm:text-lg">
                     {faq.q}
                   </span>
-                  <div className="p-1 bg-[var(--color-elevated)] border border-[var(--color-border)] text-[var(--color-accent)] shrink-0">
+                  <span aria-hidden="true" className="shrink-0 rounded-md border border-[var(--color-border)] bg-[var(--color-elevated)] p-1 text-[var(--color-accent)]">
                     {isOpen ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
-                  </div>
-                </button>
+                  </span>
+                </Button>
 
                 {isOpen && (
-                  <div className="px-4 pb-5 sm:px-5 sm:pb-6 pt-1 text-sm sm:text-base text-[var(--color-text-muted)] font-sans border-t border-[var(--color-elevated)] leading-relaxed">
+                  <div id={panelId} className="px-4 pb-5 sm:px-5 sm:pb-6 pt-3 text-sm sm:text-base text-[var(--color-text-muted)] border-t border-[var(--color-elevated)] leading-relaxed">
                     {faq.a}
                   </div>
                 )}

@@ -208,6 +208,8 @@ export function CodeEditor({ value, onChange, filename }: CodeEditorProps) {
           onSelect={trackCaret}
           onScroll={syncScroll}
           onBlur={() => setSuggest(null)}
+          role="combobox"
+          aria-expanded={Boolean(suggest)}
           aria-label={`${filename} source code`}
           aria-describedby={hintId}
           aria-autocomplete="list"
@@ -239,10 +241,10 @@ export function CodeEditor({ value, onChange, filename }: CodeEditorProps) {
                 aria-selected={i === suggest.index}
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "0 8px", borderRadius: 3, cursor: "pointer",
-                  height: suggest.rowHeight, background: i === suggest.index ? SUGGEST.active : "transparent",
+                  minHeight: Math.max(suggest.rowHeight, 28), background: i === suggest.index ? SUGGEST.active : "transparent",
                 }}
-                // mousedown keeps focus in the textarea; click would blur it first.
-                onMouseDown={(event) => {
+                // pointerdown keeps focus in the textarea on mouse and touch; click would blur it first.
+                onPointerDown={(event) => {
                   event.preventDefault();
                   const area = event.currentTarget.closest(".code-editor")?.querySelector("textarea");
                   if (area) accept(area, item);

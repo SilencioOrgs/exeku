@@ -1,5 +1,5 @@
 import "server-only";
-import { isObject, text } from "@/lib/accounts/rules";
+import { isObject, isUuid, text } from "@/lib/accounts/rules";
 import type { Viewer } from "@/lib/auth/viewer";
 import type { AvatarBorderId } from "@/lib/avatar-borders";
 import { EVENT_COLUMNS, toEvents, viewerScope, type EventRow } from "@/lib/competition/repository";
@@ -14,7 +14,6 @@ export type TournamentActionResult = { ok: true } | { ok: false; status: number;
 type TeamRow = { id: string; name: string };
 type MemberRow = { team_id: string; user_id: string; profiles: { display_name: string; avatar_id: string; border_id: string } };
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const UNIQUE_VIOLATION = "23505";
 const VIOLATION_KINDS = ["fullscreen", "tab", "focus"];
 const MEMBER_COLUMNS = "team_id,user_id,profiles(display_name,avatar_id,border_id)";
@@ -25,7 +24,7 @@ const statusAt = (now: number, startsAt: string, endsAt: string): TournamentStat
 
 /** Hidden tournaments answer exactly like missing ones. */
 async function loadVisible(viewer: Viewer, id: string) {
-  if (!UUID.test(id)) return null;
+  if (!isUuid(id)) return null;
   const row = must(await db().from("events").select(EVENT_COLUMNS).eq("id", id).maybeSingle()) as unknown as EventRow | null;
   if (!row?.starts_at || !row.ends_at) return null;
   const [event] = await toEvents([row]);
@@ -39,8 +38,18 @@ async function loadRoster(eventId: string) {
   return { teams, members };
 }
 
-const entries = (teams: TeamRow[], members: MemberRow[]): TeamEntry[] =>
-  teams.map((t) => ({ id: t.id, memberIds: members.filter((m) => m.team_id === t.id).map((m) => m.user_id) }));
+function groupMembersByTeam(members: MemberRow[]): Map<string, MemberRow[]> {
+  const byTeam = new Map<string, MemberRow[]>();
+  for (const member of members) {
+    const list = byTeam.get(member.team_id);
+    if (list) list.push(member);
+    else byTeam.set(member.team_id, [member]);
+  }
+  return byTeam;
+}
+
+const entries = (teams: TeamRow[], byTeam: Map<string, MemberRow[]>): TeamEntry[] =>
+  teams.map((t) => ({ id: t.id, memberIds: (byTeam.get(t.id) ?? []).map((m) => m.user_id) }));
 
 export async function getTournament(viewer: Viewer, id: string): Promise<TournamentView | null> {
   const found = await loadVisible(viewer, id);
@@ -49,24 +58,37 @@ export async function getTournament(viewer: Viewer, id: string): Promise<Tournam
   const now = Date.now();
   const status = statusAt(now, startsAt, endsAt);
   const { teams, members } = await loadRoster(id);
+  const membersByTeam = groupMembersByTeam(members);
+  const teamByUser = new Map(members.map((m) => [m.user_id, m.team_id]));
   const problemIds = (event.problems ?? []).map((p) => p.id);
   const solves = status === "registration" ? [] : await solvesBetween(members.map((m) => m.user_id), startsAt, endsAt);
-  const standings = rankTeams(entries(teams, members), solves, problemIds);
-  const myTeamId = members.find((m) => m.user_id === viewer.id)?.team_id ?? null;
+  const standings = rankTeams(entries(teams, membersByTeam), solves, problemIds);
+  const standingByTeam = new Map(standings.map((s) => [s.teamId, s]));
+  const myTeamId = teamByUser.get(viewer.id) ?? null;
   const open = status !== "registration" && myTeamId !== null;
-  const teamMembers = new Set(members.filter((m) => m.team_id === myTeamId).map((m) => m.user_id));
+  const teamMembers = new Set((myTeamId ? membersByTeam.get(myTeamId) ?? [] : []).map((m) => m.user_id));
   const violations = must(await db().from("tournament_violations").select("user_id").eq("event_id", id)) as { user_id: string }[];
+  const warningsByTeam = new Map<string, number>();
+  for (const v of violations) {
+    const teamId = teamByUser.get(v.user_id);
+    if (teamId) warningsByTeam.set(teamId, (warningsByTeam.get(teamId) ?? 0) + 1);
+  }
 
   const view = teams.map((team) => {
-    const standing = standings.find((s) => s.teamId === team.id);
+    const standing = standingByTeam.get(team.id);
     return {
       id: team.id,
       name: team.name,
-      members: members.filter((m) => m.team_id === team.id).map((m) => ({ id: m.user_id, name: m.profiles.display_name, avatarId: m.profiles.avatar_id, borderId: m.profiles.border_id as AvatarBorderId })),
+      members: (membersByTeam.get(team.id) ?? []).map((m) => ({
+        id: m.user_id,
+        name: m.profiles.display_name,
+        avatarId: m.profiles.avatar_id,
+        borderId: m.profiles.border_id as AvatarBorderId,
+      })),
       // Scores stay on the server until the end, so the standings can't be read early.
       points: status === "ended" ? standing?.points ?? 0 : 0,
       solved: status === "ended" ? standing?.solved ?? 0 : 0,
-      warnings: violations.filter((v) => members.some((m) => m.team_id === team.id && m.user_id === v.user_id)).length,
+      warnings: warningsByTeam.get(team.id) ?? 0,
       rank: status === "ended" ? standing?.rank : undefined,
     };
   });
@@ -105,7 +127,12 @@ export async function performTournamentAction(viewer: Viewer, id: string, input:
       const { error } = await db().from("tournament_teams").insert({ id: teamId, event_id: id, name });
       if (error?.code === UNIQUE_VIOLATION) return failed(409, "That team name is taken.");
       if (error) throw new Error(`Database error: ${error.message}`);
-      must(await db().from("tournament_members").insert({ event_id: id, team_id: teamId, user_id: viewer.id }));
+      const { error: memberError } = await db().from("tournament_members").insert({ event_id: id, team_id: teamId, user_id: viewer.id });
+      if (memberError) {
+        await db().from("tournament_teams").delete().eq("id", teamId);
+        if (memberError.code === UNIQUE_VIOLATION) return failed(409, "You're already on a team.");
+        throw new Error(`Database error: ${memberError.message}`);
+      }
       return { ok: true };
     }
     case "joinTeam": {
@@ -122,7 +149,8 @@ export async function performTournamentAction(viewer: Viewer, id: string, input:
     case "leave": {
       if (!mine) return { ok: true };
       must(await db().from("tournament_members").delete().eq("event_id", id).eq("user_id", viewer.id));
-      if (members.filter((m) => m.team_id === mine.team_id).length === 1) must(await db().from("tournament_teams").delete().eq("id", mine.team_id));
+      const remaining = must(await db().from("tournament_members").select("user_id").eq("team_id", mine.team_id).limit(1)) as { user_id: string }[];
+      if (remaining.length === 0) must(await db().from("tournament_teams").delete().eq("id", mine.team_id));
       return { ok: true };
     }
     default:
@@ -133,15 +161,22 @@ export async function performTournamentAction(viewer: Viewer, id: string, input:
 /** The tournament this student must be locked into right now, if any. A team that has solved everything is free to go. */
 export async function getActiveTournament(viewer: Viewer): Promise<ActiveTournament | null> {
   const joined = must(await db().from("tournament_members").select("event_id,team_id").eq("user_id", viewer.id)) as { event_id: string; team_id: string }[];
+  if (joined.length === 0) return null;
+  const rows = must(await db().from("events").select(EVENT_COLUMNS).in("id", joined.map((j) => j.event_id))) as unknown as EventRow[];
+  const now = Date.now();
+  const liveRows = rows.filter((row) => row.starts_at && row.ends_at && statusAt(now, row.starts_at, row.ends_at) === "live");
+  if (liveRows.length === 0) return null;
+  // Resolve through toEvents so problems deleted after scheduling drop out instead of trapping the team in lockdown.
+  const liveById = new Map((await toEvents(liveRows)).map((event) => [event.id, event]));
   for (const { event_id: eventId, team_id: teamId } of joined) {
-    const row = must(await db().from("events").select("id,title,starts_at,ends_at,problem_ids").eq("id", eventId).maybeSingle()) as { id: string; title: string; starts_at: string | null; ends_at: string | null; problem_ids: string[] | null } | null;
-    if (!row?.starts_at || !row.ends_at || statusAt(Date.now(), row.starts_at, row.ends_at) !== "live") continue;
+    const event = liveById.get(eventId);
+    if (!event?.tournament) continue;
     const team = must(await db().from("tournament_members").select("user_id").eq("team_id", teamId)) as { user_id: string }[];
-    const solved = new Set((await solvesBetween(team.map((m) => m.user_id), row.starts_at, row.ends_at)).map((s) => s.problemId));
-    const problems = row.problem_ids ?? [];
-    if (problems.length > 0 && problems.every((id) => solved.has(id))) continue;
+    const solved = new Set((await solvesBetween(team.map((m) => m.user_id), event.tournament.startsAt, event.tournament.endsAt)).map((s) => s.problemId));
+    const problems = (event.problems ?? []).map((p) => p.id);
+    if (problems.length > 0 && problems.every((problemId) => solved.has(problemId))) continue;
     const violations = must(await db().from("tournament_violations").select("id").eq("event_id", eventId).eq("user_id", viewer.id)) as unknown[];
-    return { id: row.id, title: row.title, warnings: violations.length };
+    return { id: event.id, title: event.title, warnings: violations.length };
   }
   return null;
 }
@@ -149,14 +184,21 @@ export async function getActiveTournament(viewer: Viewer): Promise<ActiveTournam
 /** Top 3 finishes in tournaments that have ended. A team with no points earns nothing. */
 export async function getMedals(userId: string): Promise<Medal[]> {
   const joined = must(await db().from("tournament_members").select("event_id,team_id").eq("user_id", userId)) as { event_id: string; team_id: string }[];
+  if (joined.length === 0) return [];
+  const rows = must(await db().from("events").select(EVENT_COLUMNS).in("id", joined.map((j) => j.event_id))) as unknown as EventRow[];
+  const now = Date.now();
+  const endedRows = rows.filter((row) => row.starts_at && row.ends_at && now >= Date.parse(row.ends_at));
+  if (endedRows.length === 0) return [];
+  const endedById = new Map((await toEvents(endedRows)).map((event) => [event.id, event]));
   const medals: Medal[] = [];
   for (const { event_id: eventId, team_id: teamId } of joined) {
-    const row = must(await db().from("events").select(EVENT_COLUMNS).eq("id", eventId).maybeSingle()) as unknown as EventRow | null;
-    if (!row?.starts_at || !row.ends_at || Date.now() < Date.parse(row.ends_at)) continue;
+    const event = endedById.get(eventId);
+    if (!event?.tournament) continue;
     const { teams, members } = await loadRoster(eventId);
-    const solves = await solvesBetween(members.map((m) => m.user_id), row.starts_at, row.ends_at);
-    const mine = rankTeams(entries(teams, members), solves, row.problem_ids ?? []).find((s) => s.teamId === teamId);
-    if (mine && mine.rank <= 3 && mine.points > 0) medals.push({ place: mine.rank, at: row.ends_at, title: row.title });
+    const solves = await solvesBetween(members.map((m) => m.user_id), event.tournament.startsAt, event.tournament.endsAt);
+    const problemIds = (event.problems ?? []).map((p) => p.id);
+    const mine = rankTeams(entries(teams, groupMembersByTeam(members)), solves, problemIds).find((s) => s.teamId === teamId);
+    if (mine && mine.rank <= 3 && mine.points > 0) medals.push({ place: mine.rank, at: event.tournament.endsAt, title: event.title });
   }
   return medals;
 }

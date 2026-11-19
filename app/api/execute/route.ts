@@ -30,7 +30,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: err.message }, { status: 429 });
     }
 
-    const message = err instanceof Error ? err.message : "Internal Server Error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("Execute route failed:", err instanceof Error ? err.message : "unknown error");
+    return NextResponse.json({ error: "Code execution failed. Please try again." }, { status: 500 });
   }
 }

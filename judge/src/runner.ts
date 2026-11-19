@@ -1,4 +1,5 @@
-import { open, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { constants as fsConstants } from "node:fs";
+import { lstat, open, readdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { classifyRun, parseMeta, type IsolateCli } from "./isolate.ts";
 import type { LanguageSpec } from "./languages.ts";
@@ -8,6 +9,7 @@ export const MAX_STDOUT_BYTES = 1024 * 1024;
 export const MAX_STDERR_BYTES = 64 * 1024;
 const MAX_COMPILE_OUTPUT_BYTES = 64 * 1024;
 const MAX_ARTIFACT_BYTES = 64 * 1024 * 1024;
+const SAFE_READ_FLAGS = fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW ?? 0) | (fsConstants.O_NONBLOCK ?? 0);
 
 const COMPILE_LIMITS = { timeMs: 20_000, wallTimeMs: 40_000, memoryKb: 768 * 1024, fileSizeKb: 64 * 1024, processes: 64 };
 const RUN_FILE_SIZE_KB = 8 * 1024;
@@ -26,20 +28,28 @@ export interface RunnerDeps {
   workDir: string;
 }
 
-async function readCapped(path: string, maxBytes: number): Promise<string> {
+/** Reads at most maxBytes from a regular file without following symlinks or blocking on FIFOs. */
+async function readRegularFile(path: string, maxBytes: number): Promise<Buffer | null> {
   let handle;
   try {
-    handle = await open(path, "r");
+    handle = await open(path, SAFE_READ_FLAGS);
+    const info = await handle.stat();
+    if (!info.isFile()) return null;
+    const toRead = Math.min(maxBytes, info.size);
+    if (toRead <= 0) return Buffer.alloc(0);
+    const buffer = Buffer.alloc(toRead);
+    const { bytesRead } = await handle.read(buffer, 0, toRead, 0);
+    return buffer.subarray(0, bytesRead);
   } catch {
-    return "";
-  }
-  try {
-    const buffer = Buffer.alloc(maxBytes);
-    const { bytesRead } = await handle.read(buffer, 0, maxBytes, 0);
-    return buffer.subarray(0, bytesRead).toString("utf8");
+    return null;
   } finally {
-    await handle.close();
+    await handle?.close();
   }
+}
+
+async function readCapped(path: string, maxBytes: number): Promise<string> {
+  const data = await readRegularFile(path, maxBytes);
+  return data ? data.toString("utf8") : "";
 }
 
 async function withBox<T>(cli: IsolateCli, boxId: number, fn: (boxDir: string) => Promise<T>): Promise<T> {
@@ -63,11 +73,12 @@ export async function collectArtifacts(boxDir: string): Promise<Map<string, Buff
   for (const name of await readdir(boxDir)) {
     if (WORKER_FILES.has(name)) continue;
     const path = join(boxDir, name);
-    const info = await stat(path);
+    const info = await lstat(path);
     if (!info.isFile()) continue;
     total += info.size;
     if (total > MAX_ARTIFACT_BYTES) throw new Error("Compiled output is too large.");
-    artifacts.set(name, await readFile(path));
+    const data = await readRegularFile(path, info.size);
+    if (data) artifacts.set(name, data);
   }
   return artifacts;
 }

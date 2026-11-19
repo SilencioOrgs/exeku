@@ -19,20 +19,41 @@ export const toProblem = (r: ProblemRow): ProgrammingProblem => ({
   starterCodes: Object.fromEntries(ALL_SUPPORTED_LANGUAGES.map((language) => [language, getStarterCode(language)])) as ProgrammingProblem["starterCodes"],
 });
 
+export interface ProblemLookupOptions {
+  /** Admins can view and test problems scheduled for upcoming tournaments. */
+  includeLocked?: boolean;
+}
+
+/** Problem IDs assigned to tournaments that have not started yet stay hidden from students until start time. */
+export async function upcomingLockedProblemIds(now = new Date().toISOString()): Promise<Set<string>> {
+  const rows = must(await db().from("events").select("problem_ids").gt("starts_at", now)) as { problem_ids: string[] | null }[];
+  return new Set(rows.flatMap((row) => row.problem_ids ?? []));
+}
+
 /** Full problem including hidden tests. Only the judge may use this; browsers get findVisibleProblem. */
-export async function findProblem(id: string): Promise<ProgrammingProblem | null> {
+export async function findProblem(id: string, options?: ProblemLookupOptions): Promise<ProgrammingProblem | null> {
+  if (!options?.includeLocked && (await upcomingLockedProblemIds()).has(id)) return null;
   const builtIn = getProblemById(id);
   if (builtIn) return builtIn;
   const row = must(await db().from("problems").select("*").eq("id", id).maybeSingle()) as ProblemRow | null;
   return row ? toProblem(row) : null;
 }
 
-export async function findVisibleProblem(id: string): Promise<VisibleProblem | null> {
-  const problem = await findProblem(id);
+export async function findVisibleProblem(id: string, options?: ProblemLookupOptions): Promise<VisibleProblem | null> {
+  const problem = await findProblem(id, options);
   return problem ? toVisibleProblem(problem) : null;
 }
 
-export async function listProblemSummaries(filter?: ProblemFilter): Promise<ProblemSummary[]> {
-  const rows = must(await db().from("problems").select("*").order("created_at")) as ProblemRow[];
-  return summarizeProblems([...getAllProblems(), ...rows.map(toProblem)], filter);
+export async function listProblemIds(): Promise<string[]> {
+  const rows = must(await db().from("problems").select("id")) as { id: string }[];
+  return [...getAllProblems().map((p) => p.id), ...rows.map((r) => r.id)];
+}
+
+export async function listProblemSummaries(filter?: ProblemFilter, options?: ProblemLookupOptions): Promise<ProblemSummary[]> {
+  const [rows, locked] = await Promise.all([
+    db().from("problems").select("*").order("created_at").then((result) => must(result) as ProblemRow[]),
+    options?.includeLocked ? Promise.resolve(new Set<string>()) : upcomingLockedProblemIds(),
+  ]);
+  const all = [...getAllProblems(), ...rows.map(toProblem)].filter((problem) => !locked.has(problem.id));
+  return summarizeProblems(all, filter);
 }

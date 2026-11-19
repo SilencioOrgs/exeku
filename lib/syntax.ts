@@ -67,6 +67,16 @@ function pattern(lang: Lang): RegExp {
   return re;
 }
 
+function followedByParen(code: string, from: number): boolean {
+  let i = from;
+  while (i < code.length) {
+    const ch = code.charCodeAt(i);
+    if (ch !== 32 && ch !== 9 && ch !== 10 && ch !== 13) return ch === 40;
+    i++;
+  }
+  return false;
+}
+
 export function tokenize(code: string, lang: Lang): Token[] {
   const re = pattern(lang);
   const tokens: Token[] = [];
@@ -86,12 +96,11 @@ export function tokenize(code: string, lang: Lang): Token[] {
       type = (`bracket${depth % 3}`) as TokenType;
       if (text === "(" || text === "[" || text === "{") depth++;
     } else if (g.word !== undefined) {
-      const rest = code.slice(re.lastIndex);
       if (CONTROL.has(text)) type = "control";
       else if (CONSTANTS[lang].has(text)) type = "constant";
       else if (KEYWORDS[lang].has(text)) type = "keyword";
       else if (TYPES[lang].has(text) || (lang === "java" && /^[A-Z]/.test(text)) || previousWord === "class" || previousWord === "struct") type = "type";
-      else if (/^\s*\(/.test(rest) || previousWord === "def") type = "function";
+      else if (followedByParen(code, re.lastIndex) || previousWord === "def") type = "function";
       else type = "variable";
       previousWord = text;
     }

@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { normalizeOutput, compareOutputs } from "../lib/judge/output-normalizer.ts";
 import { JudgingService } from "../lib/judge/judging-service.ts";
-import { MockSandboxAdapter } from "../lib/execution/mock-adapter.ts";
+import { MockSandboxAdapter } from "./fixtures/mock-adapter.ts";
 import { ExecutionQueue } from "../lib/execution/queue.ts";
 
 test("outputNormalizer - normalizes CRLF and trailing whitespace", () => {

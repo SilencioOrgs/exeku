@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { validateExecutionRequest } from "../lib/execution/validation.ts";
 import { ExekuJudgeAdapter } from "../lib/execution/exeku-judge-adapter.ts";
-import { MockSandboxAdapter } from "../lib/execution/mock-adapter.ts";
+import { MockSandboxAdapter } from "./fixtures/mock-adapter.ts";
 
 test("validateExecutionRequest - validates valid python request", () => {
   const result = validateExecutionRequest({

@@ -14,11 +14,11 @@ const VERDICTS: Record<string, { code: string; label: string; pass?: boolean }> 
 };
 
 export function verdictInfo(status: string | undefined | null): { code: string; label: string; pass: boolean } {
-  const known = status ? VERDICTS[status] : undefined;
+  const known = status && Object.hasOwn(VERDICTS, status) ? VERDICTS[status] : undefined;
   return known ? { pass: false, ...known } : { code: "ERR", label: "Unknown result", pass: false };
 }
 
 /** Judge or sandbox failures are not attempts by the student. */
 export function isRealVerdict(status: string | undefined | null): boolean {
-  return Boolean(status && VERDICTS[status]) && status !== "SERVICE_UNAVAILABLE" && status !== "INTERNAL_JUDGE_ERROR" && status !== "INTERNAL_ERROR";
+  return Boolean(status && Object.hasOwn(VERDICTS, status)) && status !== "SERVICE_UNAVAILABLE" && status !== "INTERNAL_JUDGE_ERROR" && status !== "INTERNAL_ERROR";
 }

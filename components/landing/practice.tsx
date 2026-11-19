@@ -10,7 +10,7 @@ const POINTS: Array<{ icon: LucideIcon; title: string; body: string }> = [
 /** Competitive-programming half of the landing page: the live editor demo. */
 export function Practice() {
   return (
-    <section id="practice" className="border-b border-[var(--color-border)] py-20 md:py-28">
+    <section id="practice" className="overflow-x-clip border-b border-[var(--color-border)] py-20 md:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
           <div className="min-w-0">

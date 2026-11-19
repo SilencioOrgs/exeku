@@ -20,7 +20,11 @@ import { LANGUAGE_DISPLAY_NAMES } from "@/lib/workspace-defaults";
 import { BrandLoader } from "@/components/brand-loader";
 
 export function hostOf(url: string) {
-  return new URL(url).hostname.replace(/^www\./, "");
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
 }
 
 export function SocialLink({ icon, label, handle, text, href }: { icon: ReactNode; label: string; handle?: string; text?: string; href: string }) {
@@ -32,7 +36,7 @@ export function SocialLink({ icon, label, handle, text, href }: { icon: ReactNod
         {handle || text ? (
           <a href={href} target="_blank" rel="noreferrer" className="block truncate text-sm font-medium text-[var(--color-accent)] underline-offset-4 hover:underline">{text ?? `@${handle}`}</a>
         ) : (
-          <p className="font-code text-sm text-[var(--color-text-muted)]">NaN</p>
+          <p className="text-sm text-[var(--color-text-muted)]">Not set</p>
         )}
       </div>
     </div>

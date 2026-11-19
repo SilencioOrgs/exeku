@@ -123,7 +123,13 @@ export function createIsolateCli(bin = "isolate"): IsolateCli {
       if (res.code !== 0 && res.code !== 1) throw new Error(`isolate --run failed: ${res.stderr.trim() || res.code}`);
     },
     async cleanup(boxId) {
-      await exec(bin, ["--cg", `--box-id=${boxId}`, "--cleanup"], 10_000);
+      let res = await exec(bin, ["--cg", `--box-id=${boxId}`, "--cleanup"], 10_000);
+      if (res.code !== 0) {
+        res = await exec(bin, ["--cg", `--box-id=${boxId}`, "--cleanup"], 10_000);
+      }
+      if (res.code !== 0) {
+        console.error(`isolate --cleanup failed for box ${boxId}: ${res.stderr.trim() || res.code}`);
+      }
     },
   };
 }

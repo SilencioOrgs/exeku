@@ -5,7 +5,7 @@ import { schoolDirectory } from "@/lib/accounts/school-directory";
 import { getViewer } from "@/lib/auth/viewer";
 import { db, must } from "@/lib/db/client";
 
-// shortcut: no verification email is sent, so the school address is unproven and campus-only events trust it, verify ownership here before real contests.
+// shortcut: campus_id is locked once set, but school email ownership is not verified by OTP yet; verify via email before public contests.
 export async function POST(request: Request) {
   const viewer = await getViewer();
   if (!viewer) return NextResponse.json({ error: "Sign in to continue." }, { status: 401 });
@@ -14,6 +14,9 @@ export async function POST(request: Request) {
   const checked = await checkSchoolAccount(body.value, schoolDirectory);
   if (!checked.ok) return NextResponse.json({ fieldErrors: checked.fieldErrors }, { status: 422 });
   const { email, age, school } = checked.account;
+  if (viewer.campusId && (school.campusId ?? undefined) !== viewer.campusId) {
+    return NextResponse.json({ error: "Your campus is already set. Contact an admin to change it." }, { status: 409 });
+  }
   must(await db().from("profiles").update({ school_email: email, age, school, campus_id: school.campusId ?? null }).eq("user_id", viewer.id));
   return NextResponse.json({ account: checked.account });
 }

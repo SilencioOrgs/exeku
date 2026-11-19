@@ -5,6 +5,7 @@
  */
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { disposeTree } from "./circuit";
 
 const PARTS = ["arduino-uno", "breadboard"] as const;
 type Manifest = Partial<Record<(typeof PARTS)[number], string | null>>;
@@ -31,7 +32,7 @@ export function fitToFootprint(model: THREE.Object3D, part: THREE.Object3D) {
   model.position.add(new THREE.Vector3(targetCenter.x - center.x, target.min.y - box.min.y, targetCenter.z - center.z));
 }
 
-export async function applyModelOverrides(root: THREE.Object3D, isDisposed: () => boolean) {
+export async function applyModelOverrides(root: THREE.Object3D, isDisposed: () => boolean, onSwap?: () => void) {
   const files = await loadManifest();
   const loader = new GLTFLoader();
   for (const name of PARTS) {
@@ -40,7 +41,10 @@ export async function applyModelOverrides(root: THREE.Object3D, isDisposed: () =
     if (!file || !part) continue;
     try {
       const gltf = await loader.loadAsync(`/models/${file}`);
-      if (isDisposed()) return;
+      if (isDisposed()) {
+        disposeTree(gltf.scene);
+        return;
+      }
       const model = gltf.scene;
       model.traverse((o) => { o.castShadow = true; o.receiveShadow = true; });
       part.updateWorldMatrix(true, true);
@@ -49,6 +53,7 @@ export async function applyModelOverrides(root: THREE.Object3D, isDisposed: () =
       part.parent?.add(holder);
       fitToFootprint(model, part);
       part.visible = false;
+      onSwap?.();
     } catch {
       // A broken or missing file keeps the procedural part.
     }

@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import ts from "typescript";
 import * as orgRules from "../lib/orgs/rules.ts";
-import { isObject, text } from "../lib/accounts/rules.ts";
+import { isObject, isUuid, text } from "../lib/accounts/rules.ts";
 import { todayInManila } from "../lib/dates.ts";
 import { fakeDb, must } from "./fixtures/fake-db.mjs";
 
@@ -20,6 +20,9 @@ function load(path, modules) {
   return loaded.exports;
 }
 
+const MINE = "11111111-1111-4111-8111-111111111111";
+const NIGHT = "22222222-2222-4222-8222-222222222222";
+const THEIRS = "33333333-3333-4333-8333-333333333333";
 const ORGS = { acoes: { name: "ACOES", campus_id: "santa-cruz", campus_name: "Santa Cruz" }, other: { name: "Other", campus_id: "siniloan", campus_name: "Siniloan" } };
 const event = (id, org_id, access, featured = false) => ({ id, org_id, access, featured, title: id, summary: "s", starts_on: "2026-12-01", banner: "circuit", winners: null, orgs: ORGS[org_id] });
 const member = (user_id, role) => ({ org_id: "acoes", user_id, role, orgs: ORGS.acoes, profiles: { display_name: user_id } });
@@ -33,11 +36,11 @@ function harness() {
     submissions: [],
     problems: [{ id: "created", title: "Created" }],
     tournament_members: [],
-    events: [event("mine", "acoes", "open"), event("night", "acoes", "campus-only"), event("theirs", "other", "open", true)],
+    events: [event(MINE, "acoes", "open"), event(NIGHT, "acoes", "campus-only"), event(THEIRS, "other", "open", true)],
   };
   const shared = { "server-only": {}, "@/lib/db/client": { db: fakeDb(tables), must }, "@/lib/dates": { todayInManila: () => "2026-11-08" }, "@/lib/orgs/rules": orgRules };
   const competition = load("lib/competition/repository.ts", { ...shared, "@/lib/accounts/school-directory": { schoolDirectory: {} }, "./rank": { rankScores: () => [] }, "@/lib/judge/solves": { firstSolves: async () => [], solvesBetween: async () => [] }, "@/lib/problems/catalog": { getProblemById: (id) => (id === "known" ? { id, title: "Known", testCases: [{ input: "secret" }] } : null) } });
-  const repository = load("lib/orgs/repository.ts", { ...shared, "@/lib/accounts/rules": { isObject, text }, "@/lib/competition/repository": competition, "./rules": orgRules });
+  const repository = load("lib/orgs/repository.ts", { ...shared, "@/lib/accounts/rules": { isObject, isUuid, text }, "@/lib/competition/repository": competition, "./rules": orgRules });
   return { tables, repository, competition };
 }
 
@@ -62,10 +65,10 @@ test("an identity in the request body is ignored, so nobody can act as the presi
 test("choosing a dashboard event clears only the same org's choice", async () => {
   const { tables, repository } = harness();
   const featured = () => tables.events.filter((e) => e.featured).map((e) => e.id).sort();
-  assert.equal((await repository.performOrgAction("acoes", viewer("pres"), { action: "feature", eventId: "mine" })).ok, true);
-  assert.deepEqual(featured(), ["mine", "theirs"]);
-  assert.equal((await repository.performOrgAction("acoes", viewer("pres"), { action: "feature", eventId: "night" })).ok, true);
-  assert.deepEqual(featured(), ["night", "theirs"]);
+  assert.equal((await repository.performOrgAction("acoes", viewer("pres"), { action: "feature", eventId: MINE })).ok, true);
+  assert.deepEqual(featured(), [MINE, THEIRS]);
+  assert.equal((await repository.performOrgAction("acoes", viewer("pres"), { action: "feature", eventId: NIGHT })).ok, true);
+  assert.deepEqual(featured(), [NIGHT, THEIRS]);
 });
 
 test("accepting an application makes the applicant a member and clears it", async () => {
@@ -82,9 +85,9 @@ test("accepting an application makes the applicant a member and clears it", asyn
 test("the org page shows campus events to a non-member from that campus, as the Events feed does", async () => {
   const { repository } = harness();
   const ids = async (campus) => (await repository.getOrgDetail("acoes", viewer("visitor", campus))).events.map((e) => e.id);
-  assert.deepEqual(await ids("santa-cruz"), ["mine", "night"]);
-  assert.deepEqual(await ids("siniloan"), ["mine"]);
-  assert.deepEqual(await ids(undefined), ["mine"]);
+  assert.deepEqual(await ids("santa-cruz"), [MINE, NIGHT]);
+  assert.deepEqual(await ids("siniloan"), [MINE]);
+  assert.deepEqual(await ids(undefined), [MINE]);
 });
 
 test("the events feed offers posting only to orgs the viewer can publish for", async () => {
@@ -97,7 +100,7 @@ test("the events feed offers posting only to orgs the viewer can publish for", a
 test("event problems expose only id and title, and unknown IDs are dropped", async () => {
   const { tables, competition } = harness();
   tables.events[0].problem_ids = ["known", "created", "gone"];
-  const event = (await competition.getEventsFeed(viewer("pres"))).events.find((e) => e.id === "mine");
+  const event = (await competition.getEventsFeed(viewer("pres"))).events.find((e) => e.id === MINE);
   assert.equal(JSON.stringify(event.problems), '[{"id":"known","title":"Known"},{"id":"created","title":"Created"}]');
 });
 

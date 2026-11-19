@@ -26,6 +26,7 @@ function mount(saved) {
   vm.runInNewContext(output, {
     module: loaded, exports: loaded.exports, queueMicrotask,
     window: { addEventListener() {}, removeEventListener() {} },
+    document: { visibilityState: "visible", addEventListener() {}, removeEventListener() {} },
     localStorage: { getItem: (key) => store.get(key) ?? null, setItem: (key, value) => store.set(key, value), removeItem: (key) => store.delete(key) },
     setInterval: () => 1, clearInterval() {},
     require: (name) => ({

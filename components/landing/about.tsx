@@ -9,22 +9,22 @@ export function About() {
     iconColor: string;
     title: string;
     tag: string;
-    badgeVariant: "pink" | "cyan" | "mint";
+    badgeVariant: "default" | "cyan" | "purple";
     description: string;
   }> = [
     {
       icon: Shield,
       iconColor: "text-[var(--color-primary-text)]",
-      title: "Isolated Sandboxing",
+      title: "Isolated sandboxing",
       tag: "Secure runtime",
-      badgeVariant: "pink",
+      badgeVariant: "default",
       description:
-        "Untrusted code is executed inside ephemeral, resource-constrained sandbox containers. Memory limits, CPU quotas, and air-gapped process isolation keep runaway loops and unsafe code contained.",
+        "Untrusted code runs inside ephemeral, resource-constrained sandbox containers. Memory limits, CPU quotas, and air-gapped process isolation keep runaway loops and unsafe code contained.",
     },
     {
       icon: CirclePlay,
       iconColor: "text-[var(--color-accent)]",
-      title: "Automated Assessment",
+      title: "Automated assessment",
       tag: "Instant verdicts",
       badgeVariant: "cyan",
       description:
@@ -33,11 +33,11 @@ export function About() {
     {
       icon: Code2,
       iconColor: "text-[var(--color-primary-text)]",
-      title: "Runs in the Browser",
+      title: "Runs in the browser",
       tag: "Nothing to install",
-      badgeVariant: "mint",
+      badgeVariant: "purple",
       description:
-        "Open the site and start coding. Your profile, settings and drafts are saved in your browser, with no forced sign-up and no third-party trackers.",
+        "Sign in with Google and start coding right away. Unsubmitted drafts and editor preferences stay saved in your browser while submissions sync to your campus and global standings.",
     },
   ];
 
@@ -55,7 +55,7 @@ export function About() {
           >
             Code. Practice. Compete.
           </h2>
-          <p className="text-base sm:text-lg text-[var(--color-text-muted)] font-sans leading-relaxed">
+          <p className="text-base sm:text-lg text-[var(--color-text-muted)] leading-relaxed">
             Exeku is an online programming practice and assessment platform for students.
             It combines instant automated judging, four languages and competitive programming workflows, right in
             your browser.
@@ -71,8 +71,8 @@ export function About() {
               className="bg-[var(--color-surface)] hover:border-[var(--color-primary)] transition-all group"
             >
               <div className="flex items-center justify-between mb-6">
-                <div className="w-12 h-12 bg-[var(--color-elevated)] border border-[var(--color-border)] group-hover:border-[var(--color-accent)] flex items-center justify-center transition-colors">
-                  <pillar.icon size={24} className={pillar.iconColor} />
+                <div className="w-12 h-12 rounded-lg bg-[var(--color-elevated)] border border-[var(--color-border)] group-hover:border-[var(--color-accent)] flex items-center justify-center transition-colors">
+                  <pillar.icon size={24} aria-hidden="true" className={pillar.iconColor} />
                 </div>
                 <PixelBadge variant={pillar.badgeVariant}>{pillar.tag}</PixelBadge>
               </div>

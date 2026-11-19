@@ -6,7 +6,6 @@ import { DEFAULT_AVATAR_ID } from "@/lib/avatars";
 import { validateDisplayName } from "@/lib/profile-validation";
 import {
   PROFILE_STORE,
-  idbGet,
   idbGetAll,
   idbPut,
   idbUpdate,
@@ -33,6 +32,8 @@ function generateId(): string {
 }
 
 export class ProfileRepository {
+  private readonly pendingClaims = new Map<string, Promise<LocalProfile>>();
+
   /**
    * Retrieves the current active profile, or null if no profile exists.
    */
@@ -82,6 +83,9 @@ export class ProfileRepository {
       preferredLanguage: input.preferredLanguage,
       appearancePreferences: appearanceRepository.getPreferences(),
       account: input.account,
+      socialLinks: input.socialLinks,
+      userType: input.userType,
+      borderId: input.borderId,
       createdAt: now,
       updatedAt: now,
     };
@@ -99,21 +103,31 @@ export class ProfileRepository {
    * The newest updatedAt is the active profile, so this also switches a shared computer to this student.
    */
   async claimProfile(ownerId: string, displayName: string): Promise<LocalProfile> {
-    let found: LocalProfile | undefined;
+    const inflight = this.pendingClaims.get(ownerId);
+    if (inflight) return inflight;
+    const task = (async () => {
+      let found: LocalProfile | undefined;
+      try {
+        const profiles = await idbGetAll<LocalProfile>(PROFILE_STORE);
+        found = profiles.find((profile) => profile.ownerId === ownerId) ?? profiles.find((profile) => !profile.ownerId);
+      } catch (err) {
+        throw new ProfileRepositoryError("Failed to read local profiles", err);
+      }
+      if (!found) return this.saveProfile({ ownerId, displayName, avatarId: DEFAULT_AVATAR_ID, experienceLevel: "beginner", preferredLanguage: "python" });
+      try {
+        return await idbUpdate<LocalProfile>(PROFILE_STORE, found.id, (current) => {
+          if (!current) throw new Error("Profile was not found");
+          return { ...current, ownerId, updatedAt: new Date().toISOString() };
+        });
+      } catch (err) {
+        throw new ProfileRepositoryError("Failed to claim local profile", err);
+      }
+    })();
+    this.pendingClaims.set(ownerId, task);
     try {
-      const profiles = await idbGetAll<LocalProfile>(PROFILE_STORE);
-      found = profiles.find((profile) => profile.ownerId === ownerId) ?? profiles.find((profile) => !profile.ownerId);
-    } catch (err) {
-      throw new ProfileRepositoryError("Failed to read local profiles", err);
-    }
-    if (!found) return this.saveProfile({ ownerId, displayName, avatarId: DEFAULT_AVATAR_ID, experienceLevel: "beginner", preferredLanguage: "python" });
-    try {
-      return await idbUpdate<LocalProfile>(PROFILE_STORE, found.id, (current) => {
-        if (!current) throw new Error("Profile was not found");
-        return { ...current, ownerId, updatedAt: new Date().toISOString() };
-      });
-    } catch (err) {
-      throw new ProfileRepositoryError("Failed to claim local profile", err);
+      return await task;
+    } finally {
+      this.pendingClaims.delete(ownerId);
     }
   }
 
@@ -124,12 +138,7 @@ export class ProfileRepository {
     id: string,
     updates: Partial<ProfileInput>
   ): Promise<LocalProfile> {
-    const existing = await idbGet<LocalProfile>(PROFILE_STORE, id);
-    if (!existing) {
-      throw new ProfileRepositoryError(`Profile with ID '${id}' was not found`);
-    }
-
-    let trimmedDisplayName = existing.displayName;
+    let trimmedDisplayName: string | undefined;
     if (updates.displayName !== undefined) {
       const validation = validateDisplayName(updates.displayName);
       if (!validation.isValid) {
@@ -140,30 +149,31 @@ export class ProfileRepository {
       trimmedDisplayName = validation.trimmed!;
     }
 
-    const updatedProfile: LocalProfile = {
-      ...existing,
-      displayName: trimmedDisplayName,
-      bio:
-        updates.bio !== undefined
-          ? updates.bio.trim() || undefined
-          : existing.bio,
-      avatarId: updates.avatarId ?? existing.avatarId,
-      experienceLevel: updates.experienceLevel ?? existing.experienceLevel,
-      preferredLanguage:
-        updates.preferredLanguage ?? existing.preferredLanguage,
-      account: updates.account ?? existing.account,
-      socialLinks: updates.socialLinks ?? existing.socialLinks,
-      userType: updates.userType ?? existing.userType,
-      borderId: updates.borderId ?? existing.borderId,
-      updatedAt: new Date().toISOString(),
-    };
-
     try {
       return await idbUpdate<LocalProfile>(PROFILE_STORE, id, (current) => {
-        if (!current) throw new Error("Profile was not found");
-        return { ...updatedProfile, appearancePreferences: current.appearancePreferences };
+        if (!current) {
+          throw new ProfileRepositoryError(`Profile with ID '${id}' was not found`);
+        }
+        return {
+          ...current,
+          displayName: trimmedDisplayName ?? current.displayName,
+          bio:
+            updates.bio !== undefined
+              ? updates.bio.trim() || undefined
+              : current.bio,
+          avatarId: updates.avatarId ?? current.avatarId,
+          experienceLevel: updates.experienceLevel ?? current.experienceLevel,
+          preferredLanguage:
+            updates.preferredLanguage ?? current.preferredLanguage,
+          account: updates.account ?? current.account,
+          socialLinks: updates.socialLinks ?? current.socialLinks,
+          userType: updates.userType ?? current.userType,
+          borderId: updates.borderId ?? current.borderId,
+          updatedAt: new Date().toISOString(),
+        };
       });
     } catch (err) {
+      if (err instanceof ProfileRepositoryError) throw err;
       throw new ProfileRepositoryError(
         `Failed to update profile '${id}' in local storage`,
         err

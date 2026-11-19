@@ -10,7 +10,7 @@ export function Languages() {
     role: string;
     accentBorder: string;
     accentText: string;
-    badgeVariant: "cyan" | "default" | "purple" | "pink";
+    badgeVariant: "cyan" | "default" | "purple";
     icon: LucideIcon;
     runtimeNote: string;
     curriculum: string[];
@@ -19,7 +19,7 @@ export function Languages() {
     {
       id: "python",
       name: "Python 3",
-      role: "Fundamentals & Logic",
+      role: "Fundamentals & logic",
       accentBorder: "border-[var(--color-accent)]/50",
       accentText: "text-[var(--color-accent)]",
       badgeVariant: "cyan",
@@ -31,7 +31,7 @@ export function Languages() {
     {
       id: "java",
       name: "Java",
-      role: "Object-Oriented Architecture",
+      role: "Object-oriented architecture",
       accentBorder: "border-[var(--color-warning)]/50",
       accentText: "text-[var(--color-warning)]",
       badgeVariant: "default",
@@ -43,7 +43,7 @@ export function Languages() {
     {
       id: "cpp",
       name: "C++",
-      role: "Systems & Performance",
+      role: "Systems & performance",
       accentBorder: "border-[var(--color-primary)]/50",
       accentText: "text-[var(--color-primary-text)]",
       badgeVariant: "purple",
@@ -55,10 +55,10 @@ export function Languages() {
     {
       id: "c",
       name: "C",
-      role: "Bare Metal & Foundations",
+      role: "Bare metal & foundations",
       accentBorder: "border-[var(--color-primary-text)]/50",
       accentText: "text-[var(--color-primary-text)]",
-      badgeVariant: "pink",
+      badgeVariant: "default",
       icon: FileCode2,
       runtimeNote: "Native · C11 / C17",
       curriculum: ["Manual Memory Management", "Structs & Memory Layout", "Bitwise Operations"],
@@ -78,9 +78,9 @@ export function Languages() {
             className="text-3xl sm:text-4xl md:text-5xl font-bold text-[var(--color-text-main)] mb-6 tracking-tight"
             style={{ fontFamily: "var(--font-heading-active)" }}
           >
-            Four Foundational Languages.
+            Four foundational languages.
           </h2>
-          <p className="text-base sm:text-lg text-[var(--color-text-muted)] font-sans leading-relaxed">
+          <p className="text-base sm:text-lg text-[var(--color-text-muted)] leading-relaxed">
             Exeku focuses deeply on the languages that form the backbone of computer
             science education. From high-level algorithmic logic to bare-metal memory
             allocation, students build real fluency across the software stack.
@@ -97,8 +97,8 @@ export function Languages() {
             >
               <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-[var(--color-elevated)] border border-[var(--color-border)] flex items-center justify-center">
-                    <lang.icon size={22} className={lang.accentText} />
+                  <div className="w-10 h-10 rounded-lg bg-[var(--color-elevated)] border border-[var(--color-border)] flex items-center justify-center">
+                    <lang.icon size={22} aria-hidden="true" className={lang.accentText} />
                   </div>
                   <div>
                     <h3
@@ -107,7 +107,7 @@ export function Languages() {
                     >
                       {lang.name}
                     </h3>
-                    <span className="text-xs font-mono text-[var(--color-text-muted)]">{lang.role}</span>
+                    <span className="text-xs text-[var(--color-text-muted)]">{lang.role}</span>
                   </div>
                 </div>
                 <PixelBadge variant={lang.badgeVariant}>{lang.runtimeNote}</PixelBadge>
@@ -115,14 +115,14 @@ export function Languages() {
 
               {/* Planned Curriculum Tracks */}
               <div className="mb-4 pt-3 border-t border-[var(--color-border)]">
-                <span className="text-xs font-mono text-[var(--color-text-muted)] block mb-2">
-                  Planned Curriculum Modules:
+                <span className="text-xs text-[var(--color-text-muted)] block mb-2">
+                  Planned curriculum modules:
                 </span>
                 <div className="flex flex-wrap gap-2">
                   {lang.curriculum.map((item, idx) => (
                     <span
                       key={idx}
-                      className="px-2 py-1 text-xs font-mono bg-[var(--color-elevated)] border border-[var(--color-border)] text-[var(--color-text-main)]"
+                      className="rounded-md px-2 py-1 text-xs bg-[var(--color-elevated)] border border-[var(--color-border)] text-[var(--color-text-main)]"
                     >
                       {item}
                     </span>
@@ -131,7 +131,7 @@ export function Languages() {
               </div>
 
               {/* Code Snippet Box */}
-              <div className="p-3 bg-[var(--color-canvas)] border border-[var(--color-border)] font-mono text-xs text-[var(--color-text-muted)] overflow-x-auto">
+              <div className="rounded-lg p-3 bg-[var(--color-canvas)] border border-[var(--color-border)] font-code text-xs text-[var(--color-text-muted)] overflow-x-auto">
                 <pre className="text-[0.75rem] leading-5 text-[var(--color-text-main)] whitespace-pre">
                   {lang.sample}
                 </pre>

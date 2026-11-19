@@ -116,7 +116,8 @@ export class ExekuJudgeAdapter implements IExecutionAdapter {
     const timeLimit = request.timeLimitMs || DEFAULT_TIME_LIMIT_MS;
     // Compile time plus every run at its wall-clock cap, plus time waiting in the worker's queue.
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 60_000 + stdins.length * (timeLimit * 3 + 1000));
+    const perRunWallMs = Math.max(timeLimit * 3, timeLimit + 3000) + 1000;
+    const timer = setTimeout(() => controller.abort(), 60_000 + stdins.length * perRunWallMs);
     const fail = (status: ExecutionStatus, message: string, error?: string) => stdins.map(() => this.failure(status, message, error));
 
     try {

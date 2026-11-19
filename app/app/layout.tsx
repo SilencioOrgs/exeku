@@ -5,8 +5,8 @@ import { ChallengeProvider } from "@/hooks/use-challenge-session";
 import { ChallengeExitGuardModal } from "@/components/app/challenge-exit-guard-modal";
 
 export const metadata: Metadata = {
-  title: "Workspace — Exeku",
-  description: "Offline-first programming environment and local profile dashboard.",
+  title: "Workspace | Exeku",
+  description: "Competitive programming workspace, sandbox judge, and tournament dashboard.",
 };
 
 export default function AppLayout({
