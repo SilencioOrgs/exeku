@@ -5,6 +5,7 @@ import { useProfile } from "@/hooks/use-profile";
 import { buttonVariants } from "@/components/ui/button";
 import { ArrowDown, ArrowRight } from "lucide-react";
 import { VersusScene } from "./versus-scene";
+import { ScrollReveal } from "./scroll-reveal";
 
 const STATS = [
   { value: "4", label: "languages judged" },
@@ -24,7 +25,7 @@ export function Hero() {
       <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent to-[var(--color-canvas)]" />
 
       <div className="pointer-events-none relative mx-auto flex min-h-[calc(100svh-4rem)] max-w-7xl items-end px-4 pt-[50vh] pb-14 sm:px-6 md:items-center md:pt-16 lg:px-8">
-        <div className="pointer-events-auto max-w-xl">
+        <ScrollReveal variant="copy" className="pointer-events-auto max-w-xl">
           <h1 className="text-5xl leading-[1.02] font-semibold tracking-tight text-[var(--color-text-main)] sm:text-6xl xl:text-7xl">
             Out-code<br />your <span className="text-gradient-orange">rival.</span>
           </h1>
@@ -39,15 +40,15 @@ export function Hero() {
               See how it works<ArrowDown size={16} aria-hidden="true" />
             </a>
           </div>
-          <dl className="mt-10 grid max-w-md grid-cols-3 gap-4 border-t border-[var(--color-border)] pt-6">
+          <dl className="skeuo-panel mt-10 grid max-w-md grid-cols-3 gap-2 p-2">
             {STATS.map((stat) => (
-              <div key={stat.label}>
-                <dt className="text-xs text-[var(--color-text-muted)]">{stat.label}</dt>
-                <dd className="font-code mt-1 text-xl font-semibold text-[var(--color-text-main)]">{stat.value}</dd>
+              <div key={stat.label} className="skeuo-well min-w-0 rounded-xl border px-3 py-2.5">
+                <dt className="truncate text-xs text-[var(--color-text-muted)]">{stat.label}</dt>
+                <dd className="font-code mt-1 text-lg font-semibold text-[var(--color-text-main)] sm:text-xl">{stat.value}</dd>
               </div>
             ))}
           </dl>
-        </div>
+        </ScrollReveal>
       </div>
     </section>
   );

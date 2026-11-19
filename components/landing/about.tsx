@@ -1,7 +1,6 @@
 import React from "react";
-import { PixelBadge } from "@/components/retro/pixel-badge";
-import { PixelCard } from "@/components/retro/pixel-card";
 import { CirclePlay, Code2, Shield, type LucideIcon } from "lucide-react";
+import { ScrollReveal } from "./scroll-reveal";
 
 export function About() {
   const pillars: Array<{
@@ -9,7 +8,7 @@ export function About() {
     iconColor: string;
     title: string;
     tag: string;
-    badgeVariant: "default" | "cyan" | "purple";
+    spec: string;
     description: string;
   }> = [
     {
@@ -17,7 +16,7 @@ export function About() {
       iconColor: "text-[var(--color-primary-text)]",
       title: "Isolated sandboxing",
       tag: "Secure runtime",
-      badgeVariant: "default",
+      spec: "isolate v2 · air-gapped",
       description:
         "Untrusted code runs inside ephemeral, resource-constrained sandbox containers. Memory limits, CPU quotas, and air-gapped process isolation keep runaway loops and unsafe code contained.",
     },
@@ -26,7 +25,7 @@ export function About() {
       iconColor: "text-[var(--color-accent)]",
       title: "Automated assessment",
       tag: "Instant verdicts",
-      badgeVariant: "cyan",
+      spec: "AC · WA · TLE · MLE",
       description:
         "Deterministic test suite verification with instant grading. Visible test cases provide actionable debugging feedback, while hidden test cases ensure algorithmic rigor and prevent hardcoded answers.",
     },
@@ -35,62 +34,60 @@ export function About() {
       iconColor: "text-[var(--color-primary-text)]",
       title: "Runs in the browser",
       tag: "Nothing to install",
-      badgeVariant: "purple",
+      spec: "IndexedDB + cloud sync",
       description:
         "Sign in with Google and start coding right away. Unsubmitted drafts and editor preferences stay saved in your browser while submissions sync to your campus and global standings.",
     },
   ];
 
   return (
-    <section id="about" className="py-20 md:py-28 bg-[var(--color-canvas)] border-t border-b border-[var(--color-border)] relative">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
-        <div className="max-w-3xl mb-14">
-          <div className="mb-3">
-            <p className="font-code text-xs font-medium text-[var(--color-primary-text)]">About</p>
-          </div>
-          <h2
-            className="text-3xl sm:text-4xl md:text-5xl font-bold text-[var(--color-text-main)] mb-6 tracking-tight"
-            style={{ fontFamily: "var(--font-heading-active)" }}
-          >
+    <section id="about" className="relative border-t border-b border-[var(--color-border)] bg-[var(--color-canvas)] py-20 md:py-28">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <ScrollReveal variant="copy" className="mb-14 max-w-3xl">
+          <h2 className="mb-6 text-3xl font-bold tracking-tight text-[var(--color-text-main)] sm:text-4xl md:text-5xl">
             Code. Practice. Compete.
           </h2>
-          <p className="text-base sm:text-lg text-[var(--color-text-muted)] leading-relaxed">
+          <p className="text-base leading-relaxed text-[var(--color-text-muted)] sm:text-lg">
             Exeku is an online programming practice and assessment platform for students.
             It combines instant automated judging, four languages and competitive programming workflows, right in
             your browser.
           </p>
-        </div>
+        </ScrollReveal>
 
-        {/* 3 Pillars Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
-          {pillars.map((pillar) => (
-            <PixelCard
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:gap-8">
+          {pillars.map((pillar, index) => (
+            <ScrollReveal
               key={pillar.title}
-              variant="default"
-              className="bg-[var(--color-surface)] hover:border-[var(--color-primary)] transition-all group"
+              variant="panel"
+              delayMs={index * 80}
+              className="skeuo-panel flex flex-col justify-between p-5 sm:p-6"
             >
-              <div className="flex items-center justify-between mb-6">
-                <div className="w-12 h-12 rounded-lg bg-[var(--color-elevated)] border border-[var(--color-border)] group-hover:border-[var(--color-accent)] flex items-center justify-center transition-colors">
-                  <pillar.icon size={24} aria-hidden="true" className={pillar.iconColor} />
+              <div>
+                <div className="mb-6 flex items-center justify-between gap-2">
+                  <div className="skeuo-key flex size-12 shrink-0 items-center justify-center rounded-xl bg-[var(--color-elevated)]">
+                    <pillar.icon size={22} aria-hidden="true" className={pillar.iconColor} />
+                  </div>
+                  <span className="skeuo-well inline-flex items-center rounded-lg border px-2.5 py-1 font-code text-xs text-[var(--color-primary-text)]">
+                    {pillar.tag}
+                  </span>
                 </div>
-                <PixelBadge variant={pillar.badgeVariant}>{pillar.tag}</PixelBadge>
+
+                <h3 className="mb-3 text-xl font-bold text-[var(--color-text-main)] sm:text-2xl">
+                  {pillar.title}
+                </h3>
+
+                <p className="text-sm leading-relaxed text-[var(--color-text-muted)] sm:text-base">
+                  {pillar.description}
+                </p>
               </div>
 
-              <h3
-                className="text-xl sm:text-2xl font-bold text-[var(--color-text-main)] mb-3"
-                style={{ fontFamily: "var(--font-heading-active)" }}
-              >
-                {pillar.title}
-              </h3>
-
-              <p className="text-sm sm:text-base text-[var(--color-text-muted)] leading-relaxed">
-                {pillar.description}
-              </p>
-            </PixelCard>
+              <div className="skeuo-well mt-6 flex items-center justify-between rounded-xl border px-3 py-2 font-code text-xs text-[var(--color-text-muted)]">
+                <span>Subsystem</span>
+                <span className="text-[var(--color-text-main)]">{pillar.spec}</span>
+              </div>
+            </ScrollReveal>
           ))}
         </div>
-
       </div>
     </section>
   );
