@@ -8,7 +8,7 @@ export function useNearViewport(ref: RefObject<Element | null>, margin = "600px"
   useEffect(() => {
     const el = ref.current;
     if (!el || near) return;
-    const io = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) setNear(true); }, { rootMargin: margin });
+    const io = new IntersectionObserver((entries) => { if (entries.some((e) => e.isIntersecting)) setNear(true); }, { rootMargin: margin });
     io.observe(el);
     return () => io.disconnect();
   }, [ref, margin, near]);
