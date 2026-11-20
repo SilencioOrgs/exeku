@@ -11,6 +11,9 @@ update profiles set role = 'admin' where is_admin = true and role <> 'admin';
 create table if not exists faculty_requests (
   id uuid primary key default gen_random_uuid(),
   user_id text not null references profiles on delete cascade,
+  full_name text not null default '',
+  school_email text not null default '',
+  email_verified boolean not null default false,
   school_name text not null,
   department text not null,
   position_title text not null,

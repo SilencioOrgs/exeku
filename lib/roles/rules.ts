@@ -1,8 +1,9 @@
-import { isObject, text } from "@/lib/accounts/rules";
 import type { FieldErrors } from "@/types/account";
 import type { UserRole } from "@/types/roles";
 
 export interface CheckedFacultyRequest {
+  fullName: string;
+  schoolEmail: string;
   schoolName: string;
   department: string;
   positionTitle: string;
@@ -12,19 +13,36 @@ export interface CheckedFacultyRequest {
 
 type Checked<T> = ({ ok: true } & T) | { ok: false; fieldErrors: FieldErrors };
 
+const isObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+const text = (source: Record<string, unknown>, key: string) =>
+  typeof source[key] === "string" ? source[key].trim() : "";
+
+const EMAIL_RE = /^[a-z0-9._%+-]+@[a-z0-9-]+(\.[a-z0-9-]+)+$/;
+const ACADEMIC_DOMAIN_RE = /^([a-z0-9-]+\.)+(edu(\.[a-z]{2})?|ac\.[a-z]{2})$/;
+
 export const canCreateClasses = (role: UserRole) => role === "teacher" || role === "admin";
 
 export function checkFacultyRequest(input: unknown): Checked<{ request: CheckedFacultyRequest }> {
   if (!isObject(input)) {
-    return { ok: false, fieldErrors: { schoolName: "Enter your school name." } };
+    return { ok: false, fieldErrors: { fullName: "Enter your complete name." } };
   }
   const errors: FieldErrors = {};
+  const fullName = text(input, "fullName");
+  const schoolEmail = text(input, "schoolEmail").toLowerCase();
   const schoolName = text(input, "schoolName");
   const department = text(input, "department");
   const positionTitle = text(input, "positionTitle");
   const employeeId = text(input, "employeeId");
   const note = text(input, "note");
 
+  if (fullName.length < 3 || fullName.length > 120 || !/\s+/.test(fullName)) {
+    errors.fullName = "Enter your complete name (first and last name).";
+  }
+  const domain = schoolEmail.split("@")[1] ?? "";
+  if (schoolEmail.length > 254 || !EMAIL_RE.test(schoolEmail) || !ACADEMIC_DOMAIN_RE.test(domain)) {
+    errors.schoolEmail = "Enter a valid school email (like name@school.edu.ph).";
+  }
   if (schoolName.length < 3 || schoolName.length > 120) {
     errors.schoolName = "Enter your school's full name (3 to 120 characters).";
   }
@@ -45,6 +63,8 @@ export function checkFacultyRequest(input: unknown): Checked<{ request: CheckedF
   return {
     ok: true,
     request: {
+      fullName,
+      schoolEmail,
       schoolName,
       department,
       positionTitle,

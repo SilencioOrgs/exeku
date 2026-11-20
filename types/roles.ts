@@ -4,6 +4,9 @@ export type FacultyRequestStatus = "pending" | "approved" | "rejected";
 
 export interface FacultyRequestView {
   id: string;
+  fullName: string;
+  schoolEmail: string;
+  emailVerified: boolean;
   schoolName: string;
   department: string;
   positionTitle: string;
