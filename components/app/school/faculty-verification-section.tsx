@@ -5,21 +5,19 @@ import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 import { BadgeCheck, Clock3, GraduationCap, KeyRound, MailCheck, RefreshCw, ShieldAlert } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  clerkErrorMessage,
+  prepareClerkEmailOtp,
+  resendClerkEmailOtp,
+  verifyClerkEmailOtp,
+  type ClerkEmailUser,
+} from "@/lib/auth/clerk-email";
 import { fetchFacultyStatus, submitFacultyVerification } from "@/lib/roles/api";
 import { checkFacultyRequest } from "@/lib/roles/rules";
 import type { FieldErrors } from "@/types/account";
 import type { LocalProfile } from "@/types/profile";
 import type { FacultyStatusPayload } from "@/types/roles";
 import { TextAreaField, TextField } from "./field";
-
-function clerkErrorMessage(err: unknown, fallback: string): string {
-  if (err && typeof err === "object" && "errors" in err && Array.isArray((err as { errors: unknown[] }).errors)) {
-    const first = (err as { errors: Array<{ longMessage?: string; message?: string }> }).errors[0];
-    if (first?.longMessage) return first.longMessage;
-    if (first?.message) return first.message;
-  }
-  return err instanceof Error ? err.message : fallback;
-}
 
 export function FacultyVerificationSection({ profile }: { profile: LocalProfile }) {
   const { user, isLoaded } = useUser();
@@ -115,21 +113,12 @@ export function FacultyVerificationSection({ profile }: { profile: LocalProfile 
     setBusy(true);
     try {
       const normalized = checked.request.schoolEmail;
-      let emailResource = user.emailAddresses.find(
-        (entry) => entry.emailAddress.toLowerCase() === normalized,
-      );
-
-      // Already verified on Clerk (for example, signed in via school Google account): submit directly.
-      if (emailResource?.verification?.status === "verified") {
+      const prepared = await prepareClerkEmailOtp(user as unknown as ClerkEmailUser, normalized);
+      if (prepared.status === "already_verified") {
         await finalizeSubmission();
         return;
       }
-
-      if (!emailResource) {
-        emailResource = await user.createEmailAddress({ email: normalized });
-      }
-      await emailResource.prepareVerification({ strategy: "email_code" });
-      setPendingEmailId(emailResource.id);
+      setPendingEmailId(prepared.emailId);
       setStep("otp");
       setOtpCode("");
       setOtpNotice(`Verification code sent to ${normalized}. Check your school inbox.`);
@@ -156,32 +145,13 @@ export function FacultyVerificationSection({ profile }: { profile: LocalProfile 
     }
 
     const normalized = schoolEmail.trim().toLowerCase();
-    const emailResource =
-      user.emailAddresses.find((entry) => entry.id === pendingEmailId) ??
-      user.emailAddresses.find((entry) => entry.emailAddress.toLowerCase() === normalized);
-
-    if (!emailResource) {
-      setSubmitError("Verification session expired. Request a new code.");
-      setStep("details");
-      return;
-    }
-
-    const alreadyVerified = emailResource.verification?.status === "verified";
-    const code = otpCode.trim();
-    if (!alreadyVerified && !/^\d{6}$/.test(code)) {
-      setSubmitError("Enter the 6-digit verification code from your school email.");
-      return;
-    }
-
     setBusy(true);
     try {
-      if (!alreadyVerified) {
-        const verified = await emailResource.attemptVerification({ code });
-        if (verified.verification?.status !== "verified") {
-          setSubmitError("Code could not be verified. Check the code and try again.");
-          return;
-        }
-        await user.reload();
+      const verified = await verifyClerkEmailOtp(user as unknown as ClerkEmailUser, pendingEmailId, normalized, otpCode);
+      if (!verified.ok) {
+        setSubmitError(verified.error);
+        if (verified.expired) setStep("details");
+        return;
       }
       await finalizeSubmission();
     } catch (err) {
@@ -196,17 +166,17 @@ export function FacultyVerificationSection({ profile }: { profile: LocalProfile 
     setBusy(true);
     setSubmitError(undefined);
     setOtpNotice(undefined);
+    const normalized = schoolEmail.trim().toLowerCase();
     try {
-      const normalized = schoolEmail.trim().toLowerCase();
-      const emailResource =
-        user.emailAddresses.find((entry) => entry.id === pendingEmailId) ??
-        user.emailAddresses.find((entry) => entry.emailAddress.toLowerCase() === normalized);
-      if (!emailResource) {
+      const res = await resendClerkEmailOtp(user as unknown as ClerkEmailUser, pendingEmailId, normalized);
+      if (!res.ok) {
         setStep("details");
-        return;
+        setSubmitError("Verification session expired. Request a new code.");
+      } else if (res.alreadyVerified) {
+        await finalizeSubmission();
+      } else {
+        setOtpNotice(`A fresh verification code was sent to ${normalized}.`);
       }
-      await emailResource.prepareVerification({ strategy: "email_code" });
-      setOtpNotice(`A fresh verification code was sent to ${normalized}.`);
     } catch (err) {
       setSubmitError(clerkErrorMessage(err, "Could not resend verification code. Wait a moment and try again."));
     } finally {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Shield } from "lucide-react";
+import { KeyRound, MailCheck, RefreshCw, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { fetchLocations, fetchSchools } from "@/lib/accounts/api";
 import type { FieldErrors, NewSchoolRequest, SchoolLocation, SchoolOption } from "@/types/account";
@@ -23,14 +23,37 @@ export interface SchoolEmailFormProps {
   form: SchoolForm;
   errors: FieldErrors;
   newSchool: NewSchoolRequest | null;
+  step?: "details" | "otp";
+  otpCode?: string;
+  otpNotice?: string;
   busy: boolean;
   onChange: (patch: Partial<SchoolForm>) => void;
   onNewSchool: (school: NewSchoolRequest | null) => void;
+  onOtpCodeChange?: (code: string) => void;
   onSubmit: (event: React.FormEvent) => void;
+  onVerifyOtp?: (event: React.FormEvent) => void;
+  onResendOtp?: () => void;
+  onBackToDetails?: () => void;
   onCancel: () => void;
 }
 
-export function SchoolEmailForm({ form, errors, newSchool, busy, onChange, onNewSchool, onSubmit, onCancel }: SchoolEmailFormProps) {
+export function SchoolEmailForm({
+  form,
+  errors,
+  newSchool,
+  step = "details",
+  otpCode = "",
+  otpNotice,
+  busy,
+  onChange,
+  onNewSchool,
+  onOtpCodeChange,
+  onSubmit,
+  onVerifyOtp,
+  onResendOtp,
+  onBackToDetails,
+  onCancel,
+}: SchoolEmailFormProps) {
   const [locations, setLocations] = useState<SchoolLocation[] | null>(null);
   const [loaded, setLoaded] = useState<{ locationId: string; schools: SchoolOption[] } | null>(null);
   const [loadError, setLoadError] = useState<string>();
@@ -71,6 +94,52 @@ export function SchoolEmailForm({ form, errors, newSchool, busy, onChange, onNew
     const school = schools?.find((s) => s.id === schoolId);
     onChange({ schoolId, schoolLabel: school?.shortName ?? "", campusId: "", campusLabel: "", programId: "" });
   };
+
+  if (step === "otp" && onVerifyOtp) {
+    return (
+      <form id="school-otp-form" onSubmit={onVerifyOtp} noValidate className="mt-4 space-y-4">
+        {otpNotice && (
+          <p role="status" className="skeuo-recess flex items-center gap-2 rounded-xl p-3 text-sm text-[var(--color-primary-text)]">
+            <MailCheck size={16} aria-hidden="true" className="shrink-0" />
+            <span>{otpNotice}</span>
+          </p>
+        )}
+        <div className="max-w-xs">
+          <TextField
+            id="school-otp"
+            label={`Enter 6-digit code sent to ${form.email.trim().toLowerCase()}`}
+            placeholder="123456"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={6}
+            autoFocus
+            value={otpCode}
+            onChange={(e) => onOtpCodeChange?.(e.target.value.replace(/\D/g, "").slice(0, 6))}
+            className="font-code tracking-[0.25em]"
+            required
+          />
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap gap-2">
+            {onResendOtp && (
+              <Button type="button" variant="outline" size="sm" onClick={onResendOtp} disabled={busy}>
+                <RefreshCw size={14} aria-hidden="true" /> Resend code
+              </Button>
+            )}
+            {onBackToDetails && (
+              <Button type="button" variant="ghost" size="sm" onClick={onBackToDetails} disabled={busy}>
+                Edit details
+              </Button>
+            )}
+          </div>
+          <Button type="submit" size="lg" className="px-5" disabled={busy || otpCode.length < 6}>
+            <KeyRound size={15} aria-hidden="true" />
+            {busy ? "Verifying…" : "Verify & save"}
+          </Button>
+        </div>
+      </form>
+    );
+  }
 
   return (
     <form id="school-form" onSubmit={onSubmit} noValidate className="mt-4 space-y-4">
@@ -132,12 +201,12 @@ export function SchoolEmailForm({ form, errors, newSchool, busy, onChange, onNew
       )}
 
       <p className="flex items-start gap-2 text-xs text-[var(--color-text-muted)]">
-        <Shield size={14} className="mt-px" />
-        Saved in this browser for now. We&apos;ll verify your email once accounts are connected.
+        <Shield size={14} className="mt-px shrink-0" />
+        We&apos;ll send a 6-digit verification code to confirm this email belongs to you. If it&apos;s already verified on your account, it saves right away.
       </p>
       <div className="flex justify-end gap-2">
         <Button type="button" variant="ghost" size="lg" className="px-4" onClick={onCancel}>Cancel</Button>
-        <Button type="submit" size="lg" className="px-5" disabled={busy}>{busy ? "Saving…" : "Save school email"}</Button>
+        <Button type="submit" size="lg" className="px-5" disabled={busy}>{busy ? "Checking…" : "Verify & save"}</Button>
       </div>
     </form>
   );
