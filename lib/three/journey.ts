@@ -147,15 +147,18 @@ function buildStanding(style: PlayerStyle, armsUp: boolean) {
   const std = (color: string, roughness = 0.75) => new THREE.MeshStandardMaterial({ color, roughness });
   const hoodie = std(style.hoodie, 0.85), pants = std(style.pants, 0.85), skin = std(style.skin, 0.6);
   const v = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
+  g.add(limb(v(-8.5, 86, 0), v(8.5, 86, 0), 8, pants));
   for (const s of [-1, 1]) {
-    g.add(limb(v(s * 9, 92, 0), v(s * 10, 50, 1), 7.5, pants));
-    g.add(limb(v(s * 10, 50, 1), v(s * 10, 9, 0), 6, pants));
-    g.add(mesh(new RoundedBoxGeometry(9, 6, 16, 2, 2.5), std("#f2f2f2", 0.6), s * 10, 3, 3));
+    g.add(limb(v(s * 9, 86, 0), v(s * 9.5, 48, 1.5), 7.2, pants));
+    g.add(limb(v(s * 9.5, 48, 1.5), v(s * 9.5, 9, 0), 5.8, pants));
+    g.add(mesh(new RoundedBoxGeometry(9.5, 6.5, 17, 2, 2.5), std("#f2f2f2", 0.6), s * 9.5, 3.25, 3));
   }
-  g.add(limb(v(0, 90, 0), v(0, 140, 0), 15, hoodie));
-  g.add(mesh(new THREE.CylinderGeometry(4.2, 4.6, 8, 14), skin, 0, 150, 0));
+  g.add(limb(v(0, 99, 0), v(0, 129, 0), 14.5, hoodie));
+  g.add(limb(v(-12, 130, 0), v(12, 130, 0), 7.2, hoodie));
+  g.add(mesh(new THREE.CylinderGeometry(6.4, 8.8, 3.6, 20), hoodie, 0, 141.2, 0));
+  g.add(limb(v(0, 139, 0), v(0, 154, 0), 4.5, skin));
   const head = new THREE.Group();
-  head.position.set(0, 163, 0);
+  head.position.set(0, 158, 0);
   head.add(mesh(new THREE.SphereGeometry(10.5, 32, 24), skin));
   const hair = mesh(new THREE.SphereGeometry(11.1, 32, 16, 0, Math.PI * 2, 0, Math.PI * 0.55), std(style.hair, 0.9), 0, 0.8, -1.2);
   hair.rotation.x = -0.45;
@@ -169,12 +172,13 @@ function buildStanding(style: PlayerStyle, armsUp: boolean) {
   }
   g.add(head);
   for (const s of [-1, 1]) {
-    const shoulder = v(s * 17, 135, 0);
-    const elbow = armsUp ? v(s * 25, 160, 3) : v(s * 21, 112, 2);
-    const hand = armsUp ? v(s * 8, 183, 4) : v(s * 20, 88, 6);
-    g.add(limb(shoulder, elbow, 5.6, hoodie));
-    g.add(limb(elbow, hand, 4.6, hoodie));
-    g.add(mesh(new THREE.SphereGeometry(3.6, 16, 12), skin, hand.x, hand.y, hand.z));
+    const shoulder = v(s * 14.8, 130.5, 0);
+    const elbow = armsUp ? v(s * 23, 155, 2) : v(s * 18.5, 107, 1.5);
+    const wrist = armsUp ? v(s * 8.5, 178, 3.5) : v(s * 18.5, 85, 4);
+    const hand = armsUp ? v(s * 6.5, 181, 4) : v(s * 18.5, 80.5, 4.8);
+    g.add(limb(shoulder, elbow, 5.2, hoodie));
+    g.add(limb(elbow, wrist, 4.4, hoodie));
+    g.add(mesh(new THREE.SphereGeometry(3.7, 16, 12), skin, hand.x, hand.y, hand.z));
   }
   return g;
 }
@@ -211,7 +215,7 @@ export function buildPodiumZone() {
   }
   const trophy = buildTrophy();
   trophy.userData.dynamic = true;
-  trophy.position.set(0, 64 + 187, 0);
+  trophy.position.set(0, 64 + 184, 0);
   group.add(trophy);
 
   // Spotlight on first place and slow falling confetti.
