@@ -21,6 +21,8 @@ async function call<T>(url: string, init?: RequestInit): Promise<ApiReply<T>> {
 export const fetchFacultyStatus = () => call<FacultyStatusPayload>("/api/account/faculty");
 
 export const submitFacultyVerification = (input: {
+  fullName: string;
+  schoolEmail: string;
   schoolName: string;
   department: string;
   positionTitle: string;

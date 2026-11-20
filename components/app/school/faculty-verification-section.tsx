@@ -2,26 +2,45 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { BadgeCheck, Clock3, GraduationCap, ShieldAlert } from "lucide-react";
+import { useUser } from "@clerk/nextjs";
+import { BadgeCheck, Clock3, GraduationCap, KeyRound, MailCheck, RefreshCw, ShieldAlert } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { fetchFacultyStatus, submitFacultyVerification } from "@/lib/roles/api";
+import { checkFacultyRequest } from "@/lib/roles/rules";
 import type { FieldErrors } from "@/types/account";
 import type { LocalProfile } from "@/types/profile";
 import type { FacultyStatusPayload } from "@/types/roles";
 import { TextAreaField, TextField } from "./field";
 
+function clerkErrorMessage(err: unknown, fallback: string): string {
+  if (err && typeof err === "object" && "errors" in err && Array.isArray((err as { errors: unknown[] }).errors)) {
+    const first = (err as { errors: Array<{ longMessage?: string; message?: string }> }).errors[0];
+    if (first?.longMessage) return first.longMessage;
+    if (first?.message) return first.message;
+  }
+  return err instanceof Error ? err.message : fallback;
+}
+
 export function FacultyVerificationSection({ profile }: { profile: LocalProfile }) {
+  const { user, isLoaded } = useUser();
   const [status, setStatus] = useState<FacultyStatusPayload | null>(null);
   const [loadError, setLoadError] = useState<string>();
   const [openForm, setOpenForm] = useState(false);
 
+  const [fullName, setFullName] = useState(profile.displayName || "");
+  const [schoolEmail, setSchoolEmail] = useState(profile.account?.email ?? "");
   const [schoolName, setSchoolName] = useState(profile.account?.school.name ?? "");
   const [department, setDepartment] = useState(profile.account?.school.program ?? "");
   const [positionTitle, setPositionTitle] = useState("");
   const [employeeId, setEmployeeId] = useState("");
   const [note, setNote] = useState("");
+
+  const [step, setStep] = useState<"details" | "otp">("details");
+  const [pendingEmailId, setPendingEmailId] = useState<string | null>(null);
+  const [otpCode, setOtpCode] = useState("");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [submitError, setSubmitError] = useState<string>();
+  const [otpNotice, setOtpNotice] = useState<string>();
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -36,26 +55,146 @@ export function FacultyVerificationSection({ profile }: { profile: LocalProfile 
     };
   }, []);
 
-  const handleSubmit = async (event: FormEvent) => {
-    event.preventDefault();
-    setBusy(true);
-    setFieldErrors({});
-    setSubmitError(undefined);
-    const res = await submitFacultyVerification({
-      schoolName,
-      department,
-      positionTitle,
-      employeeId,
-      note: note.trim() || undefined,
-    });
-    setBusy(false);
+  const payload = () => ({
+    fullName: fullName.trim(),
+    schoolEmail: schoolEmail.trim().toLowerCase(),
+    schoolName: schoolName.trim(),
+    department: department.trim(),
+    positionTitle: positionTitle.trim(),
+    employeeId: employeeId.trim(),
+    note: note.trim() || undefined,
+  });
+
+  const finalizeSubmission = async () => {
+    const res = await submitFacultyVerification(payload());
     if (!res.ok) {
       setFieldErrors(res.fieldErrors ?? {});
-      setSubmitError(res.error);
-      return;
+      setSubmitError(res.error ?? "Could not send verification to admin.");
+      return false;
     }
     setStatus((prev) => ({ role: prev?.role ?? "student", request: res.data.request }));
     setOpenForm(false);
+    setStep("details");
+    setOtpCode("");
+    setPendingEmailId(null);
+    setOtpNotice(undefined);
+    return true;
+  };
+
+  const handleRequestOtp = async (event: FormEvent) => {
+    event.preventDefault();
+    setFieldErrors({});
+    setSubmitError(undefined);
+    setOtpNotice(undefined);
+
+    const data = payload();
+    const checked = checkFacultyRequest(data);
+    if (!checked.ok) {
+      setFieldErrors(checked.fieldErrors);
+      return;
+    }
+    if (!isLoaded || !user) {
+      setSubmitError("Wait for your session to finish loading, then try again.");
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const normalized = checked.request.schoolEmail;
+      let emailResource = user.emailAddresses.find(
+        (entry) => entry.emailAddress.toLowerCase() === normalized,
+      );
+
+      // Already verified on Clerk (for example, signed in via school Google account): submit directly.
+      if (emailResource?.verification?.status === "verified") {
+        await finalizeSubmission();
+        return;
+      }
+
+      if (!emailResource) {
+        emailResource = await user.createEmailAddress({ email: normalized });
+      }
+      await emailResource.prepareVerification({ strategy: "email_code" });
+      setPendingEmailId(emailResource.id);
+      setStep("otp");
+      setOtpCode("");
+      setOtpNotice(`Verification code sent to ${normalized}. Check your school inbox.`);
+    } catch (err) {
+      setSubmitError(
+        clerkErrorMessage(
+          err,
+          "Clerk could not send a verification code to that school email. Make sure the email is valid and not linked to another account.",
+        ),
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleVerifyOtpAndSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+    setSubmitError(undefined);
+    setOtpNotice(undefined);
+
+    const code = otpCode.trim();
+    if (!/^\d{6}$/.test(code)) {
+      setSubmitError("Enter the 6-digit verification code from your school email.");
+      return;
+    }
+    if (!user) {
+      setSubmitError("Sign in again to complete verification.");
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const normalized = schoolEmail.trim().toLowerCase();
+      const emailResource =
+        user.emailAddresses.find((entry) => entry.id === pendingEmailId) ??
+        user.emailAddresses.find((entry) => entry.emailAddress.toLowerCase() === normalized);
+
+      if (!emailResource) {
+        setSubmitError("Verification session expired. Request a new code.");
+        setStep("details");
+        return;
+      }
+
+      const verified = await emailResource.attemptVerification({ code });
+      if (verified.verification?.status !== "verified") {
+        setSubmitError("Code could not be verified. Check the code and try again.");
+        return;
+      }
+
+      await user.reload();
+      await finalizeSubmission();
+    } catch (err) {
+      setSubmitError(clerkErrorMessage(err, "Invalid or expired verification code. Try again or resend."));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (!user) return;
+    setBusy(true);
+    setSubmitError(undefined);
+    setOtpNotice(undefined);
+    try {
+      const normalized = schoolEmail.trim().toLowerCase();
+      const emailResource =
+        user.emailAddresses.find((entry) => entry.id === pendingEmailId) ??
+        user.emailAddresses.find((entry) => entry.emailAddress.toLowerCase() === normalized);
+      if (!emailResource) {
+        setStep("details");
+        return;
+      }
+      await emailResource.prepareVerification({ strategy: "email_code" });
+      setOtpNotice(`A fresh verification code was sent to ${normalized}.`);
+    } catch (err) {
+      setSubmitError(clerkErrorMessage(err, "Could not resend verification code. Wait a moment and try again."));
+    } finally {
+      setBusy(false);
+    }
   };
 
   if (loadError) {
@@ -73,7 +212,7 @@ export function FacultyVerificationSection({ profile }: { profile: LocalProfile 
             Are you a faculty member of the school?
           </h2>
           <p className="mt-1 max-w-2xl text-sm text-[var(--color-text-muted)]">
-            Verified teachers can create classes with invite codes, group students, assign problems, and track class progress.
+            Verify your school email with a Clerk OTP code to submit your faculty details for admin approval. Approved teachers can create classes, invite codes, and student groups.
           </p>
         </div>
 
@@ -83,7 +222,7 @@ export function FacultyVerificationSection({ profile }: { profile: LocalProfile 
             Manage classes
           </Link>
         ) : req?.status !== "pending" && !openForm ? (
-          <Button type="button" variant="outline" size="sm" onClick={() => setOpenForm(true)}>
+          <Button type="button" variant="outline" size="sm" onClick={() => { setOpenForm(true); setStep("details"); }}>
             <GraduationCap size={15} aria-hidden="true" />
             {req?.status === "rejected" ? "Submit new verification" : "Verify as faculty"}
           </Button>
@@ -104,12 +243,19 @@ export function FacultyVerificationSection({ profile }: { profile: LocalProfile 
         </div>
       ) : req?.status === "pending" ? (
         <div className="skeuo-recess space-y-2 rounded-xl p-4 text-sm">
-          <div className="flex items-center gap-2 font-medium text-[var(--color-primary-text)]">
+          <div className="flex flex-wrap items-center gap-2 font-medium text-[var(--color-primary-text)]">
             <Clock3 size={16} aria-hidden="true" />
             <span>Pending admin approval</span>
+            {req.emailVerified && (
+              <span className="inline-flex items-center gap-1 rounded-md bg-[var(--color-easy-bg)] px-2 py-0.5 font-code text-xs text-[var(--color-mint)]">
+                <MailCheck size={12} aria-hidden="true" /> School email verified
+              </span>
+            )}
           </div>
           <p className="text-xs text-[var(--color-text-muted)]">
-            Submitted for <strong className="text-[var(--color-text-main)]">{req.schoolName}</strong> · {req.department} · {req.positionTitle} (ID: <span className="font-code">{req.employeeId}</span>). An administrator will review and upgrade your account.
+            Submitted as <strong className="text-[var(--color-text-main)]">{req.fullName || profile.displayName}</strong>
+            {req.schoolEmail ? <> (<span className="font-code text-[var(--color-text-main)]">{req.schoolEmail}</span>)</> : null} ·{" "}
+            {req.schoolName} · {req.department} · {req.positionTitle} (ID: <span className="font-code">{req.employeeId}</span>). An administrator will review and upgrade your account.
           </p>
         </div>
       ) : (
@@ -124,8 +270,8 @@ export function FacultyVerificationSection({ profile }: { profile: LocalProfile 
             </div>
           )}
 
-          {openForm && (
-            <form onSubmit={handleSubmit} className="space-y-4 border-t border-[var(--color-border)] pt-4">
+          {openForm && step === "details" && (
+            <form onSubmit={handleRequestOtp} className="space-y-4 border-t border-[var(--color-border)] pt-4">
               {submitError && (
                 <p role="alert" className="skeuo-recess rounded-xl p-3 text-sm text-[var(--color-pink)]">
                   {submitError}
@@ -133,9 +279,30 @@ export function FacultyVerificationSection({ profile }: { profile: LocalProfile 
               )}
               <div className="grid gap-3 sm:grid-cols-2">
                 <TextField
+                  id="faculty-fullname"
+                  label="Complete name"
+                  placeholder="Juan Dela Cruz"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  error={fieldErrors.fullName}
+                  autoComplete="name"
+                  required
+                />
+                <TextField
+                  id="faculty-email"
+                  type="email"
+                  label="School email (Clerk sends OTP here)"
+                  placeholder="faculty@school.edu.ph"
+                  value={schoolEmail}
+                  onChange={(e) => setSchoolEmail(e.target.value)}
+                  error={fieldErrors.schoolEmail}
+                  autoComplete="email"
+                  required
+                />
+                <TextField
                   id="faculty-school"
                   label="School name"
-                  placeholder="Laguna State Polytechnic University"
+                  placeholder="Your university or college"
                   value={schoolName}
                   onChange={(e) => setSchoolName(e.target.value)}
                   error={fieldErrors.schoolName}
@@ -180,10 +347,59 @@ export function FacultyVerificationSection({ profile }: { profile: LocalProfile 
               />
               <div className="flex flex-wrap gap-2">
                 <Button type="submit" disabled={busy}>
-                  {busy ? "Sending…" : "Send to admin for approval"}
+                  <KeyRound size={15} aria-hidden="true" />
+                  {busy ? "Sending code…" : "Send OTP verification code"}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => setOpenForm(false)} disabled={busy}>
                   Cancel
+                </Button>
+              </div>
+            </form>
+          )}
+
+          {openForm && step === "otp" && (
+            <form onSubmit={handleVerifyOtpAndSubmit} className="space-y-4 border-t border-[var(--color-border)] pt-4">
+              {otpNotice && (
+                <p role="status" className="skeuo-recess flex items-center gap-2 rounded-xl p-3 text-sm text-[var(--color-primary-text)]">
+                  <MailCheck size={16} aria-hidden="true" className="shrink-0" />
+                  <span>{otpNotice}</span>
+                </p>
+              )}
+              {submitError && (
+                <p role="alert" className="skeuo-recess rounded-xl p-3 text-sm text-[var(--color-pink)]">
+                  {submitError}
+                </p>
+              )}
+
+              <div className="max-w-xs">
+                <TextField
+                  id="faculty-otp"
+                  label={`Enter 6-digit code sent to ${schoolEmail.trim().toLowerCase()}`}
+                  placeholder="123456"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={6}
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  className="font-code tracking-[0.25em]"
+                  required
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <Button type="submit" disabled={busy || otpCode.length < 6}>
+                  {busy ? "Verifying & sending…" : "Verify OTP & send to admin"}
+                </Button>
+                <Button type="button" variant="outline" onClick={() => void handleResendOtp()} disabled={busy}>
+                  <RefreshCw size={14} aria-hidden="true" /> Resend code
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => { setStep("details"); setSubmitError(undefined); setOtpNotice(undefined); }}
+                  disabled={busy}
+                >
+                  Edit details
                 </Button>
               </div>
             </form>
