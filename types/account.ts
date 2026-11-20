@@ -47,6 +47,7 @@ export interface StudentAccount {
   email: string;
   age: number;
   school: AccountSchool;
+  verified?: boolean;
 }
 
 export interface SchoolAccountRequest {

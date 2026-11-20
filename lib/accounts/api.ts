@@ -10,7 +10,7 @@ import type {
 import type { LocalProfile } from "@/types/profile";
 import type { Medal } from "@/types/tournament";
 
-export type ApiResult<T> = { ok: true; data: T } | { ok: false; error?: string; fieldErrors?: FieldErrors };
+export type ApiResult<T> = { ok: true; data: T } | { ok: false; error?: string; code?: string; fieldErrors?: FieldErrors };
 
 const UNREACHABLE = "We couldn't reach Exeku. Check your connection and try again.";
 
@@ -21,9 +21,14 @@ export async function call<T>(path: string, body?: unknown): Promise<ApiResult<T
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    const payload = (await response.json().catch(() => ({}))) as { error?: string; fieldErrors?: FieldErrors };
+    const payload = (await response.json().catch(() => ({}))) as { error?: string; code?: string; fieldErrors?: FieldErrors };
     if (response.ok) return { ok: true, data: payload as T };
-    return { ok: false, error: payload.error || "Request failed. Please try again.", fieldErrors: payload.fieldErrors };
+    return {
+      ok: false,
+      error: payload.error || "Request failed. Please try again.",
+      code: payload.code,
+      fieldErrors: payload.fieldErrors,
+    };
   } catch {
     return { ok: false, error: UNREACHABLE };
   }

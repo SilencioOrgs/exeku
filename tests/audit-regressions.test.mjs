@@ -328,6 +328,7 @@ test("POST /api/account/school returns 409 when switching an already-set campus"
   const tables = { profiles: [{ user_id: "u1", campus_id: "sc" }] };
   const route = loadTs("app/api/account/school/route.ts", {
     "next/server": { NextResponse },
+    "@clerk/nextjs/server": { currentUser: async () => ({ emailAddresses: [] }) },
     "@/lib/accounts/read-json": readJson,
     "@/lib/accounts/rules": {
       checkSchoolAccount: async () => ({
@@ -344,6 +345,123 @@ test("POST /api/account/school returns 409 when switching an already-set campus"
   const res = await route.POST(req);
   assert.equal(res.status, 409);
   assert.equal(tables.profiles[0].campus_id, "sc");
+});
+
+test("POST /api/account/school requires Clerk OTP verification, allows same email on same account, and blocks another account", async () => {
+  const tables = {
+    profiles: [
+      { user_id: "u1", campus_id: null, school_email: null, age: null, school: null },
+      { user_id: "u2", campus_id: "sc", school_email: "taken@lspu.edu.ph", age: 21, school: null },
+    ],
+  };
+  let clerkEmails = [];
+  let requestedEmail = "student@lspu.edu.ph";
+  let requestedAge = 20;
+  let viewerCampusId = undefined;
+
+  const route = loadTs("app/api/account/school/route.ts", {
+    "next/server": { NextResponse },
+    "@clerk/nextjs/server": { currentUser: async () => ({ emailAddresses: clerkEmails }) },
+    "@/lib/accounts/read-json": readJson,
+    "@/lib/accounts/rules": {
+      checkSchoolAccount: async () => ({
+        ok: true,
+        account: { email: requestedEmail, age: requestedAge, school: { id: "lspu", campusId: "sc", name: "LSPU", shortName: "LSPU", location: "Laguna", campus: "Santa Cruz", status: "listed" } },
+      }),
+    },
+    "@/lib/accounts/school-directory": { schoolDirectory: {} },
+    "@/lib/api/route-handler": { withApiErrors: (_label, fn) => fn() },
+    "@/lib/auth/viewer": { getViewer: async () => ({ id: "u1", name: "Ada", campusId: viewerCampusId }) },
+    "@/lib/db/client": { db: fakeDb(tables), exactCount, fetchAllPages, must },
+  });
+
+  const post = () => route.POST(new Request("http://localhost/api/account/school", { method: "POST", body: JSON.stringify({}) }));
+
+  // 1. Unverified email returns 403 VERIFICATION_REQUIRED and does not mutate profile.
+  clerkEmails = [{ emailAddress: "student@lspu.edu.ph", verification: { status: "unverified" } }];
+  const unverifiedRes = await post();
+  assert.equal(unverifiedRes.status, 403);
+  const unverifiedBody = await unverifiedRes.json();
+  assert.equal(unverifiedBody.code, "VERIFICATION_REQUIRED");
+  assert.equal(tables.profiles[0].school_email, null);
+
+  // 2. Once Clerk verifies the email on this account, saving succeeds and sets verified: true.
+  clerkEmails = [{ emailAddress: "STUDENT@LSPU.EDU.PH", verification: { status: "verified" } }];
+  const okRes = await post();
+  assert.equal(okRes.status, 200);
+  const okBody = await okRes.json();
+  assert.equal(okBody.account.verified, true);
+  assert.equal(tables.profiles[0].school_email, "student@lspu.edu.ph");
+
+  // 3. Re-saving with the SAME student email on the SAME account works (e.g. updating age).
+  viewerCampusId = "sc";
+  requestedAge = 21;
+  const sameAccountRes = await post();
+  assert.equal(sameAccountRes.status, 200);
+  assert.equal(tables.profiles[0].age, 21);
+
+  // 4. Attempting to claim a student email linked to ANOTHER account returns 409.
+  requestedEmail = "taken@lspu.edu.ph";
+  clerkEmails = [{ emailAddress: "taken@lspu.edu.ph", verification: { status: "verified" } }];
+  const conflictRes = await post();
+  assert.equal(conflictRes.status, 409);
+  assert.equal(tables.profiles[0].school_email, "student@lspu.edu.ph");
+});
+
+test("clerk-email helper reuses verified and unverified emails on the same account without duplicate createEmailAddress calls", async () => {
+  const { prepareClerkEmailOtp, verifyClerkEmailOtp } = await import("../lib/auth/clerk-email.ts");
+
+  // 1. Existing verified email on same account -> returns already_verified, never calls createEmailAddress or prepareVerification.
+  let createCalls = 0;
+  let prepareCalls = 0;
+  const verifiedUser = {
+    emailAddresses: [
+      {
+        id: "em_1",
+        emailAddress: "Student@LSPU.edu.ph",
+        verification: { status: "verified" },
+        prepareVerification: async () => { prepareCalls++; },
+        attemptVerification: async () => ({ verification: { status: "verified" } }),
+      },
+    ],
+    createEmailAddress: async () => { createCalls++; throw new Error("should not create"); },
+    reload: async () => verifiedUser,
+  };
+  const r1 = await prepareClerkEmailOtp(verifiedUser, "student@lspu.edu.ph");
+  assert.deepEqual(r1, { status: "already_verified", emailId: "em_1" });
+  assert.equal(createCalls, 0);
+  assert.equal(prepareCalls, 0);
+
+  // 2. Existing unverified email on same account -> reuses it (no createEmailAddress) and prepares OTP.
+  let verifyAttempts = 0;
+  let reloadCalls = 0;
+  const unverifiedEmail = {
+    id: "em_2",
+    emailAddress: "retry@lspu.edu.ph",
+    verification: { status: "unverified" },
+    prepareVerification: async () => { prepareCalls++; },
+    attemptVerification: async ({ code }) => {
+      verifyAttempts++;
+      if (code === "123456") {
+        unverifiedEmail.verification = { status: "verified" };
+      }
+      return unverifiedEmail;
+    },
+  };
+  const retryUser = {
+    emailAddresses: [unverifiedEmail],
+    createEmailAddress: async () => { createCalls++; throw new Error("should not create"); },
+    reload: async () => { reloadCalls++; return retryUser; },
+  };
+  const r2 = await prepareClerkEmailOtp(retryUser, "retry@lspu.edu.ph");
+  assert.deepEqual(r2, { status: "otp_sent", emailId: "em_2" });
+  assert.equal(createCalls, 0);
+  assert.equal(prepareCalls, 1);
+
+  const v1 = await verifyClerkEmailOtp(retryUser, "em_2", "retry@lspu.edu.ph", "123456");
+  assert.deepEqual(v1, { ok: true });
+  assert.equal(verifyAttempts, 1);
+  assert.ok(reloadCalls >= 2);
 });
 
 test("isAdmin recognizes both is_admin flag and role='admin' and rejects students/teachers", async () => {

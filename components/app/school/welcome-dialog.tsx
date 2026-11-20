@@ -106,8 +106,23 @@ export function WelcomeDialog({ profile, onUpdate }: { profile: LocalProfile; on
         {step === "school" && (
           <>
             {school.formError && <p role="alert" className="skeuo-recess rounded-xl p-3 text-sm text-[var(--color-pink)]">{school.formError}</p>}
-            <SchoolEmailForm form={school.form} errors={school.errors} newSchool={school.newSchool} busy={school.busy}
-              onChange={school.updateForm} onNewSchool={school.setNewSchool} onSubmit={school.submit} onCancel={() => setStep("choose")} />
+            <SchoolEmailForm
+              form={school.form}
+              errors={school.errors}
+              newSchool={school.newSchool}
+              step={school.step}
+              otpCode={school.otpCode}
+              otpNotice={school.otpNotice}
+              busy={school.busy}
+              onChange={school.updateForm}
+              onNewSchool={school.setNewSchool}
+              onOtpCodeChange={school.setOtpCode}
+              onSubmit={school.submit}
+              onVerifyOtp={school.verifyOtp}
+              onResendOtp={() => void school.resendOtp()}
+              onBackToDetails={school.backToDetails}
+              onCancel={() => { school.reset(); setStep("choose"); }}
+            />
           </>
         )}
         {step === "orgs" && <OrgStep profile={profile} onDone={() => setOpen(false)} />}
