@@ -16,6 +16,7 @@ import { CodingActivity } from "./coding-activity";
 import { ProfileEditDialog } from "./profile-edit-dialog";
 import { ConfirmDialog } from "./workspace/submission-modals";
 import { SchoolEmailSection } from "./school/school-email-section";
+import { FacultyVerificationSection } from "./school/faculty-verification-section";
 import { LANGUAGE_DISPLAY_NAMES } from "@/lib/workspace-defaults";
 import { BrandLoader } from "@/components/brand-loader";
 
@@ -116,6 +117,8 @@ export function ProfileView() {
           <Readout label="Saved drafts" value={draftCount === null ? "Unavailable" : draftCount} />
         </div>
       </SchoolEmailSection>
+
+      <FacultyVerificationSection profile={profile} />
 
       <CodingActivity profileId={profile.id} />
       <p className="text-xs text-[var(--color-text-muted)]">Activity reflects days with saved edits on this browser only. It is not linked to your GitHub account or a verified competition history.</p>

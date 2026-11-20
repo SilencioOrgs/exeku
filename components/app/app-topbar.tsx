@@ -14,13 +14,14 @@ export interface AppTopbarProps {
 }
 
 const ROUTE_LABELS: Record<string, string> = {
-  "/app": "Overview", "/app/challenges": "Challenges", "/app/workspace": "Workspace",
+  "/app": "Overview", "/app/challenges": "Challenges", "/app/classes": "Classes", "/app/workspace": "Workspace",
   "/app/profile": "Profile", "/app/settings": "Settings",
-  "/app/leaderboard": "Leaderboard", "/app/events": "Events", "/app/orgs": "Organizations", "/app/friends": "Friends", "/app/admin": "Admin",
+  "/app/leaderboard": "Leaderboard", "/app/events": "Events", "/app/orgs": "Organizations", "/app/friends": "Friends",
 };
 
 function labelForPath(pathname: string): string {
   if (ROUTE_LABELS[pathname]) return ROUTE_LABELS[pathname];
+  if (pathname.startsWith("/app/classes/")) return "Classes";
   if (pathname.startsWith("/app/orgs/")) return "Organizations";
   if (pathname.startsWith("/app/events/")) return "Events";
   if (pathname.startsWith("/app/friends/")) return "Friends";

@@ -8,13 +8,17 @@ export function fakeDb(tables) {
       let op = "select", payload, single = false, limitCount = null, rangeSlice = null;
       const matching = () => rows.filter((r) => filters.every((keep) => keep(r)));
       const run = () => {
-        if (op === "insert" || op === "upsert") rows.push({ id: crypto.randomUUID(), ...payload });
+        let inserted = null;
+        if (op === "insert" || op === "upsert") {
+          inserted = { id: crypto.randomUUID(), created_at: new Date().toISOString(), status: "pending", ...payload };
+          rows.push(inserted);
+        }
         if (op === "update") matching().forEach((r) => Object.assign(r, payload));
         if (op === "delete") matching().forEach((r) => rows.splice(rows.indexOf(r), 1));
-        let found = op === "select" ? matching() : null;
+        let found = op === "select" ? matching() : inserted ? [inserted] : null;
         if (found && rangeSlice) found = found.slice(rangeSlice[0], rangeSlice[1] + 1);
         if (found && limitCount !== null) found = found.slice(0, limitCount);
-        return { data: single ? (found[0] ?? null) : found, error: null };
+        return { data: single ? (found?.[0] ?? null) : found, error: null };
       };
       const builder = {
         select: () => builder,
@@ -34,6 +38,7 @@ export function fakeDb(tables) {
         update: (v) => { op = "update"; payload = v; return builder; },
         delete: () => { op = "delete"; return builder; },
         maybeSingle: () => { single = true; return builder; },
+        single: () => { single = true; return builder; },
         then: (resolve, reject) => Promise.resolve().then(run).then(resolve, reject),
       };
       return builder;
