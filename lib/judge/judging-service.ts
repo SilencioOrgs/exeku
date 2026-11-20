@@ -170,7 +170,12 @@ export class JudgingService {
           const results = await this.adapter.executeBatch!(baseRequest, chunk);
           collected.push(...results);
           const first = results[0];
-          if (first && (first.status === "COMPILATION_ERROR" || first.status === "SERVICE_UNAVAILABLE")) {
+          if (
+            first &&
+            (first.status === "COMPILATION_ERROR" ||
+              first.status === "SERVICE_UNAVAILABLE" ||
+              first.status === "INTERNAL_ERROR")
+          ) {
             break;
           }
         }
@@ -182,7 +187,19 @@ export class JudgingService {
       const execResult = batch
         ? batch[index]
         : await this.queue.enqueue(() => this.adapter.execute({ ...baseRequest, stdin: testCase.input }), client);
-      if (!execResult) break;
+      if (!execResult) {
+        return {
+          problemId,
+          language: submission.language,
+          overallVerdict: "INTERNAL_JUDGE_ERROR",
+          passedTests: 0,
+          totalTests: problem.testCases.length,
+          scorePercentage: 0,
+          maxDurationMs,
+          testResults: [],
+          error: "The judge returned fewer test results than expected. Nothing was judged.",
+        };
+      }
 
       if (execResult.durationMs > maxDurationMs) {
         maxDurationMs = execResult.durationMs;
@@ -215,7 +232,7 @@ export class JudgingService {
           scorePercentage: 0,
           maxDurationMs,
           testResults: [],
-          error: execResult.error || "The sandbox returned an unexpected error. Nothing was judged.",
+          error: "The sandbox returned an unexpected error. Nothing was judged.",
         };
       }
 
@@ -239,6 +256,20 @@ export class JudgingService {
       if (passed) passedTests++;
       else if (overallVerdict === "ACCEPTED") overallVerdict = "WRONG_ANSWER";
       testResults.push(testVerdict(testCase, passed ? "PASSED" : "WRONG_ANSWER", execResult));
+    }
+
+    if (overallVerdict === "ACCEPTED" && testResults.length !== problem.testCases.length) {
+      return {
+        problemId,
+        language: submission.language,
+        overallVerdict: "INTERNAL_JUDGE_ERROR",
+        passedTests: 0,
+        totalTests: problem.testCases.length,
+        scorePercentage: 0,
+        maxDurationMs,
+        testResults: [],
+        error: "Judging ended early before all test cases were checked.",
+      };
     }
 
     const totalTests = problem.testCases.length;

@@ -113,7 +113,11 @@ function exec(bin: string, args: string[], timeoutMs: number): Promise<{ code: n
 export function createIsolateCli(bin = "isolate"): IsolateCli {
   return {
     async init(boxId) {
-      const res = await exec(bin, ["--cg", `--box-id=${boxId}`, "--init"], 10_000);
+      let res = await exec(bin, ["--cg", `--box-id=${boxId}`, "--init"], 10_000);
+      if (res.code !== 0) {
+        await exec(bin, ["--cg", `--box-id=${boxId}`, "--cleanup"], 10_000);
+        res = await exec(bin, ["--cg", `--box-id=${boxId}`, "--init"], 10_000);
+      }
       if (res.code !== 0) throw new Error(`isolate --init failed: ${res.stderr.trim() || res.code}`);
       return res.stdout.trim();
     },

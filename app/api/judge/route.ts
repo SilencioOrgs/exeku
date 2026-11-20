@@ -5,10 +5,6 @@ import { isAdmin } from "@/lib/auth/admin-check";
 import { defaultJudgingService } from "@/lib/judge/judging-service";
 import { recordSubmission } from "@/lib/judge/record-submission";
 import { findProblem } from "@/lib/problems/store";
-import {
-  type ExecutionLanguage,
-  SUPPORTED_EXECUTION_LANGUAGES,
-} from "@/types/execution";
 import { MAX_BODY_BYTES, validateExecutionRequest } from "@/lib/execution/validation";
 import { clientFrom, QueueFullError } from "@/lib/execution/queue";
 
@@ -46,28 +42,18 @@ export async function POST(req: Request) {
       );
     }
 
-    const problem = await findProblem(problemId, { includeLocked: await isAdmin(userId) });
+    // Validate language, sourceCode, and companion files before touching the database.
+    const validation = validateExecutionRequest({ language, sourceCode, files });
+    if (!validation.valid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+    const execLang = validation.request.language;
+
+    const problem = await findProblem(problemId, { includeLocked: await isAdmin(userId), userId });
     if (!problem) {
       return NextResponse.json(
         { error: `Problem with ID '${problemId}' not found.` },
         { status: 404 }
-      );
-    }
-
-    if (!language || typeof language !== "string") {
-      return NextResponse.json(
-        { error: "Missing or invalid 'language'." },
-        { status: 400 }
-      );
-    }
-
-    const execLang = language.toLowerCase() as ExecutionLanguage;
-    if (!SUPPORTED_EXECUTION_LANGUAGES.includes(execLang)) {
-      return NextResponse.json(
-        {
-          error: `Unsupported language '${language}'. Supported: ${SUPPORTED_EXECUTION_LANGUAGES.join(", ")}.`,
-        },
-        { status: 400 }
       );
     }
 
@@ -78,12 +64,6 @@ export async function POST(req: Request) {
         },
         { status: 400 }
       );
-    }
-
-    // Share execution validation, including total source size and companion files.
-    const validation = validateExecutionRequest({ language: execLang, sourceCode, files });
-    if (!validation.valid) {
-      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
     const judgingResult = await defaultJudgingService.judgeSubmission(

@@ -57,15 +57,17 @@ test("a compile error is reported for every input; worker messages fill empty st
   assert.equal((await short.adapter.execute(request)).status, "INTERNAL_ERROR");
 });
 
-test("offline judge, wrong token and full queue each fail safely", async () => {
+test("offline judge, wrong token and full queue each fail safely without leaking internals", async () => {
   const offline = new ExekuJudgeAdapter({ baseUrl: "http://judge.test", fetchImpl: async () => { throw new TypeError("fetch failed"); } });
-  assert.equal((await offline.execute(request)).status, "SERVICE_UNAVAILABLE");
+  const offlineRes = await offline.execute(request);
+  assert.equal(offlineRes.status, "SERVICE_UNAVAILABLE");
+  assert.doesNotMatch(offlineRes.stderr, /judge\.test/);
   assert.equal((await offline.checkHealth()).isAvailable, false);
 
   const wrongToken = adapterWith(() => jsonResponse(401, { error: "Missing or wrong judge token." }));
   const denied = await wrongToken.adapter.execute(request);
   assert.equal(denied.status, "INTERNAL_ERROR");
-  assert.match(denied.stderr, /JUDGE_TOKEN/);
+  assert.doesNotMatch(denied.stderr, /JUDGE_TOKEN|judge\.test/);
 
   const busy = adapterWith(() => jsonResponse(429, { error: "full" }));
   await assert.rejects(busy.adapter.execute(request), QueueFullError);

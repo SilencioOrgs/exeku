@@ -20,7 +20,14 @@ export interface QueueClient {
 
 /** Forwarded addresses can be faked, so they are read only when TRUST_PROXY=1 (Vercel or a proxy that overwrites them). */
 export function clientFrom(headers: Headers, userId: string, env: Record<string, string | undefined> = process.env): QueueClient {
-  const ip = (env.TRUST_PROXY === "1" && (headers.get("x-forwarded-for")?.split(",")[0].trim() || headers.get("x-real-ip")?.trim())) || "local";
+  if (env.TRUST_PROXY !== "1") return { ip: "local", key: userId };
+  const realIp = headers.get("x-real-ip")?.trim();
+  const xffParts = (headers.get("x-forwarded-for") ?? "")
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  // Take the rightmost proxy-appended client IP when x-real-ip is not provided.
+  const ip = realIp || xffParts[xffParts.length - 1] || "local";
   return { ip, key: userId };
 }
 
@@ -54,7 +61,7 @@ export class ExecutionQueue {
     this.maxConcurrency = options?.maxConcurrency ?? 4;
     this.maxQueueLength = options?.maxQueueLength ?? 50;
     this.maxPerClient = options?.maxPerClient ?? 2;
-    this.maxPerIp = options?.maxPerIp ?? 30;
+    this.maxPerIp = options?.maxPerIp ?? 60;
   }
 
   async enqueue<T>(task: () => Promise<T>, client?: QueueClient): Promise<T> {
@@ -63,9 +70,11 @@ export class ExecutionQueue {
       if (held >= this.maxPerClient) {
         throw new QueueFullError(`You already have ${held} runs in progress. Wait for one to finish, then try again.`);
       }
-      const onNetwork = this.ipCounts.get(client.ip) ?? 0;
-      if (onNetwork >= this.maxPerIp) {
-        throw new QueueFullError(`This network already has ${onNetwork} runs in progress. Please retry in a few seconds.`);
+      if (client.ip !== "local") {
+        const onNetwork = this.ipCounts.get(client.ip) ?? 0;
+        if (onNetwork >= this.maxPerIp) {
+          throw new QueueFullError(`This network already has ${onNetwork} runs in progress. Please retry in a few seconds.`);
+        }
       }
     }
 
@@ -77,7 +86,7 @@ export class ExecutionQueue {
 
     if (client) {
       adjust(this.clientCounts, client.key, 1);
-      adjust(this.ipCounts, client.ip, 1);
+      if (client.ip !== "local") adjust(this.ipCounts, client.ip, 1);
     }
 
     return new Promise<T>((resolve, reject) => {
@@ -108,7 +117,7 @@ export class ExecutionQueue {
         this.activeCount--;
         if (nextTask.client) {
           adjust(this.clientCounts, nextTask.client.key, -1);
-          adjust(this.ipCounts, nextTask.client.ip, -1);
+          if (nextTask.client.ip !== "local") adjust(this.ipCounts, nextTask.client.ip, -1);
         }
         this.processNext();
       });
@@ -129,7 +138,9 @@ export class ExecutionQueue {
   }
 }
 
+const configuredConcurrency = Number(process.env.JUDGE_CONCURRENCY);
 export const globalExecutionQueue = new ExecutionQueue({
-  maxConcurrency: 4,
+  maxConcurrency: Number.isFinite(configuredConcurrency) && configuredConcurrency >= 1 ? Math.floor(configuredConcurrency) : 4,
   maxQueueLength: 50,
+  maxPerIp: 60,
 });

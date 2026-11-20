@@ -34,27 +34,28 @@ test("one student gets at most 2 active plus waiting runs, and a finished run fr
   assert.deepEqual(await Promise.all([waiting, other, again]), ["done", "other", "again"]);
 });
 
-test("30 students on one IP can all run, and the network stops there", async () => {
-  const queue = new ExecutionQueue({ maxConcurrency: 1 });
+test("60 runs on one school IP are allowed, and the network stops there", async () => {
+  const queue = new ExecutionQueue({ maxConcurrency: 1, maxQueueLength: 100 });
   let open;
   const gate = new Promise((resolve) => { open = () => resolve("done"); });
-  const runs = Array.from({ length: 30 }, (_, i) => queue.enqueue(() => gate, student(`s${i}`)));
+  const runs = Array.from({ length: 60 }, (_, i) => queue.enqueue(() => gate, student(`s${i}`)));
 
-  await assert.rejects(queue.enqueue(async () => "x", student("s30")), (err) => err instanceof QueueFullError && /This network already has 30/.test(err.message));
+  await assert.rejects(queue.enqueue(async () => "x", student("s60")), (err) => err instanceof QueueFullError && /This network already has 60/.test(err.message));
   const elsewhere = queue.enqueue(async () => "elsewhere", student("s0", "other-school"));
 
   open();
-  assert.equal((await Promise.all(runs)).filter((result) => result === "done").length, 30);
+  assert.equal((await Promise.all(runs)).filter((result) => result === "done").length, 60);
   assert.equal(await elsewhere, "elsewhere");
 });
 
-test("forwarded addresses count only with TRUST_PROXY=1", () => {
-  const forwarded = { "x-forwarded-for": " 203.0.113.9 , 10.0.0.1", "x-real-ip": "198.51.100.2" };
+test("forwarded addresses count only with TRUST_PROXY=1 and prefer x-real-ip or rightmost hop", () => {
+  const spoofedAndProxy = { "x-forwarded-for": "1.2.3.4, 203.0.113.9", "x-real-ip": "198.51.100.2" };
+  const xffOnly = { "x-forwarded-for": "1.2.3.4, 203.0.113.9" };
   const trusted = { TRUST_PROXY: "1" };
-  assert.deepEqual(clientFrom(new Headers(forwarded), "user_1", {}), { ip: "local", key: "user_1" }, "a faked header changes nothing");
-  assert.deepEqual(clientFrom(new Headers(forwarded), "user_1", { TRUST_PROXY: "0" }), { ip: "local", key: "user_1" });
-  assert.equal(clientFrom(new Headers(forwarded), "user_1", trusted).ip, "203.0.113.9");
-  assert.equal(clientFrom(new Headers({ "x-real-ip": "198.51.100.2" }), "user_1", trusted).ip, "198.51.100.2");
+  assert.deepEqual(clientFrom(new Headers(spoofedAndProxy), "user_1", {}), { ip: "local", key: "user_1" }, "a faked header changes nothing");
+  assert.deepEqual(clientFrom(new Headers(spoofedAndProxy), "user_1", { TRUST_PROXY: "0" }), { ip: "local", key: "user_1" });
+  assert.equal(clientFrom(new Headers(spoofedAndProxy), "user_1", trusted).ip, "198.51.100.2");
+  assert.equal(clientFrom(new Headers(xffOnly), "user_1", trusted).ip, "203.0.113.9");
   assert.equal(clientFrom(new Headers(), "user_1", trusted).ip, "local");
 });
 

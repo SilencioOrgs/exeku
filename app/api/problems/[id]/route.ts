@@ -14,7 +14,7 @@ export async function GET(
 
     const { id } = await params;
     const includeLocked = await isAdmin(userId);
-    const problem = await findVisibleProblem(id, { includeLocked });
+    const problem = await findVisibleProblem(id, { includeLocked, userId });
 
     if (!problem) {
       return NextResponse.json({ error: "Problem not found" }, { status: 404 });

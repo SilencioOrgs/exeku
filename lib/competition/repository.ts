@@ -3,7 +3,7 @@ import { schoolDirectory } from "@/lib/accounts/school-directory";
 import type { Viewer } from "@/lib/auth/viewer";
 import type { BannerId } from "@/lib/banners";
 import { todayInManila } from "@/lib/dates";
-import { db, must } from "@/lib/db/client";
+import { db, fetchAllPages, must } from "@/lib/db/client";
 import { firstSolves, solvesBetween } from "@/lib/judge/solves";
 import { getProblemById } from "@/lib/problems/catalog";
 import { can, canViewEvent } from "@/lib/orgs/rules";
@@ -44,14 +44,22 @@ export async function toEvents(rows: EventRow[]): Promise<CompetitionEvent[]> {
 }
 
 export async function getCampuses(): Promise<Campus[]> {
-  return (await schoolDirectory.findSchool("lspu"))?.campuses ?? [];
+  return schoolDirectory.listAllCampuses();
 }
 
 /** Ranks within the scope, so a campus board starts again at 1. */
 export async function getLeaderboard(campusId?: string): Promise<LeaderboardEntry[]> {
-  const query = db().from("leaderboard").select("user_id,name,campus_id,campus_name,solved,points").order("points", { ascending: false });
-  const rows = must(await (campusId ? query.eq("campus_id", campusId) : query)) as
-    { user_id: string; name: string; campus_id: string; campus_name: string; solved: number; points: number }[];
+  type BoardRow = { user_id: string; name: string; campus_id: string; campus_name: string; solved: number; points: number };
+  const rows = await fetchAllPages<BoardRow>((from, to) => {
+    const base = db()
+      .from("leaderboard")
+      .select("user_id,name,campus_id,campus_name,solved,points")
+      .order("points", { ascending: false })
+      .order("solved", { ascending: false })
+      .order("user_id", { ascending: true })
+      .range(from, to);
+    return campusId ? base.eq("campus_id", campusId) : base;
+  });
   const scores: LeaderboardScore[] = rows.map((r) => ({ id: r.user_id, name: r.name, campusId: r.campus_id, campusName: r.campus_name, solved: r.solved, points: r.points }));
   return rankScores(scores);
 }
@@ -78,49 +86,70 @@ export async function maskTournamentProblems(
 ): Promise<CompetitionEvent[]> {
   const hasTournament = events.some((event) => Boolean(event.tournament));
   if (!hasTournament) return events;
-  const registered = new Set(
-    (must(await db().from("tournament_members").select("event_id").eq("user_id", viewerId)) as { event_id: string }[]).map((m) => m.event_id),
-  );
+  const myTeams = must(
+    await db().from("tournament_members").select("event_id,team_id").eq("user_id", viewerId),
+  ) as { event_id: string; team_id: string }[];
+  const teamByEvent = new Map(myTeams.map((m) => [m.event_id, m.team_id]));
+
   const now = Date.now();
   const activeTournaments = events.filter(
-    (event) => event.tournament && registered.has(event.id) && now >= Date.parse(event.tournament.startsAt),
+    (event) => event.tournament && teamByEvent.has(event.id) && now >= Date.parse(event.tournament.startsAt),
   );
+
   let solves: Awaited<ReturnType<typeof solvesBetween>> = [];
+  const membersByEvent = new Map<string, Set<string>>();
   if (includeSolves && activeTournaments.length > 0) {
-    const starts = activeTournaments.map((e) => e.tournament!.startsAt).sort();
-    const ends = activeTournaments.map((e) => e.tournament!.endsAt).sort();
-    solves = await solvesBetween([viewerId], starts[0], ends.at(-1)!);
+    const teamIds = [...new Set(activeTournaments.map((e) => teamByEvent.get(e.id)).filter((id): id is string => Boolean(id)))];
+    const teammates = teamIds.length
+      ? (must(await db().from("tournament_members").select("event_id,team_id,user_id").in("team_id", teamIds)) as {
+          event_id: string;
+          team_id: string;
+          user_id: string;
+        }[])
+      : [];
+    const allUserIds = new Set<string>([viewerId]);
+    for (const tm of teammates) {
+      allUserIds.add(tm.user_id);
+      const set = membersByEvent.get(tm.event_id) ?? new Set<string>();
+      set.add(tm.user_id);
+      membersByEvent.set(tm.event_id, set);
+    }
+
+    const starts = activeTournaments
+      .map((e) => e.tournament!.startsAt)
+      .sort((a, b) => Date.parse(a) - Date.parse(b));
+    const ends = activeTournaments
+      .map((e) => e.tournament!.endsAt)
+      .sort((a, b) => Date.parse(a) - Date.parse(b));
+    solves = await solvesBetween([...allUserIds], starts[0], ends.at(-1)!);
   }
+
   return events.map((event) => {
     if (!event.tournament) return event;
-    if (!registered.has(event.id) || now < Date.parse(event.tournament.startsAt)) {
+    if (!teamByEvent.has(event.id) || now < Date.parse(event.tournament.startsAt)) {
       return { ...event, problems: [] };
     }
     if (!includeSolves) return event;
     const windowStart = Date.parse(event.tournament.startsAt);
     const windowEnd = Date.parse(event.tournament.endsAt);
+    const allowedProblems = new Set((event.problems ?? []).map((p) => p.id));
+    const teamUsers = membersByEvent.get(event.id) ?? new Set([viewerId]);
     const solvedInWindow = solves.filter((s) => {
+      if (!teamUsers.has(s.userId) || !allowedProblems.has(s.problemId)) return false;
       if (!s.at) return true;
       const t = Date.parse(s.at);
       return t >= windowStart && t <= windowEnd;
     });
-    return { ...event, solvedProblemIds: solvedInWindow.map((s) => s.problemId) };
+    return { ...event, solvedProblemIds: [...new Set(solvedInWindow.map((s) => s.problemId))] };
   });
 }
-
-const EVENT_PAGE_SIZE = 1000;
 
 export async function getEventsFeed(viewer: Viewer): Promise<EventsFeed> {
   const memberships = await membershipsOf(viewer);
   const scope = scopeOf(viewer, memberships);
-  const rows: EventRow[] = [];
-  for (let from = 0; ; from += EVENT_PAGE_SIZE) {
-    const page = must(
-      await db().from("events").select(EVENT_COLUMNS).order("starts_on", { ascending: false }).range(from, from + EVENT_PAGE_SIZE - 1),
-    ) as unknown as EventRow[];
-    rows.push(...page);
-    if (page.length < EVENT_PAGE_SIZE) break;
-  }
+  const rows = await fetchAllPages<EventRow>((from, to) =>
+    db().from("events").select(EVENT_COLUMNS).order("starts_on", { ascending: false }).order("id").range(from, to),
+  );
   const visible = (await toEvents(rows)).filter((e) => canViewEvent(e, scope));
   const events = await maskTournamentProblems(visible, viewer.id, true);
   return {

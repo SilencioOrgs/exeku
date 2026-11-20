@@ -7,7 +7,9 @@ import * as accountRules from "../lib/accounts/rules.ts";
 import * as roleRules from "../lib/roles/rules.ts";
 import * as classRules from "../lib/classes/rules.ts";
 import * as catalog from "../lib/problems/catalog.ts";
-import { fakeDb, must } from "./fixtures/fake-db.mjs";
+import { exactCount, fakeDb, fetchAllPages, must } from "./fixtures/fake-db.mjs";
+import { NextResponse } from "next/server";
+import * as readJson from "../lib/accounts/read-json.ts";
 
 function loadTs(path, modules) {
   const source = readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
@@ -64,7 +66,7 @@ test("submitFacultyRequest enforces Clerk-verified school email and blocks exist
   const tables = { faculty_requests: [] };
   const repo = loadTs("lib/roles/repository.ts", {
     "server-only": {},
-    "@/lib/db/client": { db: fakeDb(tables), must },
+    "@/lib/db/client": { db: fakeDb(tables), exactCount, fetchAllPages, must },
     "./rules": roleRules,
   });
 
@@ -115,6 +117,37 @@ test("submitFacultyRequest enforces Clerk-verified school email and blocks exist
   assert.equal(dup.status, 409);
 });
 
+test("POST /api/account/faculty passes only Clerk-verified email addresses to submitFacultyRequest", async () => {
+  const received = [];
+  const route = loadTs("app/api/account/faculty/route.ts", {
+    "next/server": { NextResponse },
+    "@clerk/nextjs/server": {
+      currentUser: async () => ({
+        emailAddresses: [
+          { emailAddress: "unverified@lspu.edu.ph", verification: { status: "unverified" } },
+          { emailAddress: "verified@lspu.edu.ph", verification: { status: "verified" } },
+          { emailAddress: "missing@lspu.edu.ph", verification: null },
+        ],
+      }),
+    },
+    "@/lib/accounts/read-json": readJson,
+    "@/lib/api/route-handler": { withApiErrors: (_label, fn) => fn() },
+    "@/lib/auth/viewer": { getViewer: async () => ({ id: "s1", name: "Applicant", role: "student" }) },
+    "@/lib/roles/repository": {
+      getFacultyStatus: async () => ({ role: "student", latestRequest: null }),
+      submitFacultyRequest: async (_viewer, _body, verifiedEmails) => {
+        received.push(verifiedEmails);
+        return { ok: true, request: { id: "r1", status: "pending" } };
+      },
+    },
+  });
+
+  const req = new Request("http://localhost/api/account/faculty", { method: "POST", body: JSON.stringify({}) });
+  const res = await route.POST(req);
+  assert.equal(res.status, 201);
+  assert.deepEqual(received, [["verified@lspu.edu.ph"]]);
+});
+
 test("teacher creates class with invite code, student joins, teacher groups students and assigns problems", async () => {
   const tables = {
     profiles: [
@@ -130,12 +163,20 @@ test("teacher creates class with invite code, student joins, teacher groups stud
     ],
   };
 
+  const lockedIds = new Set(["secret-tournament-prob"]);
+  const summaries = catalog.getProblemSummaries();
+
   const repo = loadTs("lib/classes/repository.ts", {
     "server-only": {},
     "@/lib/accounts/rules": accountRules,
-    "@/lib/db/client": { db: fakeDb(tables), must },
+    "@/lib/db/client": { db: fakeDb(tables), exactCount, fetchAllPages, must },
     "@/lib/problems/store": {
-      listProblemSummaries: async () => catalog.getProblemSummaries(),
+      listProblemSummaries: async (_userId, opts) =>
+        opts?.includeLocked ? summaries : summaries.filter((p) => !lockedIds.has(p.id)),
+      problemExists: async (id, opts) => {
+        if (!opts?.includeLocked && lockedIds.has(id)) return false;
+        return summaries.some((p) => p.id === id) || lockedIds.has(id);
+      },
     },
     "@/lib/roles/rules": roleRules,
     "./rules": classRules,
@@ -143,6 +184,7 @@ test("teacher creates class with invite code, student joins, teacher groups stud
 
   const studentViewer = { id: "student-1", name: "Grace", role: "student" };
   const teacherViewer = { id: "teacher-1", name: "Prof Ada", role: "teacher" };
+  const outsiderViewer = { id: "outsider-1", name: "Outsider", role: "student" };
 
   // Students cannot create classes.
   const denied = await repo.createClass(studentViewer, { name: "Algorithms" });
@@ -159,16 +201,30 @@ test("teacher creates class with invite code, student joins, teacher groups stud
   assert.equal(joined.ok, true);
   assert.equal(joined.classId, created.id);
 
+  // Locked tournament problems cannot be assigned to a class.
+  const lockedAdd = await repo.performClassAction(teacherViewer, created.id, { action: "addProblem", problemId: "secret-tournament-prob" });
+  assert.equal(lockedAdd.ok, false);
+  assert.equal(lockedAdd.status, 404);
+
   // Teacher creates a student group, assigns student to it, and assigns hello-world problem.
   assert.equal((await repo.performClassAction(teacherViewer, created.id, { action: "createGroup", name: "Group A" })).ok, true);
   const groupId = tables.class_groups[0].id;
   assert.equal((await repo.performClassAction(teacherViewer, created.id, { action: "assignMemberGroup", userId: "student-1", groupId })).ok, true);
   assert.equal((await repo.performClassAction(teacherViewer, created.id, { action: "addProblem", problemId: "hello-world" })).ok, true);
 
-  // Students cannot mutate teacher settings.
+  // Students cannot mutate teacher settings; outsiders cannot view class details.
   const forbidden = await repo.performClassAction(studentViewer, created.id, { action: "createGroup", name: "Hack" });
   assert.equal(forbidden.ok, false);
   assert.equal(forbidden.status, 403);
+  assert.equal(await repo.getClassDetail(outsiderViewer, created.id), null);
+
+  // Demoted teacher loses teacher capabilities, inviteCode, and student schoolEmail access.
+  const demotedTeacher = { id: "teacher-1", name: "Prof Ada", role: "student" };
+  const demotedMutate = await repo.performClassAction(demotedTeacher, created.id, { action: "createGroup", name: "Revoked" });
+  assert.equal(demotedMutate.ok, false);
+  assert.equal(demotedMutate.status, 403);
+  assert.equal(await repo.getClassDetail(demotedTeacher, created.id), null);
+  assert.deepEqual(Array.from((await repo.listClassesForViewer(demotedTeacher)).teaching), []);
 
   // Detail view reports solved progress per student, per group, and per problem.
   const detail = await repo.getClassDetail(teacherViewer, created.id);
@@ -184,4 +240,13 @@ test("teacher creates class with invite code, student joins, teacher groups stud
   assert.equal(studentDetail.inviteCode, undefined);
   assert.equal(studentDetail.members[0].schoolEmail, undefined);
   assert.equal(studentDetail.problems[0].solvedByViewer, true);
+
+  // Pagination: >1,000 submissions still register a solve on page 2.
+  for (let i = 0; i < 1050; i++) {
+    tables.submissions.push({ id: `filler-${i}`, user_id: "student-1", problem_id: "hello-world", verdict: "ACCEPTED", points: 100 });
+  }
+  tables.submissions.push({ id: "sub-late", user_id: "student-1", problem_id: "sum-two-integers", verdict: "ACCEPTED", points: 100 });
+  assert.equal((await repo.performClassAction(teacherViewer, created.id, { action: "addProblem", problemId: "sum-two-integers" })).ok, true);
+  const paginatedDetail = await repo.getClassDetail(teacherViewer, created.id);
+  assert.deepEqual(Array.from(paginatedDetail.members[0].solvedProblemIds).sort(), ["hello-world", "sum-two-integers"]);
 });

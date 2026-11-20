@@ -3,7 +3,7 @@ import { isObject, isUuid, text } from "@/lib/accounts/rules";
 import type { Viewer } from "@/lib/auth/viewer";
 import type { AvatarBorderId } from "@/lib/avatar-borders";
 import { EVENT_COLUMNS, toEvents, viewerScope, type EventRow } from "@/lib/competition/repository";
-import { db, must } from "@/lib/db/client";
+import { db, exactCount, fetchAllPages, must } from "@/lib/db/client";
 import { solvesBetween } from "@/lib/judge/solves";
 import { canViewEvent, eventAccessLabel } from "@/lib/orgs/rules";
 import type { ActiveTournament, Medal, TournamentStatus, TournamentView } from "@/types/tournament";
@@ -33,8 +33,14 @@ async function loadVisible(viewer: Viewer, id: string) {
 }
 
 async function loadRoster(eventId: string) {
-  const teams = must(await db().from("tournament_teams").select("id,name").eq("event_id", eventId).order("name")) as TeamRow[];
-  const members = must(await db().from("tournament_members").select(MEMBER_COLUMNS).eq("event_id", eventId)) as unknown as MemberRow[];
+  const [teams, members] = await Promise.all([
+    fetchAllPages<TeamRow>((from, to) =>
+      db().from("tournament_teams").select("id,name").eq("event_id", eventId).order("name").order("id").range(from, to),
+    ),
+    fetchAllPages<MemberRow>((from, to) =>
+      db().from("tournament_members").select(MEMBER_COLUMNS).eq("event_id", eventId).order("team_id").order("user_id").range(from, to),
+    ),
+  ]);
   return { teams, members };
 }
 
@@ -67,7 +73,9 @@ export async function getTournament(viewer: Viewer, id: string): Promise<Tournam
   const myTeamId = teamByUser.get(viewer.id) ?? null;
   const open = status !== "registration" && myTeamId !== null;
   const teamMembers = new Set((myTeamId ? membersByTeam.get(myTeamId) ?? [] : []).map((m) => m.user_id));
-  const violations = must(await db().from("tournament_violations").select("user_id").eq("event_id", id)) as { user_id: string }[];
+  const violations = await fetchAllPages<{ user_id: string }>((from, to) =>
+    db().from("tournament_violations").select("user_id").eq("event_id", id).order("id").range(from, to),
+  );
   const warningsByTeam = new Map<string, number>();
   for (const v of violations) {
     const teamId = teamByUser.get(v.user_id);
@@ -93,12 +101,17 @@ export async function getTournament(viewer: Viewer, id: string): Promise<Tournam
     };
   });
 
+  const problemSet = new Set(problemIds);
+  const solvedProblemIds = open
+    ? [...new Set(solves.filter((s) => teamMembers.has(s.userId) && problemSet.has(s.problemId)).map((s) => s.problemId))]
+    : [];
+
   return {
     id, title: event.title, summary: event.summary, accessLabel: eventAccessLabel(event), status, startsAt, endsAt, now: new Date(now).toISOString(),
     teamSize, myTeamId,
     teams: status === "ended" ? view.sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0)) : view,
     problems: open ? event.problems ?? [] : [],
-    solvedProblemIds: open ? solves.filter((s) => teamMembers.has(s.userId) && problemIds.includes(s.problemId)).map((s) => s.problemId) : [],
+    solvedProblemIds,
   };
 }
 
@@ -153,9 +166,8 @@ export async function performTournamentAction(viewer: Viewer, id: string, input:
     }
     case "leave": {
       if (!mine) return { ok: true };
+      // Empty team cleanup is enforced atomically in Postgres by tournament_members_cleanup_empty_team.
       must(await db().from("tournament_members").delete().eq("event_id", id).eq("user_id", viewer.id));
-      const remaining = must(await db().from("tournament_members").select("user_id").eq("team_id", mine.team_id).limit(1)) as { user_id: string }[];
-      if (remaining.length === 0) must(await db().from("tournament_teams").delete().eq("id", mine.team_id));
       return { ok: true };
     }
     default:
@@ -180,8 +192,10 @@ export async function getActiveTournament(viewer: Viewer): Promise<ActiveTournam
     const solved = new Set((await solvesBetween(team.map((m) => m.user_id), event.tournament.startsAt, event.tournament.endsAt)).map((s) => s.problemId));
     const problems = (event.problems ?? []).map((p) => p.id);
     if (problems.length > 0 && problems.every((problemId) => solved.has(problemId))) continue;
-    const violations = must(await db().from("tournament_violations").select("id").eq("event_id", eventId).eq("user_id", viewer.id)) as unknown[];
-    return { id: event.id, title: event.title, warnings: violations.length };
+    const warnings = await exactCount(
+      db().from("tournament_violations").select("id", { count: "exact", head: true }).eq("event_id", eventId).eq("user_id", viewer.id),
+    );
+    return { id: event.id, title: event.title, warnings };
   }
   return null;
 }
@@ -195,15 +209,21 @@ export async function getMedals(userId: string): Promise<Medal[]> {
   const endedRows = rows.filter((row) => row.starts_at && row.ends_at && now >= Date.parse(row.ends_at));
   if (endedRows.length === 0) return [];
   const endedById = new Map((await toEvents(endedRows)).map((event) => [event.id, event]));
-  const medals: Medal[] = [];
-  for (const { event_id: eventId, team_id: teamId } of joined) {
-    const event = endedById.get(eventId);
-    if (!event?.tournament) continue;
-    const { teams, members } = await loadRoster(eventId);
-    const solves = await solvesBetween(members.map((m) => m.user_id), event.tournament.startsAt, event.tournament.endsAt);
-    const problemIds = (event.problems ?? []).map((p) => p.id);
-    const mine = rankTeams(entries(teams, groupMembersByTeam(members)), solves, problemIds).find((s) => s.teamId === teamId);
-    if (mine && mine.rank <= 3 && mine.points > 0) medals.push({ place: mine.rank, at: event.tournament.endsAt, title: event.title });
-  }
-  return medals;
+
+  const results = await Promise.all(
+    joined.map(async ({ event_id: eventId, team_id: teamId }): Promise<Medal | null> => {
+      const event = endedById.get(eventId);
+      if (!event?.tournament) return null;
+      const { teams, members } = await loadRoster(eventId);
+      const solves = await solvesBetween(members.map((m) => m.user_id), event.tournament.startsAt, event.tournament.endsAt);
+      const problemIds = (event.problems ?? []).map((p) => p.id);
+      const mine = rankTeams(entries(teams, groupMembersByTeam(members)), solves, problemIds).find((s) => s.teamId === teamId);
+      if (mine && mine.rank <= 3 && mine.points > 0) {
+        return { place: mine.rank, at: event.tournament.endsAt, title: event.title };
+      }
+      return null;
+    }),
+  );
+
+  return results.filter((m): m is Medal => m !== null);
 }

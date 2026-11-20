@@ -16,3 +16,27 @@ export function must<T>(result: { data: T; error: { message: string } | null }):
   if (result.error) throw new Error(`Database error: ${result.error.message}`);
   return result.data;
 }
+
+const DEFAULT_PAGE_SIZE = 1000;
+
+/** Reads every page in range chunks so PostgREST's default 1,000-row cap never silently truncates results. */
+export async function fetchAllPages<T>(
+  queryPage: (from: number, to: number) => PromiseLike<{ data: unknown; error: { message: string } | null }>,
+  pageSize = DEFAULT_PAGE_SIZE,
+): Promise<T[]> {
+  const all: T[] = [];
+  for (let from = 0; ; from += pageSize) {
+    const page = must(await queryPage(from, from + pageSize - 1)) as T[];
+    all.push(...page);
+    if (page.length < pageSize) break;
+  }
+  return all;
+}
+
+export async function exactCount(
+  query: PromiseLike<{ count: number | null; error: { message: string } | null }>,
+): Promise<number> {
+  const res = await query;
+  if (res.error) throw new Error(`Database error: ${res.error.message}`);
+  return res.count ?? 0;
+}

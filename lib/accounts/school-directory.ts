@@ -39,6 +39,7 @@ function domainSuffixes(domain: string): string[] {
 export const schoolDirectory: SchoolLookup & {
   listLocations(): Promise<SchoolLocation[]>;
   listSchools(locationId: string): Promise<SchoolOption[]>;
+  listAllCampuses(): Promise<SchoolRecord["campuses"]>;
 } = {
   async listLocations() {
     const rows = must(await db().from("schools").select("location_id,location_name").order("name")) as Pick<SchoolRow, "location_id" | "location_name">[];
@@ -50,6 +51,20 @@ export const schoolDirectory: SchoolLookup & {
       await db().from("schools").select("id,name,short_name,campuses,programs").eq("location_id", locationId).order("name"),
     ) as Pick<SchoolRow, "id" | "name" | "short_name" | "campuses" | "programs">[];
     return rows.map((r) => ({ id: r.id, name: r.name, shortName: r.short_name, campuses: r.campuses, programs: r.programs }));
+  },
+  async listAllCampuses() {
+    const rows = must(await db().from("schools").select("campuses").order("name")) as Pick<SchoolRow, "campuses">[];
+    const seen = new Set<string>();
+    const campuses: SchoolRecord["campuses"] = [];
+    for (const row of rows) {
+      for (const campus of row.campuses ?? []) {
+        if (!seen.has(campus.id)) {
+          seen.add(campus.id);
+          campuses.push(campus);
+        }
+      }
+    }
+    return campuses;
   },
   async findSchool(id) {
     const row = must(await db().from("schools").select("*").eq("id", id).maybeSingle()) as SchoolRow | null;

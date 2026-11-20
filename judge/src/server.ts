@@ -1,4 +1,4 @@
-import { mkdir } from "node:fs/promises";
+import { mkdtemp, rm } from "node:fs/promises";
 import { cpus, tmpdir } from "node:os";
 import { join } from "node:path";
 import { createJudgeServer } from "./app.ts";
@@ -22,8 +22,8 @@ const firstBoxId = Number(env.JUDGE_FIRST_BOX_ID || 0);
 
 const cli = createIsolateCli(env.ISOLATE_BIN || "isolate");
 const specs = buildLanguageSpecs(detectToolchain());
-const workDir = join(tmpdir(), "exeku-judge");
-await mkdir(workDir, { recursive: true, mode: 0o700 });
+const ownsTempDir = !env.RUNTIME_DIRECTORY;
+const workDir = env.RUNTIME_DIRECTORY || (await mkdtemp(join(tmpdir(), "exeku-judge-")));
 
 // Boxes left over from a crash would make --init fail later.
 for (let i = 0; i < concurrency; i++) await cli.cleanup(firstBoxId + i);
@@ -36,6 +36,11 @@ server.listen(port, host, () => {
   console.log(`languages: ${Object.keys(specs).join(", ") || "none found, install the compilers"}`);
 });
 
-const stop = () => server.close(() => process.exit(0));
+const stop = () => {
+  server.close(() => {
+    const cleanup = ownsTempDir ? rm(workDir, { recursive: true, force: true }).catch(() => {}) : Promise.resolve();
+    void cleanup.finally(() => process.exit(0));
+  });
+};
 process.on("SIGTERM", stop);
 process.on("SIGINT", stop);

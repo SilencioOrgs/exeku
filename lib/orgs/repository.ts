@@ -3,7 +3,7 @@ import { isObject, isUuid, text } from "@/lib/accounts/rules";
 import type { Viewer } from "@/lib/auth/viewer";
 import { EVENT_COLUMNS, maskTournamentProblems, toEvents, viewerScope, type EventRow } from "@/lib/competition/repository";
 import { todayInManila } from "@/lib/dates";
-import { db, must } from "@/lib/db/client";
+import { db, fetchAllPages, must } from "@/lib/db/client";
 import type { FieldErrors } from "@/types/account";
 import type { OrgDetail, OrgPermission, OrgRole, OrgSummary } from "@/types/org";
 import { can, canViewEvent, checkEvent } from "./rules";
@@ -33,27 +33,50 @@ async function clearFeatured(orgId: string) {
 }
 
 export async function listOrgs(campusId?: string): Promise<OrgSummary[]> {
-  const query = db().from("orgs").select(ORG_COLUMNS).order("name");
-  return (must(await (campusId ? query.eq("campus_id", campusId) : query)) as unknown as OrgRow[]).map(toSummary);
+  return (
+    await fetchAllPages<OrgRow>((from, to) => {
+      const base = db().from("orgs").select(ORG_COLUMNS).order("name").order("id").range(from, to);
+      return campusId ? base.eq("campus_id", campusId) : base;
+    })
+  ).map(toSummary);
 }
 
 export async function getOrgDetail(orgId: string, viewer: Viewer): Promise<OrgDetail | null> {
   const org = await findOrg(orgId);
   if (!org) return null;
-  const members = must(await db().from("org_members").select("user_id,role,profiles(display_name)").eq("org_id", orgId)) as unknown as MemberRow[];
-  const applications = must(await db().from("org_applications").select("id,user_id,program,status,profiles(display_name)").eq("org_id", orgId)) as unknown as ApplicationRow[];
-  const events = must(await db().from("events").select(EVENT_COLUMNS).eq("org_id", orgId).order("starts_on", { ascending: false })) as unknown as EventRow[];
-  const viewerRole = members.find((m) => m.user_id === viewer.id)?.role ?? null;
-  const scope = await viewerScope(viewer);
+
+  const [viewerMember, viewerApp, members, events, scope] = await Promise.all([
+    db().from("org_members").select("role").eq("org_id", orgId).eq("user_id", viewer.id).maybeSingle().then((r) => must(r) as { role: OrgRole } | null),
+    db().from("org_applications").select("status").eq("org_id", orgId).eq("user_id", viewer.id).maybeSingle().then((r) => must(r) as { status: "pending" | "rejected" } | null),
+    fetchAllPages<MemberRow>((from, to) =>
+      db().from("org_members").select("user_id,role,profiles(display_name)").eq("org_id", orgId).order("user_id").range(from, to),
+    ),
+    fetchAllPages<EventRow>((from, to) =>
+      db().from("events").select(EVENT_COLUMNS).eq("org_id", orgId).order("starts_on", { ascending: false }).order("id").range(from, to),
+    ),
+    viewerScope(viewer),
+  ]);
+
+  const viewerRole = viewerMember?.role ?? null;
+  const pendingApplications = can(viewerRole, "reviewApplications")
+    ? await fetchAllPages<ApplicationRow>((from, to) =>
+        db()
+          .from("org_applications")
+          .select("id,user_id,program,status,profiles(display_name)")
+          .eq("org_id", orgId)
+          .eq("status", "pending")
+          .order("id")
+          .range(from, to),
+      )
+    : [];
+
   const visibleEvents = (await toEvents(events)).filter((e) => canViewEvent(e, scope));
   return {
     org: toSummary(org),
     viewerRole,
-    applicationStatus: applications.find((a) => a.user_id === viewer.id)?.status ?? "none",
+    applicationStatus: viewerApp?.status ?? "none",
     members: members.map((m) => ({ id: m.user_id, name: m.profiles.display_name, role: m.role })),
-    applications: can(viewerRole, "reviewApplications")
-      ? applications.filter((a) => a.status === "pending").map((a) => ({ id: a.id, name: a.profiles.display_name, program: a.program ?? undefined }))
-      : [],
+    applications: pendingApplications.map((a) => ({ id: a.id, name: a.profiles.display_name, program: a.program ?? undefined })),
     events: await maskTournamentProblems(visibleEvents, viewer.id),
   };
 }
@@ -76,11 +99,12 @@ export async function performOrgAction(orgId: string, viewer: Viewer, input: unk
     }
     case "decide": {
       if (denied("reviewApplications")) return failed(403, "Only officers can review applications.");
+      if (typeof input.accept !== "boolean") return failed(400, "Specify whether to accept or reject.");
       const applicationId = text(input, "applicationId");
       if (!isUuid(applicationId)) return failed(404, "That application is no longer pending.");
       const application = must(await db().from("org_applications").select("id,user_id").eq("org_id", orgId).eq("id", applicationId).eq("status", "pending").maybeSingle()) as { id: string; user_id: string } | null;
       if (!application) return failed(404, "That application is no longer pending.");
-      if (input.accept === true) {
+      if (input.accept) {
         // Member first and upsert, so a failure between the two steps can simply be accepted again.
         must(await db().from("org_members").upsert({ org_id: orgId, user_id: application.user_id, role: "member" }, { onConflict: "org_id,user_id", ignoreDuplicates: true }));
         must(await db().from("org_applications").delete().eq("id", application.id));

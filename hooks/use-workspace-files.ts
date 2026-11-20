@@ -25,6 +25,7 @@ export function useWorkspaceFiles(profile: LocalProfile | null, problem: Visible
   const pendingSaveRef = useRef<(() => Promise<void>) | null>(null);
   const saveVersionRef = useRef(0);
   const dirtyRef = useRef(false);
+  const pendingOverrideRef = useRef<{ lang: PreferredLanguage; code: string } | null>(null);
 
   const code = files.find((file) => file.name === activeFile)?.content ?? "";
   const mainCode = files.find((file) => file.name === mainFilename)?.content ?? "";
@@ -32,47 +33,9 @@ export function useWorkspaceFiles(profile: LocalProfile | null, problem: Visible
 
   const updateFiles = useCallback((next: WorkspaceFile[]) => { filesRef.current = next; setFiles(next); }, []);
 
-  // Load the profile's existing single-file or multi-file draft.
-  useEffect(() => {
-    if (!profileId) return;
-    let current = true;
-    dirtyRef.current = false;
-    const loaded = (draftFiles: WorkspaceFile[]) => {
-      if (!current || dirtyRef.current) return;
-      const primary = draftFiles.find((file) => file.name === mainFilename);
-      updateFiles([{ name: mainFilename, content: primary?.content ?? starter }, ...draftFiles.filter((file) => file.name !== mainFilename)]);
-      setActiveFile(mainFilename);
-      setSaveStatus("SAVED");
-    };
-    draftRepository.getDraft(profileId, activeLang, problemId)
-      .then((draft) => loaded(draft?.files?.length ? draft.files : [{ name: mainFilename, content: draft?.code?.trim() ? draft.code : starter }]))
-      .catch(() => loaded([{ name: mainFilename, content: starter }]));
-    return () => {
-      current = false;
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-      void pendingSaveRef.current?.();
-    };
-  }, [profileId, activeLang, mainFilename, starter, problemId, updateFiles]);
-
   const cancelPendingSave = useCallback(() => {
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     pendingSaveRef.current = null;
-  }, []);
-
-  // Typing waits 600 ms before saving, so leaving the editor or the page must save right away.
-  useEffect(() => {
-    const flush = () => {
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-      void pendingSaveRef.current?.();
-    };
-    const flushWhenHidden = () => { if (document.visibilityState === "hidden") flush(); };
-    window.addEventListener("pagehide", flush);
-    document.addEventListener("visibilitychange", flushWhenHidden);
-    return () => {
-      window.removeEventListener("pagehide", flush);
-      document.removeEventListener("visibilitychange", flushWhenHidden);
-      flush();
-    };
   }, []);
 
   const saveNow = useCallback((next: WorkspaceFile[]) => {
@@ -102,14 +65,73 @@ export function useWorkspaceFiles(profile: LocalProfile | null, problem: Visible
     saveTimeoutRef.current = setTimeout(save, 600);
   }, [profileId, saveNow, updateFiles, cancelPendingSave]);
 
+  // Load the profile's existing single-file or multi-file draft.
+  useEffect(() => {
+    if (!profileId) return;
+    let current = true;
+    dirtyRef.current = false;
+    if (pendingOverrideRef.current?.lang === activeLang) {
+      const override = pendingOverrideRef.current.code;
+      pendingOverrideRef.current = null;
+      persistFiles([{ name: mainFilename, content: override }]);
+      setActiveFile(mainFilename);
+      return () => {
+        current = false;
+        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+        void pendingSaveRef.current?.();
+      };
+    }
+    const loaded = (draftFiles: WorkspaceFile[]) => {
+      if (!current || dirtyRef.current) return;
+      const primary = draftFiles.find((file) => file.name === mainFilename);
+      updateFiles([{ name: mainFilename, content: primary?.content ?? starter }, ...draftFiles.filter((file) => file.name !== mainFilename)]);
+      setActiveFile(mainFilename);
+      setSaveStatus("SAVED");
+    };
+    draftRepository.getDraft(profileId, activeLang, problemId)
+      .then((draft) => loaded(draft?.files?.length ? draft.files : [{ name: mainFilename, content: draft?.code?.trim() ? draft.code : starter }]))
+      .catch(() => loaded([{ name: mainFilename, content: starter }]));
+    return () => {
+      current = false;
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      void pendingSaveRef.current?.();
+    };
+  }, [profileId, activeLang, mainFilename, starter, problemId, updateFiles, persistFiles]);
+
+  // Typing waits 600 ms before saving, so leaving the editor or the page must save right away.
+  useEffect(() => {
+    const flush = () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      void pendingSaveRef.current?.();
+    };
+    const flushWhenHidden = () => { if (document.visibilityState === "hidden") flush(); };
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", flushWhenHidden);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      document.removeEventListener("visibilitychange", flushWhenHidden);
+      flush();
+    };
+  }, []);
+
   const setFileContent = useCallback((name: string, content: string) => {
     persistFiles(filesRef.current.map((file) => file.name === name ? { ...file, content } : file));
   }, [persistFiles]);
 
-  const switchLanguage = async (next: PreferredLanguage) => {
-    if (next === activeLang) return;
+  const switchLanguage = async (next: PreferredLanguage, initialCode?: string) => {
+    if (next === activeLang) {
+      if (initialCode !== undefined) {
+        const targetMain = getFilenameForLanguage(next);
+        persistFiles(filesRef.current.map((file) => (file.name === targetMain ? { ...file, content: initialCode } : file)));
+        setActiveFile(targetMain);
+      }
+      return;
+    }
     cancelPendingSave();
     if (saveStatus !== "SAVED") await saveNow(filesRef.current).catch(() => undefined);
+    if (initialCode !== undefined) {
+      pendingOverrideRef.current = { lang: next, code: initialCode };
+    }
     setUserSelectedLang(next);
   };
 

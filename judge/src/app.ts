@@ -2,7 +2,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import { timingSafeEqual } from "node:crypto";
 import type { IsolateCli } from "./isolate.ts";
 import type { LanguageSpec } from "./languages.ts";
-import { BoxPool, QueueFullError } from "./pool.ts";
+import { BoxPool, JobAbortedError, QueueFullError } from "./pool.ts";
 import { runJob } from "./runner.ts";
 import type { Language } from "./types.ts";
 import { validateRunRequest } from "./validate.ts";
@@ -20,6 +20,7 @@ export interface JudgeAppOptions {
 }
 
 function send(res: ServerResponse, status: number, body: unknown, close = false) {
+  if (res.writableEnded) return;
   const headers: Record<string, string> = { "content-type": "application/json", "cache-control": "no-store" };
   if (close) headers.connection = "close";
   res.writeHead(status, headers);
@@ -89,11 +90,25 @@ export function createJudgeServer(options: JudgeAppOptions): Server {
       const request = validation.request;
       const spec = specs[request.language]!;
 
+      const controller = new AbortController();
+      const onClose = () => {
+        if (!res.writableFinished) controller.abort();
+      };
+      res.on("close", onClose);
+
       const started = Date.now();
-      const result = await pool.use((boxId) => runJob(request, boxId, { cli, spec, workDir }));
-      log(`${request.language} ${request.stdins.length} input(s) in ${Date.now() - started}ms`);
-      return send(res, 200, result);
+      try {
+        const result = await pool.use(
+          (boxId) => runJob(request, boxId, { cli, spec, workDir, signal: controller.signal }),
+          controller.signal,
+        );
+        log(`${request.language} ${request.stdins.length} input(s) in ${Date.now() - started}ms`);
+        return send(res, 200, result);
+      } finally {
+        res.off("close", onClose);
+      }
     } catch (err) {
+      if (err instanceof JobAbortedError) return;
       if (err instanceof QueueFullError) return send(res, 429, { error: err.message });
       log(`error: ${err instanceof Error ? err.message : String(err)}`);
       // Never echo internals to the caller; the log has the details.

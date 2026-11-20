@@ -1,5 +1,5 @@
 import "server-only";
-import { db, must } from "@/lib/db/client";
+import { db, fetchAllPages, must } from "@/lib/db/client";
 import { getAllProblems, getProblemById, summarizeProblems, toVisibleProblem, type ProblemFilter } from "@/lib/problems/catalog";
 import { ALL_SUPPORTED_LANGUAGES, getStarterCode } from "@/lib/workspace-defaults";
 import type { ProblemDifficulty, ProgrammingProblem, ProblemSummary, TestCase, VisibleProblem } from "@/types/problem";
@@ -11,6 +11,11 @@ export interface ProblemRow {
   test_cases: TestCase[]; time_limit_ms: number; memory_limit_kb: number;
 }
 
+type ProblemSummaryRow = Pick<
+  ProblemRow,
+  "id" | "title" | "difficulty" | "category" | "tags" | "supported_languages" | "test_cases" | "time_limit_ms" | "memory_limit_kb"
+>;
+
 export const toProblem = (r: ProblemRow): ProgrammingProblem => ({
   id: r.id, slug: r.id, title: r.title, description: r.description, difficulty: r.difficulty, category: r.category, tags: r.tags,
   supportedLanguages: r.supported_languages, inputSpec: r.input_spec, outputSpec: r.output_spec, constraints: r.constraints,
@@ -20,19 +25,70 @@ export const toProblem = (r: ProblemRow): ProgrammingProblem => ({
 });
 
 export interface ProblemLookupOptions {
-  /** Admins can view and test problems scheduled for upcoming tournaments. */
+  /** Admins can view and test problems scheduled for upcoming or private live tournaments. */
   includeLocked?: boolean;
+  /** Signed-in viewer ID, used to unlock live tournament problems only for registered participants. */
+  userId?: string;
 }
 
-/** Problem IDs assigned to tournaments that have not started yet stay hidden from students until start time. */
-export async function upcomingLockedProblemIds(now = new Date().toISOString()): Promise<Set<string>> {
-  const rows = must(await db().from("events").select("problem_ids").gt("starts_at", now)) as { problem_ids: string[] | null }[];
-  return new Set(rows.flatMap((row) => row.problem_ids ?? []));
+interface TournamentLockRow {
+  id: string;
+  problem_ids: string[] | null;
+  starts_at: string | null;
+  ends_at: string | null;
 }
+
+/**
+ * Problem IDs that must stay hidden from this viewer:
+ * - Every upcoming tournament (starts_at > now).
+ * - Every live tournament (starts_at <= now < ends_at) where this viewer is not a registered participant.
+ */
+export async function lockedProblemIdsFor(userId?: string, now = new Date().toISOString()): Promise<Set<string>> {
+  const rows = must(
+    await db().from("events").select("id,problem_ids,starts_at,ends_at").gt("ends_at", now),
+  ) as TournamentLockRow[];
+  const nowMs = Date.parse(now);
+  const locked = new Set<string>();
+  const liveEvents: TournamentLockRow[] = [];
+
+  for (const row of rows) {
+    const ids = row.problem_ids ?? [];
+    if (ids.length === 0 || !row.starts_at) continue;
+    if (Date.parse(row.starts_at) > nowMs) {
+      for (const pid of ids) locked.add(pid);
+    } else {
+      liveEvents.push(row);
+    }
+  }
+
+  if (liveEvents.length === 0) return locked;
+
+  const registeredEventIds = new Set<string>();
+  if (userId) {
+    const memberships = must(
+      await db()
+        .from("tournament_members")
+        .select("event_id")
+        .eq("user_id", userId)
+        .in("event_id", liveEvents.map((e) => e.id)),
+    ) as { event_id: string }[];
+    for (const m of memberships) registeredEventIds.add(m.event_id);
+  }
+
+  for (const row of liveEvents) {
+    if (!registeredEventIds.has(row.id)) {
+      for (const pid of row.problem_ids ?? []) locked.add(pid);
+    }
+  }
+  return locked;
+}
+
+/** Kept as alias for upcoming/live lock lookup without a viewer (locks all unended tournaments). */
+export const upcomingLockedProblemIds = (now = new Date().toISOString()) => lockedProblemIdsFor(undefined, now);
 
 /** Full problem including hidden tests. Only the judge may use this; browsers get findVisibleProblem. */
 export async function findProblem(id: string, options?: ProblemLookupOptions): Promise<ProgrammingProblem | null> {
-  if (!options?.includeLocked && (await upcomingLockedProblemIds()).has(id)) return null;
+  if (!options?.includeLocked && (await lockedProblemIdsFor(options?.userId)).has(id)) return null;
   const builtIn = getProblemById(id);
   if (builtIn) return builtIn;
   const row = must(await db().from("problems").select("*").eq("id", id).maybeSingle()) as ProblemRow | null;
@@ -44,16 +100,41 @@ export async function findVisibleProblem(id: string, options?: ProblemLookupOpti
   return problem ? toVisibleProblem(problem) : null;
 }
 
-export async function listProblemIds(): Promise<string[]> {
-  const rows = must(await db().from("problems").select("id")) as { id: string }[];
-  return [...getAllProblems().map((p) => p.id), ...rows.map((r) => r.id)];
+/** Lightweight existence check that avoids loading hidden test cases JSONB. */
+export async function problemExists(id: string, options?: ProblemLookupOptions): Promise<boolean> {
+  if (!options?.includeLocked && (await lockedProblemIdsFor(options?.userId)).has(id)) return false;
+  if (getProblemById(id)) return true;
+  const row = must(await db().from("problems").select("id").eq("id", id).maybeSingle()) as { id: string } | null;
+  return Boolean(row);
 }
 
 export async function listProblemSummaries(filter?: ProblemFilter, options?: ProblemLookupOptions): Promise<ProblemSummary[]> {
   const [rows, locked] = await Promise.all([
-    db().from("problems").select("*").order("created_at").then((result) => must(result) as ProblemRow[]),
-    options?.includeLocked ? Promise.resolve(new Set<string>()) : upcomingLockedProblemIds(),
+    fetchAllPages<ProblemSummaryRow>((from, to) =>
+      db()
+        .from("problems")
+        .select("id,title,difficulty,category,tags,supported_languages,test_cases,time_limit_ms,memory_limit_kb")
+        .order("created_at")
+        .order("id")
+        .range(from, to),
+    ),
+    options?.includeLocked ? Promise.resolve(new Set<string>()) : lockedProblemIdsFor(options?.userId),
   ]);
-  const all = [...getAllProblems(), ...rows.map(toProblem)].filter((problem) => !locked.has(problem.id));
+
+  const builtIns = getAllProblems();
+  const seen = new Set(builtIns.map((p) => p.id));
+  const dbProblems: ProgrammingProblem[] = rows
+    .filter((r) => !seen.has(r.id))
+    .map((r) =>
+      toProblem({
+        ...r,
+        description: "",
+        input_spec: "",
+        output_spec: "",
+        constraints: [],
+      }),
+    );
+
+  const all = [...builtIns, ...dbProblems].filter((problem) => !locked.has(problem.id));
   return summarizeProblems(all, filter);
 }

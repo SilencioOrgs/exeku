@@ -70,13 +70,20 @@ export function WorkspaceView() {
   const [expiredDismissed, setExpiredDismissed] = useState(false);
 
   // This view stays mounted between problems, so a verdict must be cleared when the problem changes.
-  const [resultsFor, setResultsFor] = useState(problemIdParam);
-  if (resultsFor !== problemIdParam) {
-    setResultsFor(problemIdParam);
-    setResultOpen(false);
-    setConfirmSubmitOpen(false);
-    judge.reset();
-  }
+  const prevProblemRef = useRef(problemIdParam);
+  const judgeResetRef = useRef(judge.reset);
+  useEffect(() => {
+    judgeResetRef.current = judge.reset;
+  });
+  useEffect(() => {
+    if (prevProblemRef.current === problemIdParam) return;
+    prevProblemRef.current = problemIdParam;
+    queueMicrotask(() => {
+      setResultOpen(false);
+      setConfirmSubmitOpen(false);
+      judgeResetRef.current();
+    });
+  }, [problemIdParam]);
 
   const eventId = searchParams.get("event");
   const [eventRun, setEventRun] = useState<{ title: string; problemIds: string[]; solved: string[] } | null>(null);
@@ -207,9 +214,7 @@ export function WorkspaceView() {
   };
 
   const loadDemoCode = (code: string, state: "solved" | "incorrect") => {
-    void files.switchLanguage("python");
-    files.setActiveFile("main.py");
-    files.setFileContent("main.py", code);
+    void files.switchLanguage("python", code);
     demo.setDemoState(state);
   };
 

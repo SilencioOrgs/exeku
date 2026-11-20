@@ -128,17 +128,22 @@ export class ExekuJudgeAdapter implements IExecutionAdapter {
         signal: controller.signal,
       });
       if (res.status === 429) throw new QueueFullError("The judge is busy. Please retry in a few seconds.");
-      if (res.status === 401) return fail("INTERNAL_ERROR", "The judge rejected the token. Set the same JUDGE_TOKEN in .env.local and on the judge.");
+      if (res.status === 401) {
+        console.error("[exeku-judge] rejected JUDGE_TOKEN (HTTP 401)");
+        return fail("INTERNAL_ERROR", "The execution sandbox is misconfigured. Contact an administrator.");
+      }
       if (!res.ok) {
-        const text = await res.text();
-        return fail("INTERNAL_ERROR", `The judge returned HTTP ${res.status}.`, text);
+        const text = await res.text().catch(() => "");
+        console.error(`[exeku-judge] HTTP ${res.status} from ${this.baseUrl}: ${text.slice(0, 500)}`);
+        return fail("INTERNAL_ERROR", "The execution sandbox returned an unexpected error. Please retry.");
       }
       return this.transformResponse((await res.json()) as WorkerResponse, stdins.length);
     } catch (err: unknown) {
       if (err instanceof QueueFullError) throw err;
       const message = err instanceof Error ? err.message : String(err);
-      if (controller.signal.aborted) return fail("INTERNAL_ERROR", "The judge took too long to answer.", message);
-      return fail("SERVICE_UNAVAILABLE", `The Exeku judge is not reachable at ${this.baseUrl}. Start it (see judge/README.md).`, message);
+      console.error(`[exeku-judge] request failed (${this.baseUrl}): ${message}`);
+      if (controller.signal.aborted) return fail("INTERNAL_ERROR", "The judge took too long to answer.");
+      return fail("SERVICE_UNAVAILABLE", "The Exeku judge sandbox is currently unreachable. Start it (see judge/README.md).");
     } finally {
       clearTimeout(timer);
     }

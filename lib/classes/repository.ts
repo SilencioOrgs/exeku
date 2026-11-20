@@ -1,8 +1,8 @@
 import "server-only";
 import { isObject, isUuid, text } from "@/lib/accounts/rules";
 import type { Viewer } from "@/lib/auth/viewer";
-import { db, must } from "@/lib/db/client";
-import { listProblemSummaries } from "@/lib/problems/store";
+import { db, fetchAllPages, must } from "@/lib/db/client";
+import { listProblemSummaries, problemExists } from "@/lib/problems/store";
 import { canCreateClasses } from "@/lib/roles/rules";
 import type { FieldErrors } from "@/types/account";
 import type {
@@ -58,31 +58,52 @@ interface ProfileMiniRow {
   school_email: string | null;
 }
 
+const PROFILE_CHUNK_SIZE = 500;
+
 async function loadProfiles(userIds: string[]): Promise<Map<string, ProfileMiniRow>> {
   const unique = [...new Set(userIds.filter(Boolean))];
-  if (unique.length === 0) return new Map();
-  const rows = must(
-    await db()
-      .from("profiles")
-      .select("user_id,display_name,avatar_id,border_id,school_email")
-      .in("user_id", unique),
-  ) as ProfileMiniRow[];
-  return new Map(rows.map((r) => [r.user_id, r]));
+  const map = new Map<string, ProfileMiniRow>();
+  for (let i = 0; i < unique.length; i += PROFILE_CHUNK_SIZE) {
+    const chunk = unique.slice(i, i + PROFILE_CHUNK_SIZE);
+    const rows = must(
+      await db()
+        .from("profiles")
+        .select("user_id,display_name,avatar_id,border_id,school_email")
+        .in("user_id", chunk),
+    ) as ProfileMiniRow[];
+    for (const row of rows) map.set(row.user_id, row);
+  }
+  return map;
+}
+
+function countByClass<T extends { class_id: string }>(rows: T[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const row of rows) counts.set(row.class_id, (counts.get(row.class_id) ?? 0) + 1);
+  return counts;
 }
 
 export async function listClassesForViewer(viewer: Viewer): Promise<ClassListPayload> {
+  const viewerCanTeach = canCreateClasses(viewer.role);
   const [teachingRows, myMemberships] = await Promise.all([
-    db()
-      .from("classes")
-      .select("id,teacher_id,name,section,description,invite_code,created_at")
-      .eq("teacher_id", viewer.id)
-      .order("created_at", { ascending: false })
-      .then((res) => must(res) as ClassRow[]),
-    db()
-      .from("class_members")
-      .select("class_id,user_id,group_id,joined_at")
-      .eq("user_id", viewer.id)
-      .then((res) => must(res) as MemberRow[]),
+    viewerCanTeach
+      ? fetchAllPages<ClassRow>((from, to) =>
+          db()
+            .from("classes")
+            .select("id,teacher_id,name,section,description,invite_code,created_at")
+            .eq("teacher_id", viewer.id)
+            .order("created_at", { ascending: false })
+            .order("id", { ascending: true })
+            .range(from, to),
+        )
+      : Promise.resolve([] as ClassRow[]),
+    fetchAllPages<MemberRow>((from, to) =>
+      db()
+        .from("class_members")
+        .select("class_id,user_id,group_id,joined_at")
+        .eq("user_id", viewer.id)
+        .order("class_id")
+        .range(from, to),
+    ),
   ]);
 
   const enrolledIds = myMemberships
@@ -104,24 +125,33 @@ export async function listClassesForViewer(viewer: Viewer): Promise<ClassListPay
   if (allClassIds.length === 0) {
     return {
       role: viewer.role,
-      canCreateClass: canCreateClasses(viewer.role),
+      canCreateClass: viewerCanTeach,
       teaching: [],
       enrolled: [],
     };
   }
 
   const [allMembers, allGroups, allProblems, teacherProfiles] = await Promise.all([
-    db().from("class_members").select("class_id,user_id,group_id,joined_at").in("class_id", allClassIds).then((r) => must(r) as MemberRow[]),
-    db().from("class_groups").select("id,class_id,name,created_at").in("class_id", allClassIds).then((r) => must(r) as GroupRow[]),
-    db().from("class_problems").select("class_id,problem_id,assigned_at,due_at").in("class_id", allClassIds).then((r) => must(r) as ClassProblemRow[]),
+    fetchAllPages<{ class_id: string }>((from, to) =>
+      db().from("class_members").select("class_id").in("class_id", allClassIds).order("class_id").order("user_id").range(from, to),
+    ),
+    fetchAllPages<GroupRow>((from, to) =>
+      db().from("class_groups").select("id,class_id,name,created_at").in("class_id", allClassIds).order("id").range(from, to),
+    ),
+    fetchAllPages<{ class_id: string }>((from, to) =>
+      db().from("class_problems").select("class_id").in("class_id", allClassIds).order("class_id").order("problem_id").range(from, to),
+    ),
     loadProfiles(allClasses.map((c) => c.teacher_id)),
   ]);
 
+  const memberCountByClass = countByClass(allMembers);
+  const groupCountByClass = countByClass(allGroups);
+  const problemCountByClass = countByClass(allProblems);
   const groupNameById = new Map(allGroups.map((g) => [g.id, g.name]));
   const membershipByClass = new Map(myMemberships.map((m) => [m.class_id, m]));
 
   const summarize = (row: ClassRow): ClassSummary => {
-    const isTeacher = row.teacher_id === viewer.id;
+    const isTeacher = viewerCanTeach && row.teacher_id === viewer.id;
     const myMem = membershipByClass.get(row.id);
     return {
       id: row.id,
@@ -131,9 +161,9 @@ export async function listClassesForViewer(viewer: Viewer): Promise<ClassListPay
       inviteCode: isTeacher ? row.invite_code : undefined,
       teacherId: row.teacher_id,
       teacherName: teacherProfiles.get(row.teacher_id)?.display_name ?? "Instructor",
-      memberCount: allMembers.filter((m) => m.class_id === row.id).length,
-      groupCount: allGroups.filter((g) => g.class_id === row.id).length,
-      problemCount: allProblems.filter((p) => p.class_id === row.id).length,
+      memberCount: memberCountByClass.get(row.id) ?? 0,
+      groupCount: groupCountByClass.get(row.id) ?? 0,
+      problemCount: problemCountByClass.get(row.id) ?? 0,
       isTeacher,
       myGroupName: myMem?.group_id ? groupNameById.get(myMem.group_id) : undefined,
       createdAt: row.created_at,
@@ -142,7 +172,7 @@ export async function listClassesForViewer(viewer: Viewer): Promise<ClassListPay
 
   return {
     role: viewer.role,
-    canCreateClass: canCreateClasses(viewer.role),
+    canCreateClass: viewerCanTeach,
     teaching: teachingRows.map(summarize),
     enrolled: enrolledRows.map(summarize),
   };
@@ -222,11 +252,17 @@ export async function getClassDetail(viewer: Viewer, classId: string): Promise<C
   ) as ClassRow | null;
   if (!cls) return null;
 
-  const isTeacher = cls.teacher_id === viewer.id;
+  const isTeacher = canCreateClasses(viewer.role) && cls.teacher_id === viewer.id;
   const [members, groups, assigned] = await Promise.all([
-    db().from("class_members").select("class_id,user_id,group_id,joined_at").eq("class_id", classId).order("joined_at").then((r) => must(r) as MemberRow[]),
-    db().from("class_groups").select("id,class_id,name,created_at").eq("class_id", classId).order("name").then((r) => must(r) as GroupRow[]),
-    db().from("class_problems").select("class_id,problem_id,assigned_at,due_at").eq("class_id", classId).order("assigned_at", { ascending: false }).then((r) => must(r) as ClassProblemRow[]),
+    fetchAllPages<MemberRow>((from, to) =>
+      db().from("class_members").select("class_id,user_id,group_id,joined_at").eq("class_id", classId).order("joined_at").order("user_id").range(from, to),
+    ),
+    fetchAllPages<GroupRow>((from, to) =>
+      db().from("class_groups").select("id,class_id,name,created_at").eq("class_id", classId).order("name").order("id").range(from, to),
+    ),
+    fetchAllPages<ClassProblemRow>((from, to) =>
+      db().from("class_problems").select("class_id,problem_id,assigned_at,due_at").eq("class_id", classId).order("assigned_at", { ascending: false }).order("problem_id").range(from, to),
+    ),
   ]);
 
   const isMember = members.some((m) => m.user_id === viewer.id);
@@ -234,23 +270,26 @@ export async function getClassDetail(viewer: Viewer, classId: string): Promise<C
 
   const [profiles, catalogSummaries] = await Promise.all([
     loadProfiles([cls.teacher_id, ...members.map((m) => m.user_id)]),
-    listProblemSummaries(undefined, { includeLocked: isTeacher || viewer.role === "admin" }),
+    // Classes only expose unlocked practice problems (never upcoming or private live tournament problems).
+    listProblemSummaries(undefined, { includeLocked: false }),
   ]);
 
   const problemIds = assigned.map((p) => p.problem_id);
   const memberIds = members.map((m) => m.user_id);
 
-  // Pull accepted solves for class members on class-assigned problems only.
+  // Pull accepted solves for class members on class-assigned problems, paginated past PostgREST's 1,000-row cap.
   const solvedByUser = new Map<string, Set<string>>();
   if (problemIds.length > 0 && memberIds.length > 0) {
-    const subs = must(
-      await db()
+    const subs = await fetchAllPages<{ user_id: string; problem_id: string }>((from, to) =>
+      db()
         .from("submissions")
         .select("user_id,problem_id")
         .eq("verdict", "ACCEPTED")
         .in("user_id", memberIds)
-        .in("problem_id", problemIds),
-    ) as { user_id: string; problem_id: string }[];
+        .in("problem_id", problemIds)
+        .order("id")
+        .range(from, to),
+    );
     for (const s of subs) {
       const set = solvedByUser.get(s.user_id) ?? new Set<string>();
       set.add(s.problem_id);
@@ -333,6 +372,7 @@ export async function getClassDetail(viewer: Viewer, classId: string): Promise<C
 }
 
 async function requireClassTeacher(viewer: Viewer, classId: string): Promise<{ ok: true } | { ok: false; status: number; error: string }> {
+  if (!canCreateClasses(viewer.role)) return { ok: false, status: 403, error: "Only approved faculty teachers can manage classes." };
   if (!isUuid(classId)) return { ok: false, status: 404, error: "Class not found." };
   const cls = must(await db().from("classes").select("teacher_id").eq("id", classId).maybeSingle()) as { teacher_id: string } | null;
   if (!cls) return { ok: false, status: 404, error: "Class not found." };
@@ -392,8 +432,7 @@ export async function performClassAction(viewer: Viewer, classId: string, body: 
   if (action === "addProblem") {
     const problemId = text(body, "problemId");
     if (!problemId) return { ok: false, status: 400, error: "Choose a problem to assign." };
-    const catalog = await listProblemSummaries(undefined, { includeLocked: true });
-    if (!catalog.some((p) => p.id === problemId)) {
+    if (!(await problemExists(problemId, { includeLocked: false }))) {
       return { ok: false, status: 404, error: "Problem not found." };
     }
     const { error } = await db().from("class_problems").insert({ class_id: classId, problem_id: problemId });

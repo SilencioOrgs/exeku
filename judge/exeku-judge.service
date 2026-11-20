@@ -6,6 +6,9 @@ Requires=isolate.service
 [Service]
 User=exeku-judge
 Group=exeku-judge
+PrivateTmp=true
+RuntimeDirectory=exeku-judge
+RuntimeDirectoryMode=0700
 EnvironmentFile=/etc/exeku-judge.env
 WorkingDirectory=/opt/exeku-judge
 ExecStart=/usr/bin/node --experimental-strip-types --disable-warning=ExperimentalWarning src/server.ts
