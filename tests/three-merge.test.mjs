@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import * as THREE from "three";
 import { mergeStatic } from "../lib/three/stage.ts";
+import { limb } from "../lib/three/arena.ts";
 
 test("mergeStatic bakes static meshes into one mesh per material and leaves moving or transparent parts alone", () => {
   const root = new THREE.Group();
@@ -22,4 +23,19 @@ test("mergeStatic bakes static meshes into one mesh per material and leaves movi
   assert.ok(meshes.some((m) => m.castShadow) && meshes.some((m) => !m.castShadow));
   assert.ok(root.children.includes(beam), "transparent mesh untouched");
   assert.equal(spinner.children.length, 1, "dynamic subtree untouched");
+});
+
+test("limb centers rounded caps on joints a and b so consecutive segments overlap at shared joints", () => {
+  const mat = new THREE.MeshStandardMaterial({ color: "#262628" });
+  const upper = limb(new THREE.Vector3(0, 100, 0), new THREE.Vector3(0, 50, 0), 6, mat);
+  const lower = limb(new THREE.Vector3(0, 50, 0), new THREE.Vector3(0, 10, 0), 5, mat);
+  upper.updateMatrixWorld(true);
+  lower.updateMatrixWorld(true);
+
+  const upperBox = new THREE.Box3().setFromObject(upper);
+  const lowerBox = new THREE.Box3().setFromObject(lower);
+
+  assert.ok(upperBox.min.y < 45, "upper segment extends past the shared joint y=50 by its cap radius");
+  assert.ok(lowerBox.max.y > 54, "lower segment extends past the shared joint y=50 by its cap radius");
+  assert.ok(upperBox.intersectsBox(lowerBox), "adjacent limbs overlap cleanly at the joint");
 });

@@ -15,11 +15,11 @@ export function mesh(geometry: THREE.BufferGeometry, material: THREE.Material, x
   return m;
 }
 
-/** Capsule from a to b, like an arm or a leg. */
+/** Capsule whose rounded ends center on joints a and b, so connected limbs never gap. */
 export function limb(a: THREE.Vector3, b: THREE.Vector3, radius: number, material: THREE.Material) {
   const dir = b.clone().sub(a);
-  const length = Math.max(0.01, dir.length() - radius * 2);
-  const m = mesh(new THREE.CapsuleGeometry(radius, length, 6, 14), material);
+  const length = Math.max(0.01, dir.length());
+  const m = mesh(new THREE.CapsuleGeometry(radius, length, 8, 16), material);
   m.position.copy(a).add(b).multiplyScalar(0.5);
   m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
   return m;
@@ -122,11 +122,15 @@ export function buildPlayer(style: PlayerStyle) {
     group.add(mesh(new THREE.SphereGeometry(2.6, 12, 8), dark, Math.cos(a) * 28, 2.6, Math.sin(a) * 28));
   }
 
-  // Body, leaning in toward the screen.
-  group.add(limb(v(2, 54, 0), v(12, 96, 0), 15, hoodie));
-  group.add(mesh(new THREE.CylinderGeometry(4.2, 4.6, 8, 14), skin, 15, 104, 0));
+  // Body, leaning in toward the screen, with shoulder and pelvis bridges and a continuous neck.
+  group.add(limb(v(4, 61, 0), v(12, 91, 0), 14.5, hoodie));
+  group.add(limb(v(12, 91, -11.5), v(12, 91, 11.5), 7.2, hoodie));
+  const collar = mesh(new THREE.CylinderGeometry(6.4, 8.8, 3.8, 20), hoodie, 14.8, 102.6, 0);
+  collar.rotation.z = -0.22;
+  group.add(collar);
+  group.add(limb(v(13.5, 98.5, 0), v(17.5, 113.5, 0), 4.5, skin));
   const head = new THREE.Group();
-  head.position.set(18, 117, 0);
+  head.position.set(18.5, 117.5, 0);
   head.rotation.z = -0.18;
   head.add(mesh(new THREE.SphereGeometry(10.5, 32, 24), skin));
   const hair = mesh(new THREE.SphereGeometry(11.1, 32, 16, 0, Math.PI * 2, 0, Math.PI * 0.55), std(style.hair, 0.9), -1.2, 0.8, 0);
@@ -145,15 +149,16 @@ export function buildPlayer(style: PlayerStyle) {
   }
   group.add(head);
 
+  group.add(limb(v(5, 55, -8.5), v(5, 55, 8.5), 7.8, pants));
   for (const side of [-1, 1]) {
-    const shoulder = v(10, 92, side * 17), elbow = v(25, 70, side * 20), hand = v(47, 78, side * 9);
-    group.add(limb(shoulder, elbow, 5.6, hoodie));
-    group.add(limb(elbow, hand.clone().add(v(-4, 0, 0)), 4.6, hoodie));
-    group.add(mesh(new THREE.SphereGeometry(3.6, 16, 12), skin, hand.x, hand.y, hand.z));
-    const hip = v(6, 52, side * 9), knee = v(42, 53, side * 11), ankle = v(44, 9, side * 11);
-    group.add(limb(hip, knee, 7.5, pants));
-    group.add(limb(knee, ankle, 6, pants));
-    group.add(mesh(new RoundedBoxGeometry(16, 6, 9, 2, 2.5), std("#f2f2f2", 0.6), 48, 3, side * 11));
+    const shoulder = v(12, 91, side * 14.2), elbow = v(25, 72, side * 18), wrist = v(44, 77.5, side * 9);
+    group.add(limb(shoulder, elbow, 5.2, hoodie));
+    group.add(limb(elbow, wrist, 4.4, hoodie));
+    group.add(mesh(new THREE.SphereGeometry(3.6, 16, 12), skin, 47.5, 77.5, side * 8.5));
+    const hip = v(7, 55, side * 9), knee = v(41, 54, side * 11), ankle = v(44, 9, side * 11);
+    group.add(limb(hip, knee, 7.2, pants));
+    group.add(limb(knee, ankle, 5.8, pants));
+    group.add(mesh(new RoundedBoxGeometry(17, 6.5, 9.5, 2, 2.5), std("#f2f2f2", 0.6), 48, 3.25, side * 11));
   }
 
   // Desk.
