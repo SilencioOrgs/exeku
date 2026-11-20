@@ -15,7 +15,9 @@ export async function GET(req: Request) {
     const search = searchParams.get("search") || undefined;
     const includeLocked = await isAdmin(userId);
 
-    return NextResponse.json({ problems: await listProblemSummaries({ difficulty, language, search }, { includeLocked }) });
+    return NextResponse.json({
+      problems: await listProblemSummaries({ difficulty, language, search }, { includeLocked, userId }),
+    });
   } catch (err: unknown) {
     unstable_rethrow(err);
     console.error("Could not list problems:", err instanceof Error ? err.message : "unknown error");

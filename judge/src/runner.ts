@@ -3,16 +3,18 @@ import { lstat, open, readdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { classifyRun, parseMeta, type IsolateCli } from "./isolate.ts";
 import type { LanguageSpec } from "./languages.ts";
+import { JobAbortedError } from "./pool.ts";
 import type { CompileResult, Language, RunRequest, RunResponse, RunStatus, TestRun } from "./types.ts";
 
-export const MAX_STDOUT_BYTES = 1024 * 1024;
+export const MAX_STDOUT_BYTES = 256 * 1024;
 export const MAX_STDERR_BYTES = 64 * 1024;
 const MAX_COMPILE_OUTPUT_BYTES = 64 * 1024;
-const MAX_ARTIFACT_BYTES = 64 * 1024 * 1024;
+export const MAX_ARTIFACT_BYTES = 16 * 1024 * 1024;
+export const MAX_BATCH_WALL_MS = 90_000;
 const SAFE_READ_FLAGS = fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW ?? 0) | (fsConstants.O_NONBLOCK ?? 0);
 
-const COMPILE_LIMITS = { timeMs: 20_000, wallTimeMs: 40_000, memoryKb: 768 * 1024, fileSizeKb: 64 * 1024, processes: 64 };
-const RUN_FILE_SIZE_KB = 8 * 1024;
+const COMPILE_LIMITS = { timeMs: 20_000, wallTimeMs: 40_000, memoryKb: 768 * 1024, fileSizeKb: 16 * 1024, processes: 64 };
+const RUN_FILE_SIZE_KB = 2 * 1024;
 
 // Names the worker writes into the box. "~" is never allowed in a submitted file name, so these cannot collide.
 const STDIN = "~stdin";
@@ -21,11 +23,15 @@ const STDERR = "~stderr";
 const COMPILE_OUT = "~compile";
 const WORKER_FILES = new Set([STDIN, STDOUT, STDERR, COMPILE_OUT]);
 
+export class ArtifactTooLargeError extends Error {}
+
 export interface RunnerDeps {
   cli: IsolateCli;
   spec: LanguageSpec;
   /** Private directory for meta files, outside every box. */
   workDir: string;
+  signal?: AbortSignal;
+  maxBatchWallMs?: number;
 }
 
 /** Reads at most maxBytes from a regular file without following symlinks or blocking on FIFOs. */
@@ -76,7 +82,7 @@ export async function collectArtifacts(boxDir: string): Promise<Map<string, Buff
     const info = await lstat(path);
     if (!info.isFile()) continue;
     total += info.size;
-    if (total > MAX_ARTIFACT_BYTES) throw new Error("Compiled output is too large.");
+    if (total > MAX_ARTIFACT_BYTES) throw new ArtifactTooLargeError("Compiled output is too large.");
     const data = await readRegularFile(path, info.size);
     if (data) artifacts.set(name, data);
   }
@@ -84,10 +90,12 @@ export async function collectArtifacts(boxDir: string): Promise<Map<string, Buff
 }
 
 export async function runJob(request: RunRequest, boxId: number, deps: RunnerDeps): Promise<RunResponse> {
-  const { cli, spec, workDir } = deps;
+  const { cli, spec, workDir, signal, maxBatchWallMs = MAX_BATCH_WALL_MS } = deps;
   const metaPath = join(workDir, `meta-${boxId}.txt`);
   let compile: CompileResult | null = null;
   let artifacts = new Map<string, Buffer>(request.files.map((file) => [file.name, Buffer.from(file.content, "utf8")]));
+
+  if (signal?.aborted) throw new JobAbortedError("Client disconnected.");
 
   if (spec.compile) {
     const compileArgv = spec.compile(request.files.map((file) => file.name));
@@ -103,7 +111,15 @@ export async function runJob(request: RunRequest, boxId: number, deps: RunnerDep
         timeMs: outcome.timeMs,
       };
       if (outcome.status === "INTERNAL_ERROR") throw new Error(outcome.message);
-      return { result, files: result.ok ? await collectArtifacts(boxDir) : null };
+      if (!result.ok) return { result, files: null };
+      try {
+        return { result, files: await collectArtifacts(boxDir) };
+      } catch (err) {
+        if (err instanceof ArtifactTooLargeError) {
+          return { result: { ok: false, output: err.message, timeMs: outcome.timeMs }, files: null };
+        }
+        throw err;
+      }
     });
     compile = compiled.result;
     if (!compiled.files) return { compile, runs: [] };
@@ -119,9 +135,25 @@ export async function runJob(request: RunRequest, boxId: number, deps: RunnerDep
     processes: spec.processes,
   };
   const runArgv = spec.run(request.memoryLimitKb);
+  const batchDeadline = Date.now() + maxBatchWallMs;
 
   // A fresh box per test: no files or cached memory carry over from the previous input.
   for (const stdin of request.stdins) {
+    if (signal?.aborted) throw new JobAbortedError("Client disconnected.");
+    if (runs.length > 0 && Date.now() >= batchDeadline) {
+      runs.push({
+        status: "TIME_LIMIT_EXCEEDED",
+        exitCode: null,
+        signal: null,
+        stdout: "",
+        stderr: "",
+        timeMs: request.timeLimitMs,
+        wallTimeMs: 0,
+        memoryKb: 0,
+        message: "Batch wall-time limit exceeded across test cases.",
+      });
+      continue;
+    }
     runs.push(
       await withBox(cli, boxId, async (boxDir) => {
         for (const [name, data] of artifacts) await writeFile(join(boxDir, name), data, { mode: 0o755 });

@@ -1,7 +1,7 @@
 import "server-only";
 import { isObject, text } from "@/lib/accounts/rules";
 import type { Viewer } from "@/lib/auth/viewer";
-import { db, must } from "@/lib/db/client";
+import { db, fetchAllPages, must } from "@/lib/db/client";
 import type { AvatarBorderId } from "@/lib/avatar-borders";
 import type { SocialLinks } from "@/types/profile";
 import type { FriendsFeed, FriendStatus, Person, PublicProfile } from "@/types/friends";
@@ -13,12 +13,30 @@ export type FriendActionResult = { ok: true } | { ok: false; status: number; err
 // Deliberately excludes school_email and age.
 const PUBLIC_COLUMNS = "user_id,display_name,avatar_id,border_id,campus_id,school";
 const MAX_LISTED = 40;
+const IN_CHUNK_SIZE = 100;
 const UNIQUE_VIOLATION = "23505";
 
 async function edgesOf(id: string) {
-  const asked = must(await db().from("friendships").select("requester,addressee,status").eq("requester", id)) as Edge[];
-  const received = must(await db().from("friendships").select("requester,addressee,status").eq("addressee", id)) as Edge[];
+  const [asked, received] = await Promise.all([
+    fetchAllPages<Edge>((from, to) =>
+      db().from("friendships").select("requester,addressee,status").eq("requester", id).order("addressee").range(from, to),
+    ),
+    fetchAllPages<Edge>((from, to) =>
+      db().from("friendships").select("requester,addressee,status").eq("addressee", id).order("requester").range(from, to),
+    ),
+  ]);
   return [...asked, ...received];
+}
+
+async function fetchPublicProfiles(ids: string[]): Promise<ProfileRow[]> {
+  const unique = [...new Set(ids)];
+  const rows: ProfileRow[] = [];
+  for (let i = 0; i < unique.length; i += IN_CHUNK_SIZE) {
+    const chunk = unique.slice(i, i + IN_CHUNK_SIZE);
+    const batch = must(await db().from("profiles").select(PUBLIC_COLUMNS).in("user_id", chunk)) as ProfileRow[];
+    rows.push(...batch);
+  }
+  return rows;
 }
 
 /** Counts, for everyone else, how many of the viewer's friends are also their friend. */
@@ -26,12 +44,22 @@ async function countMutuals(viewerId: string, friendIds: string[]) {
   const counts = new Map<string, number>();
   if (friendIds.length === 0) return counts;
   const friends = new Set(friendIds);
-  const asked = must(await db().from("friendships").select("requester,addressee,status").eq("status", "accepted").in("requester", friendIds)) as Edge[];
-  const received = must(await db().from("friendships").select("requester,addressee,status").eq("status", "accepted").in("addressee", friendIds)) as Edge[];
   const bump = (id: string) => { if (id !== viewerId) counts.set(id, (counts.get(id) ?? 0) + 1); };
-  for (const edge of asked) bump(edge.addressee);
-  // A row between two of the viewer's friends was already counted once above, for the addressee.
-  for (const edge of received) bump(edge.requester);
+
+  for (let i = 0; i < friendIds.length; i += IN_CHUNK_SIZE) {
+    const chunk = friendIds.slice(i, i + IN_CHUNK_SIZE);
+    const [asked, received] = await Promise.all([
+      fetchAllPages<Edge>((from, to) =>
+        db().from("friendships").select("requester,addressee,status").eq("status", "accepted").in("requester", chunk).order("requester").order("addressee").range(from, to),
+      ),
+      fetchAllPages<Edge>((from, to) =>
+        db().from("friendships").select("requester,addressee,status").eq("status", "accepted").in("addressee", chunk).order("addressee").order("requester").range(from, to),
+      ),
+    ]);
+    for (const edge of asked) bump(edge.addressee);
+    // A row between two of the viewer's friends was already counted once above, for the addressee.
+    for (const edge of received) bump(edge.requester);
+  }
   for (const id of friends) if (!counts.get(id)) counts.delete(id);
   return counts;
 }
@@ -65,9 +93,27 @@ const toPerson = (viewer: Viewer, r: ProfileRow, { statusOf, mutuals }: Relation
 export async function getPublicProfile(viewer: Viewer, userId: string): Promise<PublicProfile | null> {
   const row = must(await db().from("profiles").select(`${PUBLIC_COLUMNS},bio,social_links`).eq("user_id", userId).maybeSingle()) as unknown as (ProfileRow & { bio: string | null; social_links: SocialLinks | null }) | null;
   if (!row) return null;
-  const score = must(await db().from("leaderboard").select("solved,points").eq("user_id", userId).maybeSingle()) as { solved: number; points: number } | null;
+  const [score, viewerEdges, targetEdges] = await Promise.all([
+    db().from("leaderboard").select("solved,points").eq("user_id", userId).maybeSingle().then((r) => must(r) as { solved: number; points: number } | null),
+    edgesOf(viewer.id),
+    userId === viewer.id ? Promise.resolve([] as Edge[]) : edgesOf(userId),
+  ]);
+
+  const statusOf = new Map<string, FriendStatus>(viewerEdges.map((e) => {
+    const other = e.requester === viewer.id ? e.addressee : e.requester;
+    return [other, e.status === "accepted" ? "friends" : e.requester === viewer.id ? "outgoing" : "incoming"];
+  }));
+  const viewerFriends = new Set([...statusOf].filter(([, s]) => s === "friends").map(([id]) => id));
+  let mutualCount = 0;
+  for (const edge of targetEdges) {
+    if (edge.status !== "accepted") continue;
+    const other = edge.requester === userId ? edge.addressee : edge.requester;
+    if (other !== viewer.id && viewerFriends.has(other)) mutualCount++;
+  }
+  const mutuals = new Map<string, number>(mutualCount > 0 ? [[userId, mutualCount]] : []);
+
   return {
-    ...toPerson(viewer, row, await relationships(viewer)),
+    ...toPerson(viewer, row, { statusOf, mutuals }),
     bio: row.bio ?? undefined,
     socialLinks: row.social_links ?? {},
     solved: score?.solved ?? 0,
@@ -89,8 +135,17 @@ export async function getFriendsFeed(viewer: Viewer, rawSearch: string): Promise
     foundIds = (must(await db().from("profiles").select("user_id").eq("campus_id", viewer.campusId).limit(MAX_LISTED)) as { user_id: string }[]).map((r) => r.user_id);
   }
 
-  const ids = [...new Set([...statusOf.keys(), ...mutuals.keys(), ...foundIds])].filter((id) => id !== viewer.id);
-  const rows = ids.length ? must(await db().from("profiles").select(PUBLIC_COLUMNS).in("user_id", ids)) as ProfileRow[] : [];
+  // Cap mutual-only suggestions to top MAX_LISTED before querying profiles to prevent HTTP 414 on large graphs.
+  const topMutualIds = search.length >= 2
+    ? []
+    : [...mutuals.entries()]
+        .filter(([id]) => !statusOf.has(id))
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, MAX_LISTED)
+        .map(([id]) => id);
+
+  const ids = [...new Set([...statusOf.keys(), ...topMutualIds, ...foundIds])].filter((id) => id !== viewer.id);
+  const rows = ids.length ? await fetchPublicProfiles(ids) : [];
   const people = rows.map((r) => toPerson(viewer, r, related)).sort((a, b) => b.mutualFriends - a.mutualFriends || Number(b.sameCampus) - Number(a.sameCampus) || a.name.localeCompare(b.name));
 
   const found = new Set(foundIds);

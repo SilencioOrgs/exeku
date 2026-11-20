@@ -24,7 +24,7 @@ import * as readJson from "../lib/accounts/read-json.ts";
 import { isObject, isUuid, text } from "../lib/accounts/rules.ts";
 import * as catalog from "../lib/problems/catalog.ts";
 import { ALL_SUPPORTED_LANGUAGES, getStarterCode } from "../lib/workspace-defaults.ts";
-import { fakeDb, must } from "./fixtures/fake-db.mjs";
+import { exactCount, fakeDb, fetchAllPages, must } from "./fixtures/fake-db.mjs";
 import { MockSandboxAdapter } from "./fixtures/mock-adapter.ts";
 
 function loadTs(path, modules, extraGlobals = {}) {
@@ -148,7 +148,7 @@ test("judge server returns JSON 413 cleanly when body exceeds 10 MB", async () =
 // ---------------------------------------------------------------------------
 
 test("ExecutionQueue releases its slot when a task throws synchronously", async () => {
-  const queue = new ExecutionQueue({ maxConcurrent: 1, maxQueueSize: 2 });
+  const queue = new ExecutionQueue({ maxConcurrency: 1, maxQueueLength: 2 });
   await assert.rejects(
     queue.enqueue(() => {
       throw new Error("sync boom");
@@ -217,13 +217,19 @@ test("JudgingService returns INTERNAL_JUDGE_ERROR on 0 test cases and chunks >64
 // Phase 1: Auth, problem visibility, campus lock, admin limits
 // ---------------------------------------------------------------------------
 
-test("problem store hides upcoming tournament problems from students and keeps them visible to admins", async () => {
+test("problem store hides upcoming and unregistered live tournament problems from students and keeps them visible to participants and admins", async () => {
   const future = new Date(Date.now() + 60 * 60_000).toISOString();
-  const past = new Date(Date.now() - 60 * 60_000).toISOString();
+  const futureEnd = new Date(Date.now() + 120 * 60_000).toISOString();
+  const pastStart = new Date(Date.now() - 15 * 60_000).toISOString();
+  const pastEnd = new Date(Date.now() - 5 * 60_000).toISOString();
   const tables = {
     events: [
-      { id: "e1", problem_ids: ["hello-world", "custom-locked"], starts_at: future },
-      { id: "e2", problem_ids: ["sum-two-integers"], starts_at: past },
+      { id: "e1", problem_ids: ["hello-world", "custom-locked"], starts_at: future, ends_at: futureEnd },
+      { id: "e-live", problem_ids: ["even-or-odd"], starts_at: pastStart, ends_at: futureEnd },
+      { id: "e2", problem_ids: ["sum-two-integers"], starts_at: pastStart, ends_at: pastEnd },
+    ],
+    tournament_members: [
+      { event_id: "e-live", team_id: "t1", user_id: "joined" },
     ],
     problems: [
       {
@@ -245,25 +251,36 @@ test("problem store hides upcoming tournament problems from students and keeps t
   };
   const store = loadTs("lib/problems/store.ts", {
     "server-only": {},
-    "@/lib/db/client": { db: fakeDb(tables), must },
+    "@/lib/db/client": { db: fakeDb(tables), exactCount, fetchAllPages, must },
     "@/lib/problems/catalog": catalog,
     "@/lib/workspace-defaults": { ALL_SUPPORTED_LANGUAGES, getStarterCode },
   });
 
-  assert.equal(await store.findProblem("hello-world"), null);
-  assert.equal(await store.findProblem("custom-locked"), null);
-  assert.notEqual(await store.findProblem("sum-two-integers"), null);
+  // Upcoming tournament problems are hidden from everyone except admins (includeLocked).
+  assert.equal(await store.findProblem("hello-world", { userId: "stranger" }), null);
+  assert.equal(await store.findProblem("custom-locked", { userId: "joined" }), null);
+  // Live tournament problem is hidden from unregistered students, visible to registered participants.
+  assert.equal(await store.findProblem("even-or-odd", { userId: "stranger" }), null);
+  assert.notEqual(await store.findProblem("even-or-odd", { userId: "joined" }), null);
+  // Ended tournament problem is visible to everyone.
+  assert.notEqual(await store.findProblem("sum-two-integers", { userId: "stranger" }), null);
   assert.notEqual(await store.findProblem("hello-world", { includeLocked: true }), null);
   assert.notEqual(await store.findProblem("custom-locked", { includeLocked: true }), null);
 
-  const studentIds = (await store.listProblemSummaries()).map((p) => p.id);
-  assert.ok(!studentIds.includes("hello-world"));
-  assert.ok(!studentIds.includes("custom-locked"));
-  assert.ok(studentIds.includes("sum-two-integers"));
+  const strangerIds = (await store.listProblemSummaries(undefined, { userId: "stranger" })).map((p) => p.id);
+  assert.ok(!strangerIds.includes("hello-world"));
+  assert.ok(!strangerIds.includes("custom-locked"));
+  assert.ok(!strangerIds.includes("even-or-odd"));
+  assert.ok(strangerIds.includes("sum-two-integers"));
+
+  const joinedIds = (await store.listProblemSummaries(undefined, { userId: "joined" })).map((p) => p.id);
+  assert.ok(joinedIds.includes("even-or-odd"));
+  assert.ok(!joinedIds.includes("hello-world"));
 
   const adminIds = (await store.listProblemSummaries(undefined, { includeLocked: true })).map((p) => p.id);
   assert.ok(adminIds.includes("hello-world"));
   assert.ok(adminIds.includes("custom-locked"));
+  assert.ok(adminIds.includes("even-or-odd"));
 });
 
 test("getOrgDetail masks problems on upcoming or unregistered tournaments", async () => {
@@ -283,7 +300,7 @@ test("getOrgDetail masks problems on upcoming or unregistered tournaments", asyn
       { id: "e-live", org_id: "acoes", access: "open", featured: false, title: "Live", summary: "s", starts_on: "2026-12-01", starts_at: pastStart, ends_at: futureEnd, problem_ids: ["known"], banner: "circuit", winners: null, orgs: ORGS.acoes },
     ],
   };
-  const shared = { "server-only": {}, "@/lib/db/client": { db: fakeDb(tables), must }, "@/lib/dates": { todayInManila: () => "2026-11-08" }, "@/lib/orgs/rules": orgRules };
+  const shared = { "server-only": {}, "@/lib/db/client": { db: fakeDb(tables), exactCount, fetchAllPages, must }, "@/lib/dates": { todayInManila: () => "2026-11-08" }, "@/lib/orgs/rules": orgRules };
   const competition = loadTs("lib/competition/repository.ts", {
     ...shared,
     "@/lib/accounts/school-directory": { schoolDirectory: {} },
@@ -319,8 +336,9 @@ test("POST /api/account/school returns 409 when switching an already-set campus"
       }),
     },
     "@/lib/accounts/school-directory": { schoolDirectory: {} },
+    "@/lib/api/route-handler": { withApiErrors: (_label, fn) => fn() },
     "@/lib/auth/viewer": { getViewer: async () => ({ id: "u1", name: "Ada", campusId: "sc" }) },
-    "@/lib/db/client": { db: fakeDb(tables), must },
+    "@/lib/db/client": { db: fakeDb(tables), exactCount, fetchAllPages, must },
   });
   const req = new Request("http://localhost/api/account/school", { method: "POST", body: JSON.stringify({}) });
   const res = await route.POST(req);
@@ -339,7 +357,7 @@ test("isAdmin recognizes both is_admin flag and role='admin' and rejects student
   };
   const check = loadTs("lib/auth/admin-check.ts", {
     "server-only": {},
-    "@/lib/db/client": { db: fakeDb(tables), must },
+    "@/lib/db/client": { db: fakeDb(tables), exactCount, fetchAllPages, must },
   });
 
   assert.equal(await check.isAdmin("student"), false);
@@ -365,7 +383,7 @@ test("rankTeams compares sub-second ISO timestamps numerically (.500Z is later t
   assert.deepEqual(ranked.map((t) => [t.teamId, t.rank]), [["exact", 1], ["half", 2]]);
 });
 
-test("tournament leave keeps team alive with remaining member, createTeam cleans orphan on 23505, and deleted problems lift lockdown", async () => {
+test("tournament leave delegates empty-team cleanup to SQL trigger, createTeam cleans orphan on 23505, and deleted problems lift lockdown", async () => {
   const ID = "11111111-1111-4111-8111-111111111111";
   const iso = (m) => new Date(Date.now() + m * 60_000).toISOString();
   const org = { name: "O", campus_id: "sc", campus_name: "SC" };
@@ -397,7 +415,7 @@ test("tournament leave keeps team alive with remaining member, createTeam cleans
         },
       };
     };
-    const database = { db: wrappedDb, must };
+    const database = { db: wrappedDb, exactCount, fetchAllPages, must };
     const solves = loadTs("lib/judge/solves.ts", { "server-only": {}, "@/lib/db/client": database });
     const competition = loadTs("lib/competition/repository.ts", {
       "server-only": {},
@@ -421,12 +439,17 @@ test("tournament leave keeps team alive with remaining member, createTeam cleans
     return { tables, repo };
   };
 
-  // Leave keeps team alive while member 'b' remains, then deletes when last member leaves
+  // Leave removes only the member row in JS; Postgres trigger atomically removes empty teams.
   const h1 = makeHarness(5, 30);
   await h1.repo.performTournamentAction({ id: "a", name: "a", campusId: "sc" }, ID, { action: "leave" });
+  assert.equal(h1.tables.tournament_members.length, 1);
   assert.equal(h1.tables.tournament_teams.length, 1);
   await h1.repo.performTournamentAction({ id: "b", name: "b", campusId: "sc" }, ID, { action: "leave" });
-  assert.equal(h1.tables.tournament_teams.length, 0);
+  assert.equal(h1.tables.tournament_members.length, 0);
+  const triggerSql = readFileSync(new URL("../supabase/migrations/20261120020000_tournament_team_cleanup_trigger.sql", import.meta.url), "utf8");
+  assert.match(triggerSql, /FOR UPDATE/i);
+  assert.match(triggerSql, /NOT EXISTS/i);
+  assert.match(triggerSql, /AFTER DELETE ON (public\.)?tournament_members/i);
 
   // createTeam cleans up orphan team if member insert hits 23505
   const h2 = makeHarness(5, 30, { failMemberUnique: true });
@@ -560,7 +583,7 @@ test("schoolDirectory filters locations, schools, and exact or subdomain email d
   const accountRules = await import("../lib/accounts/rules.ts");
   const { schoolDirectory } = loadTs("lib/accounts/school-directory.ts", {
     "server-only": {},
-    "@/lib/db/client": { db: fakeDb(tables), must },
+    "@/lib/db/client": { db: fakeDb(tables), exactCount, fetchAllPages, must },
     "./rules": accountRules,
   });
 
@@ -616,6 +639,219 @@ test("landing page uses skeuomorphic sandbox deck with keyboard tab navigation a
     assert.match(src, /skeuo-panel/);
   }
 });
+
+// ---------------------------------------------------------------------------
+// Audit Wave 1-3 Regressions: fail-closed judging, isolate recovery, runner caps,
+// school request status handling, and strict lowercase extension / time limit
+// ---------------------------------------------------------------------------
+
+test("JudgingService fails closed on partial batch results and short-circuits chunks on INTERNAL_ERROR without leaking raw errors", async () => {
+  const problem = {
+    id: "p-partial",
+    title: "Partial",
+    description: "",
+    difficulty: "beginner",
+    category: "Basics",
+    tags: [],
+    supportedLanguages: ["python"],
+    inputSpec: "",
+    outputSpec: "",
+    constraints: [],
+    testCases: [
+      { id: "t1", input: "1", expectedOutput: "1", isHidden: false },
+      { id: "t2", input: "2", expectedOutput: "2", isHidden: true },
+    ],
+    timeLimitMs: 1000,
+    memoryLimitKb: 131072,
+    starterCodes: {},
+  };
+
+  // Adapter returns fewer results than requested -> must NOT accept.
+  const partialAdapter = {
+    async execute() { throw new Error("unexpected"); },
+    async executeBatch() {
+      return [{ status: "SUCCESS", exitCode: 0, stdout: "1\n", stderr: "", durationMs: 1 }];
+    },
+    async checkHealth() { return { isAvailable: true, engine: "test", supportedLanguages: ["python"] }; },
+  };
+  const partialService = new JudgingService({ adapter: partialAdapter, queue: new ExecutionQueue() });
+  const partialRes = await partialService.judgeSubmission(problem, { language: "python", sourceCode: "print(1)" });
+  assert.equal(partialRes.overallVerdict, "INTERNAL_JUDGE_ERROR");
+  assert.equal(partialRes.passedTests, 0);
+
+  // Adapter returns INTERNAL_ERROR on chunk 1 -> chunk 2 is never called and raw internal message is redacted.
+  let batchCalls = 0;
+  const errAdapter = {
+    async execute() { throw new Error("unexpected"); },
+    async executeBatch(_req, stdins) {
+      batchCalls++;
+      return stdins.map(() => ({ status: "INTERNAL_ERROR", exitCode: null, stdout: "", stderr: "", durationMs: 0, error: "http://10.0.0.5:4000 secret token" }));
+    },
+    async checkHealth() { return { isAvailable: true, engine: "test", supportedLanguages: ["python"] }; },
+  };
+  const manyTests = Array.from({ length: 70 }, (_, i) => ({ id: `t${i}`, input: "1", expectedOutput: "1", isHidden: true }));
+  const errService = new JudgingService({ adapter: errAdapter, queue: new ExecutionQueue() });
+  const errRes = await errService.judgeSubmission({ ...problem, testCases: manyTests }, { language: "python", sourceCode: "print(1)" });
+  assert.equal(errRes.overallVerdict, "INTERNAL_JUDGE_ERROR");
+  assert.equal(batchCalls, 1);
+  assert.doesNotMatch(errRes.error ?? "", /10\.0\.0\.5|secret token/);
+});
+
+test("createIsolateCli.init runs --cleanup and retries --init once after a stale box failure", async () => {
+  const calls = [];
+  let initAttempts = 0;
+  const { createIsolateCli } = loadTs("judge/src/isolate.ts", {
+    "node:child_process": {
+      execFile: (_bin, args, _opts, cb) => {
+        calls.push(args.join(" "));
+        if (args.includes("--init")) {
+          initAttempts++;
+          if (initAttempts === 1) return cb({ code: 1 }, "", "Box already exists");
+          return cb(null, "/var/local/lib/isolate/3\n", "");
+        }
+        return cb(null, "", "");
+      },
+    },
+  });
+  const cli = createIsolateCli("isolate");
+  const root = await cli.init(3);
+  assert.equal(root, "/var/local/lib/isolate/3");
+  assert.deepEqual(calls, [
+    "--cg --box-id=3 --init",
+    "--cg --box-id=3 --cleanup",
+    "--cg --box-id=3 --init",
+  ]);
+});
+
+test("judge runJob reports compile failure for oversized artifacts and stops batches past maxBatchWallMs", async () => {
+  const root = mkdtempSync(join(tmpdir(), "box-cap-"));
+  const workDir = mkdtempSync(join(tmpdir(), "work-cap-"));
+  const box = join(root, "box");
+  try {
+    const specs = buildLanguageSpecs({ python3: "/usr/bin/python3", gcc: "/usr/bin/gcc", gxx: "/usr/bin/g++", javac: "/usr/bin/javac", java: "/usr/bin/java", javaDirs: [] });
+    const oversizedCli = {
+      async init() {
+        const { mkdirSync } = await import("node:fs");
+        mkdirSync(box, { recursive: true });
+        return root;
+      },
+      async run(r) {
+        writeFileSync(r.metaPath, "exitcode:0\ntime:0.01\ntime-wall:0.02\n");
+        writeFileSync(join(box, r.stdout), "");
+        writeFileSync(join(box, "solution"), Buffer.alloc(17 * 1024 * 1024));
+      },
+      async cleanup() {},
+    };
+    const bigRes = await runJob(
+      { language: "cpp", files: [{ name: "main.cpp", content: "int main(){}" }], stdins: [""], timeLimitMs: 1000, memoryLimitKb: 131072 },
+      0,
+      { cli: oversizedCli, spec: specs.cpp, workDir }
+    );
+    assert.equal(bigRes.compile?.ok, false);
+    assert.match(bigRes.compile?.output ?? "", /too large/i);
+    assert.deepEqual(bigRes.runs, []);
+
+    // Batch wall-time cap short-circuits subsequent test cases instead of running them all.
+    let runInvocations = 0;
+    const slowCli = {
+      async init() {
+        const { mkdirSync } = await import("node:fs");
+        mkdirSync(box, { recursive: true });
+        return root;
+      },
+      async run(r) {
+        runInvocations++;
+        await new Promise((resolve) => setTimeout(resolve, 25));
+        writeFileSync(r.metaPath, "exitcode:0\ntime:0.01\ntime-wall:0.02\n");
+        writeFileSync(join(box, r.stdout), "ok\n");
+        if (r.stderr) writeFileSync(join(box, r.stderr), "");
+      },
+      async cleanup() {},
+    };
+    const cappedRes = await runJob(
+      { language: "python", files: [{ name: "main.py", content: "print('ok')" }], stdins: ["1", "2", "3"], timeLimitMs: 1000, memoryLimitKb: 131072 },
+      0,
+      { cli: slowCli, spec: specs.python, workDir, maxBatchWallMs: 10 }
+    );
+    assert.equal(runInvocations, 1);
+    assert.equal(cappedRes.runs.length, 3);
+    assert.equal(cappedRes.runs[0].status, "SUCCESS");
+    assert.equal(cappedRes.runs[1].status, "TIME_LIMIT_EXCEEDED");
+    assert.equal(cappedRes.runs[2].status, "TIME_LIMIT_EXCEEDED");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    rmSync(workDir, { recursive: true, force: true });
+  }
+});
+
+test("POST /api/schools returns 409 for pending/approved requests and resets status to pending after rejection", async () => {
+  const tables = {
+    school_requests: [
+      { id: "r1", requested_by: "u1", email_domain: "pending.edu.ph", status: "pending", name: "Pending U", location: "Laguna", campus: null },
+      { id: "r2", requested_by: "u1", email_domain: "approved.edu.ph", status: "approved", name: "Approved U", location: "Laguna", campus: null },
+      { id: "r3", requested_by: "u1", email_domain: "retry.edu.ph", status: "rejected", name: "Retry U", location: "Laguna", campus: null },
+    ],
+  };
+  const route = loadTs("app/api/schools/route.ts", {
+    "next/server": { NextResponse },
+    "@clerk/nextjs/server": { auth: async () => ({ userId: "u1" }) },
+    "@/lib/accounts/read-json": readJson,
+    "@/lib/accounts/rules": {
+      checkNewSchool: async (body) => ({
+        ok: true,
+        school: { name: "School", location: "Laguna", campus: null, emailDomain: body.emailDomain },
+      }),
+    },
+    "@/lib/accounts/school-directory": { schoolDirectory: {} },
+    "@/lib/api/route-handler": { withApiErrors: (_label, fn) => fn() },
+    "@/lib/auth/viewer": { getViewer: async () => ({ id: "u1", name: "Ada" }) },
+    "@/lib/db/client": { db: fakeDb(tables), exactCount, fetchAllPages, must },
+  });
+
+  const post = (emailDomain) =>
+    route.POST(new Request("http://localhost/api/schools", { method: "POST", body: JSON.stringify({ emailDomain }) }));
+
+  assert.equal((await post("pending.edu.ph")).status, 409);
+  assert.equal((await post("approved.edu.ph")).status, 409);
+  const retried = await post("retry.edu.ph");
+  assert.equal(retried.status, 202);
+  assert.equal(tables.school_requests.find((r) => r.email_domain === "retry.edu.ph").status, "pending");
+});
+
+test("validateExecutionRequest and validateWorkspaceFilename reject uppercase extensions and cap timeLimitMs at 5000ms", () => {
+  const upperCpp = validateExecutionRequest({
+    language: "cpp",
+    sourceCode: "int main(){}",
+    files: [{ name: "Main.CPP", content: "int main(){}" }],
+  });
+  assert.equal(upperCpp.valid, false);
+
+  const upperJava = validateExecutionRequest({
+    language: "java",
+    sourceCode: "class Main {}",
+    files: [{ name: "Main.JAVA", content: "class Main {}" }],
+  });
+  assert.equal(upperJava.valid, false);
+  assert.ok(validateWorkspaceFilename("Main.CPP", "cpp", []));
+  assert.equal(validateWorkspaceFilename("Main.cpp", "cpp", []), null);
+
+  const overTime = validateExecutionRequest({
+    language: "python",
+    sourceCode: "print(1)",
+    timeLimitMs: 10000,
+  });
+  assert.equal(overTime.valid, true);
+  assert.equal(overTime.request.timeLimitMs, 5000);
+
+  const atLimit = validateExecutionRequest({
+    language: "python",
+    sourceCode: "print(1)",
+    timeLimitMs: 5000,
+  });
+  assert.equal(atLimit.valid, true);
+  assert.equal(atLimit.request.timeLimitMs, 5000);
+});
+
 
 
 

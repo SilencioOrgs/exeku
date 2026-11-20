@@ -111,6 +111,21 @@ export function createStage(mount: HTMLElement, { orbit = false, autoRotate = fa
     const rect = mount.getBoundingClientRect();
     return rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.top < window.innerHeight;
   };
+  const shouldRun = () => !disposed && (typeof document === "undefined" || !document.hidden) && isOnScreen();
+  const startLoop = () => {
+    if (!frame && shouldRun()) frame = requestAnimationFrame(loop);
+  };
+  const stopLoop = () => {
+    if (frame) {
+      cancelAnimationFrame(frame);
+      frame = 0;
+    }
+    lastRender = 0;
+  };
+  const syncLoop = () => {
+    if (shouldRun()) startLoop();
+    else stopLoop();
+  };
   // Adaptive quality: average the time between rendered frames, then trade resolution for speed.
   let sampleTime = 0, samples = 0, halfRate = false, skipThis = false, lastRender = 0;
   const adapt = (now: number) => {
@@ -127,9 +142,9 @@ export function createStage(mount: HTMLElement, { orbit = false, autoRotate = fa
     renderer.setPixelRatio(pixelRatio);
   };
   const loop = (timestamp?: number) => {
-    if (disposed) return;
+    frame = 0;
+    if (disposed || (typeof document !== "undefined" && document.hidden)) { lastRender = 0; return; }
     frame = requestAnimationFrame(loop);
-    if (!isOnScreen()) { lastRender = 0; return; }
     if (halfRate && (skipThis = !skipThis)) return;
     timer.update(timestamp);
     adapt(performance.now());
@@ -140,7 +155,7 @@ export function createStage(mount: HTMLElement, { orbit = false, autoRotate = fa
     if (key.position.distanceToSquared(lastKey) > 1) { lastKey.copy(key.position); renderer.shadowMap.needsUpdate = true; }
     renderer.render(scene, camera);
   };
-  loop();
+  startLoop();
 
   const resize = new ResizeObserver(() => {
     const { clientWidth: w, clientHeight: h } = mount;
@@ -148,13 +163,18 @@ export function createStage(mount: HTMLElement, { orbit = false, autoRotate = fa
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
     renderer.setSize(w, h);
+    syncLoop();
   });
   resize.observe(mount);
   const io = new IntersectionObserver((entries) => {
     const entry = entries[entries.length - 1];
-    if (entry) ioVisible = entry.isIntersecting;
+    if (!entry) return;
+    ioVisible = entry.isIntersecting;
+    syncLoop();
   });
   io.observe(mount);
+  window.addEventListener("scroll", syncLoop, { passive: true });
+  document.addEventListener("visibilitychange", syncLoop);
 
   return {
     scene,
@@ -166,7 +186,9 @@ export function createStage(mount: HTMLElement, { orbit = false, autoRotate = fa
     onFrame(callback) { callbacks.push(callback); },
     dispose() {
       disposed = true;
-      cancelAnimationFrame(frame);
+      stopLoop();
+      window.removeEventListener("scroll", syncLoop);
+      document.removeEventListener("visibilitychange", syncLoop);
       timer.dispose();
       resize.disconnect();
       io.disconnect();
@@ -219,14 +241,28 @@ export function mergeStatic(root: THREE.Object3D, shadowRadius = 12) {
   };
   visit(root);
   for (const mesh of merged) mesh.removeFromParent();
-  // Only dispose source geometries that are no longer referenced by any remaining mesh under root.
+  // Only dispose source geometries and deduplicated materials no longer referenced under root or in buckets.
   const keptGeometries = new Set<THREE.BufferGeometry>();
-  root.traverse((obj) => { const g = (obj as THREE.Mesh).geometry; if (g) keptGeometries.add(g); });
+  const keptMaterials = new Set<THREE.Material>();
+  root.traverse((obj) => {
+    const m = obj as THREE.Mesh;
+    if (m.geometry) keptGeometries.add(m.geometry);
+    if (Array.isArray(m.material)) m.material.forEach((mat) => keptMaterials.add(mat));
+    else if (m.material) keptMaterials.add(m.material);
+  });
+  for (const { material } of buckets.values()) keptMaterials.add(material);
+
   const disposedGeometries = new Set<THREE.BufferGeometry>();
+  const disposedMaterials = new Set<THREE.Material>();
   for (const mesh of merged) {
     if (!keptGeometries.has(mesh.geometry) && !disposedGeometries.has(mesh.geometry)) {
       disposedGeometries.add(mesh.geometry);
       mesh.geometry.dispose();
+    }
+    const mat = mesh.material as THREE.Material;
+    if (mat && !keptMaterials.has(mat) && !disposedMaterials.has(mat)) {
+      disposedMaterials.add(mat);
+      mat.dispose();
     }
   }
   for (const { material, cast, geometries } of buckets.values()) {

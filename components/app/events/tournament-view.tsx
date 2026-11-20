@@ -62,23 +62,29 @@ export function TournamentPage({ id }: { id: string }) {
   const loadAgain = useRef(false);
   const lastStatus = useRef<TournamentView["status"]>(undefined);
 
+  const lastReloadAt = useRef(0);
+
   // One request at a time, and each reply is used. Cancelling the previous request on every tick meant a reply slower than a second never arrived.
   const load = useCallback(async () => {
     if (loading.current) { loadAgain.current = true; return; }
     loading.current = true;
-    do {
-      loadAgain.current = false;
-      const result = await fetchTournament(id);
-      if (!mounted.current) continue;
-      if (!result.ok) { setLoadError(result.error ?? "We couldn't load this tournament."); continue; }
-      setView(result.data);
-      setOffset(Date.parse(result.data.now) - Date.now());
-      setTick(Date.now());
-      setLoadError(undefined);
-      if (lastStatus.current && lastStatus.current !== result.data.status) window.dispatchEvent(new Event(TOURNAMENT_REFRESH_EVENT));
-      lastStatus.current = result.data.status;
-    } while (loadAgain.current);
-    loading.current = false;
+    try {
+      do {
+        loadAgain.current = false;
+        lastReloadAt.current = Date.now();
+        const result = await fetchTournament(id);
+        if (!mounted.current) break;
+        if (!result.ok) { setLoadError(result.error ?? "We couldn't load this tournament."); continue; }
+        setView(result.data);
+        setOffset(Date.parse(result.data.now) - Date.now());
+        setTick(Date.now());
+        setLoadError(undefined);
+        if (lastStatus.current && lastStatus.current !== result.data.status) window.dispatchEvent(new Event(TOURNAMENT_REFRESH_EVENT));
+        lastStatus.current = result.data.status;
+      } while (loadAgain.current && mounted.current);
+    } finally {
+      loading.current = false;
+    }
   }, [id]);
 
   useEffect(() => {
@@ -90,15 +96,24 @@ export function TournamentPage({ id }: { id: string }) {
   const status = view?.status;
   const target = view && (view.status === "registration" ? Date.parse(view.startsAt) : Date.parse(view.endsAt));
 
-  // Counts down each second, reloads when the phase changes, and refreshes teams and scores every 15 seconds.
+  // Counts down each second, reloads when the phase changes (throttled on failure), and refreshes every 15s while visible.
   useEffect(() => {
     if (!target || status === "ended") return;
     const timer = setInterval(() => {
       const now = Date.now();
       setTick(now);
-      if (now + offset >= target || Math.floor(now / 1000) % 15 === 0) void load();
+      if (document.hidden) return;
+      const elapsedSinceReload = now - lastReloadAt.current;
+      if ((now + offset >= target && elapsedSinceReload >= 5000) || elapsedSinceReload >= 15_000) {
+        void load();
+      }
     }, 1000);
-    return () => clearInterval(timer);
+    const onVisible = () => { if (!document.hidden) void load(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [target, status, offset, load]);
 
   const back = <Link href="/app/events" className="inline-flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]"><ArrowLeft size={14} aria-hidden="true" />All events</Link>;

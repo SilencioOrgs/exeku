@@ -47,10 +47,18 @@ export function TournamentLock() {
       }
       wasActive.current = Boolean(next);
     });
+    const poll = () => { if (!document.hidden) load(); };
+    const onVisible = () => { if (!document.hidden) load(); };
     load();
-    const timer = setInterval(load, POLL_MS);
+    const timer = setInterval(poll, POLL_MS);
     window.addEventListener(TOURNAMENT_REFRESH_EVENT, load);
-    return () => { live = false; clearInterval(timer); window.removeEventListener(TOURNAMENT_REFRESH_EVENT, load); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      live = false;
+      clearInterval(timer);
+      window.removeEventListener(TOURNAMENT_REFRESH_EVENT, load);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, []);
 
   useEffect(() => {
@@ -81,6 +89,7 @@ export function TournamentLock() {
     window.addEventListener("blur", onBlur);
     BLOCKED_EVENTS.forEach((name) => document.addEventListener(name, block, true));
     return () => {
+      keyboardLock()?.unlock?.();
       document.removeEventListener("fullscreenchange", onFullscreen);
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("blur", onBlur);

@@ -64,12 +64,13 @@ test("a compile error on a hidden test exposes only the compiler's output", asyn
   }
 });
 
-test("a sandbox HTTP error is a judge error, not a wrong answer", async () => {
+test("a sandbox HTTP error is a judge error, not a wrong answer, and redacts raw upstream details", async () => {
   const result = await service(async () => ({ status: "INTERNAL_ERROR", exitCode: null, stdout: "", stderr: "HTTP 400", durationMs: 1, error: "python-3.10.0 runtime is unknown" }))
     .judgeSubmission("hello-world", { language: "python", sourceCode: "x" });
   assert.equal(result.overallVerdict, "INTERNAL_JUDGE_ERROR");
   assert.equal(result.testResults.length, 0);
-  assert.match(result.error, /runtime is unknown/);
+  assert.doesNotMatch(result.error ?? "", /runtime is unknown/);
+  assert.match(result.error ?? "", /unexpected error/i);
 });
 
 test("a compile that was killed (no output, no runs) is a compile error, not 'sandbox unavailable'", () => {

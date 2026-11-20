@@ -10,7 +10,7 @@ export const MAX_FILES = 6;
 export const MAX_SOURCE_LENGTH = 64 * 1024; // 64KB
 export const MAX_STDIN_LENGTH = 64 * 1024; // 64KB
 export const MIN_TIME_LIMIT_MS = 500;
-export const MAX_TIME_LIMIT_MS = 10000;
+export const MAX_TIME_LIMIT_MS = 5000;
 export const DEFAULT_TIME_LIMIT_MS = 3000;
 export const DEFAULT_MEMORY_LIMIT_KB = 128000;
 export const MIN_MEMORY_LIMIT_KB = 16000;
@@ -75,11 +75,14 @@ export function validateExecutionRequest(input: unknown): ValidationResult {
         return { valid: false, error: "File names can't start with a dot or dash." };
       }
       if (typeof entry.content !== "string") return { valid: false, error: "File content must be text." };
-      const key = entry.name.toLowerCase();
+      const fileName = entry.name;
+      const key = fileName.toLowerCase();
       if (seen.has(key)) return { valid: false, error: "Duplicate file name." };
-      if (!allowed.some((ext) => key.endsWith(ext))) return { valid: false, error: "File extension is not supported for this language." };
+      if (!allowed.some((ext) => fileName.endsWith(ext))) {
+        return { valid: false, error: "File extension must be lowercase and supported for this language." };
+      }
       seen.add(key);
-      files.push({ name: entry.name, content: entry.content });
+      files.push({ name: fileName, content: entry.content });
     }
     if (files[0]?.name !== mainName || files[0].content !== raw.sourceCode) {
       return { valid: false, error: `First file must be ${mainName} and must match sourceCode.` };

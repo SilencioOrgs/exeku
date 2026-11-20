@@ -38,6 +38,12 @@ export function ClassDetailView({ classId }: { classId: string }) {
   const [selectedProblemId, setSelectedProblemId] = useState("");
   const [confirmDeleteClass, setConfirmDeleteClass] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
+  const [pendingConfirm, setPendingConfirm] = useState<{
+    title: string;
+    description: string;
+    confirmLabel: string;
+    body: Record<string, unknown>;
+  } | null>(null);
 
   const load = useCallback(async () => {
     const res = await fetchClassDetail(classId);
@@ -61,17 +67,20 @@ export function ClassDetailView({ classId }: { classId: string }) {
     };
   }, [classId]);
 
-  const act = async (body: Record<string, unknown>) => {
+  const act = async (body: Record<string, unknown>, reload = true) => {
     setBusy(true);
     setError(undefined);
-    const res = await postClassAction(classId, body);
-    setBusy(false);
-    if (!res.ok) {
-      setError(res.error ?? "Action failed. Try again.");
+    try {
+      const res = await postClassAction(classId, body);
+      if (!res.ok) {
+        setError(res.error ?? "Action failed. Try again.");
+        return res;
+      }
+      if (reload) await load();
       return res;
+    } finally {
+      setBusy(false);
     }
-    await load();
-    return res;
   };
 
   const handleCopyCode = async () => {
@@ -269,7 +278,14 @@ export function ClassDetailView({ classId }: { classId: string }) {
                       size="icon"
                       className="size-8"
                       disabled={busy}
-                      onClick={() => void act({ action: "removeProblem", problemId: problem.id })}
+                      onClick={() =>
+                        setPendingConfirm({
+                          title: `Remove "${problem.title}"?`,
+                          description: "Students will no longer see this problem in the class assignment list. Existing submissions stay on their profiles.",
+                          confirmLabel: "Remove problem",
+                          body: { action: "removeProblem", problemId: problem.id },
+                        })
+                      }
                       aria-label={`Remove ${problem.title} from class`}
                     >
                       <Trash2 size={14} aria-hidden="true" />
@@ -336,7 +352,14 @@ export function ClassDetailView({ classId }: { classId: string }) {
                           size="icon"
                           className="size-8"
                           disabled={busy}
-                          onClick={() => void act({ action: "deleteGroup", groupId: group.id })}
+                          onClick={() =>
+                            setPendingConfirm({
+                              title: `Delete group "${group.name}"?`,
+                              description: "Members in this group will become unassigned, but they will remain enrolled in the class.",
+                              confirmLabel: "Delete group",
+                              body: { action: "deleteGroup", groupId: group.id },
+                            })
+                          }
                           aria-label={`Delete group ${group.name}`}
                         >
                           <Trash2 size={14} aria-hidden="true" />
@@ -428,7 +451,14 @@ export function ClassDetailView({ classId }: { classId: string }) {
                           size="icon"
                           className="size-8"
                           disabled={busy}
-                          onClick={() => void act({ action: "removeMember", userId: member.userId })}
+                          onClick={() =>
+                            setPendingConfirm({
+                              title: `Remove ${member.name} from this class?`,
+                              description: "They will be removed from the class roster and group, but can rejoin later with the invite code.",
+                              confirmLabel: "Remove student",
+                              body: { action: "removeMember", userId: member.userId },
+                            })
+                          }
                           aria-label={`Remove ${member.name} from class`}
                         >
                           <UserMinus size={14} aria-hidden="true" />
@@ -453,9 +483,10 @@ export function ClassDetailView({ classId }: { classId: string }) {
         title="Delete this class?"
         description="All groups, enrollments, and class problem assignments will be permanently removed. Student submissions stay on their profiles."
         confirmLabel="Delete class"
+        destructive
         onConfirm={async () => {
           setConfirmDeleteClass(false);
-          const res = await act({ action: "deleteClass" });
+          const res = await act({ action: "deleteClass" }, false);
           if (res.ok) router.push("/app/classes");
         }}
       />
@@ -466,10 +497,27 @@ export function ClassDetailView({ classId }: { classId: string }) {
         title="Leave this class?"
         description="You can rejoin later with the teacher's invite code."
         confirmLabel="Leave class"
+        destructive
         onConfirm={async () => {
           setConfirmLeave(false);
-          const res = await act({ action: "leaveClass" });
+          const res = await act({ action: "leaveClass" }, false);
           if (res.ok) router.push("/app/classes");
+        }}
+      />
+
+      <ConfirmDialog
+        open={pendingConfirm !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingConfirm(null);
+        }}
+        title={pendingConfirm?.title ?? "Confirm action"}
+        description={pendingConfirm?.description ?? ""}
+        confirmLabel={pendingConfirm?.confirmLabel ?? "Confirm"}
+        destructive
+        onConfirm={async () => {
+          const action = pendingConfirm;
+          setPendingConfirm(null);
+          if (action) await act(action.body);
         }}
       />
     </div>

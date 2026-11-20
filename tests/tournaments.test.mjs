@@ -6,7 +6,7 @@ import ts from "typescript";
 import * as orgRules from "../lib/orgs/rules.ts";
 import { isObject, isUuid, text } from "../lib/accounts/rules.ts";
 import { rankTeams } from "../lib/tournaments/standings.ts";
-import { fakeDb, must } from "./fixtures/fake-db.mjs";
+import { exactCount, fakeDb, fetchAllPages, must } from "./fixtures/fake-db.mjs";
 
 function load(path, modules) {
   const source = readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
@@ -31,7 +31,7 @@ function harness(startsIn, endsIn, { access = "campus-only", size = 2 } = {}) {
     submissions: [],
     tournament_violations: [],
   };
-  const database = { db: fakeDb(tables), must };
+  const database = { db: fakeDb(tables), must, fetchAllPages, exactCount };
   const solves = load("lib/judge/solves.ts", { "server-only": {}, "@/lib/db/client": database });
   const competition = load("lib/competition/repository.ts", {
     "server-only": {}, "@/lib/db/client": database, "@/lib/dates": { todayInManila: () => "2026-11-09" }, "@/lib/orgs/rules": orgRules, "@/lib/accounts/school-directory": { schoolDirectory: {} },

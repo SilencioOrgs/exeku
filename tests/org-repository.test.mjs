@@ -6,7 +6,7 @@ import ts from "typescript";
 import * as orgRules from "../lib/orgs/rules.ts";
 import { isObject, isUuid, text } from "../lib/accounts/rules.ts";
 import { todayInManila } from "../lib/dates.ts";
-import { fakeDb, must } from "./fixtures/fake-db.mjs";
+import { exactCount, fakeDb, fetchAllPages, must } from "./fixtures/fake-db.mjs";
 
 // The repositories are server-only, so they load through the same stubbed-require pattern as the app shell test.
 function load(path, modules) {
@@ -38,7 +38,7 @@ function harness() {
     tournament_members: [],
     events: [event(MINE, "acoes", "open"), event(NIGHT, "acoes", "campus-only"), event(THEIRS, "other", "open", true)],
   };
-  const shared = { "server-only": {}, "@/lib/db/client": { db: fakeDb(tables), must }, "@/lib/dates": { todayInManila: () => "2026-11-08" }, "@/lib/orgs/rules": orgRules };
+  const shared = { "server-only": {}, "@/lib/db/client": { db: fakeDb(tables), exactCount, fetchAllPages, must }, "@/lib/dates": { todayInManila: () => "2026-11-08" }, "@/lib/orgs/rules": orgRules };
   const competition = load("lib/competition/repository.ts", { ...shared, "@/lib/accounts/school-directory": { schoolDirectory: {} }, "./rank": { rankScores: () => [] }, "@/lib/judge/solves": { firstSolves: async () => [], solvesBetween: async () => [] }, "@/lib/problems/catalog": { getProblemById: (id) => (id === "known" ? { id, title: "Known", testCases: [{ input: "secret" }] } : null) } });
   const repository = load("lib/orgs/repository.ts", { ...shared, "@/lib/accounts/rules": { isObject, isUuid, text }, "@/lib/competition/repository": competition, "./rules": orgRules });
   return { tables, repository, competition };
@@ -106,7 +106,7 @@ test("event problems expose only id and title, and unknown IDs are dropped", asy
 
 test("a first solve earns points and a milestone; solving again earns none; judge outages are not recorded", async () => {
   const tables = { submissions: [] };
-  const database = { db: fakeDb(tables), must };
+  const database = { db: fakeDb(tables), exactCount, fetchAllPages, must };
   const solves = load("lib/judge/solves.ts", { "server-only": {}, "@/lib/db/client": database });
   const { recordSubmission } = load("lib/judge/record-submission.ts", {
     "server-only": {}, "@/lib/db/client": database, "@/lib/auth/viewer": { getViewer: async () => viewer("u") }, "@/lib/judge/solves": solves,

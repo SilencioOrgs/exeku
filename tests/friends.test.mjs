@@ -6,7 +6,7 @@ import ts from "typescript";
 import { isObject, text } from "../lib/accounts/rules.ts";
 import { unlocksAt } from "../lib/avatars.ts";
 import { parseWebsite } from "../lib/social-links.ts";
-import { fakeDb, must } from "./fixtures/fake-db.mjs";
+import { exactCount, fakeDb, fetchAllPages, must } from "./fixtures/fake-db.mjs";
 
 function load(path, modules) {
   const source = readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
@@ -21,7 +21,7 @@ const accepted = (requester, addressee) => ({ requester, addressee, status: "acc
 
 function harness(friendships = []) {
   const tables = { profiles: [person("me", "sc"), person("mate", "sc"), person("far", "other"), person("pal", "other")], friendships, leaderboard: [{ user_id: "far", solved: 3, points: 500 }] };
-  const repo = load("lib/friends/repository.ts", { "server-only": {}, "@/lib/db/client": { db: fakeDb(tables), must }, "@/lib/accounts/rules": { isObject, text } });
+  const repo = load("lib/friends/repository.ts", { "server-only": {}, "@/lib/db/client": { db: fakeDb(tables), must, fetchAllPages, exactCount }, "@/lib/accounts/rules": { isObject, text } });
   return { tables, repo, me: { id: "me", name: "me", campusId: "sc" } };
 }
 

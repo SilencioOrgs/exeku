@@ -22,8 +22,8 @@ export function validateWorkspaceFilename(
   if (!name.trim()) return "Enter a file name.";
   if (name.length > 24 || !/^[A-Za-z0-9_.-]+$/.test(name)) return "Use 1–24 letters, numbers, dots, dashes, or underscores.";
   if (name.startsWith(".") || name.startsWith("-")) return "File names can't start with a dot or dash.";
-  if (!EXTENSIONS[lang].some((ext) => name.toLowerCase().endsWith(ext))) {
-    return `File extension must be ${EXTENSIONS[lang].join(" / ")}.`;
+  if (!EXTENSIONS[lang].some((ext) => name.endsWith(ext))) {
+    return `File extension must be lowercase (${EXTENSIONS[lang].join(" / ")}).`;
   }
   if (existing.some((file) => file.name.toLowerCase() === name.toLowerCase() && file.name !== previousName)) {
     return "A file with this name already exists.";

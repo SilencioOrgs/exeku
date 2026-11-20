@@ -43,12 +43,24 @@ export function FacultyVerificationSection({ profile }: { profile: LocalProfile 
   const [otpNotice, setOtpNotice] = useState<string>();
   const [busy, setBusy] = useState(false);
 
+  const [loadingStatus, setLoadingStatus] = useState(true);
+
+  const reloadStatus = async () => {
+    setLoadingStatus(true);
+    setLoadError(undefined);
+    const res = await fetchFacultyStatus();
+    setLoadingStatus(false);
+    if (res.ok) setStatus(res.data);
+    else setLoadError(res.error ?? "Could not load faculty status.");
+  };
+
   useEffect(() => {
     let live = true;
     void fetchFacultyStatus().then((res) => {
       if (!live) return;
+      setLoadingStatus(false);
       if (res.ok) setStatus(res.data);
-      else setLoadError(res.error);
+      else setLoadError(res.error ?? "Could not load faculty status.");
     });
     return () => {
       live = false;
@@ -68,8 +80,10 @@ export function FacultyVerificationSection({ profile }: { profile: LocalProfile 
   const finalizeSubmission = async () => {
     const res = await submitFacultyVerification(payload());
     if (!res.ok) {
-      setFieldErrors(res.fieldErrors ?? {});
+      const nextErrors = res.fieldErrors ?? {};
+      setFieldErrors(nextErrors);
       setSubmitError(res.error ?? "Could not send verification to admin.");
+      if (Object.keys(nextErrors).length > 0) setStep("details");
       return false;
     }
     setStatus((prev) => ({ role: prev?.role ?? "student", request: res.data.request }));
@@ -136,36 +150,39 @@ export function FacultyVerificationSection({ profile }: { profile: LocalProfile 
     setSubmitError(undefined);
     setOtpNotice(undefined);
 
-    const code = otpCode.trim();
-    if (!/^\d{6}$/.test(code)) {
-      setSubmitError("Enter the 6-digit verification code from your school email.");
-      return;
-    }
     if (!user) {
       setSubmitError("Sign in again to complete verification.");
       return;
     }
 
+    const normalized = schoolEmail.trim().toLowerCase();
+    const emailResource =
+      user.emailAddresses.find((entry) => entry.id === pendingEmailId) ??
+      user.emailAddresses.find((entry) => entry.emailAddress.toLowerCase() === normalized);
+
+    if (!emailResource) {
+      setSubmitError("Verification session expired. Request a new code.");
+      setStep("details");
+      return;
+    }
+
+    const alreadyVerified = emailResource.verification?.status === "verified";
+    const code = otpCode.trim();
+    if (!alreadyVerified && !/^\d{6}$/.test(code)) {
+      setSubmitError("Enter the 6-digit verification code from your school email.");
+      return;
+    }
+
     setBusy(true);
     try {
-      const normalized = schoolEmail.trim().toLowerCase();
-      const emailResource =
-        user.emailAddresses.find((entry) => entry.id === pendingEmailId) ??
-        user.emailAddresses.find((entry) => entry.emailAddress.toLowerCase() === normalized);
-
-      if (!emailResource) {
-        setSubmitError("Verification session expired. Request a new code.");
-        setStep("details");
-        return;
+      if (!alreadyVerified) {
+        const verified = await emailResource.attemptVerification({ code });
+        if (verified.verification?.status !== "verified") {
+          setSubmitError("Code could not be verified. Check the code and try again.");
+          return;
+        }
+        await user.reload();
       }
-
-      const verified = await emailResource.attemptVerification({ code });
-      if (verified.verification?.status !== "verified") {
-        setSubmitError("Code could not be verified. Check the code and try again.");
-        return;
-      }
-
-      await user.reload();
       await finalizeSubmission();
     } catch (err) {
       setSubmitError(clerkErrorMessage(err, "Invalid or expired verification code. Try again or resend."));
@@ -198,7 +215,26 @@ export function FacultyVerificationSection({ profile }: { profile: LocalProfile 
   };
 
   if (loadError) {
-    return null;
+    return (
+      <section aria-labelledby="faculty-heading" className="skeuo-panel flex flex-wrap items-center justify-between gap-3 p-5 sm:p-6">
+        <div className="space-y-1">
+          <h2 id="faculty-heading" className="text-base font-semibold">Faculty verification</h2>
+          <p role="alert" className="text-xs text-[var(--color-pink)]">{loadError}</p>
+        </div>
+        <Button type="button" variant="outline" size="sm" onClick={() => void reloadStatus()}>
+          <RefreshCw size={14} aria-hidden="true" /> Retry
+        </Button>
+      </section>
+    );
+  }
+
+  if (loadingStatus && !status) {
+    return (
+      <section aria-labelledby="faculty-heading" className="skeuo-panel p-5 sm:p-6">
+        <h2 id="faculty-heading" className="text-base font-semibold">Faculty verification</h2>
+        <p className="mt-1 text-xs text-[var(--color-text-muted)]">Checking your faculty status…</p>
+      </section>
+    );
   }
 
   const role = status?.role ?? "student";

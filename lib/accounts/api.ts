@@ -21,9 +21,9 @@ export async function call<T>(path: string, body?: unknown): Promise<ApiResult<T
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    const payload = await response.json();
+    const payload = (await response.json().catch(() => ({}))) as { error?: string; fieldErrors?: FieldErrors };
     if (response.ok) return { ok: true, data: payload as T };
-    return { ok: false, error: payload.error, fieldErrors: payload.fieldErrors };
+    return { ok: false, error: payload.error || "Request failed. Please try again.", fieldErrors: payload.fieldErrors };
   } catch {
     return { ok: false, error: UNREACHABLE };
   }

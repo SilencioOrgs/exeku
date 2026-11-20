@@ -38,19 +38,29 @@ export function ChallengesView() {
 
   // Always load public, redacted metadata through the API. Never ship server test cases.
   useEffect(() => {
-    let active = true;
-    const query = new URLSearchParams();
-    if (difficulty !== "all") query.set("difficulty", difficulty);
-    if (language !== "all") query.set("language", language);
-    if (searchQuery.trim()) query.set("search", searchQuery.trim());
-    fetch(`/api/problems?${query.toString()}`)
-      .then((response) => {
-        if (!response.ok) throw new Error("Unable to load problems");
-        return response.json();
-      })
-      .then((data: { problems?: ProblemSummary[] }) => { if (active) setProblems(data.problems ?? []); })
-      .catch(() => { if (active) setProblems([]); });
-    return () => { active = false; };
+    const controller = new AbortController();
+    const delay = searchQuery.trim() ? 250 : 0;
+    const timer = setTimeout(() => {
+      const query = new URLSearchParams();
+      if (difficulty !== "all") query.set("difficulty", difficulty);
+      if (language !== "all") query.set("language", language);
+      if (searchQuery.trim()) query.set("search", searchQuery.trim());
+      fetch(`/api/problems?${query.toString()}`, { signal: controller.signal })
+        .then((response) => {
+          if (!response.ok) throw new Error("Unable to load problems");
+          return response.json();
+        })
+        .then((data: { problems?: ProblemSummary[] }) => {
+          if (!controller.signal.aborted) setProblems(data.problems ?? []);
+        })
+        .catch(() => {
+          if (!controller.signal.aborted) setProblems([]);
+        });
+    }, delay);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [difficulty, language, searchQuery]);
 
   const visible = useMemo(() => sortProblems((problems ?? []).filter((p) => inTopic(p, topic)), sort), [problems, topic, sort]);
