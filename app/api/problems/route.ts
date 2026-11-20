@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { unstable_rethrow } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
-import { isAdmin } from "@/lib/admin/guard";
+import { isAdmin } from "@/lib/auth/admin-check";
 import { listProblemSummaries } from "@/lib/problems/store";
 
 export async function GET(req: Request) {

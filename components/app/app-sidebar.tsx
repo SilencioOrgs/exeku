@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ChevronDown, ChevronLeft, ChevronRight, Code2, LayoutDashboard, Timer, Trophy, UserRound, Users, type LucideIcon } from "lucide-react";
@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { DEFAULT_AVATAR_ID, PixelAvatar } from "@/components/retro/pixel-avatar";
 import { useChallengeSession } from "@/hooks/use-challenge-session";
-import { fetchAdminStatus } from "@/lib/admin/api";
 import type { LocalProfile } from "@/types/profile";
 
 type NavLink = { label: string; href: string };
@@ -16,7 +15,7 @@ type NavGroup = { id: string; label: string; icon: LucideIcon; href?: string; it
 
 const NAV: NavGroup[] = [
   { id: "overview", label: "Overview", icon: LayoutDashboard, href: "/app" },
-  { id: "practice", label: "Practice", icon: Code2, items: [{ label: "Challenges", href: "/app/challenges" }, { label: "Workspace", href: "/app/workspace" }] },
+  { id: "practice", label: "Practice", icon: Code2, items: [{ label: "Challenges", href: "/app/challenges" }, { label: "Classes", href: "/app/classes" }, { label: "Workspace", href: "/app/workspace" }] },
   { id: "compete", label: "Compete", icon: Trophy, items: [{ label: "Leaderboard", href: "/app/leaderboard" }, { label: "Events", href: "/app/events" }] },
   { id: "community", label: "Community", icon: Users, items: [{ label: "Friends", href: "/app/friends" }, { label: "Organizations", href: "/app/orgs" }] },
   { id: "account", label: "Account", icon: UserRound, items: [{ label: "Profile", href: "/app/profile" }, { label: "Settings", href: "/app/settings" }] },
@@ -38,14 +37,7 @@ export function AppSidebar({ profile, collapsed, onToggleCollapse, onNavigate, c
   const pathname = usePathname();
   const router = useRouter();
   const { isTimedActive, formattedTime, requestNavigation } = useChallengeSession();
-  const [isAdmin, setIsAdmin] = useState(false);
-  useEffect(() => {
-    let live = true;
-    void fetchAdminStatus().then((result) => { if (live && result.ok) setIsAdmin(result.data.isAdmin); });
-    return () => { live = false; };
-  }, []);
-  // Only hides the link. The admin API checks the account on every request.
-  const nav = isAdmin ? NAV.map((g) => (g.id === "account" ? { ...g, items: [...g.items!, { label: "Admin", href: "/app/admin" }] } : g)) : NAV;
+  const nav = NAV;
   const currentGroup = nav.find((g) => g.items?.some((i) => isCurrent(pathname, i.href)))?.id ?? null;
   // A manual toggle lasts until the page changes, then the current section opens by itself.
   const [toggled, setToggled] = useState<{ path: string; id: string | null } | null>(null);

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { readJson } from "@/lib/accounts/read-json";
-import { isAdmin } from "@/lib/admin/guard";
+import { isAdmin } from "@/lib/auth/admin-check";
 import { defaultJudgingService } from "@/lib/judge/judging-service";
 import { recordSubmission } from "@/lib/judge/record-submission";
 import { findProblem } from "@/lib/problems/store";

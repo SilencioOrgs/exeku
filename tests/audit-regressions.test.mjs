@@ -20,9 +20,7 @@ import { isRealVerdict, verdictInfo } from "../lib/verdicts.ts";
 import { profileRepository } from "../lib/storage/profile-repository.ts";
 import { validateWorkspaceFilename } from "../components/app/workspace/file-tabs.tsx";
 import * as orgRules from "../lib/orgs/rules.ts";
-import * as adminRules from "../lib/admin/rules.ts";
 import * as readJson from "../lib/accounts/read-json.ts";
-import * as problemRules from "../lib/problems/rules.ts";
 import { isObject, isUuid, text } from "../lib/accounts/rules.ts";
 import * as catalog from "../lib/problems/catalog.ts";
 import { ALL_SUPPORTED_LANGUAGES, getStarterCode } from "../lib/workspace-defaults.ts";
@@ -330,57 +328,24 @@ test("POST /api/account/school returns 409 when switching an already-set campus"
   assert.equal(tables.profiles[0].campus_id, "sc");
 });
 
-test("POST /api/admin/problems accepts >8 KB payloads and admin events rejects invalid UUIDs", async () => {
-  let received = null;
-  const route = loadTs("app/api/admin/problems/route.ts", {
-    "next/server": { NextResponse },
-    "@/lib/accounts/read-json": readJson,
-    "@/lib/accounts/rules": { isObject },
-    "@/lib/admin/guard": { requireAdmin: async () => ({ viewer: { id: "admin" } }) },
-    "@/lib/admin/repository": {
-      createProblem: async (_v, body) => { received = body; return { ok: true }; },
-      deleteProblem: async () => ({ ok: true }),
-      listManagedProblems: async () => [],
-    },
-    "@/lib/problems/rules": problemRules,
-  });
-  const bigBody = JSON.stringify({ title: "Big", description: "a".repeat(12_000) });
-  const res = await route.POST(new Request("http://localhost/api/admin/problems", { method: "POST", body: bigBody }));
-  assert.equal(res.status, 200);
-  assert.equal(received.description.length, 12_000);
-
-  const eventsRepo = loadTs("lib/admin/events.ts", {
+test("isAdmin recognizes both is_admin flag and role='admin' and rejects students/teachers", async () => {
+  const tables = {
+    profiles: [
+      { user_id: "student", is_admin: false, role: "student" },
+      { user_id: "teacher", is_admin: false, role: "teacher" },
+      { user_id: "boss-flag", is_admin: true, role: "student" },
+      { user_id: "boss-role", is_admin: false, role: "admin" },
+    ],
+  };
+  const check = loadTs("lib/auth/admin-check.ts", {
     "server-only": {},
-    "@/lib/accounts/rules": { isObject, isUuid, text },
-    "@/lib/db/client": { db: fakeDb({ events: [], problem_sets: [], orgs: [], schools: [] }), must },
-    "./rules": adminRules,
-    "@/lib/problems/store": { listProblemIds: async () => [], listProblemSummaries: async () => [] },
-  });
-  const future = new Date(Date.now() + 60 * 60_000).toISOString();
-  assert.equal((await eventsRepo.rescheduleEvent({ id: "not-a-uuid", startsAt: future, minutes: 30 })).status, 400);
-  assert.equal((await eventsRepo.deleteEvent({ id: "not-a-uuid" })).status, 400);
-});
-
-test("requireAdmin denies signed-out callers with 401 and non-admins with 403", async () => {
-  const tables = { profiles: [{ user_id: "student", is_admin: false }, { user_id: "boss", is_admin: true }] };
-  let currentViewer = null;
-  const guard = loadTs("lib/admin/guard.ts", {
-    "server-only": {},
-    "next/server": { NextResponse },
-    "@/lib/auth/viewer": { getViewer: async () => currentViewer },
     "@/lib/db/client": { db: fakeDb(tables), must },
   });
 
-  const anon = await guard.requireAdmin();
-  assert.equal(anon.denied.status, 401);
-
-  currentViewer = { id: "student", name: "Student" };
-  const student = await guard.requireAdmin();
-  assert.equal(student.denied.status, 403);
-
-  currentViewer = { id: "boss", name: "Boss" };
-  const admin = await guard.requireAdmin();
-  assert.equal(admin.viewer.id, "boss");
+  assert.equal(await check.isAdmin("student"), false);
+  assert.equal(await check.isAdmin("teacher"), false);
+  assert.equal(await check.isAdmin("boss-flag"), true);
+  assert.equal(await check.isAdmin("boss-role"), true);
 });
 
 // ---------------------------------------------------------------------------
@@ -606,34 +571,6 @@ test("schoolDirectory filters locations, schools, and exact or subdomain email d
   assert.equal((await schoolDirectory.findSchoolByDomain("lspu.edu.ph"))?.id, "lspu");
   assert.equal((await schoolDirectory.findSchoolByDomain("student.sc.lspu.edu.ph"))?.id, "lspu");
   assert.equal(await schoolDirectory.findSchoolByDomain("unknown.edu.ph"), null);
-});
-
-test("listUsers paginates past 500 accounts and joins leaderboard scores across batches", async () => {
-  const profiles = Array.from({ length: 520 }, (_, i) => ({
-    user_id: `u${i}`,
-    display_name: `Student ${i}`,
-    avatar_id: "glitch-bot",
-    border_id: "none",
-    school_email: null,
-    school: null,
-    is_admin: i === 0,
-    created_at: "2026-11-19",
-  }));
-  const leaderboard = [{ user_id: "u519", solved: 4, points: 450 }];
-  const repo = loadTs("lib/admin/repository.ts", {
-    "server-only": {},
-    "@/lib/dates": { todayInManila: () => "2026-11-19" },
-    "@/lib/db/client": { db: fakeDb({ profiles, leaderboard }), must },
-    "@/lib/accounts/rules": { isObject, text },
-    "@/lib/problems/catalog": catalog,
-    "@/lib/problems/rules": problemRules,
-  });
-
-  const users = await repo.listUsers();
-  assert.equal(users.length, 520);
-  const last = users.find((u) => u.id === "u519");
-  assert.equal(last?.solved, 4);
-  assert.equal(last?.points, 450);
 });
 
 test("3D scroll tour keeps render loop alive across sticky scroll containers and updates score bidirectionally", () => {
