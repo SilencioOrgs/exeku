@@ -975,6 +975,20 @@ test("validateExecutionRequest and validateWorkspaceFilename reject uppercase ex
   assert.equal(atLimit.request.timeLimitMs, 5000);
 });
 
+test("sidebar dropdowns toggle locally without forced navigation or eager RSC prefetches and app views use skeletons", () => {
+  const sidebar = readFileSync(new URL("../components/app/app-sidebar.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(sidebar, /router\.push/);
+  assert.match(sidebar, /prefetch=\{false\}/);
+
+  const appLoading = readFileSync(new URL("../app/app/loading.tsx", import.meta.url), "utf8");
+  assert.match(appLoading, /PageSkeleton/);
+
+  const friends = readFileSync(new URL("../components/app/friends-view.tsx", import.meta.url), "utf8");
+  assert.match(friends, /FriendsContentSkeleton/);
+  assert.match(friends, /SYNCED_PROFILE_KEY/);
+});
+
+
 
 
 

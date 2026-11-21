@@ -10,7 +10,7 @@ import { PixelBadge } from "@/components/retro/pixel-badge";
 import { X } from "lucide-react";
 import { ProfileResetDialog } from "./profile-reset-dialog";
 import { draftRepository } from "@/lib/storage/draft-repository";
-import { BrandLoader } from "@/components/brand-loader";
+import { PageSkeleton } from "@/components/app/page-skeletons";
 
 export function SettingsView() {
   const router = useRouter();
@@ -41,7 +41,7 @@ export function SettingsView() {
   }, [profile]);
 
   if (!profile) {
-    return <BrandLoader label="Loading settings…" />;
+    return <PageSkeleton label="Loading settings…" />;
   }
 
   return (

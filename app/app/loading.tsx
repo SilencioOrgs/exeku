@@ -1,5 +1,5 @@
-import { BrandLoader } from "@/components/brand-loader";
+import { PageSkeleton } from "@/components/app/page-skeletons";
 
 export default function Loading() {
-  return <BrandLoader className="min-h-[60vh]" />;
+  return <PageSkeleton />;
 }

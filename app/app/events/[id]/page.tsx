@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { BrandLoader } from "@/components/brand-loader";
+import { DetailPageSkeleton } from "@/components/app/page-skeletons";
 import { TournamentPage } from "@/components/app/events/tournament-view";
 
 export const metadata: Metadata = {
@@ -16,5 +16,5 @@ async function Tournament({ params }: { params: Params }) {
 }
 
 export default function TournamentRoute({ params }: { params: Params }) {
-  return <Suspense fallback={<BrandLoader label="Loading tournament…" />}><Tournament params={params} /></Suspense>;
+  return <Suspense fallback={<DetailPageSkeleton label="Loading tournament…" />}><Tournament params={params} /></Suspense>;
 }

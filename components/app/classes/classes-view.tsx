@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, BookOpen, Copy, Check, GraduationCap, KeyRound, Plus, Users } from "lucide-react";
-import { BrandLoader } from "@/components/brand-loader";
+import { ClassesGridSkeleton } from "@/components/app/page-skeletons";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { createTeacherClass, fetchClasses, joinClassWithCode } from "@/lib/classes/api";
 import type { FieldErrors } from "@/types/account";
@@ -158,7 +158,15 @@ export function ClassesView() {
     return error ? (
       <p role="alert" className="p-8 text-sm text-[var(--color-pink)]">{error}</p>
     ) : (
-      <BrandLoader label="Loading classes…" />
+      <div className="mx-auto w-full max-w-6xl space-y-8 p-4 sm:p-6 lg:p-8">
+        <header className="min-w-0">
+          <h1 className="text-3xl font-semibold tracking-tight">Classes</h1>
+          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+            Join a class with an invite code to solve assigned problems with your group.
+          </p>
+        </header>
+        <ClassesGridSkeleton />
+      </div>
     );
   }
 

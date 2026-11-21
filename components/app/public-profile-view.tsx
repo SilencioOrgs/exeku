@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Globe } from "lucide-react";
-import { BrandLoader } from "@/components/brand-loader";
+import { DetailPageSkeleton } from "@/components/app/page-skeletons";
 import { PixelAvatar } from "@/components/retro/pixel-avatar";
 import { fetchPublicProfile, friendAction } from "@/lib/friends/api";
 import { githubUrl, linkedinUrl } from "@/lib/social-links";
@@ -31,7 +31,7 @@ export function PublicProfileView({ userId }: { userId: string }) {
   }, [userId, version]);
 
   if (loadError) return <div className="mx-auto w-full max-w-4xl space-y-4 p-4 sm:p-6 lg:p-8">{BACK}<p role="alert" className="text-sm text-[var(--color-pink)]">{loadError}</p></div>;
-  if (!person) return <BrandLoader label="Loading profile…" />;
+  if (!person) return <DetailPageSkeleton label="Loading profile…" />;
 
   const act = async (action: "request" | "accept" | "remove", id: string) => {
     setActionError(undefined);
