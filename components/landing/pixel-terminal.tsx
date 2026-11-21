@@ -269,7 +269,7 @@ export function PixelTerminal() {
         </div>
 
         <div className="overflow-x-auto p-3.5 sm:p-4 font-code text-xs sm:text-sm">
-          <div key={activeLang} className="min-w-0 space-y-1">
+          <div key={activeLang} className="min-h-[19rem] min-w-0 space-y-1">
             {current.code.map((line, i) => (
               <div
                 key={i}
@@ -313,7 +313,7 @@ export function PixelTerminal() {
       <div
         role="status"
         aria-live="polite"
-        className="skeuo-well mt-3 min-h-[88px] rounded-xl border p-3 font-code text-xs text-[var(--color-text-muted)]"
+        className="skeuo-well mt-3 min-h-[144px] rounded-xl border p-3 font-code text-xs text-[var(--color-text-muted)]"
       >
         {isRunning ? (
           <BrandLoader label={`Running preview for ${current.name}…`} height={20} className="justify-start py-2" />

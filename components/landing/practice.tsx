@@ -13,7 +13,7 @@ export function Practice() {
   return (
     <section id="practice" className="overflow-x-clip border-b border-[var(--color-border)] py-20 md:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid gap-10 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
+        <div className="grid gap-10 lg:grid-cols-[0.82fr_1.18fr] lg:items-start">
           <div className="min-w-0">
             <ScrollReveal variant="copy">
               <h2 className="text-4xl font-semibold tracking-tight md:text-5xl">Train like it&apos;s contest day.</h2>
