@@ -364,9 +364,29 @@ input::placeholder, textarea::placeholder { color: var(--color-text-dim); opacit
 .workspace-panes { min-width:0; overflow:hidden; }
 .workspace-resizable-group { display:flex; min-width:0; min-height:0; }
 .workspace-resizable-group [data-panel] { min-width:0; min-height:0; }
-.workspace-resize-handle { position:relative; width:5px; flex-shrink:0; background:var(--color-border); cursor:col-resize; }
-.workspace-resize-handle:hover, .workspace-resize-handle:focus-visible { background:var(--color-accent); }
-.workspace-panes[data-layout="focus"] .workspace-resize-handle { height:5px; width:100%; cursor:row-resize; }
+.workspace-resize-handle {
+  position: relative; width: 10px; flex-shrink: 0; background: transparent; cursor: col-resize; outline: none;
+  display: flex; align-items: center; justify-content: center;
+}
+.workspace-resize-handle::after {
+  content: ""; width: 2px; height: 28px; border-radius: 999px;
+  background: var(--color-border); opacity: 0.7;
+  transition: height 140ms ease, width 140ms ease, background-color 140ms ease, opacity 140ms ease, box-shadow 140ms ease;
+}
+.workspace-resize-handle:is(:hover, :active, :focus-visible, [data-separator="active"], [data-resize-handle-active])::after {
+  height: 56px; background: var(--color-primary); opacity: 0.9;
+}
+.workspace-resize-handle:focus-visible::after {
+  box-shadow: 0 0 0 2px rgb(255 161 22 / 0.25);
+}
+.workspace-panes[data-layout="focus"] .workspace-resize-handle { height: 10px; width: 100%; cursor: row-resize; }
+.workspace-panes[data-layout="focus"] .workspace-resize-handle::after { width: 28px; height: 2px; }
+.workspace-panes[data-layout="focus"] .workspace-resize-handle:is(:hover, :active, :focus-visible, [data-separator="active"], [data-resize-handle-active])::after {
+  width: 56px; height: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .workspace-resize-handle::after { transition: none; }
+}
 .workspace-toolbar { border-width:1px; }
 @media (min-width: 640px) and (pointer: fine) {
   .workspace-toolbar { max-height:40px; }
