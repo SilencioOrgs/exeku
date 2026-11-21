@@ -12,7 +12,7 @@ import { eventAccessLabel } from "@/lib/orgs/rules";
 import type { CompetitionEvent, EventAccess, EventsFeed } from "@/types/competition";
 import { EventDate } from "./event-date";
 import { EventForm } from "./event-form";
-import { BrandLoader } from "@/components/brand-loader";
+import { EventsListSkeleton } from "@/components/app/page-skeletons";
 
 const PLACE_LABELS = ["1st", "2nd", "3rd"];
 const FILTERS: { id: EventAccess | "all"; label: string }[] = [
@@ -95,12 +95,10 @@ export function EventsView() {
     return () => { live = false; };
   }, [campusId, version]);
 
-  if (error) return <p role="alert" className="p-8 text-sm text-[var(--color-pink)]">{error}</p>;
-  if (!feed || !profile) return <BrandLoader label="Loading events…" />;
-
-  const shown = feed.events.filter((e) => filter === "all" || e.access === filter);
-  const upcoming = shown.filter((e) => e.startsOn >= feed.today).reverse();
-  const past = shown.filter((e) => e.startsOn < feed.today);
+  const ready = Boolean(feed && profile);
+  const shown = feed ? feed.events.filter((e) => filter === "all" || e.access === filter) : [];
+  const upcoming = feed ? shown.filter((e) => e.startsOn >= feed.today).reverse() : [];
+  const past = feed ? shown.filter((e) => e.startsOn < feed.today) : [];
 
   return (
     <div className="mx-auto w-full max-w-4xl space-y-6 p-4 sm:p-6 lg:p-8">
@@ -110,11 +108,11 @@ export function EventsView() {
           <p className="text-sm text-[var(--color-text-muted)]">Competitions you can join.</p>
         </div>
         <div className="flex flex-wrap items-end gap-2">
-          {feed.postableOrgs.length > 0 && !posting && <Button size="lg" className="h-10 px-4" onClick={() => setPosting(true)}><CalendarPlus size={15} />Post an event</Button>}
+          {feed && feed.postableOrgs.length > 0 && !posting && <Button size="lg" className="h-10 px-4" onClick={() => setPosting(true)}><CalendarPlus size={15} />Post an event</Button>}
         </div>
       </header>
 
-      {posting && (
+      {posting && feed && (
         <EventForm orgs={feed.postableOrgs} today={feed.today}
           onPost={(orgId, body) => orgAction(orgId, body)}
           onDone={() => { setPosting(false); setVersion((v) => v + 1); }} />
@@ -124,8 +122,16 @@ export function EventsView() {
         {FILTERS.map((f) => <Button key={f.id} type="button" variant="outline" size="sm" aria-pressed={filter === f.id} onClick={() => setFilter(f.id)}>{f.label}</Button>)}
       </div>
 
-      <EventList title="Upcoming" events={upcoming} empty="No upcoming events here yet." solved={feed.solvedProblemIds} />
-      {past.length > 0 && <EventList title="Past events" events={past} empty="" solved={feed.solvedProblemIds} />}
+      {error ? (
+        <p role="alert" className="skeuo-recess rounded-xl p-4 text-sm text-[var(--color-pink)]">{error}</p>
+      ) : !ready || !feed ? (
+        <EventsListSkeleton />
+      ) : (
+        <>
+          <EventList title="Upcoming" events={upcoming} empty="No upcoming events here yet." solved={feed.solvedProblemIds} />
+          {past.length > 0 && <EventList title="Past events" events={past} empty="" solved={feed.solvedProblemIds} />}
+        </>
+      )}
     </div>
   );
 }

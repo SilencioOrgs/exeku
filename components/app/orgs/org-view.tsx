@@ -8,7 +8,7 @@ import { useProfile } from "@/hooks/use-profile";
 import { fetchOrg, orgAction } from "@/lib/orgs/api";
 import { can, eventAccessLabel } from "@/lib/orgs/rules";
 import type { OrgDetail } from "@/types/org";
-import { BrandLoader } from "@/components/brand-loader";
+import { DetailPageSkeleton } from "@/components/app/page-skeletons";
 
 const ROLE_LABELS = { president: "President", officer: "Officer", member: "Member" };
 
@@ -43,7 +43,7 @@ export function OrgView({ orgId }: { orgId: string }) {
   };
 
   if (loadError) return <p role="alert" className="p-8 text-sm text-[var(--color-pink)]">{loadError}</p>;
-  if (!detail || !profile) return <BrandLoader label="Loading organization…" />;
+  if (!detail || !profile) return <DetailPageSkeleton label="Loading organization…" />;
 
   const { org, viewerRole, applicationStatus, members, applications, events } = detail;
   const isStudent = profile.userType === "student" || Boolean(profile.account);

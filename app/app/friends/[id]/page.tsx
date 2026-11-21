@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { PublicProfileView } from "@/components/app/public-profile-view";
-import { BrandLoader } from "@/components/brand-loader";
+import { DetailPageSkeleton } from "@/components/app/page-skeletons";
 
 export const metadata: Metadata = {
   title: "Student profile — Exeku",
@@ -16,5 +16,5 @@ async function Profile({ params }: { params: Params }) {
 }
 
 export default function StudentProfilePage({ params }: { params: Params }) {
-  return <Suspense fallback={<BrandLoader label="Loading profile…" />}><Profile params={params} /></Suspense>;
+  return <Suspense fallback={<DetailPageSkeleton label="Loading profile…" />}><Profile params={params} /></Suspense>;
 }

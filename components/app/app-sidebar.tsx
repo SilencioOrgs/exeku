@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { ChevronDown, ChevronLeft, ChevronRight, Code2, LayoutDashboard, Timer, Trophy, UserRound, Users, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -35,7 +35,6 @@ const KEY = "appearance-nav-item flex min-h-10 items-center gap-3 rounded-lg px-
 
 export function AppSidebar({ profile, collapsed, onToggleCollapse, onNavigate, className }: AppSidebarProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const { isTimedActive, formattedTime, requestNavigation } = useChallengeSession();
   const nav = NAV;
   const currentGroup = nav.find((g) => g.items?.some((i) => isCurrent(pathname, i.href)))?.id ?? null;
@@ -44,7 +43,7 @@ export function AppSidebar({ profile, collapsed, onToggleCollapse, onNavigate, c
   const openId = toggled?.path === pathname ? toggled.id : currentGroup;
 
   const navLink = (href: string, className: string, children: ReactNode, current: boolean, title?: string, activeGroup?: boolean) => (
-    <Link href={href} title={title} aria-label={title} aria-current={current ? "page" : undefined} data-active={activeGroup || undefined} className={className}
+    <Link href={href} prefetch={false} title={title} aria-label={title} aria-current={current ? "page" : undefined} data-active={activeGroup || undefined} className={className}
       onClick={(event) => { if (!requestNavigation(href)) event.preventDefault(); else onNavigate?.(); }}>
       {children}
     </Link>
@@ -80,14 +79,7 @@ export function AppSidebar({ profile, collapsed, onToggleCollapse, onNavigate, c
         const panelId = `nav-${group.id}`;
         return <div key={group.id}>
           <Button type="button" variant="ghost" aria-expanded={open} aria-controls={panelId} data-active={groupActive || undefined}
-            onClick={() => {
-              // Entering a section goes to its first page, so the lit key always matches the page shown. The mobile menu stays open to pick another.
-              if (groupActive) return setToggled({ path: pathname, id: open ? null : group.id });
-              const first = group.items![0].href;
-              if (!requestNavigation(first)) return;
-              setToggled({ path: pathname, id: group.id });
-              router.push(first);
-            }}
+            onClick={() => setToggled({ path: pathname, id: open ? null : group.id })}
             className={cn(KEY, "h-10 w-full justify-start")}>
             {icon}<span className="flex-1 text-left">{group.label}</span>
             <ChevronDown size={15} aria-hidden="true" className={cn("transition-transform duration-150 motion-reduce:transition-none", open && "rotate-180")} />

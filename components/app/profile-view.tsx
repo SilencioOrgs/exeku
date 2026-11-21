@@ -18,7 +18,7 @@ import { ConfirmDialog } from "./workspace/submission-modals";
 import { SchoolEmailSection } from "./school/school-email-section";
 import { FacultyVerificationSection } from "./school/faculty-verification-section";
 import { LANGUAGE_DISPLAY_NAMES } from "@/lib/workspace-defaults";
-import { BrandLoader } from "@/components/brand-loader";
+import { PageSkeleton } from "@/components/app/page-skeletons";
 
 export function hostOf(url: string) {
   try {
@@ -72,7 +72,7 @@ export function ProfileView() {
     return () => { active = false; };
   }, [profile]);
 
-  if (!profile) return <BrandLoader label="Loading your profile…" />;
+  if (!profile) return <PageSkeleton label="Loading your profile…" />;
 
   const joined = new Date(profile.createdAt).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
   const github = profile.socialLinks?.github;

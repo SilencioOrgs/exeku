@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { BrandLoader } from "@/components/brand-loader";
+import { DetailPageSkeleton } from "@/components/app/page-skeletons";
 import { ClassDetailView } from "@/components/app/classes/class-detail-view";
 
 export const metadata: Metadata = { title: "Class — Exeku" };
@@ -14,7 +14,7 @@ async function ClassContent({ params }: { params: Params }) {
 
 export default function ClassDetailPage({ params }: { params: Params }) {
   return (
-    <Suspense fallback={<BrandLoader label="Loading class…" />}>
+    <Suspense fallback={<DetailPageSkeleton label="Loading class…" maxWidth="max-w-6xl" />}>
       <ClassContent params={params} />
     </Suspense>
   );

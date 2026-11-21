@@ -13,7 +13,7 @@ import type { PreferredLanguage } from "@/types/profile";
 import type { ProblemDifficulty, ProblemSummary } from "@/types/problem";
 import { DifficultyBadge, difficultyLabel } from "./difficulty-badge";
 import { TopicFilter } from "./topic-filter";
-import { BrandLoader } from "@/components/brand-loader";
+import { ChallengesTableSkeleton } from "./page-skeletons";
 
 const DIFFICULTIES: ProblemDifficulty[] = ["beginner", "intermediate", "advanced"];
 
@@ -106,7 +106,7 @@ export function ChallengesView() {
 
       <div className="skeuo-card overflow-x-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
         {problems === null ? (
-          <BrandLoader label="Loading problems…" />
+          <ChallengesTableSkeleton />
         ) : visible.length === 0 ? (
           <div className="p-10 text-center">
             <p className="font-semibold">No problems match</p>

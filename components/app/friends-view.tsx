@@ -3,7 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { Search, UserPlus } from "lucide-react";
-import { BrandLoader } from "@/components/brand-loader";
+import { FriendsContentSkeleton } from "@/components/app/page-skeletons";
 import { PixelAvatar } from "@/components/retro/pixel-avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useProfile } from "@/hooks/use-profile";
@@ -11,6 +11,8 @@ import { syncProfile } from "@/lib/accounts/api";
 import { fetchFriends, friendAction } from "@/lib/friends/api";
 import type { FriendsFeed, Person } from "@/types/friends";
 import { TextField } from "./school/field";
+
+const SYNCED_PROFILE_KEY = "exeku:synced-profile";
 
 type FriendAct = (action: "request" | "accept" | "remove", id: string) => void;
 
@@ -67,9 +69,16 @@ export function FriendsView() {
   const [version, setVersion] = useState(0);
   const published = profile && JSON.stringify({ displayName: profile.displayName, avatarId: profile.avatarId, borderId: profile.borderId, bio: profile.bio, socialLinks: profile.socialLinks });
 
-  // Other students see these details, so publish them before anyone looks.
+  // Publish profile changes once per session instead of re-POSTing on every Friends visit.
   useEffect(() => {
-    if (published) void syncProfile(JSON.parse(published));
+    if (!published) return;
+    try {
+      if (sessionStorage.getItem(SYNCED_PROFILE_KEY) === published) return;
+    } catch { /* Proceed when storage is unavailable. */ }
+    void syncProfile(JSON.parse(published)).then((res) => {
+      if (!res.ok) return;
+      try { sessionStorage.setItem(SYNCED_PROFILE_KEY, published); } catch { /* Ignore storage errors. */ }
+    });
   }, [published]);
 
   useEffect(() => {
@@ -91,8 +100,6 @@ export function FriendsView() {
   const submit = (event: FormEvent) => { event.preventDefault(); setSearch(draft.trim()); };
   const searching = search.length >= 2;
 
-  if (!feed) return error ? <p role="alert" className="p-8 text-sm text-[var(--color-pink)]">{error}</p> : <BrandLoader label="Finding your friends…" />;
-
   return (
     <div className="mx-auto w-full max-w-4xl space-y-6 p-4 sm:p-6 lg:p-8">
       <header className="space-y-1">
@@ -107,11 +114,17 @@ export function FriendsView() {
 
       {error && <p role="alert" className="skeuo-recess rounded-xl p-3 text-sm text-[var(--color-pink)]">{error}</p>}
 
-      <Section title="Friend requests" people={feed.requests} onAct={act} />
-      <Section title={searching ? `Results for ${search}` : "People you may know"} people={feed.people} onAct={act}
-        empty={searching ? "Nobody by that name yet." : feed.hasCampus ? "No classmates here yet. Invite your campus to join." : "Add your school to see classmates from your campus."} />
-      {!searching && !feed.hasCampus && <Link href="/app/profile" className={buttonVariants({ variant: "outline" })}>Go to Profile</Link>}
-      <Section title="Your friends" people={feed.friends} empty="Friends you add show up here." onAct={act} />
+      {!feed ? (
+        !error && <FriendsContentSkeleton />
+      ) : (
+        <>
+          <Section title="Friend requests" people={feed.requests} onAct={act} />
+          <Section title={searching ? `Results for ${search}` : "People you may know"} people={feed.people} onAct={act}
+            empty={searching ? "Nobody by that name yet." : feed.hasCampus ? "No classmates here yet. Invite your campus to join." : "Add your school to see classmates from your campus."} />
+          {!searching && !feed.hasCampus && <Link href="/app/profile" className={buttonVariants({ variant: "outline" })}>Go to Profile</Link>}
+          <Section title="Your friends" people={feed.friends} empty="Friends you add show up here." onAct={act} />
+        </>
+      )}
     </div>
   );
 }

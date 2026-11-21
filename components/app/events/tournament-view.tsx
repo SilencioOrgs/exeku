@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { ArrowLeft, Check, Clock, Crown } from "lucide-react";
-import { BrandLoader } from "@/components/brand-loader";
+import { DetailPageSkeleton } from "@/components/app/page-skeletons";
 import { PixelAvatar } from "@/components/retro/pixel-avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { fetchTournament, TOURNAMENT_REFRESH_EVENT, tournamentAction } from "@/lib/orgs/api";
@@ -118,7 +118,7 @@ export function TournamentPage({ id }: { id: string }) {
 
   const back = <Link href="/app/events" className="inline-flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]"><ArrowLeft size={14} aria-hidden="true" />All events</Link>;
   if (loadError && !view) return <div className="mx-auto w-full max-w-4xl space-y-4 p-4 sm:p-6 lg:p-8">{back}<p role="alert" className="text-sm text-[var(--color-pink)]">{loadError}</p></div>;
-  if (!view || !target) return <BrandLoader label="Loading tournament…" />;
+  if (!view || !target) return <DetailPageSkeleton label="Loading tournament…" />;
 
   const act = async (body: Record<string, unknown>) => {
     setActionError(undefined);

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { BrandLoader } from "@/components/brand-loader";
+import { OrgsListSkeleton } from "@/components/app/page-skeletons";
 import { RegisterOrgNote } from "@/components/app/orgs/register-org-note";
 import { listOrgs } from "@/lib/orgs/repository";
 
@@ -37,7 +37,7 @@ export default function OrgsPage() {
         <h1 className="text-3xl font-semibold tracking-tight">Organizations</h1>
         <p className="text-sm text-[var(--color-text-muted)]">Join your school organization to enter its competitions.</p>
       </header>
-      <Suspense fallback={<BrandLoader label="Loading organizations…" />}>
+      <Suspense fallback={<OrgsListSkeleton />}>
         <OrgList />
       </Suspense>
       <RegisterOrgNote />

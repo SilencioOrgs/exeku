@@ -16,7 +16,7 @@ import {
   UserMinus,
   Users,
 } from "lucide-react";
-import { BrandLoader } from "@/components/brand-loader";
+import { DetailPageSkeleton } from "@/components/app/page-skeletons";
 import { DifficultyBadge } from "@/components/app/difficulty-badge";
 import { TextField } from "@/components/app/school/field";
 import { ConfirmDialog } from "@/components/app/workspace/submission-modals";
@@ -121,7 +121,7 @@ export function ClassDetailView({ classId }: { classId: string }) {
         </Link>
       </div>
     ) : (
-      <BrandLoader label="Loading class…" />
+      <DetailPageSkeleton label="Loading class…" maxWidth="max-w-6xl" />
     );
   }
 
