@@ -77,7 +77,7 @@ test("workspace multi-file: toolbar avoids unlayered touch minimums and keys the
   const view = read("components/app/workspace-view.tsx");
   const toolbar = read("components/app/workspace/workspace-toolbar.tsx");
   const css = read("app/globals.css").replace(/\/\*[\s\S]*?\*\//g, "");
-  assert.match(toolbar, /className="workspace-toolbar/);
+  assert.match(toolbar, /className="workspace-toolbar @container/);
   assert.match(toolbar, /<FileTabs/);
   assert.match(view, /<Group/);
   assert.match(view, /<Panel id="editor"/);
