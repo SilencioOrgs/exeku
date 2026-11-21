@@ -739,7 +739,12 @@ test("landing page uses skeuomorphic sandbox deck with keyboard tab navigation a
   assert.match(terminalSource, /const LANGUAGE_ORDER: LanguageKey\[\] = \["python", "java", "cpp", "c"\]/);
   assert.match(terminalSource, /event\.key === "ArrowRight"/);
   assert.match(terminalSource, /aria-live="polite"/);
+  assert.match(terminalSource, /min-h-\[19rem\]/);
+  assert.match(terminalSource, /min-h-\[144px\]/);
   assert.doesNotMatch(terminalSource, /animate-terminal-blink/);
+
+  const practiceSource = readFileSync(new URL("../components/landing/practice.tsx", import.meta.url), "utf8");
+  assert.match(practiceSource, /lg:items-start/);
 
   const revealSource = readFileSync(new URL("../components/landing/scroll-reveal.tsx", import.meta.url), "utf8");
   assert.match(revealSource, /effectiveReducedMotion/);
