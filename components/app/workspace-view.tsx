@@ -377,7 +377,7 @@ export function WorkspaceView() {
                 onRun={handleRun}
                 onSubmit={handleOpenSubmit}
               />
-              <div className="relative flex-1 min-h-0 overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)]">
+              <div className="relative flex-1 min-h-0 overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] transition-colors focus-within:border-[var(--color-ring)]">
                 <CodeEditor
                   key={`${problem?.id ?? "free"}/${files.activeLang}/${files.activeFile}`}
                   filename={files.activeFile}
