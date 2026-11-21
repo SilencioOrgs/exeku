@@ -174,7 +174,7 @@ export function CodeEditor({ value, onChange, filename }: CodeEditorProps) {
   return (
     <div
       data-theme-scope={mode}
-      className="code-editor flex h-full min-h-[320px] overflow-hidden focus-within:outline-2 focus-within:-outline-offset-2 focus-within:outline-[var(--color-ring)]"
+      className="code-editor flex h-full min-h-[320px] overflow-hidden"
       style={style}
     >
       <pre
