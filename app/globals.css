@@ -387,12 +387,9 @@ input::placeholder, textarea::placeholder { color: var(--color-text-dim); opacit
 @media (prefers-reduced-motion: reduce) {
   .workspace-resize-handle::after { transition: none; }
 }
-.workspace-toolbar { border-width:1px; }
-@media (min-width: 640px) and (pointer: fine) {
-  .workspace-toolbar { max-height:40px; }
-  [data-density="compact"] .workspace-toolbar { height:36px; }
-}
-.workspace-toolbar [role="tablist"] { scrollbar-width:thin; }
+.workspace-toolbar { border-width: 1px; }
+.workspace-toolbar [role="tablist"] { scrollbar-width: none; }
+.workspace-toolbar [role="tablist"]::-webkit-scrollbar { display: none; }
 @media(max-width:1279px) {
   .workspace-resizable-group { flex-direction:column !important; }
   .workspace-resizable-group > [data-panel] { display:none !important; flex:0 0 0 !important; }

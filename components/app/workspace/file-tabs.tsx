@@ -79,7 +79,7 @@ export function FileTabs({ language, files, activeName, mainName, saveStatus, on
   };
 
   return (
-    <div className="relative flex min-w-28 flex-1 items-center gap-1 overflow-visible">
+    <div className="relative flex min-w-0 flex-1 items-center gap-0.5 overflow-visible">
       <div ref={tabsRef} role="tablist" aria-label="Source files" className="flex min-w-0 items-center gap-0.5 overflow-x-auto whitespace-nowrap">
         {files.map((file, index) => (
           <div key={file.name} className={`group inline-flex h-8 shrink-0 items-center rounded-md ${activeName === file.name ? "bg-[var(--color-elevated)] text-[var(--color-text-main)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]"}`}>
@@ -143,7 +143,7 @@ export function FileTabs({ language, files, activeName, mainName, saveStatus, on
         <Button
           type="button"
           variant="ghost"
-          size="icon"
+          size="icon-sm"
           onClick={() => begin(null)}
           title="Add source file"
           aria-label="Add source file"
