@@ -19,7 +19,13 @@ import type { LocalProfile } from "@/types/profile";
 import type { FacultyStatusPayload } from "@/types/roles";
 import { TextAreaField, TextField } from "./field";
 
-export function FacultyVerificationSection({ profile }: { profile: LocalProfile }) {
+export function FacultyVerificationSection({
+  profile,
+  onStatusChange,
+}: {
+  profile: LocalProfile;
+  onStatusChange?: (status: FacultyStatusPayload) => void;
+}) {
   const { user, isLoaded } = useUser();
   const [status, setStatus] = useState<FacultyStatusPayload | null>(null);
   const [loadError, setLoadError] = useState<string>();
@@ -52,8 +58,12 @@ export function FacultyVerificationSection({ profile }: { profile: LocalProfile 
     setLoadError(undefined);
     const res = await fetchFacultyStatus();
     setLoadingStatus(false);
-    if (res.ok) setStatus(res.data);
-    else setLoadError(res.error ?? "Could not load faculty status.");
+    if (res.ok) {
+      setStatus(res.data);
+      onStatusChange?.(res.data);
+    } else {
+      setLoadError(res.error ?? "Could not load faculty status.");
+    }
   };
 
   useEffect(() => {
@@ -61,13 +71,17 @@ export function FacultyVerificationSection({ profile }: { profile: LocalProfile 
     void fetchFacultyStatus().then((res) => {
       if (!live) return;
       setLoadingStatus(false);
-      if (res.ok) setStatus(res.data);
-      else setLoadError(res.error ?? "Could not load faculty status.");
+      if (res.ok) {
+        setStatus(res.data);
+        onStatusChange?.(res.data);
+      } else {
+        setLoadError(res.error ?? "Could not load faculty status.");
+      }
     });
     return () => {
       live = false;
     };
-  }, []);
+  }, [onStatusChange]);
 
   const payload = () => ({
     fullName: fullName.trim(),

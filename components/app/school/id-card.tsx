@@ -9,6 +9,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { EXEKU_SOCIAL_URL } from "@/lib/contact";
 import { dragTilt, hoverTilt, type Tilt } from "@/lib/tilt";
+import type { UserRole } from "@/types/roles";
 
 export interface IdCardProps {
   fullName: string;
@@ -18,16 +19,25 @@ export interface IdCardProps {
   avatarId: string;
   borderId?: string;
   serial: string;
+  role?: UserRole;
+  roleDetail?: string;
+}
+
+function roleLabel(role?: UserRole): string {
+  if (role === "teacher") return "Teacher";
+  if (role === "admin") return "Admin";
+  return "Student";
 }
 
 /** Decorative. Every value is already on the page as text, and the code's link is a real link when expanded. */
-function IdFace({ fullName, school, campus, pending, avatarId, borderId, serial }: IdCardProps) {
+function IdFace({ fullName, school, campus, pending, avatarId, borderId, serial, role, roleDetail }: IdCardProps) {
+  const isTeacher = role === "teacher";
   return (
     <div aria-hidden="true" className="id-tilt flex w-full flex-col items-center">
       <div className="id-clip" />
       <div className="id-sleeve">
         <div className="id-card">
-          <div className="id-card-head"><BrandWordmark height={22} /><span>Student</span></div>
+          <div className="id-card-head"><BrandWordmark height={22} /><span>{roleLabel(role)}</span></div>
           <div className="px-3.5 pt-3 pb-3">
             <div className="flex items-start justify-between">
               <PixelAvatar avatarId={avatarId} borderId={borderId} size={64} className="mt-1" />
@@ -38,8 +48,11 @@ function IdFace({ fullName, school, campus, pending, avatarId, borderId, serial 
               </div>
             </div>
             <p className="mt-2.5 text-base leading-tight font-semibold break-words text-[var(--id-ink)]">{fullName}</p>
+            {roleDetail && (
+              <p className="mt-0.5 text-[11px] font-medium leading-snug break-words text-[var(--id-ink)]">{roleDetail}</p>
+            )}
             <p className="mt-1.5 text-xs leading-snug break-words text-[var(--id-ink-muted)]">
-              {school || "Your school"}{campus ? <><br />{campus}</> : null}
+              {school || (isTeacher ? "Verified faculty" : "Your school")}{campus ? <><br />{campus}</> : null}
             </p>
             {pending && <p className="mt-1 text-xs font-medium text-[var(--id-ink)]">School pending review</p>}
             <div className="id-barcode mt-2.5" />
@@ -94,6 +107,7 @@ function IdStage({ draggable, onClick, children }: { draggable?: boolean; onClic
 
 export function IdCard(props: IdCardProps) {
   const [expanded, setExpanded] = useState(false);
+  const title = props.role === "teacher" ? "Your Exeku Teacher ID" : props.role === "admin" ? "Your Exeku Admin ID" : "Your Exeku ID";
   return (
     <div className="flex flex-col items-center gap-2">
       <IdStage onClick={() => setExpanded(true)}><IdFace {...props} /></IdStage>
@@ -101,7 +115,7 @@ export function IdCard(props: IdCardProps) {
       <Dialog open={expanded} onOpenChange={setExpanded}>
         <DialogContent className="justify-items-center sm:max-w-md">
           <div className="w-full text-center">
-            <DialogTitle>Your Exeku ID</DialogTitle>
+            <DialogTitle>{title}</DialogTitle>
             <DialogDescription className="mt-1.5">Drag the card to turn it. Scan the code to follow Exeku.</DialogDescription>
           </div>
           <div className="id-zoom"><IdStage draggable><IdFace {...props} /></IdStage></div>

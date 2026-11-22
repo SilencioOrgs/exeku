@@ -10,8 +10,10 @@ export function fakeDb(tables) {
       const run = () => {
         let inserted = null;
         if (op === "insert") {
-          inserted = { id: crypto.randomUUID(), created_at: new Date().toISOString(), status: "pending", ...payload };
-          rows.push(inserted);
+          const items = Array.isArray(payload) ? payload : [payload];
+          const created = items.map((row) => ({ id: crypto.randomUUID(), created_at: new Date().toISOString(), status: "pending", ...row }));
+          rows.push(...created);
+          inserted = Array.isArray(payload) ? created : created[0];
         }
         if (op === "upsert") {
           const existing = conflictCols

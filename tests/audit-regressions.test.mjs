@@ -312,6 +312,7 @@ test("getOrgDetail masks problems on upcoming or unregistered tournaments", asyn
     ...shared,
     "@/lib/accounts/rules": { isObject, isUuid, text },
     "@/lib/competition/repository": competition,
+    "@/lib/notifications/repository": { notifyUsers: async () => {} },
     "./rules": orgRules,
   });
 

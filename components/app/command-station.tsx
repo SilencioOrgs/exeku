@@ -6,7 +6,7 @@ import { syncProfile } from "@/lib/accounts/api";
 import { draftRepository } from "@/lib/storage/draft-repository";
 import type { WorkspaceDraft } from "@/types/draft";
 import { ModernOverview } from "./modern-overview";
-import { BrandLoader } from "@/components/brand-loader";
+import { PageSkeleton } from "./page-skeletons";
 
 export function CommandStation() {
   const { profile, updateProfile } = useProfile();
@@ -29,7 +29,7 @@ export function CommandStation() {
     return () => { active = false; };
   }, [profile]);
 
-  if (!profile) return <BrandLoader label="Loading workspace…" />;
+  if (!profile) return <PageSkeleton label="Loading overview…" />;
 
   return <ModernOverview profile={profile} activeDraft={activeDraft}
     totalDrafts={totalDrafts} onSaveProfile={async (updates) => {

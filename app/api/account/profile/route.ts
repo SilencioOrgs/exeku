@@ -16,7 +16,7 @@ export const GET = () =>
     const viewer = await getViewer();
     if (!viewer) return NextResponse.json({ error: "Sign in to continue." }, { status: 401 });
     const [summary, medals] = await Promise.all([solveSummary(viewer.id), getMedals(viewer.id)]);
-    return NextResponse.json({ solved: summary.solved, solvedAt: summary.solvedAt, medals });
+    return NextResponse.json({ solved: summary.solved, solvedAt: summary.solvedAt, medals, role: viewer.role });
   });
 
 /** Publishes what other students see. Locked avatars are checked here, since the browser can be edited. */

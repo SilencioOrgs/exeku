@@ -7,10 +7,12 @@ import { useRouter } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
 import { useProfile } from "@/hooks/use-profile";
 import { draftRepository } from "@/lib/storage/draft-repository";
-import { Globe, LogOut, Pencil, Settings } from "lucide-react";
+import { BadgeCheck, Globe, GraduationCap, LogOut, Pencil, Settings } from "lucide-react";
 import { syncProfile } from "@/lib/accounts/api";
+import { fetchFacultyStatus } from "@/lib/roles/api";
 import { useChallengeSession } from "@/hooks/use-challenge-session";
 import { githubUrl, linkedinUrl } from "@/lib/social-links";
+import type { FacultyStatusPayload } from "@/types/roles";
 import { GithubIcon, LinkedinIcon } from "./brand-icons";
 import { CodingActivity } from "./coding-activity";
 import { ProfileEditDialog } from "./profile-edit-dialog";
@@ -61,6 +63,7 @@ export function ProfileView() {
   const [editing, setEditing] = useState(false);
   const [confirmingLogout, setConfirmingLogout] = useState(false);
   const [draftCount, setDraftCount] = useState<number | null>(null);
+  const [facultyStatus, setFacultyStatus] = useState<FacultyStatusPayload | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -68,6 +71,9 @@ export function ProfileView() {
       draftRepository.getAllDraftsForProfile(profile.id)
         .then((drafts) => { if (active) setDraftCount(drafts.length); })
         .catch(() => { if (active) setDraftCount(null); });
+      void fetchFacultyStatus().then((res) => {
+        if (active && res.ok) setFacultyStatus(res.data);
+      });
     }
     return () => { active = false; };
   }, [profile]);
@@ -78,6 +84,9 @@ export function ProfileView() {
   const github = profile.socialLinks?.github;
   const linkedin = profile.socialLinks?.linkedin;
   const website = profile.socialLinks?.website;
+  const role = facultyStatus?.role ?? "student";
+  const isTeacher = role === "teacher";
+  const isAdmin = role === "admin";
   const logOut = async () => {
     await clerk.signOut();
     signOut();
@@ -87,7 +96,19 @@ export function ProfileView() {
   return (
     <div className="profile-view mx-auto w-full max-w-6xl space-y-6 p-4 sm:p-6 lg:p-8">
       <header className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-3xl font-semibold tracking-tight">Profile</h1>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <h1 className="text-3xl font-semibold tracking-tight">Profile</h1>
+          {isTeacher && (
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-primary-edge)] bg-[var(--color-surface)] px-2.5 py-1 text-xs font-medium text-[var(--color-primary-text)]">
+              <GraduationCap size={14} aria-hidden="true" /> Teacher account
+            </span>
+          )}
+          {isAdmin && (
+            <span className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-easy-bg)] px-2.5 py-1 text-xs font-medium text-[var(--color-mint)]">
+              <BadgeCheck size={14} aria-hidden="true" /> Administrator
+            </span>
+          )}
+        </div>
         <div className="flex flex-wrap gap-2">
           <Button type="button" variant="outline" onClick={() => setEditing(true)}>
             <Pencil size={15} aria-hidden="true" />Edit profile
@@ -101,9 +122,20 @@ export function ProfileView() {
         </div>
       </header>
 
-      <SchoolEmailSection profile={profile} onSave={async (account) => { await updateProfile(profile.id, { account, userType: "student" }); }}>
-        <h2 className="text-2xl font-semibold tracking-tight break-words sm:text-3xl">{profile.displayName}</h2>
-        <p className="mt-1 text-sm text-[var(--color-text-muted)]">{profile.bio || "Your personal coding workspace"}</p>
+      <SchoolEmailSection
+        profile={profile}
+        facultyStatus={facultyStatus}
+        onSave={async (account) => { await updateProfile(profile.id, { account, userType: "student" }); }}
+      >
+        <div className="flex flex-wrap items-center gap-2.5">
+          <h2 className="text-2xl font-semibold tracking-tight break-words sm:text-3xl">{profile.displayName}</h2>
+          {isTeacher && (
+            <span className="inline-flex items-center gap-1 rounded-md bg-[var(--color-easy-bg)] px-2 py-0.5 font-code text-xs text-[var(--color-mint)]">
+              <BadgeCheck size={12} aria-hidden="true" /> Verified Teacher
+            </span>
+          )}
+        </div>
+        <p className="mt-1 text-sm text-[var(--color-text-muted)]">{profile.bio || (isTeacher ? "Exeku instructor workspace" : "Your personal coding workspace")}</p>
         <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">Coding locally since {joined}</p>
 
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
@@ -112,13 +144,15 @@ export function ProfileView() {
           <SocialLink icon={<Globe size={18} aria-hidden="true" />} label="Portfolio" text={website ? hostOf(website) : undefined} href={website ?? ""} />
         </div>
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          <Readout label="Account role" value={isTeacher ? "Teacher" : isAdmin ? "Admin" : "Student"} />
           <Readout label="Language" value={LANGUAGE_DISPLAY_NAMES[profile.preferredLanguage]} />
-          <Readout label="Experience" value={profile.experienceLevel} capitalize />
           <Readout label="Saved drafts" value={draftCount === null ? "Unavailable" : draftCount} />
         </div>
       </SchoolEmailSection>
 
-      <FacultyVerificationSection profile={profile} />
+      {!isTeacher && !isAdmin && (
+        <FacultyVerificationSection profile={profile} onStatusChange={setFacultyStatus} />
+      )}
 
       <CodingActivity profileId={profile.id} />
       <p className="text-xs text-[var(--color-text-muted)]">Activity reflects days with saved edits on this browser only. It is not linked to your GitHub account or a verified competition history.</p>

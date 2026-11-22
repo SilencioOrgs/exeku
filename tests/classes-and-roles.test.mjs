@@ -169,27 +169,60 @@ test("teacher creates class with invite code, student joins, teacher groups stud
     class_groups: [],
     class_members: [],
     class_problems: [],
+    class_activities: [],
+    notifications: [],
+    problems: [],
     submissions: [
       { id: "sub-1", user_id: "student-1", problem_id: "hello-world", verdict: "ACCEPTED", points: 100 },
     ],
   };
 
+  const problemRules = await import("../lib/classes/problem-rules.ts");
+  const workspaceDefaults = await import("../lib/workspace-defaults.ts");
   const lockedIds = new Set(["secret-tournament-prob"]);
-  const summaries = catalog.getProblemSummaries();
+  const baseSummaries = catalog.getProblemSummaries();
+  const listAllSummaries = () => [
+    ...baseSummaries,
+    ...tables.problems.map((p) => ({
+      id: p.id,
+      slug: p.id,
+      title: p.title,
+      difficulty: p.difficulty,
+      category: p.category,
+      tags: p.tags,
+      supportedLanguages: p.supported_languages,
+      sampleCount: p.test_cases.filter((t) => !t.isHidden).length,
+      totalTestsCount: p.test_cases.length,
+    })),
+  ];
+
+  const notifRepo = loadTs("lib/notifications/repository.ts", {
+    "server-only": {},
+    "@/lib/accounts/rules": accountRules,
+    "@/lib/db/client": { db: fakeDb(tables), exactCount, fetchAllPages, must },
+    "@/lib/problems/store": {
+      listProblemSummaries: async () => listAllSummaries(),
+    },
+  });
 
   const repo = loadTs("lib/classes/repository.ts", {
     "server-only": {},
     "@/lib/accounts/rules": accountRules,
     "@/lib/db/client": { db: fakeDb(tables), exactCount, fetchAllPages, must },
+    "@/lib/notifications/repository": notifRepo,
+    "@/lib/workspace-defaults": workspaceDefaults,
     "@/lib/problems/store": {
-      listProblemSummaries: async (_userId, opts) =>
-        opts?.includeLocked ? summaries : summaries.filter((p) => !lockedIds.has(p.id)),
+      listProblemSummaries: async (_userId, opts) => {
+        const all = listAllSummaries();
+        return opts?.includeLocked ? all : all.filter((p) => !lockedIds.has(p.id));
+      },
       problemExists: async (id, opts) => {
         if (!opts?.includeLocked && lockedIds.has(id)) return false;
-        return summaries.some((p) => p.id === id) || lockedIds.has(id);
+        return listAllSummaries().some((p) => p.id === id) || lockedIds.has(id);
       },
     },
     "@/lib/roles/rules": roleRules,
+    "./problem-rules": problemRules,
     "./rules": classRules,
   });
 
@@ -252,6 +285,62 @@ test("teacher creates class with invite code, student joins, teacher groups stud
   assert.equal(studentDetail.members[0].schoolEmail, undefined);
   assert.equal(studentDetail.problems[0].solvedByViewer, true);
 
+  // Teacher creates a custom class problem with a deadline -> inserts into problems, assigns it, records activity, and notifies student.
+  const dueSoon = new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString();
+  const badCustom = await repo.performClassAction(teacherViewer, created.id, {
+    action: "createProblem",
+    title: "Even Sum",
+    description: "Sum all even integers in the input list.",
+    difficulty: "beginner",
+    category: "Arrays",
+    inputSpec: "N then N ints",
+    outputSpec: "Single integer",
+    testCases: [{ input: "2\n2 4", expectedOutput: "6", isHidden: true }],
+  });
+  assert.equal(badCustom.ok, false);
+  assert.equal(badCustom.status, 422);
+
+  const customCreated = await repo.performClassAction(teacherViewer, created.id, {
+    action: "createProblem",
+    title: "Even Sum",
+    description: "Sum all even integers in the input list.",
+    difficulty: "beginner",
+    category: "Arrays",
+    inputSpec: "N then N ints",
+    outputSpec: "Single integer",
+    dueAt: dueSoon,
+    testCases: [
+      { input: "2\n2 4", expectedOutput: "6", isHidden: false },
+      { input: "3\n1 3 5", expectedOutput: "0", isHidden: true },
+    ],
+  });
+  assert.equal(customCreated.ok, true);
+  assert.match(customCreated.problemId, /^cls-even-sum-/);
+  assert.equal(tables.problems.length, 1);
+
+  // Teacher posts a class deadline activity -> notifies enrolled students.
+  const postedAct = await repo.performClassAction(teacherViewer, created.id, {
+    action: "postActivity",
+    title: "Lab 1 Submission",
+    kind: "deadline",
+    body: "Finish Even Sum before tonight.",
+    dueAt: dueSoon,
+  });
+  assert.equal(postedAct.ok, true);
+
+  // Student receives notifications and can mark all read.
+  const inbox = await notifRepo.listNotificationsForViewer(studentViewer);
+  assert.ok(inbox.unreadCount >= 2);
+  assert.equal(inbox.role, "student");
+  assert.ok(inbox.notifications.some((n) => n.title.includes("Even Sum")));
+  assert.ok(inbox.notifications.some((n) => n.title.includes("Lab 1 Submission")));
+
+  assert.equal((await notifRepo.handleNotificationAction(studentViewer, { action: "markAllRead" })).ok, true);
+  const afterRead = await notifRepo.listNotificationsForViewer(studentViewer);
+  // Stored notifications are read; synthetic unsolved urgent deadline remains surfaced until solved.
+  assert.ok(afterRead.notifications.some((n) => n.read === true));
+  assert.ok(afterRead.notifications.some((n) => n.synthetic === true && n.title.includes("Even Sum")));
+
   // Pagination: >1,000 submissions still register a solve on page 2.
   for (let i = 0; i < 1050; i++) {
     tables.submissions.push({ id: `filler-${i}`, user_id: "student-1", problem_id: "hello-world", verdict: "ACCEPTED", points: 100 });
@@ -260,4 +349,17 @@ test("teacher creates class with invite code, student joins, teacher groups stud
   assert.equal((await repo.performClassAction(teacherViewer, created.id, { action: "addProblem", problemId: "sum-two-integers" })).ok, true);
   const paginatedDetail = await repo.getClassDetail(teacherViewer, created.id);
   assert.deepEqual(Array.from(paginatedDetail.members[0].solvedProblemIds).sort(), ["hello-world", "sum-two-integers"]);
+});
+
+test("/app views use skeleton loading instead of the Exeku BrandLoader splash", () => {
+  for (const rel of [
+    "../components/app/app-shell.tsx",
+    "../components/app/command-station.tsx",
+    "../components/app/modern-overview.tsx",
+    "../app/app/workspace/page.tsx",
+    "../components/app/workspace/results-pane.tsx",
+  ]) {
+    const src = readFileSync(new URL(rel, import.meta.url), "utf8");
+    assert.doesNotMatch(src, /BrandLoader/, `${rel} should not use BrandLoader`);
+  }
 });

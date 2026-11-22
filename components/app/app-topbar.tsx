@@ -7,9 +7,12 @@ import { BrandWordmark } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import { useChallengeSession } from "@/hooks/use-challenge-session";
 import type { LocalProfile } from "@/types/profile";
+import type { UserRole } from "@/types/roles";
+import { NotificationsBell } from "./notifications-bell";
 
 export interface AppTopbarProps {
   profile: LocalProfile | null;
+  onRoleLoaded?: (role: UserRole) => void;
   onToggleMobileMenu: () => void;
 }
 
@@ -28,7 +31,7 @@ function labelForPath(pathname: string): string {
   return "Workspace";
 }
 
-export function AppTopbar({ onToggleMobileMenu }: AppTopbarProps) {
+export function AppTopbar({ onRoleLoaded, onToggleMobileMenu }: AppTopbarProps) {
   const pathname = usePathname();
   const { isTimedActive, formattedTime, requestNavigation } = useChallengeSession();
 
@@ -42,6 +45,7 @@ export function AppTopbar({ onToggleMobileMenu }: AppTopbarProps) {
     </div>
     <div className="flex items-center gap-2">
       {isTimedActive && <span className="rounded-md border border-[var(--color-border)] px-2 py-1 text-xs tabular-nums">Challenge {formattedTime}</span>}
+      <NotificationsBell onRoleLoaded={onRoleLoaded} />
       <Link href="/" onClick={(event) => { if (!requestNavigation("/")) event.preventDefault(); }} className="hidden items-center gap-1 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] sm:inline-flex">Website <ArrowUpRight size={14} aria-hidden="true" /></Link>
     </div>
   </header>;
