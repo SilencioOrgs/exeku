@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { BookOpen, CheckCircle2, Copy, FileCode2, RotateCcw } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowLeft, ArrowRight, BookOpen, CheckCircle2, Copy, FileCode2, RotateCcw } from "lucide-react";
+import { Button, buttonVariants } from "@/components/ui/button";
 import type { LearnChapter } from "@/lib/learn/curriculum";
 import { LANGUAGE_DISPLAY_NAMES } from "@/lib/workspace-defaults";
 import type { VisibleProblem } from "@/types/problem";
@@ -12,6 +12,8 @@ import { DifficultyBadge } from "../difficulty-badge";
 
 export interface ProblemPaneProps {
   problem: VisibleProblem | null;
+  prevHref?: string | null;
+  nextHref?: string | null;
   lessonChapter?: LearnChapter | null;
   activeLanguage?: PreferredLanguage;
   onLoadLessonCode?: (code: string, stdin?: string) => void;
@@ -29,6 +31,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export function ProblemPane({
   problem,
+  prevHref,
+  nextHref,
   lessonChapter,
   activeLanguage = "python",
   onLoadLessonCode,
@@ -150,10 +154,37 @@ export function ProblemPane({
 
   return (
     <div className="problem-pane flex h-full flex-col overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)]">
-      <div className="shrink-0 space-y-1 border-b border-[var(--color-border)] p-3">
+      <div className="shrink-0 space-y-2 border-b border-[var(--color-border)] p-3">
         <div className="flex items-start justify-between gap-2">
           <h1 className="text-base font-semibold text-[var(--color-text-main)]">{problem.title}</h1>
-          <Link href="/app/challenges" className="shrink-0 text-xs text-[var(--color-text-muted)] underline-offset-2 hover:text-[var(--color-text-main)] hover:underline">All problems</Link>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <Link
+              href="/app/challenges"
+              className={buttonVariants({ variant: "ghost", size: "xs" })}
+            >
+              All problems
+            </Link>
+            {prevHref && (
+              <Link
+                href={prevHref}
+                aria-label="Previous problem"
+                title="Previous problem"
+                className={buttonVariants({ variant: "outline", size: "xs" })}
+              >
+                <ArrowLeft size={12} aria-hidden="true" /> Prev
+              </Link>
+            )}
+            {nextHref && (
+              <Link
+                href={nextHref}
+                aria-label="Next problem"
+                title="Skip to next problem"
+                className={buttonVariants({ variant: "outline", size: "xs" })}
+              >
+                Next <ArrowRight size={12} aria-hidden="true" />
+              </Link>
+            )}
+          </div>
         </div>
         <p className="flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
           <DifficultyBadge difficulty={problem.difficulty} />
@@ -171,7 +202,7 @@ export function ProblemPane({
           </ul>
         </Section>
 
-        <Section title={`Sample test inputs (${problem.sampleTestCases.length})`}>
+        <Section title={`Samples (${problem.sampleTestCases.length})`}>
           <div className="space-y-2">
             {problem.sampleTestCases.map((sample, idx) => (
               <div key={idx} className="space-y-2 rounded-md border border-[var(--color-border)] bg-[var(--color-canvas)] p-2.5">
@@ -187,9 +218,15 @@ export function ProblemPane({
                     </Button>
                   </div>
                 </div>
-                <div>
-                  <span className="mb-0.5 block text-xs text-[var(--color-text-muted)]">Input</span>
-                  <pre className="font-code overflow-x-auto whitespace-pre-wrap rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-1.5 text-xs">{sample.input || "(empty)"}</pre>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <div>
+                    <span className="mb-0.5 block text-xs text-[var(--color-text-muted)]">Input</span>
+                    <pre className="font-code overflow-x-auto whitespace-pre-wrap rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-1.5 text-xs">{sample.input || "(empty)"}</pre>
+                  </div>
+                  <div>
+                    <span className="mb-0.5 block text-xs text-[var(--color-text-muted)]">Sample output</span>
+                    <pre className="font-code overflow-x-auto whitespace-pre-wrap rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-1.5 text-xs">{sample.output.trim() || "(empty)"}</pre>
+                  </div>
                 </div>
               </div>
             ))}

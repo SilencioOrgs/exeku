@@ -139,7 +139,9 @@ test("Language Reference Docs cover all 4 languages across 8 topics and problems
     new URL("../components/app/workspace/problem-pane.tsx", import.meta.url),
     "utf8",
   );
-  assert.doesNotMatch(problemPane, /sample\.output/);
+  assert.match(problemPane, /Sample output/);
+  assert.match(problemPane, /sample\.output/);
+  assert.match(problemPane, /nextHref/);
   assert.doesNotMatch(problemPane, /sample\.explanation/);
 
   const learnView = readFileSync(
