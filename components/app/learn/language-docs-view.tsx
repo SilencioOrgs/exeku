@@ -15,6 +15,7 @@ import {
   Search,
   Terminal,
 } from "lucide-react";
+import { HighlightedBlock } from "@/components/app/learn/learn-view";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useProfile } from "@/hooks/use-profile";
 import {
@@ -23,19 +24,8 @@ import {
   LANGUAGE_OVERVIEW_META,
   type LanguageDocTopicId,
 } from "@/lib/learn/docs";
-import { tokenize } from "@/lib/syntax";
 import { ALL_SUPPORTED_LANGUAGES, LANGUAGE_DISPLAY_NAMES } from "@/lib/workspace-defaults";
 import type { PreferredLanguage } from "@/types/profile";
-
-function HighlightedCode({ code, language }: { code: string; language: PreferredLanguage }) {
-  return (
-    <pre className="code-editor font-code overflow-x-auto rounded-xl border border-[var(--color-border)] p-3.5 text-xs leading-6">
-      {tokenize(code, language).map((t, i) =>
-        t.type === "plain" ? t.text : <span key={i} className={`tok-${t.type}`}>{t.text}</span>,
-      )}
-    </pre>
-  );
-}
 
 export interface LanguageDocsViewProps {
   initialTopicId?: string | null;
@@ -49,8 +39,15 @@ export function LanguageDocsView({
   embedded = false,
 }: LanguageDocsViewProps) {
   const { profile } = useProfile();
-  const [selectedLang, setSelectedLang] = useState<PreferredLanguage | null>(initialLang ?? null);
-  const lang: PreferredLanguage = selectedLang ?? profile?.preferredLanguage ?? "python";
+  const safeInitialLang =
+    initialLang && ALL_SUPPORTED_LANGUAGES.includes(initialLang) ? initialLang : null;
+  const [selectedLang, setSelectedLang] = useState<PreferredLanguage | null>(safeInitialLang);
+  const lang: PreferredLanguage =
+    selectedLang && ALL_SUPPORTED_LANGUAGES.includes(selectedLang)
+      ? selectedLang
+      : profile?.preferredLanguage && ALL_SUPPORTED_LANGUAGES.includes(profile.preferredLanguage)
+        ? profile.preferredLanguage
+        : "python";
 
   const [topicId, setTopicId] = useState<LanguageDocTopicId>(() => getLanguageDocTopic(initialTopicId).id);
   const [searchQuery, setSearchQuery] = useState("");
@@ -88,10 +85,12 @@ export function LanguageDocsView({
   const section = activeTopic.byLanguage[lang];
   const meta = LANGUAGE_OVERVIEW_META[lang];
 
-  const topicIndex = LANGUAGE_DOC_TOPICS.findIndex((t) => t.id === activeTopic.id);
-  const prevTopic = topicIndex > 0 ? LANGUAGE_DOC_TOPICS[topicIndex - 1] : null;
+  const topicIndex = filteredTopics.findIndex((t) => t.id === activeTopic.id);
+  const prevTopic = topicIndex > 0 ? filteredTopics[topicIndex - 1] : null;
   const nextTopic =
-    topicIndex < LANGUAGE_DOC_TOPICS.length - 1 ? LANGUAGE_DOC_TOPICS[topicIndex + 1] : null;
+    topicIndex >= 0 && topicIndex < filteredTopics.length - 1
+      ? filteredTopics[topicIndex + 1]
+      : null;
 
   const copySnippet = async (code: string, key: string) => {
     try {
@@ -108,7 +107,7 @@ export function LanguageDocsView({
       {!embedded && (
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div className="space-y-1">
-            <h1 className="text-3xl font-semibold tracking-tight">Language Reference Docs</h1>
+            <h1 className="text-3xl font-semibold tracking-tight">Language reference docs</h1>
             <p className="text-sm text-[var(--color-text-muted)]">
               Complete syntax tables, standard library methods, I/O templates, and complexity reference for Python 3, Java, C++, and C.
             </p>
@@ -118,13 +117,13 @@ export function LanguageDocsView({
               href={`/app/learn?chapter=${encodeURIComponent(activeTopic.relatedChapterId)}&lang=${encodeURIComponent(lang)}`}
               className={buttonVariants({ variant: "outline", size: "sm" })}
             >
-              <BookOpen size={14} aria-hidden="true" /> Interactive Tutorials
+              <BookOpen size={14} aria-hidden="true" /> Interactive tutorials
             </Link>
             <Link
               href={`/app/workspace?lesson=${encodeURIComponent(activeTopic.relatedChapterId)}&lang=${encodeURIComponent(lang)}`}
               className={buttonVariants({ size: "sm" })}
             >
-              <Code2 size={14} aria-hidden="true" /> Open Workspace
+              <Code2 size={14} aria-hidden="true" /> Open workspace
             </Link>
           </div>
         </header>
@@ -182,18 +181,18 @@ export function LanguageDocsView({
         {!compareAll && (
           <div className="skeuo-recess grid gap-3 rounded-xl p-3.5 text-xs sm:grid-cols-3">
             <div>
-              <span className="block text-[11px] text-[var(--color-text-muted)]">Runtime / Compiler</span>
+              <span className="block text-xs text-[var(--color-text-muted)]">Runtime / compiler</span>
               <span className="font-code font-semibold text-[var(--color-text-main)]">{meta.version}</span>
-              <span className="mt-0.5 block text-[11px] text-[var(--color-text-muted)]">{meta.paradigm}</span>
+              <span className="mt-0.5 block text-xs text-[var(--color-text-muted)]">{meta.paradigm}</span>
             </div>
             <div>
-              <span className="block text-[11px] text-[var(--color-text-muted)]">Entry Filename</span>
+              <span className="block text-xs text-[var(--color-text-muted)]">Entry filename</span>
               <span className="font-code font-semibold text-[var(--color-primary-text)]">{meta.entryFile}</span>
-              <span className="mt-0.5 block text-[11px] text-[var(--color-text-muted)]">Main file compiled by Exeku judge</span>
+              <span className="mt-0.5 block text-xs text-[var(--color-text-muted)]">Main file compiled by Exeku judge</span>
             </div>
             <div>
-              <span className="block text-[11px] text-[var(--color-text-muted)]">Sandbox Command</span>
-              <code className="font-code block truncate text-[11px] text-[var(--color-text-main)]">
+              <span className="block text-xs text-[var(--color-text-muted)]">Sandbox command</span>
+              <code className="font-code block truncate text-xs text-[var(--color-text-main)]">
                 {meta.compileCommand}
               </code>
             </div>
@@ -208,9 +207,9 @@ export function LanguageDocsView({
           <div className="flex items-center justify-between gap-2 px-2 py-1">
             <div className="flex items-center gap-2">
               <FileText size={15} className="text-[var(--color-primary-text)]" aria-hidden="true" />
-              <h2 className="text-xs font-semibold text-[var(--color-text-main)]">Reference Topics</h2>
+              <h2 className="text-xs font-semibold text-[var(--color-text-main)]">Reference topics</h2>
             </div>
-            <span className="font-code text-[11px] text-[var(--color-text-muted)]">
+            <span className="font-code text-xs text-[var(--color-text-muted)]">
               {filteredTopics.length} topics
             </span>
           </div>
@@ -237,10 +236,10 @@ export function LanguageDocsView({
                     }`}
                   >
                     <span className="flex min-w-0 items-center gap-2">
-                      <span className="font-code text-[11px] text-[var(--color-primary-text)]">{item.order}</span>
+                      <span className="font-code text-xs text-[var(--color-primary-text)]">{item.order}</span>
                       <span className="truncate">{item.shortTitle}</span>
                     </span>
-                    <span className="rounded bg-[var(--color-canvas)] px-1.5 py-0.5 text-[10px] text-[var(--color-text-muted)]">
+                    <span className="rounded bg-[var(--color-canvas)] px-1.5 py-0.5 text-xs text-[var(--color-text-muted)]">
                       {item.category}
                     </span>
                   </Button>
@@ -257,7 +256,7 @@ export function LanguageDocsView({
               <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[var(--color-border)] pb-4">
                 <div className="space-y-1">
                   <span className="font-code text-xs text-[var(--color-primary-text)]">
-                    Section {activeTopic.order} · Side-by-Side Comparison
+                    Section {activeTopic.order} · Side-by-side comparison
                   </span>
                   <h2 className="text-2xl font-semibold tracking-tight">{activeTopic.title}</h2>
                   <p className="text-xs text-[var(--color-text-muted)]">{activeTopic.summary}</p>
@@ -296,7 +295,7 @@ export function LanguageDocsView({
                           {langSec.overview}
                         </p>
                       </div>
-                      <HighlightedCode code={langSec.codeSnippet} language={l} />
+                      <HighlightedBlock code={langSec.codeSnippet} language={l} />
                     </div>
                   );
                 })}
@@ -311,13 +310,13 @@ export function LanguageDocsView({
                     <span className="font-code text-xs text-[var(--color-primary-text)]">
                       Docs {activeTopic.order} · {LANGUAGE_DISPLAY_NAMES[lang]}
                     </span>
-                    <span className="rounded-md border border-[var(--color-border)] bg-[var(--color-elevated)] px-2 py-0.5 text-[11px] font-medium text-[var(--color-text-muted)]">
+                    <span className="rounded-md border border-[var(--color-border)] bg-[var(--color-elevated)] px-2 py-0.5 text-xs font-medium text-[var(--color-text-muted)]">
                       {activeTopic.category}
                     </span>
                     {activeTopic.tags.slice(0, 4).map((tag) => (
                       <span
                         key={tag}
-                        className="rounded-md bg-[var(--color-canvas)] px-1.5 py-0.5 font-code text-[11px] text-[var(--color-text-muted)]"
+                        className="rounded-md bg-[var(--color-canvas)] px-1.5 py-0.5 font-code text-xs text-[var(--color-text-muted)]"
                       >
                         {tag}
                       </span>
@@ -355,15 +354,15 @@ export function LanguageDocsView({
               {/* Syntax & Method Reference Table */}
               <div className="space-y-2">
                 <h3 className="text-xs font-semibold text-[var(--color-primary-text)]">
-                  Syntax &amp; Standard Library Reference
+                  Syntax &amp; standard library reference
                 </h3>
                 <div className="overflow-x-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-canvas)]">
                   <table className="w-full text-left text-xs">
                     <thead className="border-b border-[var(--color-border)] bg-[var(--color-elevated)] text-[var(--color-text-muted)]">
                       <tr>
-                        <th scope="col" className="px-3.5 py-2.5 font-semibold">Syntax / Method</th>
+                        <th scope="col" className="px-3.5 py-2.5 font-semibold">Syntax / method</th>
                         <th scope="col" className="px-3.5 py-2.5 font-semibold">What it does</th>
-                        <th scope="col" className="px-3.5 py-2.5 font-semibold">Notes &amp; Complexity</th>
+                        <th scope="col" className="px-3.5 py-2.5 font-semibold">Notes &amp; complexity</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -389,7 +388,7 @@ export function LanguageDocsView({
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="flex items-center gap-1.5 text-xs font-semibold text-[var(--color-text-main)]">
                     <Terminal size={13} className="text-[var(--color-primary-text)]" aria-hidden="true" />
-                    Reference Template ({LANGUAGE_OVERVIEW_META[lang].entryFile})
+                    Reference template ({LANGUAGE_OVERVIEW_META[lang].entryFile})
                   </span>
                   <div className="flex flex-wrap items-center gap-2">
                     <Button
@@ -409,24 +408,24 @@ export function LanguageDocsView({
                       href={`/app/learn?chapter=${encodeURIComponent(activeTopic.relatedChapterId)}&lang=${encodeURIComponent(lang)}`}
                       className={buttonVariants({ variant: "outline", size: "xs" })}
                     >
-                      <BookOpen size={12} aria-hidden="true" /> Practice in Tutorial
+                      <BookOpen size={12} aria-hidden="true" /> Practice in tutorial
                     </Link>
                     <Link
                       href={`/app/workspace?lesson=${encodeURIComponent(activeTopic.relatedChapterId)}&lang=${encodeURIComponent(lang)}`}
                       className={buttonVariants({ size: "xs" })}
                     >
-                      <Code2 size={12} aria-hidden="true" /> Open in Workspace
+                      <Code2 size={12} aria-hidden="true" /> Open in workspace
                     </Link>
                   </div>
                 </div>
-                <HighlightedCode code={section.codeSnippet} language={lang} />
+                <HighlightedBlock code={section.codeSnippet} language={lang} />
               </div>
 
               {/* Common Pitfalls & Judge Tips */}
               <div className="skeuo-recess space-y-2 rounded-xl p-4">
                 <div className="flex items-center gap-2 text-xs font-semibold text-[var(--color-primary-text)]">
                   <AlertTriangle size={14} aria-hidden="true" />
-                  <span>Common Pitfalls &amp; Contest Notes</span>
+                  <span>Common pitfalls &amp; contest notes</span>
                 </div>
                 <ul className="space-y-1.5 text-xs text-[var(--color-text-muted)]">
                   {section.pitfalls.map((pitfall, idx) => (

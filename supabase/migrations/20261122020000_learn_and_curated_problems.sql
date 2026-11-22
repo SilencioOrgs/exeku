@@ -36,6 +36,7 @@ revoke all on learn_progress from anon, authenticated;
 grant all on learn_progress to service_role;
 
 -- 3. Remove any legacy dummy problems if they were previously inserted
+delete from class_problems where problem_id in ('hello-world', 'sum-two-integers', 'even-or-odd');
 delete from problems where id in ('hello-world', 'sum-two-integers', 'even-or-odd');
 
 -- 4. Seed curated Easy (beginner), Medium (intermediate), and Hard (advanced) problems with topic labels (no answers/spoilers in problem statements)

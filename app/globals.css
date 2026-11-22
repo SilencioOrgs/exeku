@@ -188,7 +188,7 @@
 [data-reduced-motion="true"] {
   scroll-behavior: auto;
 }
-[data-reduced-motion="true"] :is(.wm-key, .wm-loader .wm-key, .id-sleeve, .milestone-key) {
+[data-reduced-motion="true"] :is(.wm-key, .wm-loader .wm-key, .id-sleeve, .milestone-key, .animate-spin) {
   animation: none;
 }
 [data-reduced-motion="true"] :is(.skeuo-key, [data-slot="button"], .btn-primary, .btn-outline, .app-sidebar .appearance-nav-item, .coding-activity-cell, .milestone-fill, .id-tilt) {
@@ -196,6 +196,9 @@
 }
 [data-reduced-motion="true"] .id-tilt { transform: none; }
 [data-reduced-motion="true"] .id-foil { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .animate-spin { animation: none; }
+}
 
 /* =========================================================================
    BASE

@@ -60,7 +60,7 @@ function ClassCard({ cls }: { cls: ClassSummary }) {
   };
 
   const solved = cls.solvedCount ?? 0;
-  const pct = cls.problemCount > 0 ? Math.round((solved / cls.problemCount) * 100) : 0;
+  const pct = cls.problemCount > 0 ? Math.min(100, Math.round((solved / cls.problemCount) * 100)) : 0;
   const due = cls.nextDueAt ? formatShortDue(cls.nextDueAt) : null;
 
   return (
@@ -71,7 +71,7 @@ function ClassCard({ cls }: { cls: ClassSummary }) {
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="truncate text-lg font-semibold text-[var(--color-text-main)]">{cls.name}</h3>
               {cls.section && (
-                <span className="skeuo-well rounded-md border px-2 py-0.5 font-code text-[11px] text-[var(--color-primary-text)]">
+                <span className="skeuo-well rounded-md border px-2 py-0.5 font-code text-xs text-[var(--color-primary-text)]">
                   {cls.section}
                 </span>
               )}
@@ -81,11 +81,11 @@ function ClassCard({ cls }: { cls: ClassSummary }) {
             </p>
           </div>
           {cls.isTeacher ? (
-            <span className="rounded-md bg-[var(--color-easy-bg)] px-2 py-0.5 font-code text-[11px] text-[var(--color-mint)]">
+            <span className="rounded-md bg-[var(--color-easy-bg)] px-2 py-0.5 font-code text-xs text-[var(--color-mint)]">
               Teaching
             </span>
           ) : cls.myGroupName ? (
-            <span className="skeuo-well rounded-md border px-2 py-0.5 font-code text-[11px] text-[var(--color-primary-text)]">
+            <span className="skeuo-well rounded-md border px-2 py-0.5 font-code text-xs text-[var(--color-primary-text)]">
               {cls.myGroupName}
             </span>
           ) : null}
@@ -97,7 +97,7 @@ function ClassCard({ cls }: { cls: ClassSummary }) {
 
         {due && (
           <div
-            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 font-code text-[11px] ${
+            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 font-code text-xs ${
               due.urgent
                 ? "bg-[var(--color-hard-bg)] text-[var(--color-pink)]"
                 : "bg-[var(--color-surface)] text-[var(--color-primary-text)]"
@@ -129,15 +129,15 @@ function ClassCard({ cls }: { cls: ClassSummary }) {
 
         <div className="grid grid-cols-3 gap-2">
           <div className="skeuo-well rounded-lg border px-2.5 py-2">
-            <p className="text-[11px] text-[var(--color-text-muted)]">Students</p>
+            <p className="text-xs text-[var(--color-text-muted)]">Students</p>
             <p className="font-code text-base font-semibold">{cls.memberCount}</p>
           </div>
           <div className="skeuo-well rounded-lg border px-2.5 py-2">
-            <p className="text-[11px] text-[var(--color-text-muted)]">Groups</p>
+            <p className="text-xs text-[var(--color-text-muted)]">Groups</p>
             <p className="font-code text-base font-semibold">{cls.groupCount}</p>
           </div>
           <div className="skeuo-well rounded-lg border px-2.5 py-2">
-            <p className="text-[11px] text-[var(--color-text-muted)]">Problems</p>
+            <p className="text-xs text-[var(--color-text-muted)]">Problems</p>
             <p className="font-code text-base font-semibold">{cls.problemCount}</p>
           </div>
         </div>

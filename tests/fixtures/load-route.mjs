@@ -20,6 +20,7 @@ export function loadRouteExports(path, userId = "user_route") {
     "next/navigation": { unstable_rethrow: () => {} },
     "@clerk/nextjs/server": { auth: async () => ({ userId }) },
     "@/lib/accounts/read-json": readJson,
+    "@/lib/api/route-handler": { withApiErrors: (_label, fn) => fn() },
     "@/lib/auth/admin-check": { isAdmin: async () => false },
     "@/lib/execution/validation": validation,
     "@/lib/execution/queue": queue,

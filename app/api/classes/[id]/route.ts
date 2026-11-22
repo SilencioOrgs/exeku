@@ -20,7 +20,7 @@ export const POST = (request: Request, { params }: { params: Params }) =>
   withApiErrors("POST /api/classes/[id]", async () => {
     const viewer = await getViewer();
     if (!viewer) return NextResponse.json({ error: "Sign in to continue." }, { status: 401 });
-    const body = await readJson(request);
+    const body = await readJson(request, 64 * 1024);
     if (!body.ok) return NextResponse.json({ error: body.error }, { status: body.status });
     const { id } = await params;
     const result = await performClassAction(viewer, id, body.value);

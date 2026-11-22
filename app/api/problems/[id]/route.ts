@@ -1,14 +1,11 @@
 import { NextResponse } from "next/server";
-import { unstable_rethrow } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
+import { withApiErrors } from "@/lib/api/route-handler";
 import { isAdmin } from "@/lib/auth/admin-check";
 import { findVisibleProblem } from "@/lib/problems/store";
 
-export async function GET(
-  _req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
+export const GET = (_req: Request, { params }: { params: Promise<{ id: string }> }) =>
+  withApiErrors("GET /api/problems/[id]", async () => {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: "Sign in to continue." }, { status: 401 });
 
@@ -21,9 +18,4 @@ export async function GET(
     }
 
     return NextResponse.json(problem);
-  } catch (err: unknown) {
-    unstable_rethrow(err);
-    console.error("Could not load problem:", err instanceof Error ? err.message : "unknown error");
-    return NextResponse.json({ error: "We couldn't load this problem." }, { status: 500 });
-  }
-}
+  });

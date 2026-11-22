@@ -81,13 +81,18 @@ export function CreateProblemDialog({
     setFieldErrors({});
     setError(undefined);
     try {
+      const parsedDue = dueAt && !Number.isNaN(Date.parse(dueAt)) ? new Date(dueAt).toISOString() : undefined;
+      if (dueAt && !parsedDue) {
+        setFieldErrors({ dueAt: "Enter a valid deadline date and time." });
+        return;
+      }
       const res = await postClassAction(classId, {
         action: "createProblem",
         title,
         difficulty,
         category,
         tags,
-        dueAt: dueAt ? new Date(dueAt).toISOString() : undefined,
+        dueAt: parsedDue,
         description,
         inputSpec,
         outputSpec,
@@ -282,8 +287,9 @@ export function CreateProblemDialog({
                         variant="outline"
                         size="sm"
                         disabled={submitting}
+                        aria-pressed={tc.isHidden}
                         onClick={() => updateCase(idx, { isHidden: !tc.isHidden })}
-                        className="h-7 px-2 text-[11px]"
+                        className="h-7 px-2 text-xs"
                       >
                         {tc.isHidden ? <EyeOff size={12} aria-hidden="true" /> : <Eye size={12} aria-hidden="true" />}
                         {tc.isHidden ? "Hidden" : "Visible"}

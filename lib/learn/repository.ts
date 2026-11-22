@@ -26,19 +26,57 @@ interface LearnProgressRow {
 }
 
 const VALID_DIFFICULTIES = new Set<ProblemDifficulty>(["beginner", "intermediate", "advanced"]);
+const CHAPTER_ID_RE = /^[a-z0-9-]+$/;
+const BUILT_IN_BY_ID = new Map(LEARN_CHAPTERS.map((c) => [c.id as string, c]));
+
+function isMissingLearnTable(message?: string | null): boolean {
+  return typeof message === "string" && /learn_chapters|learn_progress|does not exist|schema cache/i.test(message);
+}
+
+function isValidLesson(value: unknown): boolean {
+  if (!isObject(value)) return false;
+  return (
+    typeof value.headline === "string" &&
+    typeof value.intro === "string" &&
+    Array.isArray(value.keyRules) &&
+    typeof value.syntaxSnippet === "string" &&
+    typeof value.exampleTitle === "string" &&
+    typeof value.exampleCode === "string" &&
+    typeof value.expectedOutput === "string" &&
+    isObject(value.exercise) &&
+    typeof value.exercise.prompt === "string" &&
+    typeof value.exercise.codeTemplate === "string" &&
+    typeof value.exercise.answer === "string" &&
+    typeof value.exercise.hint === "string"
+  );
+}
 
 function rowToChapter(row: LearnChapterRow): LearnChapter | null {
-  if (!row.id || !row.title || !row.lessons || typeof row.lessons !== "object") return null;
+  if (!row.id || !CHAPTER_ID_RE.test(row.id) || !row.title || !isObject(row.lessons)) return null;
+  const fallback = BUILT_IN_BY_ID.get(row.id);
+  const rawLessons = row.lessons as Record<string, unknown>;
+  const mergedLessons: Partial<LearnChapter["lessons"]> = {};
+
+  for (const lang of ALL_SUPPORTED_LANGUAGES) {
+    if (isValidLesson(rawLessons[lang])) {
+      mergedLessons[lang] = rawLessons[lang] as LearnChapter["lessons"][PreferredLanguage];
+    } else if (fallback?.lessons[lang]) {
+      mergedLessons[lang] = fallback.lessons[lang];
+    } else {
+      return null;
+    }
+  }
+
   return {
     id: row.id as LearnChapterId,
-    number: row.number || "01",
+    number: row.number || fallback?.number || "01",
     title: row.title,
-    shortTitle: row.short_title || row.title,
-    category: row.category || "Language Basics",
-    difficulty: VALID_DIFFICULTIES.has(row.difficulty) ? row.difficulty : "beginner",
-    summary: row.summary || "",
-    tags: Array.isArray(row.tags) ? row.tags : [],
-    lessons: row.lessons,
+    shortTitle: row.short_title || fallback?.shortTitle || row.title,
+    category: row.category || fallback?.category || "Language Basics",
+    difficulty: VALID_DIFFICULTIES.has(row.difficulty) ? row.difficulty : (fallback?.difficulty ?? "beginner"),
+    summary: row.summary || fallback?.summary || "",
+    tags: Array.isArray(row.tags) ? row.tags : (fallback?.tags ?? []),
+    lessons: mergedLessons as LearnChapter["lessons"],
   };
 }
 
@@ -71,6 +109,8 @@ export async function listLearnForViewer(viewer: Viewer): Promise<{
     /* Table not migrated yet — fall back to built-in LEARN_CHAPTERS. */
   }
 
+  const validChapterIds = new Set(chapters.map((c) => c.id as string));
+
   try {
     const { data: progressRows, error: progressError } = await db()
       .from("learn_progress")
@@ -79,7 +119,7 @@ export async function listLearnForViewer(viewer: Viewer): Promise<{
 
     if (!progressError && Array.isArray(progressRows)) {
       completedKeys = (progressRows as LearnProgressRow[])
-        .filter((r) => r.chapter_id && r.language)
+        .filter((r) => r.chapter_id && validChapterIds.has(r.chapter_id) && ALL_SUPPORTED_LANGUAGES.includes(r.language))
         .map((r) => `${r.language}:${r.chapter_id}`);
     }
   } catch {
@@ -97,11 +137,23 @@ export async function recordLearnCompletion(
   const chapterId = text(body, "chapterId").slice(0, 64);
   const language = text(body, "language") as PreferredLanguage;
 
-  if (!chapterId) {
-    return { ok: false, status: 400, error: "Chapter ID is required." };
+  if (!chapterId || !CHAPTER_ID_RE.test(chapterId)) {
+    return { ok: false, status: 400, error: "Valid chapter ID is required." };
   }
   if (!ALL_SUPPORTED_LANGUAGES.includes(language)) {
     return { ok: false, status: 400, error: "Unsupported programming language." };
+  }
+  if (!BUILT_IN_BY_ID.has(chapterId)) {
+    let existsInDb = false;
+    try {
+      const { data } = await db().from("learn_chapters").select("id").eq("id", chapterId).maybeSingle();
+      existsInDb = Boolean(data);
+    } catch {
+      existsInDb = false;
+    }
+    if (!existsInDb) {
+      return { ok: false, status: 404, error: "Chapter not found." };
+    }
   }
 
   try {
@@ -117,7 +169,7 @@ export async function recordLearnCompletion(
         { onConflict: "user_id,chapter_id,language" },
       );
 
-    if (error) {
+    if (error && !isMissingLearnTable(error.message)) {
       return { ok: false, status: 500, error: "Could not save your lesson progress." };
     }
   } catch {

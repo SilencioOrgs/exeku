@@ -42,17 +42,34 @@ export function WorkspaceView() {
   const searchParams = useSearchParams();
   const problemIdParam = searchParams.get("problem");
   const lessonParam = searchParams.get("lesson");
-  const langParam = searchParams.get("lang") as PreferredLanguage | null;
+  const rawLangParam = searchParams.get("lang");
+  const langParam: PreferredLanguage | null =
+    rawLangParam && ALL_SUPPORTED_LANGUAGES.includes(rawLangParam as PreferredLanguage)
+      ? (rawLangParam as PreferredLanguage)
+      : null;
   const lessonChapter = useMemo(() => findLearnChapterById(lessonParam), [lessonParam]);
   const challenge = useChallengeSession();
 
-  const [problem, setProblem] = useState<VisibleProblem | null>(null);
+  const [fetchedProblem, setProblem] = useState<VisibleProblem | null>(null);
+  const problem = fetchedProblem && fetchedProblem.id === problemIdParam ? fetchedProblem : null;
   const [problemIds, setProblemIds] = useState<string[]>([]);
   const [sandboxHealth, setSandboxHealth] = useState<SandboxHealth | null>(null);
   const [offlineDismissed, setOfflineDismissed] = useState(false);
 
   const draftScope = problemIdParam ?? (lessonChapter ? `lesson:${lessonChapter.id}` : null);
-  const files = useWorkspaceFiles(profile, problem, draftScope);
+  const lessonStarters = useMemo(
+    () =>
+      lessonChapter && !problemIdParam
+        ? {
+            python: lessonChapter.lessons.python.exampleCode,
+            java: lessonChapter.lessons.java.exampleCode,
+            cpp: lessonChapter.lessons.cpp.exampleCode,
+            c: lessonChapter.lessons.c.exampleCode,
+          }
+        : null,
+    [lessonChapter, problemIdParam],
+  );
+  const files = useWorkspaceFiles(profile, problem, draftScope, lessonStarters, langParam);
   const judge = useJudge();
   const demo = useDemoMode(searchParams.get("demo"));
 
@@ -253,23 +270,18 @@ export function WorkspaceView() {
 
   const loadedLessonKeyRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!lessonChapter || problemIdParam || !profile) return;
-    const targetLang: PreferredLanguage =
-      langParam && ALL_SUPPORTED_LANGUAGES.includes(langParam)
-        ? langParam
-        : profile.preferredLanguage;
-    const key = `${lessonChapter.id}:${targetLang}`;
+    if (!lessonChapter || problemIdParam) return;
+    const key = `${lessonChapter.id}:${files.activeLang}`;
     if (loadedLessonKeyRef.current === key) return;
     loadedLessonKeyRef.current = key;
-    const lesson = lessonChapter.lessons[targetLang];
+    const lesson = lessonChapter.lessons[files.activeLang];
     queueMicrotask(() => {
       setLayout("split");
-      void files.switchLanguage(targetLang, lesson.exampleCode);
       if (lesson.exampleStdin !== undefined) {
         setCustomStdin(lesson.exampleStdin);
       }
     });
-  }, [lessonChapter, langParam, problemIdParam, profile, files]);
+  }, [lessonChapter, problemIdParam, files.activeLang]);
 
   const activeProblemId = problem?.id ?? problemIdParam;
 
@@ -431,7 +443,10 @@ export function WorkspaceView() {
                 onReset={() => setResetOpen(true)}
                 onDownload={handleDownload}
                 layout={layout}
-                onCycleLayout={() => setLayout((current: WorkspaceLayout) => current === "split" ? "wide" : current === "wide" ? "focus" : "split")}
+                onCycleLayout={() => {
+                  setProblemSlideOpen(false);
+                  setLayout((current: WorkspaceLayout) => current === "split" ? "wide" : current === "wide" ? "focus" : "split");
+                }}
                 drawerOpen={drawerOpen}
                 onToggleDrawer={() => setDrawerOpen((open) => !open)}
                 onOpenProblem={() => setProblemSlideOpen(true)}

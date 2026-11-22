@@ -95,15 +95,22 @@ async function synthesizeDeadlineAlerts(viewer: Viewer, nowMs: number): Promise<
   const classIds = memberships.map((m) => m.class_id);
   if (classIds.length === 0) return [];
 
-  const [classRows, problemRows] = await Promise.all([
-    db().from("classes").select("id,name").in("id", classIds.slice(0, IN_CHUNK_SIZE)).then((r) => must(r) as { id: string; name: string }[]),
-    db()
-      .from("class_problems")
-      .select("class_id,problem_id,assigned_at,due_at")
-      .in("class_id", classIds.slice(0, IN_CHUNK_SIZE))
-      .not("due_at", "is", null)
-      .then((r) => must(r) as { class_id: string; problem_id: string; assigned_at: string; due_at: string | null }[]),
-  ]);
+  const classRows: { id: string; name: string }[] = [];
+  const problemRows: { class_id: string; problem_id: string; assigned_at: string; due_at: string | null }[] = [];
+  for (let i = 0; i < classIds.length; i += IN_CHUNK_SIZE) {
+    const chunk = classIds.slice(i, i + IN_CHUNK_SIZE);
+    const [cBatch, pBatch] = await Promise.all([
+      db().from("classes").select("id,name").in("id", chunk).then((r) => must(r) as { id: string; name: string }[]),
+      db()
+        .from("class_problems")
+        .select("class_id,problem_id,assigned_at,due_at")
+        .in("class_id", chunk)
+        .not("due_at", "is", null)
+        .then((r) => must(r) as { class_id: string; problem_id: string; assigned_at: string; due_at: string | null }[]),
+    ]);
+    classRows.push(...cBatch);
+    problemRows.push(...pBatch);
+  }
 
   const urgent = problemRows.filter((row) => {
     if (!row.due_at) return false;
@@ -114,27 +121,31 @@ async function synthesizeDeadlineAlerts(viewer: Viewer, nowMs: number): Promise<
   if (urgent.length === 0) return [];
 
   const urgentProblemIds = [...new Set(urgent.map((u) => u.problem_id))];
-  const [solvedRows, catalog] = await Promise.all([
-    db()
-      .from("submissions")
-      .select("problem_id")
-      .eq("user_id", viewer.id)
-      .eq("verdict", "ACCEPTED")
-      .in("problem_id", urgentProblemIds)
-      .then((r) => must(r) as { problem_id: string }[]),
-    listProblemSummaries(undefined, { includeLocked: false }),
-  ]);
+  const solvedRows: { problem_id: string }[] = [];
+  for (let i = 0; i < urgentProblemIds.length; i += IN_CHUNK_SIZE) {
+    const chunk = urgentProblemIds.slice(i, i + IN_CHUNK_SIZE);
+    const batch = must(
+      await db()
+        .from("submissions")
+        .select("problem_id")
+        .eq("user_id", viewer.id)
+        .eq("verdict", "ACCEPTED")
+        .in("problem_id", chunk),
+    ) as { problem_id: string }[];
+    solvedRows.push(...batch);
+  }
+  const catalog = await listProblemSummaries(undefined, { includeLocked: false, includeClassProblems: true });
 
   const solvedSet = new Set(solvedRows.map((s) => s.problem_id));
   const classNameById = new Map(classRows.map((c) => [c.id, c.name]));
   const problemTitleById = new Map(catalog.map((p) => [p.id, p.title]));
 
   return urgent
-    .filter((row) => !solvedSet.has(row.problem_id))
+    .filter((row) => !solvedSet.has(row.problem_id) && problemTitleById.has(row.problem_id))
     .map((row) => {
       const dueMs = Date.parse(row.due_at!);
       const overdue = dueMs < nowMs;
-      const problemTitle = problemTitleById.get(row.problem_id) ?? row.problem_id;
+      const problemTitle = problemTitleById.get(row.problem_id)!;
       const className = classNameById.get(row.class_id) ?? "Class";
       return {
         id: `deadline:${row.class_id}:${row.problem_id}`,
@@ -157,11 +168,11 @@ export async function listNotificationsForViewer(viewer: Viewer, nowMs = Date.no
     synthesizeDeadlineAlerts(viewer, nowMs),
   ]);
 
-  // Avoid duplicating a deadline alert if the exact same href + dueAt is already an unread stored notification.
-  const storedKeys = new Set(
+  // Avoid duplicating an unread stored notification with the same synthetic deadline alert.
+  const unreadStoredKeys = new Set(
     stored.filter((n) => !n.read && n.dueAt && n.href).map((n) => `${n.href}|${n.dueAt}`),
   );
-  const uniqueDeadlines = deadlineAlerts.filter((d) => !storedKeys.has(`${d.href}|${d.dueAt}`));
+  const uniqueDeadlines = deadlineAlerts.filter((d) => !unreadStoredKeys.has(`${d.href}|${d.dueAt}`));
 
   const merged = [...uniqueDeadlines, ...stored].slice(0, 35);
   const unreadCount = merged.filter((n) => !n.read).length;
