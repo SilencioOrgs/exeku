@@ -15,6 +15,7 @@
     "@clerk/nextjs": "^7.9.25",
     "@supabase/supabase-js": "^2.119.0",
     "class-variance-authority": "^0.7.1",
+    "cn": "^0.4.0",
     "geist": "^1.9.2",
     "lucide-react": "^1.56.0",
     "next": "16.4.5",

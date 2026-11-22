@@ -1116,6 +1116,19 @@ test("getViewer auto-creates a missing profile and normalizes is_admin into admi
   assert.equal(admin.role, "admin");
 });
 
+test("cn resolves conflicting Tailwind utility classes so overrides win", async () => {
+  const { cn } = await import("../lib/utils.ts");
+  const heroMount = cn("relative w-full", "absolute inset-x-0 top-0 h-[54vh] min-h-[340px] md:inset-y-0 md:h-auto");
+  assert.match(heroMount, /\babsolute\b/);
+  assert.doesNotMatch(heroMount, /\brelative\b/);
+
+  const buttonClasses = cn("h-9 px-2.5", "h-11 px-5");
+  assert.match(buttonClasses, /\bh-11\b/);
+  assert.doesNotMatch(buttonClasses, /\bh-9\b/);
+  assert.match(buttonClasses, /\bpx-5\b/);
+  assert.doesNotMatch(buttonClasses, /\bpx-2\.5\b/);
+});
+
 
 
 
