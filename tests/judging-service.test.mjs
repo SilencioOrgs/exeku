@@ -3,7 +3,11 @@ import assert from "node:assert/strict";
 import { normalizeOutput, compareOutputs } from "../lib/judge/output-normalizer.ts";
 import { JudgingService } from "../lib/judge/judging-service.ts";
 import { MockSandboxAdapter } from "./fixtures/mock-adapter.ts";
+import { getProblemById } from "./fixtures/sample-problems.ts";
 import { ExecutionQueue } from "../lib/execution/queue.ts";
+
+const SUM_PROBLEM = getProblemById("sum-two-integers");
+const HELLO_PROBLEM = getProblemById("hello-world");
 
 test("outputNormalizer - normalizes CRLF and trailing whitespace", () => {
   const rawWindows = "Hello, Exeku!   \r\n42\r\n\r\n";
@@ -64,7 +68,7 @@ test("JudgingService - calculates ACCEPTED verdict when all test cases match", a
     queue: new ExecutionQueue({ maxConcurrency: 2 }),
   });
 
-  const result = await judge.judgeSubmission("sum-two-integers", {
+  const result = await judge.judgeSubmission(SUM_PROBLEM, {
     language: "python",
     sourceCode: "a, b = map(int, input().split()); print(a + b)",
   });
@@ -121,7 +125,7 @@ test("JudgingService - calculates WRONG_ANSWER and redacts hidden test data", as
     queue: new ExecutionQueue({ maxConcurrency: 2 }),
   });
 
-  const result = await judge.judgeSubmission("sum-two-integers", {
+  const result = await judge.judgeSubmission(SUM_PROBLEM, {
     language: "python",
     sourceCode: "mock source code",
   });
@@ -163,7 +167,7 @@ test("JudgingService - short-circuits on COMPILATION_ERROR", async () => {
     queue: new ExecutionQueue({ maxConcurrency: 2 }),
   });
 
-  const result = await judge.judgeSubmission("hello-world", {
+  const result = await judge.judgeSubmission(HELLO_PROBLEM, {
     language: "java",
     sourceCode: "broken syntax",
   });

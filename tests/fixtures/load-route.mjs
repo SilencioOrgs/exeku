@@ -8,7 +8,7 @@ import * as readJson from "../../lib/accounts/read-json.ts";
 import * as validation from "../../lib/execution/validation.ts";
 import * as queue from "../../lib/execution/queue.ts";
 import * as judgingService from "../../lib/judge/judging-service.ts";
-import * as catalog from "../../lib/problems/catalog.ts";
+import * as catalog from "./sample-problems.ts";
 import * as executionTypes from "../../types/execution.ts";
 
 export function loadRouteExports(path, userId = "user_route") {

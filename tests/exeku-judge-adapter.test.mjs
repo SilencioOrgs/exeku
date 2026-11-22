@@ -4,7 +4,7 @@ import { ExekuJudgeAdapter } from "../lib/execution/exeku-judge-adapter.ts";
 import { createExecutionAdapter } from "../lib/execution/engine.ts";
 import { ExecutionQueue, QueueFullError } from "../lib/execution/queue.ts";
 import { JudgingService } from "../lib/judge/judging-service.ts";
-import { getProblemById } from "../lib/problems/catalog.ts";
+import { getProblemById } from "./fixtures/sample-problems.ts";
 
 const jsonResponse = (status, body) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 const adapterWith = (respond) => {
@@ -90,7 +90,7 @@ test("judging uses one batch call and reports memory limit without leaking hidde
     },
   };
   const service = new JudgingService({ adapter, queue: new ExecutionQueue({ maxConcurrency: 1 }) });
-  const result = await service.judgeSubmission(problem.id, { language: "python", sourceCode: "print(1)" });
+  const result = await service.judgeSubmission(problem, { language: "python", sourceCode: "print(1)" });
   assert.equal(batchCalls, 1);
   assert.equal(result.overallVerdict, "MEMORY_LIMIT_EXCEEDED");
   assert.equal(result.passedTests, problem.testCases.length - 1);

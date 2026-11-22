@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlarmClock, ArrowRight, Code2, Play, Shield } from "lucide-react";
+import { AlarmClock, ArrowRight, BookOpen, Code2, Play, Shield } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ProfileEditDialog } from "./profile-edit-dialog";
 import { CodingActivity } from "./coding-activity";
@@ -12,11 +12,12 @@ import { EventBanner } from "./competition/event-banner";
 import { TopicFilter } from "./topic-filter";
 import { useChallengeSession } from "@/hooks/use-challenge-session";
 import { LabAppStrip } from "@/components/lab/lab-app-banner";
+import { LEARN_CHAPTERS } from "@/lib/learn/curriculum";
 import { inTopic, type TopicId } from "@/lib/problems/topics";
 import { tokenize } from "@/lib/syntax";
 import type { ProblemSummary } from "@/types/problem";
-import { getFilenameForLanguage, getStarterCode, LANGUAGE_DISPLAY_NAMES } from "@/lib/workspace-defaults";
-import type { LocalProfile, ProfileInput } from "@/types/profile";
+import { ALL_SUPPORTED_LANGUAGES, getFilenameForLanguage, getStarterCode, LANGUAGE_DISPLAY_NAMES } from "@/lib/workspace-defaults";
+import type { LocalProfile, PreferredLanguage, ProfileInput } from "@/types/profile";
 import type { WorkspaceDraft } from "@/types/draft";
 import { ChallengesTableSkeleton } from "./page-skeletons";
 
@@ -33,13 +34,14 @@ const TIERS = [
   { id: "advanced", label: "Hard", tone: "hard" },
 ] as const;
 
-/** Competitive programming home: the problem set, a timed round and where you left off. */
+/** Competitive programming home: learn language basics, the problem set, a timed round and where you left off. */
 export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfile }: ModernOverviewProps) {
   const router = useRouter();
   const challenge = useChallengeSession();
   const [editing, setEditing] = useState(false);
   const [problems, setProblems] = useState<ProblemSummary[] | null>(null);
   const [topic, setTopic] = useState<TopicId>("all");
+  const [learnLang, setLearnLang] = useState<PreferredLanguage>(profile.preferredLanguage);
 
   useEffect(() => {
     let active = true;
@@ -67,11 +69,13 @@ export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfil
       <header className="modern-page-header flex flex-wrap items-end justify-between gap-4">
         <div className="space-y-1.5">
           <h1 className="text-3xl font-semibold tracking-tight">Welcome back, {profile.displayName}</h1>
-          <p className="text-sm text-[var(--color-text-muted)] sm:text-base">Pick a problem, beat the clock, get it Accepted.</p>
+          <p className="text-sm text-[var(--color-text-muted)] sm:text-base">
+            Learn language syntax, practice in the editor, and solve class &amp; tournament problems.
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link href="/app/challenges" className={buttonVariants({ size: "lg" })}>
-            Browse problems<ArrowRight aria-hidden="true" size={16} />
+          <Link href="/app/learn" className={buttonVariants({ size: "lg" })}>
+            <BookOpen aria-hidden="true" size={16} />Learn languages<ArrowRight aria-hidden="true" size={16} />
           </Link>
           <Link href="/app/workspace" className={buttonVariants({ variant: "outline", size: "lg" })}>
             <Code2 aria-hidden="true" size={16} />Open editor
@@ -80,6 +84,71 @@ export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfil
       </header>
 
       <CodingActivity profileId={profile.id} />
+
+      {/* W3Schools-style Learn Language Basics Strip */}
+      <section aria-labelledby="learn-basics-heading" className="skeuo-panel space-y-4 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <span className="skeuo-key grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--color-elevated)] text-[var(--color-primary-text)]">
+              <BookOpen size={17} aria-hidden="true" />
+            </span>
+            <div>
+              <h2 id="learn-basics-heading" className="font-semibold">Learn language basics &amp; syntax</h2>
+              <p className="text-xs text-[var(--color-text-muted)]">
+                Interactive tutorials with Try it Yourself examples — from basic printing to arrays, loops, and functions.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5">
+            {ALL_SUPPORTED_LANGUAGES.map((l) => (
+              <Button
+                key={l}
+                type="button"
+                variant="outline"
+                size="sm"
+                aria-pressed={learnLang === l}
+                onClick={() => setLearnLang(l)}
+              >
+                {LANGUAGE_DISPLAY_NAMES[l]}
+              </Button>
+            ))}
+            <Link
+              href={`/app/docs?lang=${encodeURIComponent(learnLang)}`}
+              className={buttonVariants({ variant: "ghost", size: "sm" })}
+            >
+              Language Docs <ArrowRight size={13} aria-hidden="true" />
+            </Link>
+          </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {LEARN_CHAPTERS.slice(0, 4).map((ch) => {
+            const lesson = ch.lessons[learnLang];
+            return (
+              <Link
+                key={ch.id}
+                href={`/app/learn?chapter=${encodeURIComponent(ch.id)}&lang=${encodeURIComponent(learnLang)}`}
+                className="skeuo-recess flex flex-col justify-between gap-2.5 rounded-xl p-3.5 transition-colors hover:border-[var(--color-primary-edge)]"
+              >
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-code text-[11px] text-[var(--color-primary-text)]">
+                      {ch.number} · {LANGUAGE_DISPLAY_NAMES[learnLang]}
+                    </span>
+                    <DifficultyBadge difficulty={ch.difficulty} className="px-1.5 py-0 text-[10px]" />
+                  </div>
+                  <p className="text-sm font-semibold text-[var(--color-text-main)]">{ch.shortTitle}</p>
+                  <p className="line-clamp-2 text-xs text-[var(--color-text-muted)]">{lesson.headline}</p>
+                </div>
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-[var(--color-primary-text)]">
+                  Try it yourself <ArrowRight size={12} aria-hidden="true" />
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
 
       <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <div className="skeuo-card rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
@@ -106,7 +175,20 @@ export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfil
           {problems === null ? (
             <ChallengesTableSkeleton />
           ) : problems.length === 0 ? (
-            <p className="px-4 py-6 text-sm text-[var(--color-text-muted)]">The problem catalog is unavailable right now.</p>
+            <div className="space-y-3 px-5 py-6 text-sm text-[var(--color-text-muted)]">
+              <p className="font-medium text-[var(--color-text-main)]">No class or competition problems posted yet</p>
+              <p className="text-xs leading-relaxed">
+                Start with interactive syntax and array tutorials in Learn, or join a teacher&apos;s class with an invite code to unlock assigned problems.
+              </p>
+              <div className="flex flex-wrap gap-2 pt-1">
+                <Link href="/app/learn" className={buttonVariants({ size: "sm" })}>
+                  <BookOpen size={14} aria-hidden="true" /> Open Learn tutorials
+                </Link>
+                <Link href="/app/classes" className={buttonVariants({ variant: "outline", size: "sm" })}>
+                  Join a class
+                </Link>
+              </div>
+            </div>
           ) : topicProblems.length === 0 ? (
             <p className="px-4 py-6 text-sm text-[var(--color-text-muted)]">No problems in this topic yet.</p>
           ) : (
@@ -116,7 +198,14 @@ export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfil
                   <span className="font-code w-5 text-sm text-[var(--color-text-muted)]">{i + 1}</span>
                   <Link href={`/app/workspace?problem=${encodeURIComponent(problem.id)}`} className="min-w-0 flex-1 hover:text-[var(--color-primary-text)]">
                     <span className="block truncate font-medium">{problem.title}</span>
-                    <span className="block truncate text-xs text-[var(--color-text-muted)]">{problem.category} · {problem.totalTestsCount} tests</span>
+                    <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-[var(--color-text-muted)]">
+                      <span>{problem.category} · {problem.totalTestsCount} tests</span>
+                      {problem.tags.slice(0, 3).map((tag) => (
+                        <span key={tag} className="rounded bg-[var(--color-elevated)] px-1.5 py-0.5 font-code text-[10px]">
+                          {tag}
+                        </span>
+                      ))}
+                    </span>
                   </Link>
                   <DifficultyBadge difficulty={problem.difficulty} />
                   <Button type="button" variant="outline" size="icon-sm" onClick={() => startRound(problem)} aria-label={`Start a timed round on ${problem.title}`} title="Timed round">

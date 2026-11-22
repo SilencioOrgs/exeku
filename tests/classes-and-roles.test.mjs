@@ -6,7 +6,7 @@ import ts from "typescript";
 import * as accountRules from "../lib/accounts/rules.ts";
 import * as roleRules from "../lib/roles/rules.ts";
 import * as classRules from "../lib/classes/rules.ts";
-import * as catalog from "../lib/problems/catalog.ts";
+import * as catalog from "./fixtures/sample-problems.ts";
 import { exactCount, fakeDb, fetchAllPages, must } from "./fixtures/fake-db.mjs";
 import { NextResponse } from "next/server";
 import * as readJson from "../lib/accounts/read-json.ts";
