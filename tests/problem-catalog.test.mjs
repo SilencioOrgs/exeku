@@ -1,60 +1,90 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  getAllProblems as getProductionProblems,
+  summarizeProblems,
+  toVisibleProblem,
+} from "../lib/problems/catalog.ts";
+import {
+  checkExerciseAnswer,
+  findLearnChapterById,
+  getLearnChapter,
+  LEARN_CHAPTERS,
+} from "../lib/learn/curriculum.ts";
+import {
   getAllProblems,
   getProblemById,
   getVisibleProblem,
   getProblemSummaries,
-} from "../lib/problems/catalog.ts";
+} from "./fixtures/sample-problems.ts";
 import { validateProblemSchema } from "./fixtures/problem-validation.ts";
 
-test("problem catalog - contains 3 initial problems", () => {
-  const problems = getAllProblems();
-  assert.equal(problems.length, 3);
-
-  const ids = problems.map((p) => p.id);
-  assert.deepEqual(ids, ["hello-world", "sum-two-integers", "even-or-odd"]);
+test("production problem catalog ships with zero dummy problems", () => {
+  assert.deepEqual(getProductionProblems(), []);
 });
 
-test("problem catalog - all problems pass schema validation", () => {
+test("sample fixtures pass schema validation and redaction helpers", () => {
   const problems = getAllProblems();
+  assert.equal(problems.length, 3);
   for (const prob of problems) {
     const val = validateProblemSchema(prob);
     assert.equal(val.valid, true, `Problem ${prob.id} failed validation: ${val.error}`);
   }
 });
 
-test("getProblemById - retrieves full problem with hidden tests", () => {
+test("getProblemById & toVisibleProblem - retrieves full problem and redacts hidden tests for client-safe payload", () => {
   const prob = getProblemById("sum-two-integers");
   assert.notEqual(prob, null);
   assert.equal(prob?.id, "sum-two-integers");
   assert.equal(prob?.difficulty, "beginner");
+  assert.equal((prob?.testCases.filter((t) => t.isHidden).length ?? 0) > 0, true);
 
-  const hiddenTests = prob?.testCases.filter((t) => t.isHidden);
-  assert.equal((hiddenTests?.length ?? 0) > 0, true);
-});
-
-test("getVisibleProblem - redacts hidden tests for client-safe payload", () => {
-  const visible = getVisibleProblem("sum-two-integers");
-  assert.notEqual(visible, null);
-  assert.equal(visible?.id, "sum-two-integers");
-
-  // Should NOT have raw testCases field with hidden flag
+  const visible = toVisibleProblem(prob);
+  assert.equal(visible.id, "sum-two-integers");
   assert.equal("testCases" in visible, false);
-  assert.equal(Array.isArray(visible?.visibleTestCases), true);
-
-  // All visible test cases must be present
-  assert.equal((visible?.visibleTestCases.length ?? 0) >= 2, true);
+  assert.equal(Array.isArray(visible.visibleTestCases), true);
+  assert.equal(visible.visibleTestCases.length >= 2, true);
+  assert.deepEqual(getVisibleProblem("sum-two-integers"), visible);
 });
 
-test("getProblemSummaries - filters by difficulty and search term", () => {
+test("summarizeProblems - filters by difficulty and search term", () => {
   const allSummaries = getProblemSummaries();
   assert.equal(allSummaries.length, 3);
 
-  const searchSum = getProblemSummaries({ search: "integers" });
+  const searchSum = summarizeProblems(getAllProblems(), { search: "integers" });
   assert.equal(searchSum.length, 1);
   assert.equal(searchSum[0].id, "sum-two-integers");
 
-  const diffFilter = getProblemSummaries({ difficulty: "advanced" });
+  const diffFilter = summarizeProblems(getAllProblems(), { difficulty: "advanced" });
   assert.equal(diffFilter.length, 0);
+});
+
+test("W3Schools-style Learn curriculum covers Python, Java, C++, and C basics including printing arrays", () => {
+  assert.equal(LEARN_CHAPTERS.length, 8);
+  const arrayChapter = findLearnChapterById("printing-arrays");
+  assert.ok(arrayChapter, "printing-arrays chapter must exist");
+  assert.match(arrayChapter.title, /Printing an Array/i);
+
+  for (const chapter of LEARN_CHAPTERS) {
+    for (const lang of ["python", "java", "cpp", "c"]) {
+      const lesson = chapter.lessons[lang];
+      assert.ok(lesson.headline.length > 3, `${chapter.id}:${lang} headline`);
+      assert.ok(lesson.intro.length > 20, `${chapter.id}:${lang} intro`);
+      assert.ok(lesson.keyRules.length >= 2, `${chapter.id}:${lang} keyRules`);
+      assert.ok(lesson.exampleCode.length > 10, `${chapter.id}:${lang} exampleCode`);
+      assert.ok(lesson.expectedOutput.length > 0, `${chapter.id}:${lang} expectedOutput`);
+      assert.equal(
+        checkExerciseAnswer(lesson, lesson.exercise.answer),
+        true,
+        `${chapter.id}:${lang} canonical exercise answer must pass`,
+      );
+      assert.equal(
+        checkExerciseAnswer(lesson, "definitely_wrong_answer_xyz"),
+        false,
+        `${chapter.id}:${lang} wrong exercise answer must fail`,
+      );
+    }
+  }
+
+  assert.equal(getLearnChapter("non-existent").id, "syntax-output");
 });

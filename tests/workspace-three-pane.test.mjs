@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { getVisibleProblem } from "../lib/problems/catalog.ts";
+import { getVisibleProblem } from "./fixtures/sample-problems.ts";
 import {
   ALL_SUPPORTED_LANGUAGES,
   getFilenameForLanguage,

@@ -20,10 +20,13 @@ import { SandboxOfflineNotice, ChallengeBar } from "./workspace/workspace-notice
 import { ConfirmDialog, SubmissionResultDialog, TimeExpiredDialog } from "./workspace/submission-modals";
 import { VerdictBadge } from "./workspace/verdict-badge";
 import { getSimulatedAcceptedResult, getSimulatedWrongAnswerResult } from "@/lib/demo/demo-simulation";
+import { findLearnChapterById } from "@/lib/learn/curriculum";
 import { isRealVerdict } from "@/lib/verdicts";
+import { ALL_SUPPORTED_LANGUAGES } from "@/lib/workspace-defaults";
 import { fetchEvents, TOURNAMENT_REFRESH_EVENT } from "@/lib/orgs/api";
 import { cn } from "@/lib/utils";
 import type { ProblemSummary, VisibleProblem } from "@/types/problem";
+import type { PreferredLanguage } from "@/types/profile";
 import type { SandboxHealth } from "@/types/execution";
 
 type MobileActivePane = "problem" | "code" | "results";
@@ -38,6 +41,9 @@ export function WorkspaceView() {
   const { profile } = useProfile();
   const searchParams = useSearchParams();
   const problemIdParam = searchParams.get("problem");
+  const lessonParam = searchParams.get("lesson");
+  const langParam = searchParams.get("lang") as PreferredLanguage | null;
+  const lessonChapter = useMemo(() => findLearnChapterById(lessonParam), [lessonParam]);
   const challenge = useChallengeSession();
 
   const [problem, setProblem] = useState<VisibleProblem | null>(null);
@@ -54,7 +60,7 @@ export function WorkspaceView() {
   const [mobileActivePane, setMobileActivePane] = useState<MobileActivePane>("code");
 
   // Layout modes let students expand or restore the editor; saved per browser.
-  const [layout, setLayout] = useState<"split" | "wide" | "focus">(problemIdParam ? "split" : "wide");
+  const [layout, setLayout] = useState<"split" | "wide" | "focus">(problemIdParam || lessonChapter ? "split" : "wide");
   const [layoutReady, setLayoutReady] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [problemSlideOpen, setProblemSlideOpen] = useState(false);
@@ -242,6 +248,26 @@ export function WorkspaceView() {
     return () => window.removeEventListener("keydown", shortcut);
   }, []);
 
+  const loadedLessonKeyRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!lessonChapter || problemIdParam || !profile) return;
+    const targetLang: PreferredLanguage =
+      langParam && ALL_SUPPORTED_LANGUAGES.includes(langParam)
+        ? langParam
+        : profile.preferredLanguage;
+    const key = `${lessonChapter.id}:${targetLang}`;
+    if (loadedLessonKeyRef.current === key) return;
+    loadedLessonKeyRef.current = key;
+    const lesson = lessonChapter.lessons[targetLang];
+    queueMicrotask(() => {
+      setLayout("split");
+      void files.switchLanguage(targetLang, lesson.exampleCode);
+      if (lesson.exampleStdin !== undefined) {
+        setCustomStdin(lesson.exampleStdin);
+      }
+    });
+  }, [lessonChapter, langParam, problemIdParam, profile, files]);
+
   const nextProblemId = useMemo(() => {
     if (!problem) return null;
     if (eventRun) return eventRun.problemIds.find((id) => id !== problem.id && !eventRun.solved.includes(id)) ?? null;
@@ -250,7 +276,18 @@ export function WorkspaceView() {
     return problemIds[0] !== problem.id ? (problemIds[0] ?? null) : null;
   }, [problem, problemIds, eventRun]);
 
-  const problemPane = (onSample: (input: string) => void) => <ProblemPane problem={problem} onUseCustomStdin={onSample} />;
+  const problemPane = (onSample: (input: string) => void) => (
+    <ProblemPane
+      problem={problem}
+      lessonChapter={lessonChapter}
+      activeLanguage={files.activeLang}
+      onLoadLessonCode={(code, stdin) => {
+        void files.switchLanguage(files.activeLang, code);
+        if (stdin !== undefined) setCustomStdin(stdin);
+      }}
+      onUseCustomStdin={onSample}
+    />
+  );
 
   return (
     <div className="workspace-view flex min-h-[420px] h-[calc(100dvh-90px)] flex-col gap-2 overflow-hidden">

@@ -17,7 +17,7 @@ export interface AppTopbarProps {
 }
 
 const ROUTE_LABELS: Record<string, string> = {
-  "/app": "Overview", "/app/challenges": "Challenges", "/app/classes": "Classes", "/app/workspace": "Workspace",
+  "/app": "Overview", "/app/learn": "Learn", "/app/challenges": "Challenges", "/app/classes": "Classes", "/app/workspace": "Workspace",
   "/app/profile": "Profile", "/app/settings": "Settings",
   "/app/leaderboard": "Leaderboard", "/app/events": "Events", "/app/orgs": "Organizations", "/app/friends": "Friends",
 };

@@ -16,7 +16,7 @@ type NavGroup = { id: string; label: string; icon: LucideIcon; href?: string; it
 
 const NAV: NavGroup[] = [
   { id: "overview", label: "Overview", icon: LayoutDashboard, href: "/app" },
-  { id: "practice", label: "Practice", icon: Code2, items: [{ label: "Challenges", href: "/app/challenges" }, { label: "Classes", href: "/app/classes" }, { label: "Workspace", href: "/app/workspace" }] },
+  { id: "practice", label: "Practice", icon: Code2, items: [{ label: "Learn", href: "/app/learn" }, { label: "Challenges", href: "/app/challenges" }, { label: "Classes", href: "/app/classes" }, { label: "Workspace", href: "/app/workspace" }] },
   { id: "compete", label: "Compete", icon: Trophy, items: [{ label: "Leaderboard", href: "/app/leaderboard" }, { label: "Events", href: "/app/events" }] },
   { id: "community", label: "Community", icon: Users, items: [{ label: "Friends", href: "/app/friends" }, { label: "Organizations", href: "/app/orgs" }] },
   { id: "account", label: "Account", icon: UserRound, items: [{ label: "Profile", href: "/app/profile" }, { label: "Settings", href: "/app/settings" }] },

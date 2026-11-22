@@ -2,13 +2,19 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, Copy, FileCode2 } from "lucide-react";
+import { BookOpen, CheckCircle2, Copy, FileCode2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import type { LearnChapter } from "@/lib/learn/curriculum";
+import { LANGUAGE_DISPLAY_NAMES } from "@/lib/workspace-defaults";
 import type { VisibleProblem } from "@/types/problem";
+import type { PreferredLanguage } from "@/types/profile";
 import { DifficultyBadge } from "../difficulty-badge";
 
 export interface ProblemPaneProps {
   problem: VisibleProblem | null;
+  lessonChapter?: LearnChapter | null;
+  activeLanguage?: PreferredLanguage;
+  onLoadLessonCode?: (code: string, stdin?: string) => void;
   onUseCustomStdin: (sampleInput: string) => void;
 }
 
@@ -21,14 +27,115 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-export function ProblemPane({ problem, onUseCustomStdin }: ProblemPaneProps) {
+export function ProblemPane({
+  problem,
+  lessonChapter,
+  activeLanguage = "python",
+  onLoadLessonCode,
+  onUseCustomStdin,
+}: ProblemPaneProps) {
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+
+  if (!problem && lessonChapter) {
+    const lesson = lessonChapter.lessons[activeLanguage];
+    return (
+      <div className="problem-pane flex h-full flex-col overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)]">
+        <div className="shrink-0 space-y-1 border-b border-[var(--color-border)] p-3">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <span className="font-code text-[11px] text-[var(--color-primary-text)]">
+                Chapter {lessonChapter.number} · {LANGUAGE_DISPLAY_NAMES[activeLanguage]}
+              </span>
+              <h1 className="text-base font-semibold text-[var(--color-text-main)]">{lesson.headline}</h1>
+            </div>
+            <Link
+              href={`/app/learn?chapter=${encodeURIComponent(lessonChapter.id)}&lang=${encodeURIComponent(activeLanguage)}`}
+              className="shrink-0 text-xs text-[var(--color-text-muted)] underline-offset-2 hover:text-[var(--color-text-main)] hover:underline"
+            >
+              All tutorials
+            </Link>
+          </div>
+        </div>
+
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3 text-sm text-[var(--color-text-main)]">
+          <p className="leading-relaxed">{lesson.intro}</p>
+
+          <Section title="Key syntax rules">
+            <ul className="list-disc space-y-1 pl-4 text-xs text-[var(--color-text-muted)]">
+              {lesson.keyRules.map((rule, idx) => (
+                <li key={idx}>{rule}</li>
+              ))}
+            </ul>
+          </Section>
+
+          <Section title="Quick syntax pattern">
+            <pre className="font-code overflow-x-auto whitespace-pre-wrap rounded-md border border-[var(--color-border)] bg-[var(--color-canvas)] p-2.5 text-xs">
+              {lesson.syntaxSnippet}
+            </pre>
+          </Section>
+
+          {lesson.exampleStdin && (
+            <Section title="Sample standard input (stdin)">
+              <div className="space-y-1.5">
+                <pre className="font-code overflow-x-auto whitespace-pre-wrap rounded-md border border-[var(--color-border)] bg-[var(--color-canvas)] p-2 text-xs">
+                  {lesson.exampleStdin}
+                </pre>
+                <Button type="button" variant="outline" size="xs" onClick={() => onUseCustomStdin(lesson.exampleStdin!)}>
+                  Use as input
+                </Button>
+              </div>
+            </Section>
+          )}
+
+          <Section title="Expected example output">
+            <pre className="font-code overflow-x-auto whitespace-pre-wrap rounded-md border border-[var(--color-border)] bg-[var(--color-canvas)] p-2.5 text-xs text-[var(--color-mint)]">
+              {lesson.expectedOutput}
+            </pre>
+          </Section>
+
+          {onLoadLessonCode && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => onLoadLessonCode(lesson.exampleCode, lesson.exampleStdin)}
+              className="w-full"
+            >
+              <RotateCcw size={13} aria-hidden="true" /> Reload example code
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   if (!problem) {
     return (
-      <div className="flex h-full min-h-0 items-start gap-2 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-sm text-[var(--color-text-muted)]">
-        <FileCode2 size={14} aria-hidden="true" className="mt-0.5" />
-        <span>Free coding. Pick a <Link className="underline underline-offset-2" href="/app/challenges">problem</Link> when you want to submit.</span>
+      <div className="flex h-full min-h-0 flex-col justify-between gap-3 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-sm text-[var(--color-text-muted)]">
+        <div className="flex items-start gap-2.5">
+          <FileCode2 size={15} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--color-primary-text)]" />
+          <div className="space-y-1">
+            <p className="font-medium text-[var(--color-text-main)]">Free coding sandbox</p>
+            <p className="text-xs leading-relaxed">
+              Write and run code in Python 3, Java, C++, or C. Open{" "}
+              <Link className="text-[var(--color-primary-text)] underline underline-offset-2" href="/app/learn">
+                Learn
+              </Link>{" "}
+              for W3Schools-style language examples (like printing an array), or pick a{" "}
+              <Link className="text-[var(--color-primary-text)] underline underline-offset-2" href="/app/challenges">
+                problem
+              </Link>{" "}
+              when you want to submit.
+            </p>
+          </div>
+        </div>
+        <Link
+          href="/app/learn"
+          className="skeuo-well flex items-center gap-2 rounded-xl border px-3 py-2 text-xs text-[var(--color-text-main)] hover:border-[var(--color-primary)]"
+        >
+          <BookOpen size={14} className="text-[var(--color-primary-text)]" aria-hidden="true" />
+          <span>Browse language &amp; syntax examples →</span>
+        </Link>
       </div>
     );
   }

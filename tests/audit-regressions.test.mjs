@@ -22,7 +22,7 @@ import { validateWorkspaceFilename } from "../components/app/workspace/file-tabs
 import * as orgRules from "../lib/orgs/rules.ts";
 import * as readJson from "../lib/accounts/read-json.ts";
 import { isObject, isUuid, text } from "../lib/accounts/rules.ts";
-import * as catalog from "../lib/problems/catalog.ts";
+import * as catalog from "./fixtures/sample-problems.ts";
 import { ALL_SUPPORTED_LANGUAGES, getStarterCode } from "../lib/workspace-defaults.ts";
 import { exactCount, fakeDb, fetchAllPages, must } from "./fixtures/fake-db.mjs";
 import { MockSandboxAdapter } from "./fixtures/mock-adapter.ts";

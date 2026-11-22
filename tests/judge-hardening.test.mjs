@@ -4,14 +4,15 @@ import { JudgingService } from "../lib/judge/judging-service.ts";
 import { ExecutionQueue } from "../lib/execution/queue.ts";
 import { ExekuJudgeAdapter } from "../lib/execution/exeku-judge-adapter.ts";
 import { validateExecutionRequest } from "../lib/execution/validation.ts";
-import { getProblemById } from "../lib/problems/catalog.ts";
+import { getProblemById } from "./fixtures/sample-problems.ts";
 
 const service = (execute) => new JudgingService({ adapter: { execute, checkHealth: async () => ({}) }, queue: new ExecutionQueue() });
 
 test("hidden test input never comes back through stderr, even when a program prints it and crashes", async () => {
+  const sumProblem = getProblemById("sum-two-integers");
   for (const status of ["RUNTIME_ERROR", "TIME_LIMIT_EXCEEDED"]) {
     const result = await service(async (req) => ({ status, exitCode: 1, stdout: "", stderr: "LEAK:" + req.stdin, durationMs: 1 }))
-      .judgeSubmission("sum-two-integers", { language: "python", sourceCode: "x" });
+      .judgeSubmission(sumProblem, { language: "python", sourceCode: "x" });
     const hidden = result.testResults.filter((t) => t.isHidden);
     assert.ok(hidden.length > 0);
     for (const t of hidden) assert.equal(t.stderr, undefined, status);
@@ -31,7 +32,7 @@ test("no verdict type ever exposes a hidden test's input, expected output, progr
     PASSED: (stdin) => ({ ...leaked(stdin), status: "SUCCESS", stdout: expected.get(stdin) }),
   };
   for (const [verdict, run] of Object.entries(runs)) {
-    const result = await service(async (req) => run(req.stdin)).judgeSubmission(problem.id, { language: "python", sourceCode: "x" });
+    const result = await service(async (req) => run(req.stdin)).judgeSubmission(problem, { language: "python", sourceCode: "x" });
     const hidden = result.testResults.filter((t) => t.isHidden);
     assert.ok(hidden.length > 0, verdict);
     for (const t of hidden) {
@@ -53,7 +54,7 @@ test("a compile error on a hidden test exposes only the compiler's output", asyn
   problem.testCases = hiddenFirst.testCases;
   try {
     const result = await service(async (req) => ({ status: "COMPILATION_ERROR", exitCode: null, stdout: "", stderr: "LEAK:" + req.stdin, compilerOutput: "main.py: bad", durationMs: 1 }))
-      .judgeSubmission(problem.id, { language: "python", sourceCode: "x" });
+      .judgeSubmission(problem, { language: "python", sourceCode: "x" });
     const [only] = result.testResults;
     assert.equal(only.verdict, "COMPILATION_ERROR");
     assert.equal(only.compilerOutput, "main.py: bad");
@@ -65,8 +66,9 @@ test("a compile error on a hidden test exposes only the compiler's output", asyn
 });
 
 test("a sandbox HTTP error is a judge error, not a wrong answer, and redacts raw upstream details", async () => {
+  const helloProblem = getProblemById("hello-world");
   const result = await service(async () => ({ status: "INTERNAL_ERROR", exitCode: null, stdout: "", stderr: "HTTP 400", durationMs: 1, error: "python-3.10.0 runtime is unknown" }))
-    .judgeSubmission("hello-world", { language: "python", sourceCode: "x" });
+    .judgeSubmission(helloProblem, { language: "python", sourceCode: "x" });
   assert.equal(result.overallVerdict, "INTERNAL_JUDGE_ERROR");
   assert.equal(result.testResults.length, 0);
   assert.doesNotMatch(result.error ?? "", /runtime is unknown/);
