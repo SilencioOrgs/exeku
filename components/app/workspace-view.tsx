@@ -51,7 +51,8 @@ export function WorkspaceView() {
   const [sandboxHealth, setSandboxHealth] = useState<SandboxHealth | null>(null);
   const [offlineDismissed, setOfflineDismissed] = useState(false);
 
-  const files = useWorkspaceFiles(profile, problem, problemIdParam);
+  const draftScope = problemIdParam ?? (lessonChapter ? `lesson:${lessonChapter.id}` : null);
+  const files = useWorkspaceFiles(profile, problem, draftScope);
   const judge = useJudge();
   const demo = useDemoMode(searchParams.get("demo"));
 
@@ -75,21 +76,23 @@ export function WorkspaceView() {
   const [finishOpen, setFinishOpen] = useState(false);
   const [dismissedExpiredId, setDismissedExpiredId] = useState<string | null>(null);
 
-  // This view stays mounted between problems, so a verdict must be cleared when the problem changes.
-  const prevProblemRef = useRef(problemIdParam);
+  // This view stays mounted between problems, so verdict, console output, and stdin must be cleared when the problem changes.
+  const prevProblemRef = useRef(draftScope);
   const judgeResetRef = useRef(judge.reset);
   useEffect(() => {
     judgeResetRef.current = judge.reset;
   });
   useEffect(() => {
-    if (prevProblemRef.current === problemIdParam) return;
-    prevProblemRef.current = problemIdParam;
+    if (prevProblemRef.current === draftScope) return;
+    prevProblemRef.current = draftScope;
     queueMicrotask(() => {
       setResultOpen(false);
       setConfirmSubmitOpen(false);
+      setCustomStdin("");
+      setActiveResultsTab("console");
       judgeResetRef.current();
     });
-  }, [problemIdParam]);
+  }, [draftScope]);
 
   const eventId = searchParams.get("event");
   const [eventRun, setEventRun] = useState<{ title: string; problemIds: string[]; solved: string[] } | null>(null);
@@ -268,17 +271,39 @@ export function WorkspaceView() {
     });
   }, [lessonChapter, langParam, problemIdParam, profile, files]);
 
+  const activeProblemId = problem?.id ?? problemIdParam;
+
+  const prevProblemId = useMemo(() => {
+    if (!activeProblemId) return null;
+    const list = eventRun ? eventRun.problemIds : problemIds;
+    if (list.length <= 1) return null;
+    const index = list.indexOf(activeProblemId);
+    if (index > 0) return list[index - 1];
+    return list[list.length - 1] !== activeProblemId ? (list[list.length - 1] ?? null) : null;
+  }, [activeProblemId, problemIds, eventRun]);
+
   const nextProblemId = useMemo(() => {
-    if (!problem) return null;
-    if (eventRun) return eventRun.problemIds.find((id) => id !== problem.id && !eventRun.solved.includes(id)) ?? null;
-    const index = problemIds.indexOf(problem.id);
-    if (index >= 0 && index < problemIds.length - 1) return problemIds[index + 1];
-    return problemIds[0] !== problem.id ? (problemIds[0] ?? null) : null;
-  }, [problem, problemIds, eventRun]);
+    if (!activeProblemId) return null;
+    if (eventRun) {
+      const unsolved = eventRun.problemIds.find((id) => id !== activeProblemId && !eventRun.solved.includes(id));
+      if (unsolved) return unsolved;
+    }
+    const list = eventRun ? eventRun.problemIds : problemIds;
+    if (list.length <= 1) return null;
+    const index = list.indexOf(activeProblemId);
+    if (index >= 0 && index < list.length - 1) return list[index + 1];
+    return list[0] !== activeProblemId ? (list[0] ?? null) : null;
+  }, [activeProblemId, problemIds, eventRun]);
+
+  const eventQuery = eventRun && eventId ? `&event=${encodeURIComponent(eventId)}` : "";
+  const prevProblemHref = prevProblemId ? `/app/workspace?problem=${encodeURIComponent(prevProblemId)}${eventQuery}` : null;
+  const nextProblemHref = nextProblemId ? `/app/workspace?problem=${encodeURIComponent(nextProblemId)}${eventQuery}` : null;
 
   const problemPane = (onSample: (input: string) => void) => (
     <ProblemPane
       problem={problem}
+      prevHref={prevProblemHref}
+      nextHref={nextProblemHref}
       lessonChapter={lessonChapter}
       activeLanguage={files.activeLang}
       onLoadLessonCode={(code, stdin) => {
@@ -418,7 +443,7 @@ export function WorkspaceView() {
               />
               <div className="relative flex-1 min-h-0 overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] transition-colors focus-within:border-[var(--color-ring)]">
                 <CodeEditor
-                  key={`${problem?.id ?? "free"}/${files.activeLang}/${files.activeFile}`}
+                  key={`${draftScope ?? "free"}/${files.activeLang}/${files.activeFile}`}
                   filename={files.activeFile}
                   value={files.code}
                   onChange={handleCodeChange}

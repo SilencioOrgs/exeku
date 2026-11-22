@@ -650,6 +650,8 @@ test("useWorkspaceFiles flushes pending save to the previous problem before swit
   assert.equal(saves.length, 0);
 
   render("prob-b");
+  const second = render("prob-b");
+  assert.equal(second.code, "starter");
   await settle();
   assert.deepEqual(saves, [{ pid: "prob-a", lang: "python", code: "unsaved for prob-a" }]);
 });

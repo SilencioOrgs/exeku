@@ -65,11 +65,17 @@ export function useWorkspaceFiles(profile: LocalProfile | null, problem: Visible
     saveTimeoutRef.current = setTimeout(save, 600);
   }, [profileId, saveNow, updateFiles, cancelPendingSave]);
 
-  // Load the profile's existing single-file or multi-file draft.
+  // Load the profile's existing single-file or multi-file draft, starting clean on problem switch.
   useEffect(() => {
-    if (!profileId) return;
     let current = true;
     dirtyRef.current = false;
+    const loaded = (draftFiles: WorkspaceFile[]) => {
+      if (!current || dirtyRef.current) return;
+      const primary = draftFiles.find((file) => file.name === mainFilename);
+      updateFiles([{ name: mainFilename, content: primary?.content ?? starter }, ...draftFiles.filter((file) => file.name !== mainFilename)]);
+      setActiveFile(mainFilename);
+      setSaveStatus("SAVED");
+    };
     if (pendingOverrideRef.current?.lang === activeLang) {
       const override = pendingOverrideRef.current.code;
       pendingOverrideRef.current = null;
@@ -81,13 +87,13 @@ export function useWorkspaceFiles(profile: LocalProfile | null, problem: Visible
         void pendingSaveRef.current?.();
       };
     }
-    const loaded = (draftFiles: WorkspaceFile[]) => {
-      if (!current || dirtyRef.current) return;
-      const primary = draftFiles.find((file) => file.name === mainFilename);
-      updateFiles([{ name: mainFilename, content: primary?.content ?? starter }, ...draftFiles.filter((file) => file.name !== mainFilename)]);
-      setActiveFile(mainFilename);
-      setSaveStatus("SAVED");
-    };
+    // Always start clean with starter code immediately when switching problems or languages.
+    loaded([{ name: mainFilename, content: starter }]);
+    if (!profileId) {
+      return () => {
+        current = false;
+      };
+    }
     draftRepository.getDraft(profileId, activeLang, problemId)
       .then((draft) => loaded(draft?.files?.length ? draft.files : [{ name: mainFilename, content: draft?.code?.trim() ? draft.code : starter }]))
       .catch(() => loaded([{ name: mainFilename, content: starter }]));
