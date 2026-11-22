@@ -32,6 +32,7 @@ export interface WorkspaceToolbarProps {
   onToggleDrawer: () => void;
   onOpenProblem: () => void;
   canSubmit: boolean;
+  blockedReason?: string;
   isRunning: boolean;
   isSubmitting: boolean;
   onRun: () => void;
@@ -40,6 +41,7 @@ export interface WorkspaceToolbarProps {
 
 export function WorkspaceToolbar(props: WorkspaceToolbarProps) {
   const busy = props.isRunning || props.isSubmitting;
+  const blocked = Boolean(props.blockedReason);
   return (
     <div className="workspace-toolbar @container relative z-10 flex min-h-10 shrink-0 flex-wrap items-center gap-1 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] px-1.5 py-1 @[380px]:h-10 @[380px]:flex-nowrap @[380px]:py-0">
       <FileTabs
@@ -92,10 +94,27 @@ export function WorkspaceToolbar(props: WorkspaceToolbarProps) {
         </>
       )}
       <span className="mx-0.5 hidden h-5 border-l border-[var(--color-border)] @[520px]:inline" aria-hidden="true" />
-      <Button type="button" variant="outline" size="sm" className="shrink-0" disabled={busy} onClick={props.onRun} title="Run (Ctrl/Cmd+Enter)" aria-label="Run code">
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="shrink-0"
+        disabled={busy || blocked}
+        onClick={props.onRun}
+        title={props.blockedReason ?? "Run (Ctrl/Cmd+Enter)"}
+        aria-label="Run code"
+      >
         <CirclePlay size={14} aria-hidden="true" /><span className="hidden @[500px]:inline">{props.isRunning ? "Running…" : "Run"}</span>
       </Button>
-      <Button type="button" size="sm" className="shrink-0" disabled={!props.canSubmit || busy} onClick={props.onSubmit} title="Submit (Ctrl/Cmd+Shift+Enter)" aria-label="Submit solution">
+      <Button
+        type="button"
+        size="sm"
+        className="shrink-0"
+        disabled={!props.canSubmit || busy || blocked}
+        onClick={props.onSubmit}
+        title={props.blockedReason ?? "Submit (Ctrl/Cmd+Shift+Enter)"}
+        aria-label="Submit solution"
+      >
         <CheckCircle2 size={14} aria-hidden="true" /><span className="hidden @[500px]:inline">{props.isSubmitting ? "Judging…" : "Submit"}</span>
       </Button>
     </div>

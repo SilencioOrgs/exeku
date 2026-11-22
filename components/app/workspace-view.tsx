@@ -16,10 +16,11 @@ import { ProblemPane } from "./workspace/problem-pane";
 import { ResultsPane, type ResultsTab } from "./workspace/results-pane";
 import { DemoControls } from "./workspace/demo-controls";
 import { WorkspaceToolbar, type WorkspaceLayout } from "./workspace/workspace-toolbar";
-import { SandboxOfflineNotice, ChallengeBar } from "./workspace/workspace-notices";
+import { SandboxOfflineNotice, ChallengeBar, CodeSafetyNotice } from "./workspace/workspace-notices";
 import { ConfirmDialog, SubmissionResultDialog, TimeExpiredDialog } from "./workspace/submission-modals";
 import { VerdictBadge } from "./workspace/verdict-badge";
 import { getSimulatedAcceptedResult, getSimulatedWrongAnswerResult } from "@/lib/demo/demo-simulation";
+import { checkWorkspaceSafety } from "@/lib/execution/code-safety";
 import { findLearnChapterById } from "@/lib/learn/curriculum";
 import { isRealVerdict } from "@/lib/verdicts";
 import { ALL_SUPPORTED_LANGUAGES } from "@/lib/workspace-defaults";
@@ -193,20 +194,26 @@ export function WorkspaceView() {
     setMobileActivePane("results");
   };
 
+  const safetyCheck = useMemo(
+    () => checkWorkspaceSafety(files.activeLang, files.files),
+    [files.activeLang, files.files],
+  );
+  const safetyBlockedReason = safetyCheck.safe ? undefined : safetyCheck.message;
+
   const source = () => ({ language: files.activeLang, sourceCode: files.mainCode, files: files.files });
 
   const handleRun = () => {
-    if (judge.isRunning || judge.isSubmitting) return;
+    if (judge.isRunning || judge.isSubmitting || !safetyCheck.safe) return;
     showResults("console");
     void judge.run({ ...source(), stdin: customStdin, timeLimitMs: problem?.timeLimitMs ?? 3000 });
   };
 
   const handleOpenSubmit = () => {
-    if (problem && !judge.isRunning && !judge.isSubmitting) setConfirmSubmitOpen(true);
+    if (problem && !judge.isRunning && !judge.isSubmitting && safetyCheck.safe) setConfirmSubmitOpen(true);
   };
 
   const handleConfirmSubmission = async () => {
-    if (!problem || judge.isSubmitting) return;
+    if (!problem || judge.isSubmitting || !safetyCheck.safe) return;
     setConfirmSubmitOpen(false);
     showResults("results");
     const result = await judge.submit(problem.id, source());
@@ -451,11 +458,19 @@ export function WorkspaceView() {
                 onToggleDrawer={() => setDrawerOpen((open) => !open)}
                 onOpenProblem={() => setProblemSlideOpen(true)}
                 canSubmit={Boolean(problem)}
+                blockedReason={safetyBlockedReason}
                 isRunning={judge.isRunning}
                 isSubmitting={judge.isSubmitting}
                 onRun={handleRun}
                 onSubmit={handleOpenSubmit}
               />
+              {!safetyCheck.safe && (
+                <CodeSafetyNotice
+                  label={safetyCheck.issue.label}
+                  reason={safetyCheck.issue.reason}
+                  fileName={safetyCheck.issue.fileName}
+                />
+              )}
               <div className="relative flex-1 min-h-0 overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] transition-colors focus-within:border-[var(--color-ring)]">
                 <CodeEditor
                   key={`${draftScope ?? "free"}/${files.activeLang}/${files.activeFile}`}

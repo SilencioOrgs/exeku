@@ -141,3 +141,73 @@ test("ExekuJudgeAdapter - a program killed by a signal is never SUCCESS", () => 
   assert.equal(reported.status, "RUNTIME_ERROR");
   assert.equal(misreported.status, "RUNTIME_ERROR");
 });
+
+test("code safety guard blocks OS deletion, shell execution, and destructive syscalls across all languages and companion files", async () => {
+  const { checkCodeSafety } = await import("../lib/execution/code-safety.ts");
+  const { LEARN_CHAPTERS } = await import("../lib/learn/curriculum.ts");
+  const { LANGUAGE_DOC_TOPICS } = await import("../lib/learn/docs.ts");
+
+  const malicious = [
+    ["python", 'import os\nos.system("rm -rf /")'],
+    ["python", 'import shutil\nshutil.rmtree("/")'],
+    ["python", 'import subprocess\nsubprocess.run(["rm", "-rf", "/"])'],
+    ["python", '__import__("os").system("id")'],
+    ["python", 'open("/etc/passwd").read()'],
+    ["python", 'open("hack.txt", "w").write("x")'],
+    ["python", 'eval("1+1")'],
+    ["cpp", '#include <cstdlib>\nint main(){ system("rm -rf /"); }'],
+    ["cpp", '#include <filesystem>\nint main(){ std::filesystem::remove_all("/"); }'],
+    ["cpp", '#include <unistd.h>\nint main(){ fork(); }'],
+    ["c", '#include <stdio.h>\nint main(){ remove("/etc/passwd"); }'],
+    ["c", '#include <stdio.h>\nint main(){ fopen("/etc/shadow", "r"); }'],
+    ["java", 'public class Main { public static void main(String[] a) throws Exception { Runtime.getRuntime().exec("rm -rf /"); } }'],
+    ["java", 'import java.nio.file.*; public class Main { void f() throws Exception { Files.delete(Path.of("/")); } }'],
+    ["java", 'public class Main { void f() { new ProcessBuilder("sh", "-c", "rm -rf /"); } }'],
+  ];
+
+  for (const [language, sourceCode] of malicious) {
+    const res = validateExecutionRequest({ language, sourceCode });
+    assert.equal(res.valid, false, `Expected ${language} payload to be blocked: ${sourceCode}`);
+    assert.match(res.error, /blocked/i);
+  }
+
+  // Companion file containing suspicious code is also blocked.
+  const companionAttack = validateExecutionRequest({
+    language: "python",
+    sourceCode: "import helper\nprint(helper.run())\n",
+    files: [
+      { name: "main.py", content: "import helper\nprint(helper.run())\n" },
+      { name: "helper.py", content: "import os\ndef run():\n    os.system('rm -rf /')\n" },
+    ],
+  });
+  assert.equal(companionAttack.valid, false);
+  assert.match(companionAttack.error, /helper\.py/);
+
+  // Legitimate competitive programming code and comments must NOT be false-positived.
+  const safeSamples = [
+    ["python", '# Do not use os.system("rm -rf /") in solutions\nimport sys, math, collections, heapq\ndata = open(0).read().split()\nprint(sum(map(int, data)))\n'],
+    ["cpp", '// Never call system("rm -rf /")\n#include <iostream>\n#include <vector>\n#include <algorithm>\nint main(){ std::vector<int> v={1,2,3}; v.erase(std::remove(v.begin(), v.end(), 2), v.end()); std::cout << v.size(); }\n'],
+    ["c", '/* Safe C I/O */\n#include <stdio.h>\nint main(void){ int a,b; if (scanf("%d %d", &a, &b)==2) printf("%d\\n", a+b); return 0; }\n'],
+    ["java", '// Safe Java I/O\nimport java.io.BufferedReader;\nimport java.io.InputStreamReader;\npublic class Main { public static void main(String[] a) throws Exception { BufferedReader br = new BufferedReader(new InputStreamReader(System.in)); System.out.println(br.readLine()); } }\n'],
+  ];
+
+  for (const [language, sourceCode] of safeSamples) {
+    const res = validateExecutionRequest({ language, sourceCode });
+    assert.equal(res.valid, true, `Expected safe ${language} code to pass, got: ${res.valid ? "" : res.error}`);
+  }
+
+  // Every built-in Learn example and Docs snippet must pass the safety guard.
+  for (const ch of LEARN_CHAPTERS) {
+    for (const lang of ["python", "java", "cpp", "c"]) {
+      const check = checkCodeSafety(lang, ch.lessons[lang].exampleCode);
+      assert.equal(check.safe, true, `Learn chapter ${ch.id}:${lang} tripped safety guard: ${check.safe ? "" : check.message}`);
+    }
+  }
+  for (const topic of LANGUAGE_DOC_TOPICS) {
+    for (const lang of ["python", "java", "cpp", "c"]) {
+      const check = checkCodeSafety(lang, topic.byLanguage[lang].codeSnippet);
+      assert.equal(check.safe, true, `Doc topic ${topic.id}:${lang} tripped safety guard: ${check.safe ? "" : check.message}`);
+    }
+  }
+});
+

@@ -23,6 +23,7 @@ import { DifficultyBadge, difficultyLabel } from "@/components/app/difficulty-ba
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useProfile } from "@/hooks/use-profile";
+import { checkCodeSafety } from "@/lib/execution/code-safety";
 import {
   checkExerciseAnswer,
   getLearnChapter,
@@ -174,6 +175,18 @@ export function LearnView({ initialChapterId, initialLang, embedded = false }: L
 
   const handleRunExample = async () => {
     if (running) return;
+    const safety = checkCodeSafety(lang, currentCode);
+    if (!safety.safe) {
+      setOutputsByKey((prev) => ({
+        ...prev,
+        [lessonKey]: {
+          text: safety.message,
+          isError: true,
+          note: "Blocked unsafe code",
+        },
+      }));
+      return;
+    }
     setRunning(true);
     try {
       const res = await fetch("/api/execute", {
@@ -187,6 +200,18 @@ export function LearnView({ initialChapterId, initialLang, embedded = false }: L
         }),
       });
       const data = (await res.json().catch(() => null)) as (ExecutionResult & { error?: string }) | null;
+
+      if (!res.ok && res.status === 400 && data?.error) {
+        setOutputsByKey((prev) => ({
+          ...prev,
+          [lessonKey]: {
+            text: data.error!,
+            isError: true,
+            note: "Blocked by validation",
+          },
+        }));
+        return;
+      }
 
       if (res.ok && data && data.status === "SUCCESS") {
         setOutputsByKey((prev) => ({

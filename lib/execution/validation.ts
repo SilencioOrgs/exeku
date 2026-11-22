@@ -3,6 +3,7 @@ import {
   type ExecutionLanguage,
   SUPPORTED_EXECUTION_LANGUAGES,
 } from "@/types/execution";
+import { checkCodeSafety, checkWorkspaceSafety } from "./code-safety";
 
 /** Whole request body for Run and Submit: source, companion files and stdin, with room for JSON escaping. */
 export const MAX_BODY_BYTES = 256 * 1024;
@@ -91,6 +92,13 @@ export function validateExecutionRequest(input: unknown): ValidationResult {
     if (bytes > MAX_SOURCE_LENGTH) {
       return { valid: false, error: "Total file contents exceed the 64 KB limit." };
     }
+  }
+
+  const safety = files
+    ? checkWorkspaceSafety(language, files)
+    : checkCodeSafety(language, raw.sourceCode);
+  if (!safety.safe) {
+    return { valid: false, error: safety.message };
   }
 
   let stdin: string | undefined = undefined;

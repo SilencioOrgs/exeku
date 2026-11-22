@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { AlarmClock, AlertCircle, X } from "lucide-react";
+import { AlarmClock, AlertCircle, ShieldAlert, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import { JUDGE_SETUP_COMMAND } from "@/lib/execution/judge-help";
@@ -61,3 +61,21 @@ export function ChallengeBar({ formattedTime, isWarningTime, submissionCount, ca
     </div>
   );
 }
+
+export function CodeSafetyNotice({ label, reason, fileName }: { label: string; reason: string; fileName?: string }) {
+  return (
+    <div
+      role="alert"
+      className="flex min-w-0 shrink-0 items-start gap-2 rounded-[var(--radius-card)] border border-[var(--color-pink)] bg-[var(--color-hard-bg)] px-3 py-2 text-xs text-[var(--color-pink)]"
+    >
+      <ShieldAlert size={15} className="mt-0.5 shrink-0" aria-hidden="true" />
+      <p className="min-w-0 flex-1 leading-snug">
+        <strong className="font-semibold">
+          {fileName ? `Blocked code in ${fileName}:` : "Blocked code:"} {label}.
+        </strong>{" "}
+        {reason}
+      </p>
+    </div>
+  );
+}
+
