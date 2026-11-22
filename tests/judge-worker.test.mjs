@@ -186,3 +186,95 @@ test("worker compiles once and runs every input in a fresh box (fake isolate)", 
     rmSync(workDir, { recursive: true, force: true });
   }
 });
+
+test("judge server returns clean 404, 400, 429, and redacted 500 responses", async () => {
+  const token = "y".repeat(32);
+  let releaseBox;
+  const specs = buildLanguageSpecs({ python3: "/usr/bin/python3", gcc: null, gxx: null, javac: null, java: null, javaDirs: [] });
+  const slowCli = {
+    async init() {
+      await new Promise((resolve) => { releaseBox = resolve; });
+      throw new Error("secret internal host path /var/secret");
+    },
+    async run() {},
+    async cleanup() {},
+  };
+  const workDir = mkdtempSync(join(tmpdir(), "judge-err-"));
+  const server = createJudgeServer({ token, specs, cli: slowCli, pool: new BoxPool(1, 0), workDir });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const url = `http://127.0.0.1:${server.address().port}`;
+  try {
+    // 404 unknown route
+    const notFound = await fetch(`${url}/v1/unknown`);
+    assert.equal(notFound.status, 404);
+
+    // 400 malformed JSON
+    const badJson = await fetch(`${url}/v1/run`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}` },
+      body: "{not json",
+    });
+    assert.equal(badJson.status, 400);
+
+    // 429 QueueFullError while single box is busy, and redacted 500 on internal error
+    const validBody = JSON.stringify({ language: "python", files: [{ name: "main.py", content: "print(1)" }], stdins: [""] });
+    const firstPromise = fetch(`${url}/v1/run`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}` },
+      body: validBody,
+    });
+    // Wait a tick for the first request to acquire the only box.
+    await new Promise((r) => setTimeout(r, 25));
+    const full = await fetch(`${url}/v1/run`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}` },
+      body: validBody,
+    });
+    assert.equal(full.status, 429);
+
+    releaseBox();
+    const first = await firstPromise;
+    assert.equal(first.status, 500);
+    const firstBody = await first.json();
+    assert.doesNotMatch(firstBody.error, /\/var\/secret/);
+  } finally {
+    server.close();
+    rmSync(workDir, { recursive: true, force: true });
+  }
+});
+
+test("runJob fast-fails remaining tests after 3 consecutive TLEs to prevent queue starvation", async () => {
+  const { runJob } = await import("../judge/src/runner.ts");
+  const root = mkdtempSync(join(tmpdir(), "tle-fast-"));
+  const workDir = mkdtempSync(join(tmpdir(), "tle-work-"));
+  const box = join(root, "box");
+  let runsExecuted = 0;
+  try {
+    const specs = buildLanguageSpecs({ python3: "/usr/bin/python3", gcc: null, gxx: null, javac: null, java: null, javaDirs: [] });
+    const tleCli = {
+      async init() {
+        mkdirSync(box, { recursive: true });
+        return root;
+      },
+      async run(r) {
+        runsExecuted++;
+        writeFileSync(r.metaPath, "status:TO\nkilled:1\ntime:2.000\nmessage:Time limit exceeded\n");
+        writeFileSync(join(box, r.stdout), "");
+        if (r.stderr) writeFileSync(join(box, r.stderr), "");
+      },
+      async cleanup() {},
+    };
+    const res = await runJob(
+      { language: "python", files: [{ name: "main.py", content: "while True: pass" }], stdins: ["1", "2", "3", "4", "5", "6"], timeLimitMs: 2000, memoryLimitKb: 131072 },
+      0,
+      { cli: tleCli, spec: specs.python, workDir },
+    );
+    assert.equal(runsExecuted, 3);
+    assert.equal(res.runs.length, 6);
+    assert.ok(res.runs.every((r) => r.status === "TIME_LIMIT_EXCEEDED"));
+    assert.match(res.runs[5].message ?? "", /3 consecutive/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    rmSync(workDir, { recursive: true, force: true });
+  }
+});

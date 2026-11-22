@@ -1,13 +1,21 @@
 import "server-only";
 import { db, fetchAllPages } from "@/lib/db/client";
 
+const IN_CHUNK_SIZE = 100;
+
 /** Every accepted answer in a time window. Timestamps are the database's, so a browser can't backdate one. */
 export async function solvesBetween(userIds: string[], startsAt: string, endsAt: string) {
-  if (userIds.length === 0) return [];
-  const rows = await fetchAllPages<{ user_id: string; problem_id: string; points: number; created_at: string }>((from, to) =>
-    db().from("submissions").select("user_id,problem_id,points,created_at").in("user_id", userIds).eq("verdict", "ACCEPTED").gte("created_at", startsAt).lte("created_at", endsAt).order("created_at").order("id").range(from, to),
-  );
-  return rows.map((r) => ({ userId: r.user_id, problemId: r.problem_id, points: r.points, at: r.created_at }));
+  const unique = [...new Set(userIds.filter(Boolean))];
+  if (unique.length === 0) return [];
+  const results: { userId: string; problemId: string; points: number; at: string }[] = [];
+  for (let i = 0; i < unique.length; i += IN_CHUNK_SIZE) {
+    const chunk = unique.slice(i, i + IN_CHUNK_SIZE);
+    const rows = await fetchAllPages<{ user_id: string; problem_id: string; points: number; created_at: string }>((from, to) =>
+      db().from("submissions").select("user_id,problem_id,points,created_at").in("user_id", chunk).eq("verdict", "ACCEPTED").gte("created_at", startsAt).lte("created_at", endsAt).order("created_at").order("id").range(from, to),
+    );
+    for (const r of rows) results.push({ userId: r.user_id, problemId: r.problem_id, points: r.points, at: r.created_at });
+  }
+  return results;
 }
 
 /** Each problem once, at the moment it was first accepted. */

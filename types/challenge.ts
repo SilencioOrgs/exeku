@@ -24,5 +24,5 @@ export interface ChallengeSession {
   completedAt?: number | null;
 }
 
-export const DEFAULT_CHALLENGE_DURATION_MS = 5 * 60 * 1000; // 5 minutes demo duration
+export const DEFAULT_CHALLENGE_DURATION_MS = 15 * 60 * 1000; // 15 minutes
 export const CHALLENGE_STORAGE_KEY = "exeku:challenge-session";

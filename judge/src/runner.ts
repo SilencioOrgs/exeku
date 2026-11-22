@@ -149,9 +149,27 @@ export async function runJob(request: RunRequest, boxId: number, deps: RunnerDep
   const batchBudgetMs = maxBatchWallMs ?? Math.max(MAX_BATCH_WALL_MS, request.stdins.length * (limits.wallTimeMs + 1000));
   const batchDeadline = Date.now() + batchBudgetMs;
 
+  const MAX_CONSECUTIVE_LIMIT_FAILS = 3;
+  let consecutiveLimitFails = 0;
+  let lastLimitStatus: "TIME_LIMIT_EXCEEDED" | "MEMORY_LIMIT_EXCEEDED" | null = null;
+
   // A fresh box per test: no files or cached memory carry over from the previous input.
   for (const stdin of request.stdins) {
     if (signal?.aborted) throw new JobAbortedError("Client disconnected.");
+    if (consecutiveLimitFails >= MAX_CONSECUTIVE_LIMIT_FAILS && lastLimitStatus) {
+      runs.push({
+        status: lastLimitStatus,
+        exitCode: null,
+        signal: null,
+        stdout: "",
+        stderr: "",
+        timeMs: lastLimitStatus === "TIME_LIMIT_EXCEEDED" ? request.timeLimitMs : 0,
+        wallTimeMs: 0,
+        memoryKb: lastLimitStatus === "MEMORY_LIMIT_EXCEEDED" ? request.memoryLimitKb : 0,
+        message: `Stopped after ${MAX_CONSECUTIVE_LIMIT_FAILS} consecutive resource limit failures.`,
+      });
+      continue;
+    }
     if (runs.length > 0 && Date.now() >= batchDeadline) {
       // Never fabricate TIME_LIMIT_EXCEEDED for tests that never ran; report a judge-side error instead.
       runs.push({
@@ -167,31 +185,37 @@ export async function runJob(request: RunRequest, boxId: number, deps: RunnerDep
       });
       continue;
     }
-    runs.push(
-      await withBox(cli, boxId, async (boxDir) => {
-        for (const [name, data] of artifacts) await writeFile(join(boxDir, name), data, { mode: 0o755 });
-        await writeFile(join(boxDir, STDIN), stdin);
-        await rm(metaPath, { force: true });
-        await cli.run({ boxId, metaPath, limits, argv: runArgv, dirs: spec.dirs, stdin: STDIN, stdout: STDOUT, stderr: STDERR }, signal);
-        if (signal?.aborted) throw new JobAbortedError("Client disconnected.");
-        const outcome = classifyRun(parseMeta(await readCapped(metaPath, 16 * 1024)));
-        const stderr = await readCapped(join(boxDir, STDERR), MAX_STDERR_BYTES);
-        const stdoutRes = await readCappedChecked(join(boxDir, STDOUT), MAX_STDOUT_BYTES);
-        let status = finalStatus(request.language, outcome.status, stderr);
-        let message = outcome.message;
-        if (stdoutRes.truncated && status === "SUCCESS") {
-          status = "RUNTIME_ERROR";
-          message = "Output limit exceeded.";
-        }
-        return {
-          ...outcome,
-          status,
-          message,
-          stdout: stdoutRes.text,
-          stderr,
-        };
-      })
-    );
+    const run = await withBox(cli, boxId, async (boxDir) => {
+      for (const [name, data] of artifacts) await writeFile(join(boxDir, name), data, { mode: 0o755 });
+      await writeFile(join(boxDir, STDIN), stdin);
+      await rm(metaPath, { force: true });
+      await cli.run({ boxId, metaPath, limits, argv: runArgv, dirs: spec.dirs, stdin: STDIN, stdout: STDOUT, stderr: STDERR }, signal);
+      if (signal?.aborted) throw new JobAbortedError("Client disconnected.");
+      const outcome = classifyRun(parseMeta(await readCapped(metaPath, 16 * 1024)));
+      const stderr = await readCapped(join(boxDir, STDERR), MAX_STDERR_BYTES);
+      const stdoutRes = await readCappedChecked(join(boxDir, STDOUT), MAX_STDOUT_BYTES);
+      let status = finalStatus(request.language, outcome.status, stderr);
+      let message = outcome.message;
+      if (stdoutRes.truncated && status === "SUCCESS") {
+        status = "RUNTIME_ERROR";
+        message = "Output limit exceeded.";
+      }
+      return {
+        ...outcome,
+        status,
+        message,
+        stdout: stdoutRes.text,
+        stderr,
+      };
+    });
+    if (run.status === "TIME_LIMIT_EXCEEDED" || run.status === "MEMORY_LIMIT_EXCEEDED") {
+      consecutiveLimitFails = run.status === lastLimitStatus ? consecutiveLimitFails + 1 : 1;
+      lastLimitStatus = run.status;
+    } else {
+      consecutiveLimitFails = 0;
+      lastLimitStatus = null;
+    }
+    runs.push(run);
   }
   return { compile, runs };
 }

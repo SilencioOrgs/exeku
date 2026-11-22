@@ -58,13 +58,13 @@ interface ProfileMiniRow {
   school_email: string | null;
 }
 
-const PROFILE_CHUNK_SIZE = 500;
+const IN_CHUNK_SIZE = 100;
 
 async function loadProfiles(userIds: string[]): Promise<Map<string, ProfileMiniRow>> {
   const unique = [...new Set(userIds.filter(Boolean))];
   const map = new Map<string, ProfileMiniRow>();
-  for (let i = 0; i < unique.length; i += PROFILE_CHUNK_SIZE) {
-    const chunk = unique.slice(i, i + PROFILE_CHUNK_SIZE);
+  for (let i = 0; i < unique.length; i += IN_CHUNK_SIZE) {
+    const chunk = unique.slice(i, i + IN_CHUNK_SIZE);
     const rows = must(
       await db()
         .from("profiles")
@@ -74,6 +74,17 @@ async function loadProfiles(userIds: string[]): Promise<Map<string, ProfileMiniR
     for (const row of rows) map.set(row.user_id, row);
   }
   return map;
+}
+
+async function fetchChunked<T>(
+  ids: string[],
+  fetchChunk: (chunk: string[]) => Promise<T[]>,
+): Promise<T[]> {
+  const out: T[] = [];
+  for (let i = 0; i < ids.length; i += IN_CHUNK_SIZE) {
+    out.push(...(await fetchChunk(ids.slice(i, i + IN_CHUNK_SIZE))));
+  }
+  return out;
 }
 
 function countByClass<T extends { class_id: string }>(rows: T[]): Map<string, number> {
@@ -111,13 +122,15 @@ export async function listClassesForViewer(viewer: Viewer): Promise<ClassListPay
     .filter((id) => !teachingRows.some((c) => c.id === id));
 
   const enrolledRows = enrolledIds.length
-    ? (must(
-        await db()
-          .from("classes")
-          .select("id,teacher_id,name,section,description,invite_code,created_at")
-          .in("id", enrolledIds)
-          .order("created_at", { ascending: false }),
-      ) as ClassRow[])
+    ? await fetchChunked(enrolledIds, async (chunk) =>
+        must(
+          await db()
+            .from("classes")
+            .select("id,teacher_id,name,section,description,invite_code,created_at")
+            .in("id", chunk)
+            .order("created_at", { ascending: false }),
+        ) as ClassRow[],
+      )
     : [];
 
   const allClasses = [...teachingRows, ...enrolledRows];
@@ -132,14 +145,20 @@ export async function listClassesForViewer(viewer: Viewer): Promise<ClassListPay
   }
 
   const [allMembers, allGroups, allProblems, teacherProfiles] = await Promise.all([
-    fetchAllPages<{ class_id: string }>((from, to) =>
-      db().from("class_members").select("class_id").in("class_id", allClassIds).order("class_id").order("user_id").range(from, to),
+    fetchChunked(allClassIds, (chunk) =>
+      fetchAllPages<{ class_id: string }>((from, to) =>
+        db().from("class_members").select("class_id").in("class_id", chunk).order("class_id").order("user_id").range(from, to),
+      ),
     ),
-    fetchAllPages<GroupRow>((from, to) =>
-      db().from("class_groups").select("id,class_id,name,created_at").in("class_id", allClassIds).order("id").range(from, to),
+    fetchChunked(allClassIds, (chunk) =>
+      fetchAllPages<GroupRow>((from, to) =>
+        db().from("class_groups").select("id,class_id,name,created_at").in("class_id", chunk).order("id").range(from, to),
+      ),
     ),
-    fetchAllPages<{ class_id: string }>((from, to) =>
-      db().from("class_problems").select("class_id").in("class_id", allClassIds).order("class_id").order("problem_id").range(from, to),
+    fetchChunked(allClassIds, (chunk) =>
+      fetchAllPages<{ class_id: string }>((from, to) =>
+        db().from("class_problems").select("class_id").in("class_id", chunk).order("class_id").order("problem_id").range(from, to),
+      ),
     ),
     loadProfiles(allClasses.map((c) => c.teacher_id)),
   ]);
@@ -274,31 +293,37 @@ export async function getClassDetail(viewer: Viewer, classId: string): Promise<C
     listProblemSummaries(undefined, { includeLocked: false }),
   ]);
 
-  const problemIds = assigned.map((p) => p.problem_id);
-  const memberIds = members.map((m) => m.user_id);
-
-  // Pull accepted solves for class members on class-assigned problems, paginated past PostgREST's 1,000-row cap.
-  const solvedByUser = new Map<string, Set<string>>();
-  if (problemIds.length > 0 && memberIds.length > 0) {
-    const subs = await fetchAllPages<{ user_id: string; problem_id: string }>((from, to) =>
-      db()
-        .from("submissions")
-        .select("user_id,problem_id")
-        .eq("verdict", "ACCEPTED")
-        .in("user_id", memberIds)
-        .in("problem_id", problemIds)
-        .order("id")
-        .range(from, to),
-    );
-    for (const s of subs) {
-      const set = solvedByUser.get(s.user_id) ?? new Set<string>();
-      set.add(s.problem_id);
-      solvedByUser.set(s.user_id, set);
-    }
-  }
-
   const groupNameById = new Map(groups.map((g) => [g.id, g.name]));
   const catalogById = new Map(catalogSummaries.map((p) => [p.id, p]));
+  const visibleAssigned = assigned.filter((p) => catalogById.has(p.problem_id));
+  const problemIds = visibleAssigned.map((p) => p.problem_id);
+  const memberIds = members.map((m) => m.user_id);
+
+  // Pull accepted solves for class members on visible class-assigned problems, chunked to stay under URL limits.
+  const solvedByUser = new Map<string, Set<string>>();
+  if (problemIds.length > 0 && memberIds.length > 0) {
+    for (let mi = 0; mi < memberIds.length; mi += IN_CHUNK_SIZE) {
+      const mChunk = memberIds.slice(mi, mi + IN_CHUNK_SIZE);
+      for (let pi = 0; pi < problemIds.length; pi += IN_CHUNK_SIZE) {
+        const pChunk = problemIds.slice(pi, pi + IN_CHUNK_SIZE);
+        const subs = await fetchAllPages<{ user_id: string; problem_id: string }>((from, to) =>
+          db()
+            .from("submissions")
+            .select("user_id,problem_id")
+            .eq("verdict", "ACCEPTED")
+            .in("user_id", mChunk)
+            .in("problem_id", pChunk)
+            .order("id")
+            .range(from, to),
+        );
+        for (const s of subs) {
+          const set = solvedByUser.get(s.user_id) ?? new Set<string>();
+          set.add(s.problem_id);
+          solvedByUser.set(s.user_id, set);
+        }
+      }
+    }
+  }
 
   const memberViews: ClassMemberView[] = members.map((m) => {
     const p = profiles.get(m.user_id);

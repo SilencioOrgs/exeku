@@ -25,9 +25,13 @@ export function fakeDb(tables) {
             rows.push(inserted);
           }
         }
-        if (op === "update") matching().forEach((r) => Object.assign(r, payload));
+        let updated = null;
+        if (op === "update") {
+          updated = matching();
+          updated.forEach((r) => Object.assign(r, payload));
+        }
         if (op === "delete") matching().forEach((r) => rows.splice(rows.indexOf(r), 1));
-        let found = op === "select" ? matching() : inserted ? [inserted] : null;
+        let found = op === "select" ? matching() : inserted ? [inserted] : updated;
         if (headCount && op === "select") return { data: null, count: found.length, error: null };
         if (found && rangeSlice) found = found.slice(rangeSlice[0], rangeSlice[1] + 1);
         if (found && limitCount !== null) found = found.slice(0, limitCount);
@@ -42,6 +46,18 @@ export function fakeDb(tables) {
         limit: (n) => { limitCount = n; return builder; },
         range: (from, to) => { rangeSlice = [from, to]; return builder; },
         not: (k) => { filters.push((r) => r[k] !== null && r[k] !== undefined); return builder; },
+        is: (k, v) => { filters.push((r) => (v === null ? r[k] === null || r[k] === undefined : r[k] === v)); return builder; },
+        or: (expr) => {
+          const clauses = expr.split(",").map((part) => part.trim().split("."));
+          filters.push((r) =>
+            clauses.some(([col, operator, val]) => {
+              if (operator === "is" && val === "null") return r[col] === null || r[col] === undefined;
+              if (operator === "eq") return String(r[col] ?? "") === val;
+              return false;
+            }),
+          );
+          return builder;
+        },
         gt: (k, v) => { filters.push((r) => r[k] !== null && r[k] !== undefined && r[k] > v); return builder; },
         gte: (k, v) => { filters.push((r) => r[k] !== null && r[k] !== undefined && r[k] >= v); return builder; },
         lte: (k, v) => { filters.push((r) => r[k] !== null && r[k] !== undefined && r[k] <= v); return builder; },
@@ -49,7 +65,7 @@ export function fakeDb(tables) {
         neq: (k, v) => { filters.push((r) => r[k] !== v); return builder; },
         in: (k, list) => { filters.push((r) => list.includes(r[k])); return builder; },
         overlaps: (k, list) => { filters.push((r) => Array.isArray(r[k]) && r[k].some((item) => list.includes(item))); return builder; },
-        ilike: (k, pattern) => { const needle = pattern.replaceAll("%", "").toLowerCase(); filters.push((r) => r[k].toLowerCase().includes(needle)); return builder; },
+        ilike: (k, pattern) => { const needle = pattern.replaceAll("%", "").toLowerCase(); filters.push((r) => typeof r[k] === "string" && r[k].toLowerCase().includes(needle)); return builder; },
         insert: (v) => { op = "insert"; payload = v; return builder; },
         upsert: (v, opts) => { op = "upsert"; payload = v; conflictCols = opts?.onConflict ? opts.onConflict.split(",").map((s) => s.trim()) : null; return builder; },
         update: (v) => { op = "update"; payload = v; return builder; },

@@ -168,8 +168,12 @@ export class ExecutionQueue {
 }
 
 const configuredConcurrency = Number(process.env.JUDGE_CONCURRENCY);
-export const globalExecutionQueue = new ExecutionQueue({
-  maxConcurrency: Number.isFinite(configuredConcurrency) && configuredConcurrency >= 1 ? Math.floor(configuredConcurrency) : 4,
-  maxQueueLength: 50,
-  maxPerIp: 60,
-});
+const queueGlobal = globalThis as typeof globalThis & { __exekuExecutionQueue?: ExecutionQueue };
+// shortcut: process-local queue (shared across Next.js route bundles via globalThis); replace with a shared Redis/Postgres queue when scaling across multiple server instances.
+export const globalExecutionQueue =
+  queueGlobal.__exekuExecutionQueue ??
+  (queueGlobal.__exekuExecutionQueue = new ExecutionQueue({
+    maxConcurrency: Number.isFinite(configuredConcurrency) && configuredConcurrency >= 1 ? Math.floor(configuredConcurrency) : 4,
+    maxQueueLength: 50,
+    maxPerIp: 60,
+  }));

@@ -35,10 +35,16 @@ const toEvent = (r: EventRow, createdTitles: Map<string, string>): CompetitionEv
   }),
 });
 
+const IN_CHUNK_SIZE = 100;
+
 /** Built-in titles are in code; only problems created in the admin page need a query. */
 export async function toEvents(rows: EventRow[]): Promise<CompetitionEvent[]> {
   const created = [...new Set(rows.flatMap((r) => r.problem_ids ?? []))].filter((id) => !getProblemById(id));
-  const titles = created.length ? must(await db().from("problems").select("id,title").in("id", created)) as { id: string; title: string }[] : [];
+  const titles: { id: string; title: string }[] = [];
+  for (let i = 0; i < created.length; i += IN_CHUNK_SIZE) {
+    const chunk = created.slice(i, i + IN_CHUNK_SIZE);
+    titles.push(...(must(await db().from("problems").select("id,title").in("id", chunk)) as { id: string; title: string }[]));
+  }
   const createdTitles = new Map(titles.map((t) => [t.id, t.title]));
   return rows.map((r) => toEvent(r, createdTitles));
 }
@@ -100,13 +106,14 @@ export async function maskTournamentProblems(
   const membersByEvent = new Map<string, Set<string>>();
   if (includeSolves && activeTournaments.length > 0) {
     const teamIds = [...new Set(activeTournaments.map((e) => teamByEvent.get(e.id)).filter((id): id is string => Boolean(id)))];
-    const teammates = teamIds.length
-      ? (must(await db().from("tournament_members").select("event_id,team_id,user_id").in("team_id", teamIds)) as {
-          event_id: string;
-          team_id: string;
-          user_id: string;
-        }[])
-      : [];
+    const teammates: { event_id: string; team_id: string; user_id: string }[] = [];
+    for (let i = 0; i < teamIds.length; i += IN_CHUNK_SIZE) {
+      teammates.push(
+        ...(must(
+          await db().from("tournament_members").select("event_id,team_id,user_id").in("team_id", teamIds.slice(i, i + IN_CHUNK_SIZE)),
+        ) as { event_id: string; team_id: string; user_id: string }[]),
+      );
+    }
     const allUserIds = new Set<string>([viewerId]);
     for (const tm of teammates) {
       allUserIds.add(tm.user_id);

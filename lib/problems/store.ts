@@ -11,15 +11,28 @@ export interface ProblemRow {
   test_cases: TestCase[]; time_limit_ms: number; memory_limit_kb: number;
 }
 
-type ProblemSummaryRow = Pick<
+type ProblemSummaryViewRow = {
+  id: string;
+  title: string;
+  difficulty: ProblemDifficulty;
+  category: string;
+  tags: string[];
+  supported_languages: PreferredLanguage[];
+  sample_count: number;
+  total_tests_count: number;
+};
+
+type ProblemSummaryFallbackRow = Pick<
   ProblemRow,
-  "id" | "title" | "difficulty" | "category" | "tags" | "supported_languages" | "test_cases" | "time_limit_ms" | "memory_limit_kb"
+  "id" | "title" | "difficulty" | "category" | "tags" | "supported_languages" | "test_cases"
 >;
+
+const IN_CHUNK_SIZE = 100;
 
 export const toProblem = (r: ProblemRow): ProgrammingProblem => ({
   id: r.id, slug: r.id, title: r.title, description: r.description, difficulty: r.difficulty, category: r.category, tags: r.tags,
   supportedLanguages: r.supported_languages, inputSpec: r.input_spec, outputSpec: r.output_spec, constraints: r.constraints,
-  sampleTestCases: r.test_cases.filter((t) => !t.isHidden).map((t) => ({ input: t.input, output: t.expectedOutput })),
+  sampleTestCases: r.test_cases.filter((t) => !t.isHidden).map((t) => ({ input: t.input, output: t.expectedOutput, explanation: t.explanation })),
   testCases: r.test_cases, timeLimitMs: r.time_limit_ms, memoryLimitKb: r.memory_limit_kb,
   starterCodes: Object.fromEntries(ALL_SUPPORTED_LANGUAGES.map((language) => [language, getStarterCode(language)])) as ProgrammingProblem["starterCodes"],
 });
@@ -65,14 +78,17 @@ export async function lockedProblemIdsFor(userId?: string, now = new Date().toIS
 
   const registeredEventIds = new Set<string>();
   if (userId) {
-    const memberships = must(
-      await db()
-        .from("tournament_members")
-        .select("event_id")
-        .eq("user_id", userId)
-        .in("event_id", liveEvents.map((e) => e.id)),
-    ) as { event_id: string }[];
-    for (const m of memberships) registeredEventIds.add(m.event_id);
+    const liveIds = liveEvents.map((e) => e.id);
+    for (let i = 0; i < liveIds.length; i += IN_CHUNK_SIZE) {
+      const memberships = must(
+        await db()
+          .from("tournament_members")
+          .select("event_id")
+          .eq("user_id", userId)
+          .in("event_id", liveIds.slice(i, i + IN_CHUNK_SIZE)),
+      ) as { event_id: string }[];
+      for (const m of memberships) registeredEventIds.add(m.event_id);
+    }
   }
 
   const unlocked = new Set<string>();
@@ -109,33 +125,84 @@ export async function problemExists(id: string, options?: ProblemLookupOptions):
   return Boolean(row);
 }
 
-export async function listProblemSummaries(filter?: ProblemFilter, options?: ProblemLookupOptions): Promise<ProblemSummary[]> {
-  const [rows, locked] = await Promise.all([
-    fetchAllPages<ProblemSummaryRow>((from, to) =>
+async function fetchDbProblemSummaries(): Promise<ProblemSummary[]> {
+  try {
+    const viewRows = await fetchAllPages<ProblemSummaryViewRow>((from, to) =>
       db()
-        .from("problems")
-        .select("id,title,difficulty,category,tags,supported_languages,test_cases,time_limit_ms,memory_limit_kb")
+        .from("problem_summaries")
+        .select("id,title,difficulty,category,tags,supported_languages,sample_count,total_tests_count")
         .order("created_at")
         .order("id")
         .range(from, to),
-    ),
+    );
+    // In tests or unmigrated DBs, a fake table without sample_count falls through below.
+    if (viewRows.length === 0 || typeof viewRows[0]?.total_tests_count === "number") {
+      if (viewRows.length > 0) {
+        return viewRows.map((r) => ({
+          id: r.id,
+          slug: r.id,
+          title: r.title,
+          difficulty: r.difficulty,
+          category: r.category,
+          tags: r.tags,
+          supportedLanguages: r.supported_languages,
+          sampleCount: r.sample_count,
+          totalTestsCount: r.total_tests_count,
+        }));
+      }
+    }
+  } catch {
+    /* Fall back to problems table if problem_summaries view is not migrated yet. */
+  }
+
+  const rows = await fetchAllPages<ProblemSummaryFallbackRow>((from, to) =>
+    db()
+      .from("problems")
+      .select("id,title,difficulty,category,tags,supported_languages,test_cases")
+      .order("created_at")
+      .order("id")
+      .range(from, to),
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    slug: r.id,
+    title: r.title,
+    difficulty: r.difficulty,
+    category: r.category,
+    tags: r.tags,
+    supportedLanguages: r.supported_languages,
+    sampleCount: (r.test_cases ?? []).filter((t) => !t.isHidden).length,
+    totalTestsCount: (r.test_cases ?? []).length,
+  }));
+}
+
+function matchesSummaryFilter(summary: ProblemSummary, filter?: ProblemFilter): boolean {
+  if (!filter) return true;
+  if (filter.difficulty && filter.difficulty !== "all" && summary.difficulty !== filter.difficulty) return false;
+  if (filter.language && !summary.supportedLanguages.includes(filter.language as never)) return false;
+  if (filter.search) {
+    const q = filter.search.toLowerCase();
+    const inTitle = summary.title.toLowerCase().includes(q);
+    const inCategory = summary.category.toLowerCase().includes(q);
+    const inTags = summary.tags.some((t) => t.toLowerCase().includes(q));
+    if (!inTitle && !inCategory && !inTags) return false;
+  }
+  return true;
+}
+
+export async function listProblemSummaries(filter?: ProblemFilter, options?: ProblemLookupOptions): Promise<ProblemSummary[]> {
+  const [dbSummaries, locked] = await Promise.all([
+    fetchDbProblemSummaries(),
     options?.includeLocked ? Promise.resolve(new Set<string>()) : lockedProblemIdsFor(options?.userId),
   ]);
 
-  const builtIns = getAllProblems();
-  const seen = new Set(builtIns.map((p) => p.id));
-  const dbProblems: ProgrammingProblem[] = rows
-    .filter((r) => !seen.has(r.id))
-    .map((r) =>
-      toProblem({
-        ...r,
-        description: "",
-        input_spec: "",
-        output_spec: "",
-        constraints: [],
-      }),
-    );
-
-  const all = [...builtIns, ...dbProblems].filter((problem) => !locked.has(problem.id));
-  return summarizeProblems(all, filter);
+  const builtInSummaries = summarizeProblems(
+    getAllProblems().filter((problem) => !locked.has(problem.id)),
+    filter,
+  );
+  const seen = new Set(builtInSummaries.map((p) => p.id));
+  const extra = dbSummaries.filter(
+    (summary) => !seen.has(summary.id) && !locked.has(summary.id) && matchesSummaryFilter(summary, filter),
+  );
+  return [...builtInSummaries, ...extra];
 }

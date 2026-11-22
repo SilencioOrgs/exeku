@@ -243,10 +243,20 @@ export function ChallengeProvider({ children }: { children: React.ReactNode }) {
   const forfeitChallenge = useCallback(() => {
     const prev = sessionRef.current;
     if (!prev) return;
+    if (prev.status === "expired" || prev.status === "completed" || prev.status === "forfeited") return;
+    const now = Date.now();
+    if (now >= prev.deadline) {
+      const expired: ChallengeSession = { ...prev, status: "expired" };
+      sessionRef.current = expired;
+      setSession(expired);
+      setRemainingMs(0);
+      persistSession(expired);
+      return;
+    }
     const forfeited: ChallengeSession = {
       ...prev,
       status: "forfeited",
-      completedAt: Date.now(),
+      completedAt: now,
     };
     sessionRef.current = forfeited;
     setSession(forfeited);
@@ -265,6 +275,7 @@ export function ChallengeProvider({ children }: { children: React.ReactNode }) {
     const current = sessionRef.current;
     const isLocked =
       current &&
+      Date.now() < current.deadline &&
       (current.status === "active" ||
         current.status === "submitting" ||
         current.status === "submitted");

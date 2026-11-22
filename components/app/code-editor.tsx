@@ -116,9 +116,18 @@ export function CodeEditor({ value, onChange, filename }: CodeEditorProps) {
   };
 
   const syncScroll = (event: SyntheticEvent<HTMLTextAreaElement>) => {
-    const { scrollTop, scrollLeft } = event.currentTarget;
-    // Keep the list under the caret when typing scrolls the editor.
-    if (suggest) refresh(event.currentTarget);
+    const area = event.currentTarget;
+    const { scrollTop, scrollLeft } = area;
+    // Keep the list under the caret when scrolling without re-scanning the file or resetting selection index.
+    setSuggest((open) => {
+      if (!open) return null;
+      const { line, column } = caretPosition(area.value, open.start);
+      const lineTop = PAD + line * open.rowHeight - scrollTop;
+      const height = open.items.length * open.rowHeight + 10;
+      const top = lineTop + open.rowHeight + height <= area.clientHeight ? lineTop + open.rowHeight : Math.max(0, lineTop - height);
+      const left = `max(0px, min(calc(${PAD - 13 - scrollLeft}px + ${column}ch), calc(100% - ${POPUP_CH}ch)))`;
+      return { ...open, top, left };
+    });
     if (gutterRef.current) gutterRef.current.scrollTop = scrollTop;
     if (highlightRef.current) { highlightRef.current.scrollTop = scrollTop; highlightRef.current.scrollLeft = scrollLeft; }
   };

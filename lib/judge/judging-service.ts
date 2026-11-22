@@ -160,16 +160,34 @@ export class JudgingService {
       memoryLimitKb: problem.memoryLimitKb,
     };
     // Engines that support batches compile once and take one queue slot for the whole submission.
-    // Chunk to the judge worker's 64-input batch limit so larger test suites do not fail with HTTP 400.
+    // Chunk to both the judge worker's 64-input cap and 8 MB total stdin cap (leaving headroom for JSON escaping).
     const MAX_BATCH_INPUTS = 64;
+    const MAX_BATCH_STDIN_BYTES = 7 * 1024 * 1024;
     let batch: ExecutionResult[] | null = null;
     if (this.adapter.executeBatch) {
       const inputs = problem.testCases.map((testCase) => testCase.input);
+      const chunks: string[][] = [];
+      let currentChunk: string[] = [];
+      let currentBytes = 0;
+      for (const input of inputs) {
+        const bytes = Buffer.byteLength(input, "utf8");
+        if (
+          currentChunk.length > 0 &&
+          (currentChunk.length >= MAX_BATCH_INPUTS || currentBytes + bytes > MAX_BATCH_STDIN_BYTES)
+        ) {
+          chunks.push(currentChunk);
+          currentChunk = [];
+          currentBytes = 0;
+        }
+        currentChunk.push(input);
+        currentBytes += bytes;
+      }
+      if (currentChunk.length > 0) chunks.push(currentChunk);
+
       batch = await this.queue.enqueue(async () => {
         const collected: ExecutionResult[] = [];
-        for (let offset = 0; offset < inputs.length; offset += MAX_BATCH_INPUTS) {
+        for (const chunk of chunks) {
           if (signal?.aborted) throw new QueueAbortedError();
-          const chunk = inputs.slice(offset, offset + MAX_BATCH_INPUTS);
           const results = await this.adapter.executeBatch!(baseRequest, chunk, signal);
           collected.push(...results);
           const first = results[0];

@@ -1010,6 +1010,113 @@ test("sidebar dropdowns toggle locally without forced navigation or eager RSC pr
   assert.match(friends, /SYNCED_PROFILE_KEY/);
 });
 
+test("POST /api/account/school verifies Clerk ownership before checking duplicate school_email (no enumeration oracle)", async () => {
+  const tables = {
+    profiles: [
+      { user_id: "victim", school_email: "victim@lspu.edu.ph", campus_id: "santa-cruz" },
+      { user_id: "attacker", school_email: null, campus_id: null },
+    ],
+  };
+  let queriedProfiles = false;
+  const baseDb = fakeDb(tables);
+  const trackingDb = () => ({
+    from(name) {
+      if (name === "profiles") queriedProfiles = true;
+      return baseDb().from(name);
+    },
+  });
+  const route = loadTs("app/api/account/school/route.ts", {
+    "next/server": { NextResponse },
+    "@clerk/nextjs/server": { currentUser: async () => ({ emailAddresses: [] }) },
+    "@/lib/accounts/read-json": { readJson: async (req) => ({ ok: true, value: await req.json() }) },
+    "@/lib/accounts/rules": {
+      checkSchoolAccount: async () => ({
+        ok: true,
+        account: { email: "victim@lspu.edu.ph", age: 20, school: { id: "lspu", name: "LSPU", campusId: "santa-cruz", campus: "Santa Cruz", program: "BSCS" } },
+      }),
+    },
+    "@/lib/accounts/school-directory": { schoolDirectory: {} },
+    "@/lib/api/route-handler": { withApiErrors: async (_name, fn) => fn() },
+    "@/lib/auth/viewer": { getViewer: async () => ({ id: "attacker", campusId: undefined }) },
+    "@/lib/db/client": { db: trackingDb, must },
+  });
+
+  const res = await route.POST(new Request("http://localhost/api/account/school", { method: "POST", body: "{}" }));
+  assert.equal(res.status, 403);
+  assert.equal(queriedProfiles, false, "must reject unverified email before querying profiles.school_email");
+});
+
+test("JudgingService chunks batch inputs by 7 MB total stdin bytes so large suites stay under worker 8 MB cap", async () => {
+  const { JudgingService } = await import("../lib/judge/judging-service.ts");
+  const { ExecutionQueue } = await import("../lib/execution/queue.ts");
+  const batchSizes = [];
+  const adapter = {
+    execute: async () => { throw new Error("should use batch"); },
+    checkHealth: async () => ({ isAvailable: true, engine: "test", supportedLanguages: ["python"] }),
+    executeBatch: async (_req, stdins) => {
+      batchSizes.push(stdins.length);
+      return stdins.map(() => ({ status: "SUCCESS", exitCode: 0, stdout: "ok", stderr: "", durationMs: 1 }));
+    },
+  };
+  const bigInput = "x".repeat(4 * 1024 * 1024); // 4 MB each -> 3 inputs (12 MB) split into 3 batches of 1
+  const problem = {
+    id: "big-io",
+    slug: "big-io",
+    title: "Big IO",
+    description: "",
+    difficulty: "beginner",
+    category: "Test",
+    tags: [],
+    supportedLanguages: ["python"],
+    inputSpec: "",
+    outputSpec: "",
+    constraints: [],
+    sampleTestCases: [],
+    testCases: [
+      { id: "t1", input: bigInput, expectedOutput: "ok", isHidden: true },
+      { id: "t2", input: bigInput, expectedOutput: "ok", isHidden: true },
+      { id: "t3", input: bigInput, expectedOutput: "ok", isHidden: true },
+    ],
+    timeLimitMs: 2000,
+    memoryLimitKb: 128000,
+    starterCodes: { python: "", java: "", cpp: "", c: "" },
+  };
+  const service = new JudgingService({ adapter, queue: new ExecutionQueue({ maxConcurrency: 1 }) });
+  const result = await service.judgeSubmission(problem, { language: "python", sourceCode: "print('ok')" });
+  assert.equal(result.overallVerdict, "ACCEPTED");
+  assert.deepEqual(batchSizes, [1, 1, 1]);
+});
+
+test("getViewer auto-creates a missing profile and normalizes is_admin into admin role", async () => {
+  const tables = {
+    profiles: [
+      { user_id: "u-admin", display_name: "Admin", avatar_id: "glitch-bot", border_id: "none", campus_id: null, role: "student", is_admin: true },
+    ],
+  };
+  let activeUserId = "u-new";
+  const viewerMod = loadTs("lib/auth/viewer.ts", {
+    "server-only": {},
+    "@clerk/nextjs/server": {
+      auth: async () => ({ userId: activeUserId }),
+      currentUser: async () => ({ fullName: "New Coder", firstName: "New", username: "newcoder" }),
+    },
+    "@/lib/db/client": { db: fakeDb(tables), must },
+    "@/lib/profile-validation": { toDisplayName: (v) => (v || "Coder").trim() },
+    "@/lib/auth/admin-check": { normalizeRole: (role, isAdmin) => (isAdmin ? "admin" : role === "teacher" ? "teacher" : "student") },
+  });
+
+  const created = await viewerMod.getViewer();
+  assert.equal(created.id, "u-new");
+  assert.equal(created.name, "New Coder");
+  assert.equal(created.role, "student");
+  assert.equal(tables.profiles.some((p) => p.user_id === "u-new"), true);
+
+  activeUserId = "u-admin";
+  const admin = await viewerMod.getViewer();
+  assert.equal(admin.role, "admin");
+});
+
+
 
 
 

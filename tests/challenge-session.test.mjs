@@ -20,11 +20,11 @@ test("challenge-session - formatRemainingTime formats seconds and minutes accura
 test("challenge-session - calculates absolute deadline and initial state", () => {
   assert.equal(CHALLENGE_STORAGE_KEY, "exeku:challenge-session");
   const now = 1700000000000;
-  const duration = DEFAULT_CHALLENGE_DURATION_MS; // 5 minutes (300,000 ms)
-  assert.equal(duration, 5 * 60 * 1000);
+  const duration = DEFAULT_CHALLENGE_DURATION_MS; // 15 minutes (900,000 ms)
+  assert.equal(duration, 15 * 60 * 1000);
 
   const deadline = now + duration;
-  assert.equal(deadline - now, 300000);
+  assert.equal(deadline - now, 900000);
 
   const session = {
     id: "challenge-test-123",

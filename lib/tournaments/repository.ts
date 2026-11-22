@@ -57,6 +57,22 @@ function groupMembersByTeam(members: MemberRow[]): Map<string, MemberRow[]> {
 const entries = (teams: TeamRow[], byTeam: Map<string, MemberRow[]>): TeamEntry[] =>
   teams.map((t) => ({ id: t.id, memberIds: (byTeam.get(t.id) ?? []).map((m) => m.user_id) }));
 
+const IN_CHUNK_SIZE = 100;
+const ENDED_RANK_CACHE_LIMIT = 200;
+// Ended tournament standings are immutable (submissions are bounded by endsAt), so caching avoids re-ranking on every profile view.
+// shortcut: process-local LRU cache; move to a persisted tournament_results table when running many multi-instance servers.
+const endedRankCache = new Map<string, ReturnType<typeof rankTeams>>();
+
+async function fetchEventsByIds(ids: string[]): Promise<EventRow[]> {
+  const unique = [...new Set(ids.filter(Boolean))];
+  const out: EventRow[] = [];
+  for (let i = 0; i < unique.length; i += IN_CHUNK_SIZE) {
+    const chunk = unique.slice(i, i + IN_CHUNK_SIZE);
+    out.push(...(must(await db().from("events").select(EVENT_COLUMNS).in("id", chunk)) as unknown as EventRow[]));
+  }
+  return out;
+}
+
 export async function getTournament(viewer: Viewer, id: string): Promise<TournamentView | null> {
   const found = await loadVisible(viewer, id);
   if (!found) return null;
@@ -67,12 +83,16 @@ export async function getTournament(viewer: Viewer, id: string): Promise<Tournam
   const membersByTeam = groupMembersByTeam(members);
   const teamByUser = new Map(members.map((m) => [m.user_id, m.team_id]));
   const problemIds = (event.problems ?? []).map((p) => p.id);
-  const solves = status === "registration" ? [] : await solvesBetween(members.map((m) => m.user_id), startsAt, endsAt);
-  const standings = rankTeams(entries(teams, membersByTeam), solves, problemIds);
-  const standingByTeam = new Map(standings.map((s) => [s.teamId, s]));
   const myTeamId = teamByUser.get(viewer.id) ?? null;
   const open = status !== "registration" && myTeamId !== null;
   const teamMembers = new Set((myTeamId ? membersByTeam.get(myTeamId) ?? [] : []).map((m) => m.user_id));
+
+  // While live, only fetch the viewer's own team solves (standings stay hidden until ended).
+  const solveUserIds =
+    status === "ended" ? members.map((m) => m.user_id) : status === "live" && open ? [...teamMembers] : [];
+  const solves = solveUserIds.length > 0 ? await solvesBetween(solveUserIds, startsAt, endsAt) : [];
+  const standings = status === "ended" ? rankTeams(entries(teams, membersByTeam), solves, problemIds) : [];
+  const standingByTeam = new Map(standings.map((s) => [s.teamId, s]));
   const violations = await fetchAllPages<{ user_id: string }>((from, to) =>
     db().from("tournament_violations").select("user_id").eq("event_id", id).order("id").range(from, to),
   );
@@ -156,6 +176,7 @@ export async function performTournamentAction(viewer: Viewer, id: string, input:
       const { error } = await db().from("tournament_members").insert({ event_id: id, team_id: teamId, user_id: viewer.id });
       if (error?.code === UNIQUE_VIOLATION) return failed(409, "You're already on a team.");
       if (error?.code === "23514") return failed(409, "That team is full.");
+      if (error?.code === "23503") return failed(404, "That team wasn't found.");
       if (error) throw new Error(`Database error: ${error.message}`);
       const afterJoin = must(await db().from("tournament_members").select("user_id").eq("team_id", teamId)) as { user_id: string }[];
       if (afterJoin.length > found.teamSize) {
@@ -179,8 +200,18 @@ export async function performTournamentAction(viewer: Viewer, id: string, input:
 export async function getActiveTournament(viewer: Viewer): Promise<ActiveTournament | null> {
   const joined = must(await db().from("tournament_members").select("event_id,team_id").eq("user_id", viewer.id)) as { event_id: string; team_id: string }[];
   if (joined.length === 0) return null;
-  const rows = must(await db().from("events").select(EVENT_COLUMNS).in("id", joined.map((j) => j.event_id))) as unknown as EventRow[];
   const now = Date.now();
+  const nowIso = new Date(now).toISOString();
+  const joinedEventIds = [...new Set(joined.map((j) => j.event_id))];
+  const rows: EventRow[] = [];
+  for (let i = 0; i < joinedEventIds.length; i += IN_CHUNK_SIZE) {
+    const chunk = joinedEventIds.slice(i, i + IN_CHUNK_SIZE);
+    rows.push(
+      ...(must(
+        await db().from("events").select(EVENT_COLUMNS).in("id", chunk).lte("starts_at", nowIso).gt("ends_at", nowIso),
+      ) as unknown as EventRow[]),
+    );
+  }
   const liveRows = rows.filter((row) => row.starts_at && row.ends_at && statusAt(now, row.starts_at, row.ends_at) === "live");
   if (liveRows.length === 0) return null;
   // Resolve through toEvents so problems deleted after scheduling drop out instead of trapping the team in lockdown.
@@ -204,7 +235,7 @@ export async function getActiveTournament(viewer: Viewer): Promise<ActiveTournam
 export async function getMedals(userId: string): Promise<Medal[]> {
   const joined = must(await db().from("tournament_members").select("event_id,team_id").eq("user_id", userId)) as { event_id: string; team_id: string }[];
   if (joined.length === 0) return [];
-  const rows = must(await db().from("events").select(EVENT_COLUMNS).in("id", joined.map((j) => j.event_id))) as unknown as EventRow[];
+  const rows = await fetchEventsByIds(joined.map((j) => j.event_id));
   const now = Date.now();
   const endedRows = rows.filter((row) => row.starts_at && row.ends_at && now >= Date.parse(row.ends_at));
   if (endedRows.length === 0) return [];
@@ -214,10 +245,24 @@ export async function getMedals(userId: string): Promise<Medal[]> {
     joined.map(async ({ event_id: eventId, team_id: teamId }): Promise<Medal | null> => {
       const event = endedById.get(eventId);
       if (!event?.tournament) return null;
-      const { teams, members } = await loadRoster(eventId);
-      const solves = await solvesBetween(members.map((m) => m.user_id), event.tournament.startsAt, event.tournament.endsAt);
-      const problemIds = (event.problems ?? []).map((p) => p.id);
-      const mine = rankTeams(entries(teams, groupMembersByTeam(members)), solves, problemIds).find((s) => s.teamId === teamId);
+      const endedAgeMs = now - Date.parse(event.tournament.endsAt);
+      const cacheable = endedAgeMs > 5 * 60_000;
+      const cacheKey = `${eventId}:${event.tournament.endsAt}`;
+      let ranked = cacheable ? endedRankCache.get(cacheKey) : undefined;
+      if (!ranked) {
+        const { teams, members } = await loadRoster(eventId);
+        const solves = await solvesBetween(members.map((m) => m.user_id), event.tournament.startsAt, event.tournament.endsAt);
+        const problemIds = (event.problems ?? []).map((p) => p.id);
+        ranked = rankTeams(entries(teams, groupMembersByTeam(members)), solves, problemIds);
+        if (cacheable) {
+          if (endedRankCache.size >= ENDED_RANK_CACHE_LIMIT) {
+            const oldest = endedRankCache.keys().next().value;
+            if (oldest) endedRankCache.delete(oldest);
+          }
+          endedRankCache.set(cacheKey, ranked);
+        }
+      }
+      const mine = ranked.find((s) => s.teamId === teamId);
       if (mine && mine.rank <= 3 && mine.points > 0) {
         return { place: mine.rank, at: event.tournament.endsAt, title: event.title };
       }

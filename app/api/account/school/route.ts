@@ -20,27 +20,11 @@ export const POST = (request: Request) =>
       return NextResponse.json({ error: "Your campus is already set. Contact an admin to change it." }, { status: 409 });
     }
 
-    // Block another account from claiming the same school email, while allowing the same account to keep/re-verify it.
-    const takenByOther = must(
-      await db()
-        .from("profiles")
-        .select("user_id")
-        .eq("school_email", email)
-        .neq("user_id", viewer.id)
-        .limit(1)
-        .maybeSingle(),
-    ) as { user_id: string } | null;
-    if (takenByOther) {
-      return NextResponse.json(
-        { error: "This school email is already linked to another Exeku account.", fieldErrors: { email: "This school email is already linked to another account." } },
-        { status: 409 },
-      );
-    }
-
+    // Verify Clerk ownership first so unverified callers cannot probe whether a school email belongs to another account.
     const clerkUser = await currentUser();
     const verifiedEmails = (clerkUser?.emailAddresses ?? [])
       .filter((entry) => entry.verification?.status === "verified")
-      .map((entry) => entry.emailAddress.toLowerCase());
+      .map((entry) => entry.emailAddress.trim().toLowerCase());
     if (!verifiedEmails.includes(email)) {
       return NextResponse.json(
         {
@@ -52,6 +36,43 @@ export const POST = (request: Request) =>
       );
     }
 
-    must(await db().from("profiles").update({ school_email: email, age, school, campus_id: school.campusId ?? null }).eq("user_id", viewer.id));
+    // Block another account from claiming the same school email, while allowing the same account to keep/re-verify it.
+    const takenByOther = must(
+      await db()
+        .from("profiles")
+        .select("user_id")
+        .ilike("school_email", email)
+        .neq("user_id", viewer.id)
+        .limit(1)
+        .maybeSingle(),
+    ) as { user_id: string } | null;
+    if (takenByOther) {
+      return NextResponse.json(
+        { error: "This school email is already linked to another Exeku account.", fieldErrors: { email: "This school email is already linked to another account." } },
+        { status: 409 },
+      );
+    }
+
+    const nextCampus = school.campusId ?? null;
+    let query = db()
+      .from("profiles")
+      .update({ school_email: email, age, school, campus_id: nextCampus })
+      .eq("user_id", viewer.id);
+    if (nextCampus) {
+      query = query.or(`campus_id.is.null,campus_id.eq.${nextCampus}`);
+    } else {
+      query = query.is("campus_id", null);
+    }
+    const { data: updated, error } = await query.select("user_id").maybeSingle();
+    if (error?.code === "23505") {
+      return NextResponse.json(
+        { error: "This school email is already linked to another Exeku account.", fieldErrors: { email: "This school email is already linked to another account." } },
+        { status: 409 },
+      );
+    }
+    if (error) throw new Error(error.message);
+    if (!updated) {
+      return NextResponse.json({ error: "Your campus is already set. Contact an admin to change it." }, { status: 409 });
+    }
     return NextResponse.json({ account: { ...checked.account, verified: true } });
   });

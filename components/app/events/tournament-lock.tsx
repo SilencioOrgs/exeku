@@ -34,16 +34,25 @@ export function TournamentLock() {
 
   useEffect(() => {
     let live = true;
+    let lastActiveId: string | null = null;
     const load = () => void fetchActiveTournament().then((result) => {
       if (!live || !result.ok) return;
       const next = result.data.active;
       setActive(next);
-      if (next) setWarnings((count) => Math.max(count, next.warnings));
+      if (!next) {
+        setWarnings(0);
+        lastActiveId = null;
+      } else if (next.id !== lastActiveId) {
+        setWarnings(next.warnings);
+        lastActiveId = next.id;
+      } else {
+        setWarnings((count) => Math.max(count, next.warnings));
+      }
       // The tournament ended or the team finished, so hand the screen back without counting it as leaving.
       if (wasActive.current && !next) {
         wasFullscreen.current = false;
         keyboardLock()?.unlock?.();
-        if (document.fullscreenElement) void document.exitFullscreen();
+        if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
       }
       wasActive.current = Boolean(next);
     });

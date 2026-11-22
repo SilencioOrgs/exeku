@@ -67,7 +67,7 @@ export function WorkspaceView() {
   const [resetAllFiles, setResetAllFiles] = useState(false);
   const [forfeitOpen, setForfeitOpen] = useState(false);
   const [finishOpen, setFinishOpen] = useState(false);
-  const [expiredDismissed, setExpiredDismissed] = useState(false);
+  const [dismissedExpiredId, setDismissedExpiredId] = useState<string | null>(null);
 
   // This view stays mounted between problems, so a verdict must be cleared when the problem changes.
   const prevProblemRef = useRef(problemIdParam);
@@ -180,15 +180,17 @@ export function WorkspaceView() {
   };
 
   const handleConfirmSubmission = async () => {
-    if (!problem) return;
+    if (!problem || judge.isSubmitting) return;
     setConfirmSubmitOpen(false);
     showResults("results");
     const result = await judge.submit(problem.id, source());
     if (!result) return;
     if (result.overallVerdict === "ACCEPTED") window.dispatchEvent(new Event(TOURNAMENT_REFRESH_EVENT));
     if (result.overallVerdict === "ACCEPTED") setEventRun((run) => run && run.problemIds.includes(problem.id) && !run.solved.includes(problem.id) ? { ...run, solved: [...run.solved, problem.id] } : run);
-    // Only real verdicts count; a sandbox outage or judge error is not the student's attempt.
-    if (challenge.isTimedActive && isRealVerdict(result.overallVerdict)) challenge.recordSubmissionAttempt(result.overallVerdict);
+    // Only real verdicts for the active challenge's problem count; sandbox errors or other problems never credit it.
+    if (challenge.isTimedActive && challenge.session?.problemId === problem.id && isRealVerdict(result.overallVerdict)) {
+      challenge.recordSubmissionAttempt(result.overallVerdict);
+    }
     setResultOpen(true);
   };
 
@@ -482,8 +484,8 @@ export function WorkspaceView() {
       />
 
       <TimeExpiredDialog
-        open={challenge.status === "expired" && !expiredDismissed}
-        onOpenChange={(open) => { if (!open) setExpiredDismissed(true); }}
+        open={challenge.status === "expired" && dismissedExpiredId !== (challenge.session?.id ?? null)}
+        onOpenChange={(open) => { if (!open) setDismissedExpiredId(challenge.session?.id ?? null); }}
         submissionCount={challenge.session?.submissionCount ?? 0}
         lastVerdict={challenge.session?.lastVerdict}
       />
