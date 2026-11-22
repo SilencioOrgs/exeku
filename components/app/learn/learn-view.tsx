@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -18,6 +18,7 @@ import {
   Terminal,
 } from "lucide-react";
 import { CodeEditor } from "@/components/app/code-editor";
+import { DifficultyBadge, difficultyLabel } from "@/components/app/difficulty-badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useProfile } from "@/hooks/use-profile";
@@ -25,14 +26,17 @@ import {
   checkExerciseAnswer,
   getLearnChapter,
   LEARN_CHAPTERS,
+  type LearnChapter,
   type LearnChapterId,
 } from "@/lib/learn/curriculum";
 import { tokenize } from "@/lib/syntax";
 import { ALL_SUPPORTED_LANGUAGES, getFilenameForLanguage, LANGUAGE_DISPLAY_NAMES } from "@/lib/workspace-defaults";
 import type { ExecutionResult } from "@/types/execution";
+import type { ProblemDifficulty } from "@/types/problem";
 import type { PreferredLanguage } from "@/types/profile";
 
 const PROGRESS_STORAGE_KEY = "exeku:learn-completed";
+const DIFFICULTY_FILTERS: Array<ProblemDifficulty | "all"> = ["all", "beginner", "intermediate", "advanced"];
 
 function readCompleted(): string[] {
   if (typeof window === "undefined") return [];
@@ -75,12 +79,16 @@ export function LearnView({ initialChapterId, initialLang, embedded = false }: L
   const [selectedLang, setSelectedLang] = useState<PreferredLanguage | null>(initialLang ?? null);
   const lang: PreferredLanguage = selectedLang ?? profile?.preferredLanguage ?? "python";
 
+  const [chapters, setChapters] = useState<LearnChapter[]>(LEARN_CHAPTERS);
+  const [difficultyFilter, setDifficultyFilter] = useState<ProblemDifficulty | "all">("all");
   const [chapterId, setChapterId] = useState<LearnChapterId>(() => getLearnChapter(initialChapterId).id);
-  const chapter = getLearnChapter(chapterId);
+  const chapter = chapters.find((c) => c.id === chapterId) ?? getLearnChapter(chapterId);
   const lesson = chapter.lessons[lang];
-  const chapterIndex = LEARN_CHAPTERS.findIndex((c) => c.id === chapter.id);
-  const prevChapter = chapterIndex > 0 ? LEARN_CHAPTERS[chapterIndex - 1] : null;
-  const nextChapter = chapterIndex < LEARN_CHAPTERS.length - 1 ? LEARN_CHAPTERS[chapterIndex + 1] : null;
+  const chapterIndex = chapters.findIndex((c) => c.id === chapter.id);
+  const prevChapter = chapterIndex > 0 ? chapters[chapterIndex - 1] : null;
+  const nextChapter = chapterIndex < chapters.length - 1 ? chapters[chapterIndex + 1] : null;
+  const filteredChapters =
+    difficultyFilter === "all" ? chapters : chapters.filter((c) => c.difficulty === difficultyFilter);
 
   // Interactive "Try it Yourself" editor state keyed to `${lang}:${chapter.id}`
   const lessonKey = `${lang}:${chapter.id}`;
@@ -95,6 +103,29 @@ export function LearnView({ initialChapterId, initialLang, embedded = false }: L
   const [feedbackByKey, setFeedbackByKey] = useState<Record<string, "correct" | "wrong" | null>>({});
   const [showHintByKey, setShowHintByKey] = useState<Record<string, boolean>>({});
   const [completedKeys, setCompletedKeys] = useState<string[]>(() => readCompleted());
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/learn", { signal: controller.signal })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { chapters?: LearnChapter[]; completedKeys?: string[] } | null) => {
+        if (!data || controller.signal.aborted) return;
+        if (Array.isArray(data.chapters) && data.chapters.length > 0) {
+          setChapters(data.chapters);
+        }
+        if (Array.isArray(data.completedKeys) && data.completedKeys.length > 0) {
+          setCompletedKeys((prev) => {
+            const merged = Array.from(new Set([...prev, ...(data.completedKeys ?? [])]));
+            writeCompleted(merged);
+            return merged;
+          });
+        }
+      })
+      .catch(() => {
+        /* Keep static curriculum + local progress cache. */
+      });
+    return () => controller.abort();
+  }, []);
 
   const currentCode = drafts[lessonKey] ?? lesson.exampleCode;
   const currentStdin = stdinByKey[lessonKey] ?? lesson.exampleStdin ?? "";
@@ -114,6 +145,16 @@ export function LearnView({ initialChapterId, initialLang, embedded = false }: L
       writeCompleted(next);
       return next;
     });
+    const [targetLang, targetChapterId] = key.split(":");
+    if (targetLang && targetChapterId) {
+      fetch("/api/learn", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chapterId: targetChapterId, language: targetLang }),
+      }).catch(() => {
+        /* Saved locally; will sync on next completion. */
+      });
+    }
   };
 
   const handleRunExample = async () => {
@@ -216,8 +257,8 @@ export function LearnView({ initialChapterId, initialLang, embedded = false }: L
     if (ok) markChapterCompleted(lessonKey);
   };
 
-  const completedInLang = LEARN_CHAPTERS.filter((c) => completedKeys.includes(`${lang}:${c.id}`)).length;
-  const progressPct = Math.round((completedInLang / LEARN_CHAPTERS.length) * 100);
+  const completedInLang = chapters.filter((c) => completedKeys.includes(`${lang}:${c.id}`)).length;
+  const progressPct = Math.round((completedInLang / Math.max(1, chapters.length)) * 100);
   const templateParts = lesson.exercise.codeTemplate.split("___");
 
   return (
@@ -227,7 +268,7 @@ export function LearnView({ initialChapterId, initialLang, embedded = false }: L
           <div className="space-y-1">
             <h1 className="text-3xl font-semibold tracking-tight">Learn Languages &amp; Syntax</h1>
             <p className="text-sm text-[var(--color-text-muted)]">
-              Interactive tutorials with live Try it Yourself examples for Python 3, Java, C++, and C.
+              Interactive tutorials from Easy to Hard with live Try it Yourself examples for Python 3, Java, C++, and C.
             </p>
           </div>
           <Link
@@ -262,7 +303,7 @@ export function LearnView({ initialChapterId, initialLang, embedded = false }: L
             {LANGUAGE_DISPLAY_NAMES[lang]} progress:
           </span>
           <span className="font-code font-semibold text-[var(--color-primary-text)]">
-            {completedInLang}/{LEARN_CHAPTERS.length} ({progressPct}%)
+            {completedInLang}/{chapters.length} ({progressPct}%)
           </span>
           <div className="skeuo-well h-2 w-24 overflow-hidden rounded-full">
             <div
@@ -274,18 +315,36 @@ export function LearnView({ initialChapterId, initialLang, embedded = false }: L
       </section>
 
       {/* Main Tutorial Layout: Chapter Sidebar + Interactive Lesson */}
-      <div className="grid gap-6 lg:grid-cols-[16.5rem_minmax(0,1fr)]">
+      <div className="grid gap-6 lg:grid-cols-[17.5rem_minmax(0,1fr)]">
         {/* Left Chapter Navigation */}
-        <aside aria-label="Tutorial chapters" className="skeuo-panel h-fit space-y-2 p-3.5">
-          <div className="flex items-center gap-2 px-2 py-1">
-            <BookOpen size={15} className="text-[var(--color-primary-text)]" aria-hidden="true" />
-            <h2 className="text-xs font-semibold text-[var(--color-text-main)]">
-              {LANGUAGE_DISPLAY_NAMES[lang]} Tutorial
-            </h2>
+        <aside aria-label="Tutorial chapters" className="skeuo-panel h-fit space-y-2.5 p-3.5">
+          <div className="flex items-center justify-between gap-2 px-2 py-1">
+            <div className="flex items-center gap-2">
+              <BookOpen size={15} className="text-[var(--color-primary-text)]" aria-hidden="true" />
+              <h2 className="text-xs font-semibold text-[var(--color-text-main)]">
+                {LANGUAGE_DISPLAY_NAMES[lang]} Tutorial
+              </h2>
+            </div>
+            <span className="font-code text-[11px] text-[var(--color-text-muted)]">{filteredChapters.length} lessons</span>
+          </div>
+
+          <div className="flex flex-wrap gap-1 px-1">
+            {DIFFICULTY_FILTERS.map((d) => (
+              <Button
+                key={d}
+                type="button"
+                variant="outline"
+                size="xs"
+                aria-pressed={difficultyFilter === d}
+                onClick={() => setDifficultyFilter(d)}
+              >
+                {d === "all" ? "All" : difficultyLabel(d)}
+              </Button>
+            ))}
           </div>
 
           <nav className="space-y-1">
-            {LEARN_CHAPTERS.map((item) => {
+            {filteredChapters.map((item) => {
               const active = item.id === chapter.id;
               const done = completedKeys.includes(`${lang}:${item.id}`);
               return (
@@ -295,7 +354,7 @@ export function LearnView({ initialChapterId, initialLang, embedded = false }: L
                   variant="ghost"
                   aria-pressed={active}
                   onClick={() => setChapterId(item.id)}
-                  className={`h-auto w-full justify-between px-2.5 py-2 text-left text-xs ${
+                  className={`h-auto w-full justify-between gap-2 px-2.5 py-2 text-left text-xs ${
                     active
                       ? "border border-[var(--color-primary-edge)] bg-[var(--color-elevated)] font-semibold text-[var(--color-text-main)]"
                       : "text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]"
@@ -305,7 +364,10 @@ export function LearnView({ initialChapterId, initialLang, embedded = false }: L
                     <span className="font-code text-[11px] text-[var(--color-primary-text)]">{item.number}</span>
                     <span className="truncate">{item.shortTitle}</span>
                   </span>
-                  {done && <CheckCircle2 size={13} className="shrink-0 text-[var(--color-mint)]" aria-label="Completed" />}
+                  <span className="flex shrink-0 items-center gap-1.5">
+                    <DifficultyBadge difficulty={item.difficulty} className="px-1.5 py-0 text-[10px]" />
+                    {done && <CheckCircle2 size={13} className="shrink-0 text-[var(--color-mint)]" aria-label="Completed" />}
+                  </span>
                 </Button>
               );
             })}
@@ -317,11 +379,23 @@ export function LearnView({ initialChapterId, initialLang, embedded = false }: L
           {/* Lesson Concept Card */}
           <article className="skeuo-panel space-y-5 p-5 sm:p-6">
             <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[var(--color-border)] pb-4">
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-code text-xs text-[var(--color-primary-text)]">
                     Chapter {chapter.number} · {LANGUAGE_DISPLAY_NAMES[lang]}
                   </span>
+                  <DifficultyBadge difficulty={chapter.difficulty} />
+                  <span className="rounded-md border border-[var(--color-border)] bg-[var(--color-elevated)] px-2 py-0.5 text-[11px] font-medium text-[var(--color-text-muted)]">
+                    {chapter.category}
+                  </span>
+                  {chapter.tags.slice(0, 3).map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded-md bg-[var(--color-canvas)] px-1.5 py-0.5 font-code text-[11px] text-[var(--color-text-muted)]"
+                    >
+                      {tag}
+                    </span>
+                  ))}
                   {isChapterDone && (
                     <span className="inline-flex items-center gap-1 rounded-md bg-[var(--color-easy-bg)] px-2 py-0.5 font-code text-xs text-[var(--color-mint)]">
                       <CheckCircle2 size={12} aria-hidden="true" /> Completed

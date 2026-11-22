@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
@@ -59,13 +60,18 @@ test("summarizeProblems - filters by difficulty and search term", () => {
   assert.equal(diffFilter.length, 0);
 });
 
-test("W3Schools-style Learn curriculum covers Python, Java, C++, and C basics including printing arrays", () => {
+test("W3Schools-style Learn curriculum covers Python, Java, C++, and C basics including printing arrays and Easy-to-Hard labels", () => {
   assert.equal(LEARN_CHAPTERS.length, 8);
   const arrayChapter = findLearnChapterById("printing-arrays");
   assert.ok(arrayChapter, "printing-arrays chapter must exist");
   assert.match(arrayChapter.title, /Printing an Array/i);
 
+  const difficulties = new Set(LEARN_CHAPTERS.map((c) => c.difficulty));
+  assert.deepEqual(difficulties, new Set(["beginner", "intermediate", "advanced"]));
+
   for (const chapter of LEARN_CHAPTERS) {
+    assert.ok(chapter.category.length > 2, `${chapter.id} category label`);
+    assert.ok(chapter.tags.length >= 2, `${chapter.id} topic tags`);
     for (const lang of ["python", "java", "cpp", "c"]) {
       const lesson = chapter.lessons[lang];
       assert.ok(lesson.headline.length > 3, `${chapter.id}:${lang} headline`);
@@ -88,3 +94,20 @@ test("W3Schools-style Learn curriculum covers Python, Java, C++, and C basics in
 
   assert.equal(getLearnChapter("non-existent").id, "syntax-output");
 });
+
+test("database migration defines learn_chapters, learn_progress, and seeds Easy, Medium, and Hard problems with labels", () => {
+  const sql = readFileSync(
+    new URL("../supabase/migrations/20261122020000_learn_and_curated_problems.sql", import.meta.url),
+    "utf8",
+  );
+  assert.match(sql, /create table if not exists learn_chapters/i);
+  assert.match(sql, /create table if not exists learn_progress/i);
+  assert.match(sql, /delete from problems where id in \('hello-world', 'sum-two-integers', 'even-or-odd'\)/i);
+  assert.match(sql, /'array-elements-sum'/);
+  assert.match(sql, /'two-sum-target'/);
+  assert.match(sql, /'maximum-subarray-sum'/);
+  assert.match(sql, /'beginner'/);
+  assert.match(sql, /'intermediate'/);
+  assert.match(sql, /'advanced'/);
+});
+

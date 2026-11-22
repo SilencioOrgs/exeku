@@ -1,3 +1,4 @@
+import type { ProblemDifficulty } from "@/types/problem";
 import type { PreferredLanguage } from "@/types/profile";
 
 export type LearnChapterId =
@@ -35,6 +36,8 @@ export interface LearnChapter {
   number: string;
   title: string;
   shortTitle: string;
+  category: string;
+  difficulty: ProblemDifficulty;
   summary: string;
   tags: string[];
   lessons: Record<PreferredLanguage, LanguageLesson>;
@@ -46,6 +49,8 @@ export const LEARN_CHAPTERS: LearnChapter[] = [
     number: "01",
     title: "Syntax & Printing Output",
     shortTitle: "Syntax & Output",
+    category: "Syntax & Standard I/O",
+    difficulty: "beginner",
     summary: "Learn how a program starts, how statements are written, and how to print output to the console.",
     tags: ["syntax", "output", "print", "basics"],
     lessons: {
@@ -137,6 +142,8 @@ export const LEARN_CHAPTERS: LearnChapter[] = [
     number: "02",
     title: "Variables & Data Types",
     shortTitle: "Variables & Types",
+    category: "Variables & Types",
+    difficulty: "beginner",
     summary: "Store integers, decimals, strings, and booleans in variables and format them cleanly.",
     tags: ["variables", "types", "strings", "numbers"],
     lessons: {
@@ -230,6 +237,8 @@ export const LEARN_CHAPTERS: LearnChapter[] = [
     number: "03",
     title: "Arrays & Lists (Printing an Array)",
     shortTitle: "Arrays & Lists",
+    category: "Arrays & Traversal",
+    difficulty: "beginner",
     summary: "Create arrays or lists, access elements by 0-based index, and print an array cleanly in any format.",
     tags: ["array", "arrays", "list", "printing", "index"],
     lessons: {
@@ -320,6 +329,8 @@ export const LEARN_CHAPTERS: LearnChapter[] = [
     number: "04",
     title: "Loops (for & while)",
     shortTitle: "Loops (for / while)",
+    category: "Loops & Iteration",
+    difficulty: "intermediate",
     summary: "Repeat instructions, iterate over ranges of numbers, and accumulate totals.",
     tags: ["loops", "for", "while", "iteration"],
     lessons: {
@@ -411,6 +422,8 @@ export const LEARN_CHAPTERS: LearnChapter[] = [
     number: "05",
     title: "Conditionals (if / else)",
     shortTitle: "Conditionals",
+    category: "Conditionals & Logic",
+    difficulty: "intermediate",
     summary: "Make decisions with comparison operators, modulo arithmetic, and if / else chains.",
     tags: ["conditionals", "if", "else", "logic", "modulo"],
     lessons: {
@@ -501,6 +514,8 @@ export const LEARN_CHAPTERS: LearnChapter[] = [
     number: "06",
     title: "Reading Standard Input (stdin)",
     shortTitle: "User Input (stdin)",
+    category: "Standard Input & Judges",
+    difficulty: "intermediate",
     summary: "Read numbers, arrays, and lines from standard input the way automated judges pass test cases.",
     tags: ["input", "stdin", "io", "scanner", "cin", "scanf"],
     lessons: {
@@ -595,6 +610,8 @@ export const LEARN_CHAPTERS: LearnChapter[] = [
     number: "07",
     title: "Strings & Text Manipulation",
     shortTitle: "Strings",
+    category: "Strings & Slicing",
+    difficulty: "advanced",
     summary: "Inspect characters, measure string length, slice substrings, and transform text.",
     tags: ["string", "strings", "characters", "text"],
     lessons: {
@@ -685,6 +702,8 @@ export const LEARN_CHAPTERS: LearnChapter[] = [
     number: "08",
     title: "Functions & Reusable Logic",
     shortTitle: "Functions",
+    category: "Functions & Decomposition",
+    difficulty: "advanced",
     summary: "Break problems into clean, testable helper functions that take parameters and return results.",
     tags: ["functions", "methods", "return", "parameters"],
     lessons: {

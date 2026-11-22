@@ -125,10 +125,13 @@ export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfil
                 href={`/app/learn?chapter=${encodeURIComponent(ch.id)}&lang=${encodeURIComponent(learnLang)}`}
                 className="skeuo-recess flex flex-col justify-between gap-2.5 rounded-xl p-3.5 transition-colors hover:border-[var(--color-primary-edge)]"
               >
-                <div className="space-y-1">
-                  <span className="font-code text-[11px] text-[var(--color-primary-text)]">
-                    {ch.number} · {LANGUAGE_DISPLAY_NAMES[learnLang]}
-                  </span>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-code text-[11px] text-[var(--color-primary-text)]">
+                      {ch.number} · {LANGUAGE_DISPLAY_NAMES[learnLang]}
+                    </span>
+                    <DifficultyBadge difficulty={ch.difficulty} className="px-1.5 py-0 text-[10px]" />
+                  </div>
                   <p className="text-sm font-semibold text-[var(--color-text-main)]">{ch.shortTitle}</p>
                   <p className="line-clamp-2 text-xs text-[var(--color-text-muted)]">{lesson.headline}</p>
                 </div>
@@ -189,7 +192,14 @@ export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfil
                   <span className="font-code w-5 text-sm text-[var(--color-text-muted)]">{i + 1}</span>
                   <Link href={`/app/workspace?problem=${encodeURIComponent(problem.id)}`} className="min-w-0 flex-1 hover:text-[var(--color-primary-text)]">
                     <span className="block truncate font-medium">{problem.title}</span>
-                    <span className="block truncate text-xs text-[var(--color-text-muted)]">{problem.category} · {problem.totalTestsCount} tests</span>
+                    <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-[var(--color-text-muted)]">
+                      <span>{problem.category} · {problem.totalTestsCount} tests</span>
+                      {problem.tags.slice(0, 3).map((tag) => (
+                        <span key={tag} className="rounded bg-[var(--color-elevated)] px-1.5 py-0.5 font-code text-[10px]">
+                          {tag}
+                        </span>
+                      ))}
+                    </span>
                   </Link>
                   <DifficultyBadge difficulty={problem.difficulty} />
                   <Button type="button" variant="outline" size="icon-sm" onClick={() => startRound(problem)} aria-label={`Start a timed round on ${problem.title}`} title="Timed round">

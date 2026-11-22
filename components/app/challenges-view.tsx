@@ -119,13 +119,38 @@ export function ChallengesView() {
         <LearnView embedded />
       ) : (
         <>
-          <TopicFilter problems={problems ?? []} selected={topic} onSelect={setTopic} />
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <TopicFilter problems={problems ?? []} selected={topic} onSelect={setTopic} />
+            <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filter by difficulty tier">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                aria-pressed={difficulty === "all"}
+                onClick={() => setDifficulty("all")}
+              >
+                All levels
+              </Button>
+              {DIFFICULTIES.map((d) => (
+                <Button
+                  key={d}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  aria-pressed={difficulty === d}
+                  onClick={() => setDifficulty(d)}
+                >
+                  {difficultyLabel(d)}
+                </Button>
+              ))}
+            </div>
+          </div>
 
           <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-[1fr_auto_auto_auto]">
             <div className="relative sm:col-span-3 lg:col-span-1">
               <Search size={15} aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[var(--color-text-muted)]" />
               <input type="search" aria-label="Search problems" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search problems" className="skeuo-well h-9 w-full rounded-lg border border-input pr-3 pl-9 text-sm" />
+                placeholder="Search problems, categories, or labels" className="skeuo-well h-9 w-full rounded-lg border border-input pr-3 pl-9 text-sm" />
             </div>
             <FilterSelect label="Difficulty" value={difficulty} onChange={(v) => setDifficulty(v as ProblemDifficulty | "all")}>
               <option value="all">All difficulties</option>
@@ -169,7 +194,7 @@ export function ChallengesView() {
                 <thead className="border-b border-[var(--color-border)] text-left text-xs text-[var(--color-text-muted)]">
                   <tr>
                     <th scope="col" className="w-12 px-4 py-2.5 font-medium">#</th>
-                    <th scope="col" className="px-2 py-2.5 font-medium">Title</th>
+                    <th scope="col" className="px-2 py-2.5 font-medium">Title &amp; labels</th>
                     <th scope="col" className="px-2 py-2.5 font-medium">Difficulty</th>
                     <th scope="col" className="px-4 py-2.5 text-right font-medium"><span className="sr-only">Actions</span></th>
                   </tr>
@@ -180,7 +205,17 @@ export function ChallengesView() {
                       <td className="font-code px-4 py-3 text-[var(--color-text-muted)]">{index + 1}</td>
                       <td className="px-2 py-3">
                         <Link href={`/app/workspace?problem=${encodeURIComponent(problem.id)}`} className="font-medium hover:text-[var(--color-primary-text)] hover:underline">{problem.title}</Link>
-                        <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">{problem.category} · {problem.totalTestsCount} tests</p>
+                        <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-[var(--color-text-muted)]">
+                          <span>{problem.category} · {problem.totalTestsCount} tests</span>
+                          {problem.tags.slice(0, 4).map((tag) => (
+                            <span
+                              key={tag}
+                              className="rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-elevated)] px-1.5 py-0.5 font-code text-[11px] text-[var(--color-text-muted)]"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
                       </td>
                       <td className="px-2 py-3"><DifficultyBadge difficulty={problem.difficulty} /></td>
                       <td className="px-4 py-3">
