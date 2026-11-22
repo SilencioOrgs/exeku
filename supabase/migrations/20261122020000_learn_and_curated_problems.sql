@@ -38,7 +38,7 @@ grant all on learn_progress to service_role;
 -- 3. Remove any legacy dummy problems if they were previously inserted
 delete from problems where id in ('hello-world', 'sum-two-integers', 'even-or-odd');
 
--- 4. Seed curated Easy (beginner), Medium (intermediate), and Hard (advanced) problems with topic labels
+-- 4. Seed curated Easy (beginner), Medium (intermediate), and Hard (advanced) problems with topic labels (no answers/spoilers in problem statements)
 insert into problems (
   id,
   title,
@@ -68,10 +68,10 @@ values
     array['python', 'java', 'cpp', 'c'],
     'The first line contains an integer N (the number of elements). The second line contains N space-separated integers.',
     'Print a single integer representing the sum of the N elements.',
-    array['1 <= N <= 10^5', '-10^9 <= A[i] <= 10^9', 'Use a 64-bit integer (long / long long) in Java, C++, and C to avoid overflow.'],
+    array['1 <= N <= 10^5', '-10^9 <= A[i] <= 10^9'],
     '[
-      {"id": "aes-1", "input": "5\n10 20 30 40 50", "expectedOutput": "150", "isHidden": false, "explanation": "10 + 20 + 30 + 40 + 50 = 150."},
-      {"id": "aes-2", "input": "4\n-5 12 -3 8", "expectedOutput": "12", "isHidden": false, "explanation": "-5 + 12 - 3 + 8 = 12."},
+      {"id": "aes-1", "input": "5\n10 20 30 40 50", "expectedOutput": "150", "isHidden": false},
+      {"id": "aes-2", "input": "4\n-5 12 -3 8", "expectedOutput": "12", "isHidden": false},
       {"id": "aes-3", "input": "1\n42", "expectedOutput": "42", "isHidden": true},
       {"id": "aes-4", "input": "6\n1000000000 1000000000 1000000000 -500000000 0 250000000", "expectedOutput": "2750000000", "isHidden": true}
     ]'::jsonb,
@@ -90,8 +90,8 @@ values
     'Print YES if S is a palindrome, or NO if it is not.',
     array['1 <= |S| <= 10^5', 'S contains only lowercase English letters (a-z).'],
     '[
-      {"id": "pw-1", "input": "racecar", "expectedOutput": "YES", "isHidden": false, "explanation": "\"racecar\" reversed is still \"racecar\"."},
-      {"id": "pw-2", "input": "exeku", "expectedOutput": "NO", "isHidden": false, "explanation": "\"exeku\" reversed is \"ukexe\", which does not match."},
+      {"id": "pw-1", "input": "racecar", "expectedOutput": "YES", "isHidden": false},
+      {"id": "pw-2", "input": "exeku", "expectedOutput": "NO", "isHidden": false},
       {"id": "pw-3", "input": "level", "expectedOutput": "YES", "isHidden": true},
       {"id": "pw-4", "input": "a", "expectedOutput": "YES", "isHidden": true},
       {"id": "pw-5", "input": "abca", "expectedOutput": "NO", "isHidden": true}
@@ -111,8 +111,8 @@ values
     'Print N space-separated tokens on a single line corresponding to 1 through N.',
     array['1 <= N <= 10^4'],
     '[
-      {"id": "fb-1", "input": "5", "expectedOutput": "1 2 Fizz 4 Buzz", "isHidden": false, "explanation": "3 is divisible by 3 (Fizz) and 5 is divisible by 5 (Buzz)."},
-      {"id": "fb-2", "input": "15", "expectedOutput": "1 2 Fizz 4 Buzz Fizz 7 8 Fizz Buzz 11 Fizz 13 14 FizzBuzz", "isHidden": false, "explanation": "15 is divisible by both 3 and 5, producing FizzBuzz."},
+      {"id": "fb-1", "input": "5", "expectedOutput": "1 2 Fizz 4 Buzz", "isHidden": false},
+      {"id": "fb-2", "input": "15", "expectedOutput": "1 2 Fizz 4 Buzz Fizz 7 8 Fizz Buzz 11 Fizz 13 14 FizzBuzz", "isHidden": false},
       {"id": "fb-3", "input": "1", "expectedOutput": "1", "isHidden": true},
       {"id": "fb-4", "input": "3", "expectedOutput": "1 2 Fizz", "isHidden": true}
     ]'::jsonb,
@@ -135,8 +135,8 @@ values
     'Print two space-separated 0-based indices i and j (i < j), or -1 if no two elements sum to T.',
     array['2 <= N <= 10^5', '-10^9 <= A[i], T <= 10^9'],
     '[
-      {"id": "ts-1", "input": "4 9\n2 7 11 15", "expectedOutput": "0 1", "isHidden": false, "explanation": "A[0] + A[1] = 2 + 7 = 9."},
-      {"id": "ts-2", "input": "5 6\n3 2 4 8 1", "expectedOutput": "1 2", "isHidden": false, "explanation": "A[1] + A[2] = 2 + 4 = 6."},
+      {"id": "ts-1", "input": "4 9\n2 7 11 15", "expectedOutput": "0 1", "isHidden": false},
+      {"id": "ts-2", "input": "5 6\n3 2 4 8 1", "expectedOutput": "1 2", "isHidden": false},
       {"id": "ts-3", "input": "3 10\n1 2 3", "expectedOutput": "-1", "isHidden": true},
       {"id": "ts-4", "input": "4 -2\n-5 3 1 -3", "expectedOutput": "0 1", "isHidden": true}
     ]'::jsonb,
@@ -155,8 +155,8 @@ values
     'Print the N space-separated integers after rotating right by K steps.',
     array['1 <= N <= 10^5', '0 <= K <= 10^9'],
     '[
-      {"id": "ra-1", "input": "5 2\n10 20 30 40 50", "expectedOutput": "40 50 10 20 30", "isHidden": false, "explanation": "Rotating right by 2 moves 40 and 50 to the front."},
-      {"id": "ra-2", "input": "4 6\n1 2 3 4", "expectedOutput": "3 4 1 2", "isHidden": false, "explanation": "K = 6 mod 4 = 2 steps right."},
+      {"id": "ra-1", "input": "5 2\n10 20 30 40 50", "expectedOutput": "40 50 10 20 30", "isHidden": false},
+      {"id": "ra-2", "input": "4 6\n1 2 3 4", "expectedOutput": "3 4 1 2", "isHidden": false},
       {"id": "ra-3", "input": "3 0\n7 8 9", "expectedOutput": "7 8 9", "isHidden": true},
       {"id": "ra-4", "input": "5 5\n1 2 3 4 5", "expectedOutput": "1 2 3 4 5", "isHidden": true}
     ]'::jsonb,
@@ -175,8 +175,8 @@ values
     'Print YES if S and T are anagrams of each other, or NO otherwise.',
     array['1 <= |S|, |T| <= 10^5', 'S and T consist of lowercase English letters (a-z).'],
     '[
-      {"id": "va-1", "input": "listen\nsilent", "expectedOutput": "YES", "isHidden": false, "explanation": "Both words contain e, i, l, n, s, t once each."},
-      {"id": "va-2", "input": "algorithm\nlogarithm", "expectedOutput": "YES", "isHidden": false, "explanation": "Rearranging \"algorithm\" produces \"logarithm\"."},
+      {"id": "va-1", "input": "listen\nsilent", "expectedOutput": "YES", "isHidden": false},
+      {"id": "va-2", "input": "algorithm\nlogarithm", "expectedOutput": "YES", "isHidden": false},
       {"id": "va-3", "input": "rat\ncar", "expectedOutput": "NO", "isHidden": true},
       {"id": "va-4", "input": "aabb\nabb", "expectedOutput": "NO", "isHidden": true}
     ]'::jsonb,
@@ -197,10 +197,10 @@ values
     array['python', 'java', 'cpp', 'c'],
     'The first line contains an integer N. The second line contains N space-separated integers.',
     'Print a single integer: the maximum sum of any non-empty contiguous subarray.',
-    array['1 <= N <= 10^5', '-10^9 <= A[i] <= 10^9', 'An O(N) solution (Kadane''s Algorithm) using 64-bit integers is required.'],
+    array['1 <= N <= 10^5', '-10^9 <= A[i] <= 10^9'],
     '[
-      {"id": "ms-1", "input": "9\n-2 1 -3 4 -1 2 1 -5 4", "expectedOutput": "6", "isHidden": false, "explanation": "The subarray [4, -1, 2, 1] has the largest sum = 6."},
-      {"id": "ms-2", "input": "5\n5 4 -1 7 8", "expectedOutput": "23", "isHidden": false, "explanation": "The entire array sums to 23."},
+      {"id": "ms-1", "input": "9\n-2 1 -3 4 -1 2 1 -5 4", "expectedOutput": "6", "isHidden": false},
+      {"id": "ms-2", "input": "5\n5 4 -1 7 8", "expectedOutput": "23", "isHidden": false},
       {"id": "ms-3", "input": "4\n-8 -3 -6 -2", "expectedOutput": "-2", "isHidden": true},
       {"id": "ms-4", "input": "1\n-15", "expectedOutput": "-15", "isHidden": true}
     ]'::jsonb,
@@ -219,8 +219,8 @@ values
     'Print a single integer: the maximum length of a substring of S with all distinct characters.',
     array['1 <= |S| <= 10^5'],
     '[
-      {"id": "lus-1", "input": "abcabcbb", "expectedOutput": "3", "isHidden": false, "explanation": "The longest substring without repeating characters is \"abc\" of length 3."},
-      {"id": "lus-2", "input": "pwwkew", "expectedOutput": "3", "isHidden": false, "explanation": "\"wke\" has length 3."},
+      {"id": "lus-1", "input": "abcabcbb", "expectedOutput": "3", "isHidden": false},
+      {"id": "lus-2", "input": "pwwkew", "expectedOutput": "3", "isHidden": false},
       {"id": "lus-3", "input": "bbbbbb", "expectedOutput": "1", "isHidden": true},
       {"id": "lus-4", "input": "exekuplatform", "expectedOutput": "11", "isHidden": true}
     ]'::jsonb,
@@ -239,8 +239,8 @@ values
     'Print the merged intervals sorted in ascending order of their start point, one per line as "L R".',
     array['1 <= N <= 10^5', '-10^9 <= L_i <= R_i <= 10^9'],
     '[
-      {"id": "moi-1", "input": "4\n1 3\n2 6\n8 10\n15 18", "expectedOutput": "1 6\n8 10\n15 18", "isHidden": false, "explanation": "[1, 3] and [2, 6] overlap and merge into [1, 6]."},
-      {"id": "moi-2", "input": "2\n1 4\n4 5", "expectedOutput": "1 5", "isHidden": false, "explanation": "[1, 4] and [4, 5] touch at 4 and merge into [1, 5]."},
+      {"id": "moi-1", "input": "4\n1 3\n2 6\n8 10\n15 18", "expectedOutput": "1 6\n8 10\n15 18", "isHidden": false},
+      {"id": "moi-2", "input": "2\n1 4\n4 5", "expectedOutput": "1 5", "isHidden": false},
       {"id": "moi-3", "input": "3\n5 10\n1 3\n2 4", "expectedOutput": "1 4\n5 10", "isHidden": true},
       {"id": "moi-4", "input": "3\n1 10\n2 5\n6 9", "expectedOutput": "1 10", "isHidden": true}
     ]'::jsonb,

@@ -113,6 +113,12 @@ export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfil
                 {LANGUAGE_DISPLAY_NAMES[l]}
               </Button>
             ))}
+            <Link
+              href={`/app/docs?lang=${encodeURIComponent(learnLang)}`}
+              className={buttonVariants({ variant: "ghost", size: "sm" })}
+            >
+              Language Docs <ArrowRight size={13} aria-hidden="true" />
+            </Link>
           </div>
         </div>
 

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlarmClock, BookOpen, Code2, GraduationCap, Search } from "lucide-react";
+import { AlarmClock, BookOpen, FileText, GraduationCap, Search } from "lucide-react";
 import { Select } from "@/components/ui/select";
 import { useChallengeSession } from "@/hooks/use-challenge-session";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -12,7 +12,6 @@ import { ALL_SUPPORTED_LANGUAGES, LANGUAGE_DISPLAY_NAMES } from "@/lib/workspace
 import type { PreferredLanguage } from "@/types/profile";
 import type { ProblemDifficulty, ProblemSummary } from "@/types/problem";
 import { DifficultyBadge, difficultyLabel } from "./difficulty-badge";
-import { LearnView } from "./learn/learn-view";
 import { TopicFilter } from "./topic-filter";
 import { ChallengesTableSkeleton } from "./page-skeletons";
 
@@ -25,7 +24,6 @@ function FilterSelect({ label, value, onChange, children }: { label: string; val
 export function ChallengesView() {
   const router = useRouter();
   const challenge = useChallengeSession();
-  const [mode, setMode] = useState<"problems" | "learn">("problems");
   const [language, setLanguage] = useState<PreferredLanguage | "all">("all");
   const [difficulty, setDifficulty] = useState<ProblemDifficulty | "all">("all");
   const [topic, setTopic] = useState<TopicId>("all");
@@ -72,35 +70,19 @@ export function ChallengesView() {
     <div className="challenges-view space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">
-            {mode === "learn" ? "Learn Languages & Syntax" : "Problems"}
-          </h1>
+          <h1 className="text-3xl font-semibold tracking-tight">Problems</h1>
           <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            {mode === "learn"
-              ? "Master syntax, arrays, loops, and functions with interactive Try it Yourself examples."
-              : "Solve class and competition problems or switch to Learn for interactive language tutorials."}
+            Solve coding problems from Easy to Hard and submit your own solutions to the sandbox judge.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            aria-pressed={mode === "problems"}
-            onClick={() => setMode("problems")}
-          >
-            <Code2 size={14} aria-hidden="true" /> Problems
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            aria-pressed={mode === "learn"}
-            onClick={() => setMode("learn")}
-          >
-            <BookOpen size={14} aria-hidden="true" /> Learn basics
-          </Button>
+          <Link href="/app/docs" className={buttonVariants({ variant: "outline", size: "sm" })}>
+            <FileText size={14} aria-hidden="true" /> Language Docs
+          </Link>
+          <Link href="/app/learn" className={buttonVariants({ variant: "outline", size: "sm" })}>
+            <BookOpen size={14} aria-hidden="true" /> Tutorials
+          </Link>
         </div>
       </div>
 
@@ -115,125 +97,122 @@ export function ChallengesView() {
         </div>
       )}
 
-      {mode === "learn" ? (
-        <LearnView embedded />
-      ) : (
-        <>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <TopicFilter problems={problems ?? []} selected={topic} onSelect={setTopic} />
-            <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filter by difficulty tier">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                aria-pressed={difficulty === "all"}
-                onClick={() => setDifficulty("all")}
-              >
-                All levels
-              </Button>
-              {DIFFICULTIES.map((d) => (
-                <Button
-                  key={d}
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  aria-pressed={difficulty === d}
-                  onClick={() => setDifficulty(d)}
-                >
-                  {difficultyLabel(d)}
-                </Button>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <TopicFilter problems={problems ?? []} selected={topic} onSelect={setTopic} />
+        <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filter by difficulty tier">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            aria-pressed={difficulty === "all"}
+            onClick={() => setDifficulty("all")}
+          >
+            All levels
+          </Button>
+          {DIFFICULTIES.map((d) => (
+            <Button
+              key={d}
+              type="button"
+              variant="outline"
+              size="sm"
+              aria-pressed={difficulty === d}
+              onClick={() => setDifficulty(d)}
+            >
+              {difficultyLabel(d)}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-[1fr_auto_auto_auto]">
+        <div className="relative sm:col-span-3 lg:col-span-1">
+          <Search size={15} aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[var(--color-text-muted)]" />
+          <input type="search" aria-label="Search problems" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search problems, categories, or labels" className="skeuo-well h-9 w-full rounded-lg border border-input pr-3 pl-9 text-sm" />
+        </div>
+        <FilterSelect label="Difficulty" value={difficulty} onChange={(v) => setDifficulty(v as ProblemDifficulty | "all")}>
+          <option value="all">All difficulties</option>
+          {DIFFICULTIES.map((d) => <option key={d} value={d}>{difficultyLabel(d)}</option>)}
+        </FilterSelect>
+        <FilterSelect label="Language" value={language} onChange={(v) => setLanguage(v as PreferredLanguage | "all")}>
+          <option value="all">All languages</option>
+          {ALL_SUPPORTED_LANGUAGES.map((lang) => <option key={lang} value={lang}>{LANGUAGE_DISPLAY_NAMES[lang]}</option>)}
+        </FilterSelect>
+        <FilterSelect label="Sort problems" value={sort} onChange={(v) => setSort(v as SortId)}>
+          {SORT_OPTIONS.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
+        </FilterSelect>
+      </div>
+
+      <div className="skeuo-card overflow-x-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
+        {problems === null ? (
+          <ChallengesTableSkeleton />
+        ) : visible.length === 0 ? (
+          <div className="space-y-4 p-8 text-center">
+            <div className="space-y-1">
+              <p className="font-semibold">
+                {noFiltersApplied ? "No problems posted yet" : "No problems match your filters"}
+              </p>
+              <p className="mx-auto max-w-md text-xs text-[var(--color-text-muted)]">
+                {noFiltersApplied
+                  ? "Teachers and tournament organizers publish coding problems here. In the meantime, explore the Language Reference Docs or interactive tutorials."
+                  : "Try another topic, difficulty, language, or search term."}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <Link href="/app/learn" className={buttonVariants({ size: "sm" })}>
+                <BookOpen size={14} aria-hidden="true" /> Open Learn tutorials
+              </Link>
+              <Link href="/app/docs" className={buttonVariants({ variant: "outline", size: "sm" })}>
+                <FileText size={14} aria-hidden="true" /> Language Docs
+              </Link>
+              <Link href="/app/classes" className={buttonVariants({ variant: "outline", size: "sm" })}>
+                <GraduationCap size={14} aria-hidden="true" /> Go to Classes
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead className="border-b border-[var(--color-border)] text-left text-xs text-[var(--color-text-muted)]">
+              <tr>
+                <th scope="col" className="w-12 px-4 py-2.5 font-medium">#</th>
+                <th scope="col" className="px-2 py-2.5 font-medium">Title &amp; labels</th>
+                <th scope="col" className="px-2 py-2.5 font-medium">Difficulty</th>
+                <th scope="col" className="px-4 py-2.5 text-right font-medium"><span className="sr-only">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {visible.map((problem, index) => (
+                <tr key={problem.id} className="border-b border-[var(--color-border-subtle)] last:border-0 even:bg-[var(--color-canvas)] hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,transparent)]">
+                  <td className="font-code px-4 py-3 text-[var(--color-text-muted)]">{index + 1}</td>
+                  <td className="px-2 py-3">
+                    <Link href={`/app/workspace?problem=${encodeURIComponent(problem.id)}`} className="font-medium hover:text-[var(--color-primary-text)] hover:underline">{problem.title}</Link>
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-[var(--color-text-muted)]">
+                      <span>{problem.category} · {problem.totalTestsCount} tests</span>
+                      {problem.tags.slice(0, 4).map((tag) => (
+                        <span
+                          key={tag}
+                          className="rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-elevated)] px-1.5 py-0.5 font-code text-[11px] text-[var(--color-text-muted)]"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </td>
+                  <td className="px-2 py-3"><DifficultyBadge difficulty={problem.difficulty} /></td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-nowrap justify-end gap-1.5">
+                      <Button type="button" variant="outline" size="sm" onClick={() => startTimed(problem)} title="Start a 15-minute timed challenge" aria-label={`Start a timed challenge on ${problem.title}`}>
+                        <AlarmClock size={14} aria-hidden="true" /><span className="hidden sm:inline">Timed</span>
+                      </Button>
+                      <Link href={`/app/workspace?problem=${encodeURIComponent(problem.id)}`} className={buttonVariants({ size: "sm" })}>Solve</Link>
+                    </div>
+                  </td>
+                </tr>
               ))}
-            </div>
-          </div>
-
-          <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-[1fr_auto_auto_auto]">
-            <div className="relative sm:col-span-3 lg:col-span-1">
-              <Search size={15} aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[var(--color-text-muted)]" />
-              <input type="search" aria-label="Search problems" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search problems, categories, or labels" className="skeuo-well h-9 w-full rounded-lg border border-input pr-3 pl-9 text-sm" />
-            </div>
-            <FilterSelect label="Difficulty" value={difficulty} onChange={(v) => setDifficulty(v as ProblemDifficulty | "all")}>
-              <option value="all">All difficulties</option>
-              {DIFFICULTIES.map((d) => <option key={d} value={d}>{difficultyLabel(d)}</option>)}
-            </FilterSelect>
-            <FilterSelect label="Language" value={language} onChange={(v) => setLanguage(v as PreferredLanguage | "all")}>
-              <option value="all">All languages</option>
-              {ALL_SUPPORTED_LANGUAGES.map((lang) => <option key={lang} value={lang}>{LANGUAGE_DISPLAY_NAMES[lang]}</option>)}
-            </FilterSelect>
-            <FilterSelect label="Sort problems" value={sort} onChange={(v) => setSort(v as SortId)}>
-              {SORT_OPTIONS.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
-            </FilterSelect>
-          </div>
-
-          <div className="skeuo-card overflow-x-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
-            {problems === null ? (
-              <ChallengesTableSkeleton />
-            ) : visible.length === 0 ? (
-              <div className="space-y-4 p-8 text-center">
-                <div className="space-y-1">
-                  <p className="font-semibold">
-                    {noFiltersApplied ? "No problems posted yet" : "No problems match your filters"}
-                  </p>
-                  <p className="mx-auto max-w-md text-xs text-[var(--color-text-muted)]">
-                    {noFiltersApplied
-                      ? "Teachers and tournament organizers publish coding problems here. In the meantime, practice language syntax, arrays, loops, and functions in Learn."
-                      : "Try another topic, difficulty, language, or search term."}
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-center justify-center gap-2">
-                  <Button type="button" size="sm" onClick={() => setMode("learn")}>
-                    <BookOpen size={14} aria-hidden="true" /> Open Learn tutorials
-                  </Button>
-                  <Link href="/app/classes" className={buttonVariants({ variant: "outline", size: "sm" })}>
-                    <GraduationCap size={14} aria-hidden="true" /> Go to Classes
-                  </Link>
-                </div>
-              </div>
-            ) : (
-              <table className="w-full text-sm">
-                <thead className="border-b border-[var(--color-border)] text-left text-xs text-[var(--color-text-muted)]">
-                  <tr>
-                    <th scope="col" className="w-12 px-4 py-2.5 font-medium">#</th>
-                    <th scope="col" className="px-2 py-2.5 font-medium">Title &amp; labels</th>
-                    <th scope="col" className="px-2 py-2.5 font-medium">Difficulty</th>
-                    <th scope="col" className="px-4 py-2.5 text-right font-medium"><span className="sr-only">Actions</span></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {visible.map((problem, index) => (
-                    <tr key={problem.id} className="border-b border-[var(--color-border-subtle)] last:border-0 even:bg-[var(--color-canvas)] hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,transparent)]">
-                      <td className="font-code px-4 py-3 text-[var(--color-text-muted)]">{index + 1}</td>
-                      <td className="px-2 py-3">
-                        <Link href={`/app/workspace?problem=${encodeURIComponent(problem.id)}`} className="font-medium hover:text-[var(--color-primary-text)] hover:underline">{problem.title}</Link>
-                        <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-[var(--color-text-muted)]">
-                          <span>{problem.category} · {problem.totalTestsCount} tests</span>
-                          {problem.tags.slice(0, 4).map((tag) => (
-                            <span
-                              key={tag}
-                              className="rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-elevated)] px-1.5 py-0.5 font-code text-[11px] text-[var(--color-text-muted)]"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="px-2 py-3"><DifficultyBadge difficulty={problem.difficulty} /></td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-nowrap justify-end gap-1.5">
-                          <Button type="button" variant="outline" size="sm" onClick={() => startTimed(problem)} title="Start a 15-minute timed challenge" aria-label={`Start a timed challenge on ${problem.title}`}>
-                            <AlarmClock size={14} aria-hidden="true" /><span className="hidden sm:inline">Timed</span>
-                          </Button>
-                          <Link href={`/app/workspace?problem=${encodeURIComponent(problem.id)}`} className={buttonVariants({ size: "sm" })}>Solve</Link>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </>
-      )}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
   );
 }

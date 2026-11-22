@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   Code2,
   Copy,
+  FileText,
   HelpCircle,
   Loader2,
   Play,
@@ -271,12 +272,20 @@ export function LearnView({ initialChapterId, initialLang, embedded = false }: L
               Interactive tutorials from Easy to Hard with live Try it Yourself examples for Python 3, Java, C++, and C.
             </p>
           </div>
-          <Link
-            href={`/app/workspace?lesson=${encodeURIComponent(chapter.id)}&lang=${encodeURIComponent(lang)}`}
-            className={buttonVariants({ variant: "outline" })}
-          >
-            <Code2 size={15} aria-hidden="true" /> Open in Workspace
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href={`/app/docs?lang=${encodeURIComponent(lang)}`}
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              <FileText size={14} aria-hidden="true" /> Language Docs
+            </Link>
+            <Link
+              href={`/app/workspace?lesson=${encodeURIComponent(chapter.id)}&lang=${encodeURIComponent(lang)}`}
+              className={buttonVariants({ size: "sm" })}
+            >
+              <Code2 size={14} aria-hidden="true" /> Open in Workspace
+            </Link>
+          </div>
         </header>
       )}
 
@@ -613,17 +622,6 @@ export function LearnView({ initialChapterId, initialLang, embedded = false }: L
 
               <div className="flex flex-wrap items-center gap-2">
                 <Button type="submit">Submit answer</Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setAnswersByKey((prev) => ({ ...prev, [lessonKey]: lesson.exercise.answer }));
-                    setFeedbackByKey((prev) => ({ ...prev, [lessonKey]: "correct" }));
-                    markChapterCompleted(lessonKey);
-                  }}
-                >
-                  Show answer
-                </Button>
               </div>
             </form>
           </section>

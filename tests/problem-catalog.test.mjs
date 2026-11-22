@@ -95,7 +95,13 @@ test("W3Schools-style Learn curriculum covers Python, Java, C++, and C basics in
   assert.equal(getLearnChapter("non-existent").id, "syntax-output");
 });
 
-test("database migration defines learn_chapters, learn_progress, and seeds Easy, Medium, and Hard problems with labels", () => {
+import {
+  getLanguageDocTopic,
+  LANGUAGE_DOC_TOPICS,
+  LANGUAGE_OVERVIEW_META,
+} from "../lib/learn/docs.ts";
+
+test("database migration defines learn_chapters, learn_progress, and seeds Easy, Medium, and Hard problems with labels and no answers", () => {
   const sql = readFileSync(
     new URL("../supabase/migrations/20261122020000_learn_and_curated_problems.sql", import.meta.url),
     "utf8",
@@ -109,5 +115,38 @@ test("database migration defines learn_chapters, learn_progress, and seeds Easy,
   assert.match(sql, /'beginner'/);
   assert.match(sql, /'intermediate'/);
   assert.match(sql, /'advanced'/);
+  assert.doesNotMatch(sql, /"explanation":/);
 });
+
+test("Language Reference Docs cover all 4 languages across 8 topics and problems do not display answers", () => {
+  assert.equal(LANGUAGE_DOC_TOPICS.length, 8);
+  for (const lang of ["python", "java", "cpp", "c"]) {
+    assert.ok(LANGUAGE_OVERVIEW_META[lang].version.length > 0);
+    assert.ok(LANGUAGE_OVERVIEW_META[lang].entryFile.length > 0);
+  }
+  for (const topic of LANGUAGE_DOC_TOPICS) {
+    for (const lang of ["python", "java", "cpp", "c"]) {
+      const sec = topic.byLanguage[lang];
+      assert.ok(sec.title.length > 3, `${topic.id}:${lang} title`);
+      assert.ok(sec.referenceTable.length >= 2, `${topic.id}:${lang} referenceTable`);
+      assert.ok(sec.codeSnippet.length > 10, `${topic.id}:${lang} codeSnippet`);
+      assert.ok(sec.pitfalls.length >= 1, `${topic.id}:${lang} pitfalls`);
+    }
+  }
+  assert.equal(getLanguageDocTopic("non-existent").id, "program-structure");
+
+  const problemPane = readFileSync(
+    new URL("../components/app/workspace/problem-pane.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.doesNotMatch(problemPane, /sample\.output/);
+  assert.doesNotMatch(problemPane, /sample\.explanation/);
+
+  const learnView = readFileSync(
+    new URL("../components/app/learn/learn-view.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.doesNotMatch(learnView, /Show answer/);
+});
+
 

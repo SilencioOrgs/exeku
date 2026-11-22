@@ -171,7 +171,7 @@ export function ProblemPane({
           </ul>
         </Section>
 
-        <Section title={`Samples (${problem.sampleTestCases.length})`}>
+        <Section title={`Sample test inputs (${problem.sampleTestCases.length})`}>
           <div className="space-y-2">
             {problem.sampleTestCases.map((sample, idx) => (
               <div key={idx} className="space-y-2 rounded-md border border-[var(--color-border)] bg-[var(--color-canvas)] p-2.5">
@@ -187,17 +187,10 @@ export function ProblemPane({
                     </Button>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  <div>
-                    <span className="mb-0.5 block text-xs text-[var(--color-text-muted)]">Input</span>
-                    <pre className="font-code overflow-x-auto whitespace-pre-wrap rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-1.5 text-xs">{sample.input || "(empty)"}</pre>
-                  </div>
-                  <div>
-                    <span className="mb-0.5 block text-xs text-[var(--color-text-muted)]">Expected output</span>
-                    <pre className="font-code overflow-x-auto whitespace-pre-wrap rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-1.5 text-xs">{sample.output.trim() || "(empty)"}</pre>
-                  </div>
+                <div>
+                  <span className="mb-0.5 block text-xs text-[var(--color-text-muted)]">Input</span>
+                  <pre className="font-code overflow-x-auto whitespace-pre-wrap rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-1.5 text-xs">{sample.input || "(empty)"}</pre>
                 </div>
-                {sample.explanation && <p className="text-xs text-[var(--color-text-muted)]">{sample.explanation}</p>}
               </div>
             ))}
           </div>
