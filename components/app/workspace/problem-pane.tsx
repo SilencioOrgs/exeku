@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, ArrowRight, BookOpen, CheckCircle2, Copy, FileCode2, RotateCcw } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import type { LearnChapter } from "@/lib/learn/curriculum";
+import { tokenize } from "@/lib/syntax";
 import { LANGUAGE_DISPLAY_NAMES } from "@/lib/workspace-defaults";
 import type { VisibleProblem } from "@/types/problem";
 import type { PreferredLanguage } from "@/types/profile";
@@ -47,7 +48,7 @@ export function ProblemPane({
         <div className="shrink-0 space-y-1 border-b border-[var(--color-border)] p-3">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <span className="font-code text-[11px] text-[var(--color-primary-text)]">
+              <span className="font-code text-xs text-[var(--color-primary-text)]">
                 Chapter {lessonChapter.number} · {LANGUAGE_DISPLAY_NAMES[activeLanguage]}
               </span>
               <h1 className="text-base font-semibold text-[var(--color-text-main)]">{lesson.headline}</h1>
@@ -73,8 +74,10 @@ export function ProblemPane({
           </Section>
 
           <Section title="Quick syntax pattern">
-            <pre className="font-code overflow-x-auto whitespace-pre-wrap rounded-md border border-[var(--color-border)] bg-[var(--color-canvas)] p-2.5 text-xs">
-              {lesson.syntaxSnippet}
+            <pre className="code-editor font-code overflow-x-auto whitespace-pre-wrap rounded-md border border-[var(--color-border)] p-2.5 text-xs">
+              {tokenize(lesson.syntaxSnippet, activeLanguage).map((t, i) =>
+                t.type === "plain" ? t.text : <span key={i} className={`tok-${t.type}`}>{t.text}</span>,
+              )}
             </pre>
           </Section>
 

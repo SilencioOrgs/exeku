@@ -37,11 +37,12 @@ export const POST = (request: Request) =>
     }
 
     // Block another account from claiming the same school email, while allowing the same account to keep/re-verify it.
+    const escapedEmail = email.replace(/[\\%_]/g, "\\$&");
     const takenByOther = must(
       await db()
         .from("profiles")
         .select("user_id")
-        .ilike("school_email", email)
+        .ilike("school_email", escapedEmail)
         .neq("user_id", viewer.id)
         .limit(1)
         .maybeSingle(),

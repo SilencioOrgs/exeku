@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { unstable_rethrow } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
+import { withApiErrors } from "@/lib/api/route-handler";
 import { isAdmin } from "@/lib/auth/admin-check";
 import { listProblemSummaries } from "@/lib/problems/store";
 
-export async function GET(req: Request) {
-  try {
+export const GET = (req: Request) =>
+  withApiErrors("GET /api/problems", async () => {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: "Sign in to continue." }, { status: 401 });
 
@@ -18,9 +18,4 @@ export async function GET(req: Request) {
     return NextResponse.json({
       problems: await listProblemSummaries({ difficulty, language, search }, { includeLocked, userId }),
     });
-  } catch (err: unknown) {
-    unstable_rethrow(err);
-    console.error("Could not list problems:", err instanceof Error ? err.message : "unknown error");
-    return NextResponse.json({ error: "We couldn't load the problems." }, { status: 500 });
-  }
-}
+  });

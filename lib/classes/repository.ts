@@ -209,7 +209,7 @@ export async function listClassesForViewer(viewer: Viewer): Promise<ClassListPay
     };
   }
 
-  const [allMembers, allGroups, allProblems, teacherProfiles] = await Promise.all([
+  const [allMembers, allGroups, rawProblems, teacherProfiles, unlockedSummaries] = await Promise.all([
     fetchChunked(allClassIds, (chunk) =>
       fetchAllPages<{ class_id: string }>((from, to) =>
         db().from("class_members").select("class_id").in("class_id", chunk).order("class_id").order("user_id").range(from, to),
@@ -226,7 +226,11 @@ export async function listClassesForViewer(viewer: Viewer): Promise<ClassListPay
       ),
     ),
     loadProfiles(allClasses.map((c) => c.teacher_id)),
+    listProblemSummaries(undefined, { includeLocked: false, includeClassProblems: true }),
   ]);
+
+  const validProblemIds = new Set(unlockedSummaries.map((p) => p.id));
+  const allProblems = rawProblems.filter((p) => validProblemIds.has(p.problem_id));
 
   // Compute viewer's accepted solves across enrolled class problems for card progress bars.
   const enrolledProblemIds = [
@@ -399,7 +403,7 @@ export async function getClassDetail(viewer: Viewer, classId: string): Promise<C
   const [profiles, catalogSummaries] = await Promise.all([
     loadProfiles([cls.teacher_id, ...members.map((m) => m.user_id)]),
     // Classes only expose unlocked practice problems (never upcoming or private live tournament problems).
-    listProblemSummaries(undefined, { includeLocked: false }),
+    listProblemSummaries(undefined, { includeLocked: false, includeClassProblems: true }),
   ]);
 
   const groupNameById = new Map(groups.map((g) => [g.id, g.name]));
@@ -497,12 +501,14 @@ export async function getClassDetail(viewer: Viewer, classId: string): Promise<C
     problems: problemViews,
     activities,
     catalogProblems: isTeacher
-      ? catalogSummaries.map((p) => ({
-          id: p.id,
-          title: p.title,
-          difficulty: p.difficulty,
-          category: p.category,
-        }))
+      ? catalogSummaries
+          .filter((p) => !p.id.startsWith("cls-"))
+          .map((p) => ({
+            id: p.id,
+            title: p.title,
+            difficulty: p.difficulty,
+            category: p.category,
+          }))
       : undefined,
   };
 }
@@ -671,6 +677,9 @@ export async function performClassAction(
     const checked = checkClassActivity(body);
     if (!checked.ok) return { ok: false, status: 422, fieldErrors: checked.fieldErrors };
     const act = checked.activity;
+    if (act.problemId && !(await problemExists(act.problemId, { includeLocked: false }))) {
+      return { ok: false, status: 404, error: "Problem not found." };
+    }
     const { error } = await db().from("class_activities").insert({
       class_id: classId,
       teacher_id: viewer.id,
@@ -714,6 +723,9 @@ export async function performClassAction(
     const problemId = text(body, "problemId");
     if (!problemId) return { ok: false, status: 400, error: "Choose a problem." };
     must(await db().from("class_problems").delete().eq("class_id", classId).eq("problem_id", problemId));
+    if (problemId.startsWith("cls-")) {
+      await db().from("problems").delete().eq("id", problemId).eq("created_by", viewer.id);
+    }
     return { ok: true };
   }
 
@@ -729,7 +741,14 @@ export async function performClassAction(
   }
 
   if (action === "deleteClass") {
+    const assignedCustom = await fetchAllPages<{ problem_id: string }>((from, to) =>
+      db().from("class_problems").select("problem_id").eq("class_id", classId).order("problem_id").range(from, to),
+    );
     must(await db().from("classes").delete().eq("id", classId));
+    const customIds = assignedCustom.map((r) => r.problem_id).filter((id) => id.startsWith("cls-"));
+    for (const pid of customIds) {
+      await db().from("problems").delete().eq("id", pid).eq("created_by", viewer.id);
+    }
     return { ok: true };
   }
 

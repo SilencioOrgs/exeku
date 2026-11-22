@@ -1,4 +1,5 @@
 import {
+  matchesProblemFilter,
   summarizeProblems,
   toVisibleProblem,
   type ProblemFilter,
@@ -216,4 +217,4 @@ export function getProblemSummaries(filter?: ProblemFilter): ProblemSummary[] {
   return summarizeProblems(SAMPLE_PROBLEMS, filter);
 }
 
-export { toVisibleProblem, summarizeProblems };
+export { matchesProblemFilter, toVisibleProblem, summarizeProblems };

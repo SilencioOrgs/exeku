@@ -124,16 +124,12 @@ export function ChallengesView() {
         </div>
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-[1fr_auto_auto_auto]">
-        <div className="relative sm:col-span-3 lg:col-span-1">
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[1fr_auto_auto]">
+        <div className="relative sm:col-span-2 lg:col-span-1">
           <Search size={15} aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[var(--color-text-muted)]" />
           <input type="search" aria-label="Search problems" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search problems, categories, or labels" className="skeuo-well h-9 w-full rounded-lg border border-input pr-3 pl-9 text-sm" />
         </div>
-        <FilterSelect label="Difficulty" value={difficulty} onChange={(v) => setDifficulty(v as ProblemDifficulty | "all")}>
-          <option value="all">All difficulties</option>
-          {DIFFICULTIES.map((d) => <option key={d} value={d}>{difficultyLabel(d)}</option>)}
-        </FilterSelect>
         <FilterSelect label="Language" value={language} onChange={(v) => setLanguage(v as PreferredLanguage | "all")}>
           <option value="all">All languages</option>
           {ALL_SUPPORTED_LANGUAGES.map((lang) => <option key={lang} value={lang}>{LANGUAGE_DISPLAY_NAMES[lang]}</option>)}
@@ -154,7 +150,7 @@ export function ChallengesView() {
               </p>
               <p className="mx-auto max-w-md text-xs text-[var(--color-text-muted)]">
                 {noFiltersApplied
-                  ? "Teachers and tournament organizers publish coding problems here. In the meantime, explore the Language Reference Docs or interactive tutorials."
+                  ? "Teachers and tournament organizers publish coding problems here. In the meantime, explore the language reference docs or interactive tutorials."
                   : "Try another topic, difficulty, language, or search term."}
               </p>
             </div>
@@ -163,10 +159,10 @@ export function ChallengesView() {
                 <BookOpen size={14} aria-hidden="true" /> Open Learn tutorials
               </Link>
               <Link href="/app/docs" className={buttonVariants({ variant: "outline", size: "sm" })}>
-                <FileText size={14} aria-hidden="true" /> Language Docs
+                <FileText size={14} aria-hidden="true" /> Language docs
               </Link>
               <Link href="/app/classes" className={buttonVariants({ variant: "outline", size: "sm" })}>
-                <GraduationCap size={14} aria-hidden="true" /> Go to Classes
+                <GraduationCap size={14} aria-hidden="true" /> Go to classes
               </Link>
             </div>
           </div>
@@ -191,7 +187,7 @@ export function ChallengesView() {
                       {problem.tags.slice(0, 4).map((tag) => (
                         <span
                           key={tag}
-                          className="rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-elevated)] px-1.5 py-0.5 font-code text-[11px] text-[var(--color-text-muted)]"
+                          className="rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-elevated)] px-1.5 py-0.5 font-code text-xs text-[var(--color-text-muted)]"
                         >
                           {tag}
                         </span>

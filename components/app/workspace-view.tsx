@@ -16,10 +16,11 @@ import { ProblemPane } from "./workspace/problem-pane";
 import { ResultsPane, type ResultsTab } from "./workspace/results-pane";
 import { DemoControls } from "./workspace/demo-controls";
 import { WorkspaceToolbar, type WorkspaceLayout } from "./workspace/workspace-toolbar";
-import { SandboxOfflineNotice, ChallengeBar } from "./workspace/workspace-notices";
+import { SandboxOfflineNotice, ChallengeBar, CodeSafetyNotice } from "./workspace/workspace-notices";
 import { ConfirmDialog, SubmissionResultDialog, TimeExpiredDialog } from "./workspace/submission-modals";
 import { VerdictBadge } from "./workspace/verdict-badge";
 import { getSimulatedAcceptedResult, getSimulatedWrongAnswerResult } from "@/lib/demo/demo-simulation";
+import { checkWorkspaceSafety } from "@/lib/execution/code-safety";
 import { findLearnChapterById } from "@/lib/learn/curriculum";
 import { isRealVerdict } from "@/lib/verdicts";
 import { ALL_SUPPORTED_LANGUAGES } from "@/lib/workspace-defaults";
@@ -42,17 +43,34 @@ export function WorkspaceView() {
   const searchParams = useSearchParams();
   const problemIdParam = searchParams.get("problem");
   const lessonParam = searchParams.get("lesson");
-  const langParam = searchParams.get("lang") as PreferredLanguage | null;
+  const rawLangParam = searchParams.get("lang");
+  const langParam: PreferredLanguage | null =
+    rawLangParam && ALL_SUPPORTED_LANGUAGES.includes(rawLangParam as PreferredLanguage)
+      ? (rawLangParam as PreferredLanguage)
+      : null;
   const lessonChapter = useMemo(() => findLearnChapterById(lessonParam), [lessonParam]);
   const challenge = useChallengeSession();
 
-  const [problem, setProblem] = useState<VisibleProblem | null>(null);
+  const [fetchedProblem, setProblem] = useState<VisibleProblem | null>(null);
+  const problem = fetchedProblem && fetchedProblem.id === problemIdParam ? fetchedProblem : null;
   const [problemIds, setProblemIds] = useState<string[]>([]);
   const [sandboxHealth, setSandboxHealth] = useState<SandboxHealth | null>(null);
   const [offlineDismissed, setOfflineDismissed] = useState(false);
 
   const draftScope = problemIdParam ?? (lessonChapter ? `lesson:${lessonChapter.id}` : null);
-  const files = useWorkspaceFiles(profile, problem, draftScope);
+  const lessonStarters = useMemo(
+    () =>
+      lessonChapter && !problemIdParam
+        ? {
+            python: lessonChapter.lessons.python.exampleCode,
+            java: lessonChapter.lessons.java.exampleCode,
+            cpp: lessonChapter.lessons.cpp.exampleCode,
+            c: lessonChapter.lessons.c.exampleCode,
+          }
+        : null,
+    [lessonChapter, problemIdParam],
+  );
+  const files = useWorkspaceFiles(profile, problem, draftScope, lessonStarters, langParam);
   const judge = useJudge();
   const demo = useDemoMode(searchParams.get("demo"));
 
@@ -176,20 +194,26 @@ export function WorkspaceView() {
     setMobileActivePane("results");
   };
 
+  const safetyCheck = useMemo(
+    () => checkWorkspaceSafety(files.activeLang, files.files),
+    [files.activeLang, files.files],
+  );
+  const safetyBlockedReason = safetyCheck.safe ? undefined : safetyCheck.message;
+
   const source = () => ({ language: files.activeLang, sourceCode: files.mainCode, files: files.files });
 
   const handleRun = () => {
-    if (judge.isRunning || judge.isSubmitting) return;
+    if (judge.isRunning || judge.isSubmitting || !safetyCheck.safe) return;
     showResults("console");
     void judge.run({ ...source(), stdin: customStdin, timeLimitMs: problem?.timeLimitMs ?? 3000 });
   };
 
   const handleOpenSubmit = () => {
-    if (problem && !judge.isRunning && !judge.isSubmitting) setConfirmSubmitOpen(true);
+    if (problem && !judge.isRunning && !judge.isSubmitting && safetyCheck.safe) setConfirmSubmitOpen(true);
   };
 
   const handleConfirmSubmission = async () => {
-    if (!problem || judge.isSubmitting) return;
+    if (!problem || judge.isSubmitting || !safetyCheck.safe) return;
     setConfirmSubmitOpen(false);
     showResults("results");
     const result = await judge.submit(problem.id, source());
@@ -253,23 +277,18 @@ export function WorkspaceView() {
 
   const loadedLessonKeyRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!lessonChapter || problemIdParam || !profile) return;
-    const targetLang: PreferredLanguage =
-      langParam && ALL_SUPPORTED_LANGUAGES.includes(langParam)
-        ? langParam
-        : profile.preferredLanguage;
-    const key = `${lessonChapter.id}:${targetLang}`;
+    if (!lessonChapter || problemIdParam) return;
+    const key = `${lessonChapter.id}:${files.activeLang}`;
     if (loadedLessonKeyRef.current === key) return;
     loadedLessonKeyRef.current = key;
-    const lesson = lessonChapter.lessons[targetLang];
+    const lesson = lessonChapter.lessons[files.activeLang];
     queueMicrotask(() => {
       setLayout("split");
-      void files.switchLanguage(targetLang, lesson.exampleCode);
       if (lesson.exampleStdin !== undefined) {
         setCustomStdin(lesson.exampleStdin);
       }
     });
-  }, [lessonChapter, langParam, problemIdParam, profile, files]);
+  }, [lessonChapter, problemIdParam, files.activeLang]);
 
   const activeProblemId = problem?.id ?? problemIdParam;
 
@@ -431,16 +450,27 @@ export function WorkspaceView() {
                 onReset={() => setResetOpen(true)}
                 onDownload={handleDownload}
                 layout={layout}
-                onCycleLayout={() => setLayout((current: WorkspaceLayout) => current === "split" ? "wide" : current === "wide" ? "focus" : "split")}
+                onCycleLayout={() => {
+                  setProblemSlideOpen(false);
+                  setLayout((current: WorkspaceLayout) => current === "split" ? "wide" : current === "wide" ? "focus" : "split");
+                }}
                 drawerOpen={drawerOpen}
                 onToggleDrawer={() => setDrawerOpen((open) => !open)}
                 onOpenProblem={() => setProblemSlideOpen(true)}
                 canSubmit={Boolean(problem)}
+                blockedReason={safetyBlockedReason}
                 isRunning={judge.isRunning}
                 isSubmitting={judge.isSubmitting}
                 onRun={handleRun}
                 onSubmit={handleOpenSubmit}
               />
+              {!safetyCheck.safe && (
+                <CodeSafetyNotice
+                  label={safetyCheck.issue.label}
+                  reason={safetyCheck.issue.reason}
+                  fileName={safetyCheck.issue.fileName}
+                />
+              )}
               <div className="relative flex-1 min-h-0 overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] transition-colors focus-within:border-[var(--color-ring)]">
                 <CodeEditor
                   key={`${draftScope ?? "free"}/${files.activeLang}/${files.activeFile}`}

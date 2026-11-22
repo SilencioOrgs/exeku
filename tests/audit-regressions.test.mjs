@@ -247,6 +247,21 @@ test("problem store hides upcoming and unregistered live tournament problems fro
         time_limit_ms: 1000,
         memory_limit_kb: 131072,
       },
+      {
+        id: "cls-teacher-quiz-123456",
+        title: "Teacher Quiz",
+        description: "desc",
+        difficulty: "beginner",
+        category: "Class Exercise",
+        tags: [],
+        supported_languages: ["python"],
+        input_spec: "in",
+        output_spec: "out",
+        constraints: [],
+        test_cases: [{ id: "1", input: "", expectedOutput: "ok", isHidden: false }],
+        time_limit_ms: 1000,
+        memory_limit_kb: 131072,
+      },
     ],
   };
   const store = loadTs("lib/problems/store.ts", {
@@ -271,7 +286,11 @@ test("problem store hides upcoming and unregistered live tournament problems fro
   assert.ok(!strangerIds.includes("hello-world"));
   assert.ok(!strangerIds.includes("custom-locked"));
   assert.ok(!strangerIds.includes("even-or-odd"));
+  assert.ok(!strangerIds.includes("cls-teacher-quiz-123456"));
   assert.ok(strangerIds.includes("sum-two-integers"));
+
+  const withClassProblems = (await store.listProblemSummaries(undefined, { userId: "stranger", includeClassProblems: true })).map((p) => p.id);
+  assert.ok(withClassProblems.includes("cls-teacher-quiz-123456"));
 
   const joinedIds = (await store.listProblemSummaries(undefined, { userId: "joined" })).map((p) => p.id);
   assert.ok(joinedIds.includes("even-or-odd"));
@@ -281,6 +300,7 @@ test("problem store hides upcoming and unregistered live tournament problems fro
   assert.ok(adminIds.includes("hello-world"));
   assert.ok(adminIds.includes("custom-locked"));
   assert.ok(adminIds.includes("even-or-odd"));
+  assert.ok(!adminIds.includes("cls-teacher-quiz-123456"));
 });
 
 test("getOrgDetail masks problems on upcoming or unregistered tournaments", async () => {

@@ -11,10 +11,16 @@ import type { VisibleProblem } from "@/types/problem";
 export type SaveStatus = "SAVED" | "SAVING..." | "MODIFIED";
 
 /** Source files for the active problem and language, autosaved to IndexedDB. */
-export function useWorkspaceFiles(profile: LocalProfile | null, problem: VisibleProblem | null, problemId: string | null) {
+export function useWorkspaceFiles(
+  profile: LocalProfile | null,
+  problem: VisibleProblem | null,
+  problemId: string | null,
+  starterByLanguage?: Partial<Record<PreferredLanguage, string>> | null,
+  initialLang?: PreferredLanguage | null,
+) {
   const profileId = profile?.id;
-  const [userSelectedLang, setUserSelectedLang] = useState<PreferredLanguage | null>(null);
-  const activeLang = userSelectedLang ?? profile?.preferredLanguage ?? "python";
+  const [userSelectedLang, setUserSelectedLang] = useState<PreferredLanguage | null>(initialLang ?? null);
+  const activeLang = userSelectedLang ?? initialLang ?? profile?.preferredLanguage ?? "python";
   const mainFilename = getFilenameForLanguage(activeLang);
 
   const [files, setFiles] = useState<WorkspaceFile[]>([{ name: "main.py", content: getStarterCode("python") }]);
@@ -25,11 +31,12 @@ export function useWorkspaceFiles(profile: LocalProfile | null, problem: Visible
   const pendingSaveRef = useRef<(() => Promise<void>) | null>(null);
   const saveVersionRef = useRef(0);
   const dirtyRef = useRef(false);
+  const prevScopeRef = useRef<string | null>(null);
   const pendingOverrideRef = useRef<{ lang: PreferredLanguage; code: string } | null>(null);
 
   const code = files.find((file) => file.name === activeFile)?.content ?? "";
   const mainCode = files.find((file) => file.name === mainFilename)?.content ?? "";
-  const starter = problem?.starterCodes[activeLang] || getStarterCode(activeLang);
+  const starter = starterByLanguage?.[activeLang] || problem?.starterCodes[activeLang] || getStarterCode(activeLang);
 
   const updateFiles = useCallback((next: WorkspaceFile[]) => { filesRef.current = next; setFiles(next); }, []);
 
@@ -68,7 +75,11 @@ export function useWorkspaceFiles(profile: LocalProfile | null, problem: Visible
   // Load the profile's existing single-file or multi-file draft, starting clean on problem switch.
   useEffect(() => {
     let current = true;
-    dirtyRef.current = false;
+    const scopeKey = `${profileId ?? ""}:${problemId ?? ""}:${activeLang}`;
+    if (prevScopeRef.current !== scopeKey) {
+      prevScopeRef.current = scopeKey;
+      dirtyRef.current = false;
+    }
     const loaded = (draftFiles: WorkspaceFile[]) => {
       if (!current || dirtyRef.current) return;
       const primary = draftFiles.find((file) => file.name === mainFilename);

@@ -23,6 +23,7 @@ import { DifficultyBadge, difficultyLabel } from "@/components/app/difficulty-ba
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useProfile } from "@/hooks/use-profile";
+import { checkCodeSafety } from "@/lib/execution/code-safety";
 import {
   checkExerciseAnswer,
   getLearnChapter,
@@ -59,7 +60,7 @@ function writeCompleted(keys: string[]) {
   }
 }
 
-function HighlightedBlock({ code, language }: { code: string; language: PreferredLanguage }) {
+export function HighlightedBlock({ code, language }: { code: string; language: PreferredLanguage }) {
   return (
     <pre className="code-editor font-code overflow-x-auto rounded-xl border border-[var(--color-border)] p-3.5 text-xs leading-6">
       {tokenize(code, language).map((t, i) =>
@@ -77,19 +78,33 @@ export interface LearnViewProps {
 
 export function LearnView({ initialChapterId, initialLang, embedded = false }: LearnViewProps) {
   const { profile } = useProfile();
-  const [selectedLang, setSelectedLang] = useState<PreferredLanguage | null>(initialLang ?? null);
-  const lang: PreferredLanguage = selectedLang ?? profile?.preferredLanguage ?? "python";
+  const safeInitialLang =
+    initialLang && ALL_SUPPORTED_LANGUAGES.includes(initialLang) ? initialLang : null;
+  const [selectedLang, setSelectedLang] = useState<PreferredLanguage | null>(safeInitialLang);
+  const lang: PreferredLanguage =
+    selectedLang && ALL_SUPPORTED_LANGUAGES.includes(selectedLang)
+      ? selectedLang
+      : profile?.preferredLanguage && ALL_SUPPORTED_LANGUAGES.includes(profile.preferredLanguage)
+        ? profile.preferredLanguage
+        : "python";
 
   const [chapters, setChapters] = useState<LearnChapter[]>(LEARN_CHAPTERS);
   const [difficultyFilter, setDifficultyFilter] = useState<ProblemDifficulty | "all">("all");
   const [chapterId, setChapterId] = useState<LearnChapterId>(() => getLearnChapter(initialChapterId).id);
-  const chapter = chapters.find((c) => c.id === chapterId) ?? getLearnChapter(chapterId);
-  const lesson = chapter.lessons[lang];
-  const chapterIndex = chapters.findIndex((c) => c.id === chapter.id);
-  const prevChapter = chapterIndex > 0 ? chapters[chapterIndex - 1] : null;
-  const nextChapter = chapterIndex < chapters.length - 1 ? chapters[chapterIndex + 1] : null;
   const filteredChapters =
     difficultyFilter === "all" ? chapters : chapters.filter((c) => c.difficulty === difficultyFilter);
+  const chapter =
+    filteredChapters.find((c) => c.id === chapterId) ??
+    filteredChapters[0] ??
+    chapters.find((c) => c.id === chapterId) ??
+    getLearnChapter(chapterId);
+  const lesson = chapter.lessons[lang] ?? chapter.lessons.python;
+  const chapterIndex = filteredChapters.findIndex((c) => c.id === chapter.id);
+  const prevChapter = chapterIndex > 0 ? filteredChapters[chapterIndex - 1] : null;
+  const nextChapter =
+    chapterIndex >= 0 && chapterIndex < filteredChapters.length - 1
+      ? filteredChapters[chapterIndex + 1]
+      : null;
 
   // Interactive "Try it Yourself" editor state keyed to `${lang}:${chapter.id}`
   const lessonKey = `${lang}:${chapter.id}`;
@@ -160,6 +175,18 @@ export function LearnView({ initialChapterId, initialLang, embedded = false }: L
 
   const handleRunExample = async () => {
     if (running) return;
+    const safety = checkCodeSafety(lang, currentCode);
+    if (!safety.safe) {
+      setOutputsByKey((prev) => ({
+        ...prev,
+        [lessonKey]: {
+          text: safety.message,
+          isError: true,
+          note: "Blocked unsafe code",
+        },
+      }));
+      return;
+    }
     setRunning(true);
     try {
       const res = await fetch("/api/execute", {
@@ -173,6 +200,18 @@ export function LearnView({ initialChapterId, initialLang, embedded = false }: L
         }),
       });
       const data = (await res.json().catch(() => null)) as (ExecutionResult & { error?: string }) | null;
+
+      if (!res.ok && res.status === 400 && data?.error) {
+        setOutputsByKey((prev) => ({
+          ...prev,
+          [lessonKey]: {
+            text: data.error!,
+            isError: true,
+            note: "Blocked by validation",
+          },
+        }));
+        return;
+      }
 
       if (res.ok && data && data.status === "SUCCESS") {
         setOutputsByKey((prev) => ({
@@ -197,26 +236,38 @@ export function LearnView({ initialChapterId, initialLang, embedded = false }: L
         return;
       }
 
-      // Fallback when local judge service isn't running yet:
       const unmodified =
         currentCode.trim() === lesson.exampleCode.trim() &&
         currentStdin.trim() === (lesson.exampleStdin ?? "").trim();
       setOutputsByKey((prev) => ({
         ...prev,
-        [lessonKey]: {
-          text: lesson.expectedOutput,
-          note: unmodified
-            ? "Verified example output (start exeku-judge to execute custom edits live)"
-            : "Showing reference example output — start exeku-judge in WSL2 to execute custom code changes",
-        },
+        [lessonKey]: unmodified
+          ? {
+              text: lesson.expectedOutput,
+              note: "Verified example output (start exeku-judge to execute custom edits live)",
+            }
+          : {
+              text: "SANDBOX SERVICE UNAVAILABLE: Start the Exeku judge worker on port 4000 (see judge/README.md) to execute custom code changes.",
+              isError: true,
+              note: "Judge offline",
+            },
       }));
     } catch {
+      const unmodified =
+        currentCode.trim() === lesson.exampleCode.trim() &&
+        currentStdin.trim() === (lesson.exampleStdin ?? "").trim();
       setOutputsByKey((prev) => ({
         ...prev,
-        [lessonKey]: {
-          text: lesson.expectedOutput,
-          note: "Verified example output",
-        },
+        [lessonKey]: unmodified
+          ? {
+              text: lesson.expectedOutput,
+              note: "Verified example output",
+            }
+          : {
+              text: "SANDBOX SERVICE UNAVAILABLE: Start the Exeku judge worker on port 4000 (see judge/README.md) to execute custom code changes.",
+              isError: true,
+              note: "Judge offline",
+            },
       }));
     } finally {
       setRunning(false);
@@ -267,9 +318,9 @@ export function LearnView({ initialChapterId, initialLang, embedded = false }: L
       {!embedded && (
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div className="space-y-1">
-            <h1 className="text-3xl font-semibold tracking-tight">Learn Languages &amp; Syntax</h1>
+            <h1 className="text-3xl font-semibold tracking-tight">Learn languages &amp; syntax</h1>
             <p className="text-sm text-[var(--color-text-muted)]">
-              Interactive tutorials from Easy to Hard with live Try it Yourself examples for Python 3, Java, C++, and C.
+              Interactive tutorials from Easy to Hard with live Try it yourself examples for Python 3, Java, C++, and C.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -277,13 +328,13 @@ export function LearnView({ initialChapterId, initialLang, embedded = false }: L
               href={`/app/docs?lang=${encodeURIComponent(lang)}`}
               className={buttonVariants({ variant: "outline", size: "sm" })}
             >
-              <FileText size={14} aria-hidden="true" /> Language Docs
+              <FileText size={14} aria-hidden="true" /> Language docs
             </Link>
             <Link
               href={`/app/workspace?lesson=${encodeURIComponent(chapter.id)}&lang=${encodeURIComponent(lang)}`}
               className={buttonVariants({ size: "sm" })}
             >
-              <Code2 size={14} aria-hidden="true" /> Open in Workspace
+              <Code2 size={14} aria-hidden="true" /> Open in workspace
             </Link>
           </div>
         </header>
@@ -331,10 +382,10 @@ export function LearnView({ initialChapterId, initialLang, embedded = false }: L
             <div className="flex items-center gap-2">
               <BookOpen size={15} className="text-[var(--color-primary-text)]" aria-hidden="true" />
               <h2 className="text-xs font-semibold text-[var(--color-text-main)]">
-                {LANGUAGE_DISPLAY_NAMES[lang]} Tutorial
+                {LANGUAGE_DISPLAY_NAMES[lang]} tutorial
               </h2>
             </div>
-            <span className="font-code text-[11px] text-[var(--color-text-muted)]">{filteredChapters.length} lessons</span>
+            <span className="font-code text-xs text-[var(--color-text-muted)]">{filteredChapters.length} lessons</span>
           </div>
 
           <div className="flex flex-wrap gap-1 px-1">
@@ -370,11 +421,11 @@ export function LearnView({ initialChapterId, initialLang, embedded = false }: L
                   }`}
                 >
                   <span className="flex min-w-0 items-center gap-2">
-                    <span className="font-code text-[11px] text-[var(--color-primary-text)]">{item.number}</span>
+                    <span className="font-code text-xs text-[var(--color-primary-text)]">{item.number}</span>
                     <span className="truncate">{item.shortTitle}</span>
                   </span>
                   <span className="flex shrink-0 items-center gap-1.5">
-                    <DifficultyBadge difficulty={item.difficulty} className="px-1.5 py-0 text-[10px]" />
+                    <DifficultyBadge difficulty={item.difficulty} className="px-1.5 py-0 text-xs" />
                     {done && <CheckCircle2 size={13} className="shrink-0 text-[var(--color-mint)]" aria-label="Completed" />}
                   </span>
                 </Button>
@@ -394,13 +445,13 @@ export function LearnView({ initialChapterId, initialLang, embedded = false }: L
                     Chapter {chapter.number} · {LANGUAGE_DISPLAY_NAMES[lang]}
                   </span>
                   <DifficultyBadge difficulty={chapter.difficulty} />
-                  <span className="rounded-md border border-[var(--color-border)] bg-[var(--color-elevated)] px-2 py-0.5 text-[11px] font-medium text-[var(--color-text-muted)]">
+                  <span className="rounded-md border border-[var(--color-border)] bg-[var(--color-elevated)] px-2 py-0.5 text-xs font-medium text-[var(--color-text-muted)]">
                     {chapter.category}
                   </span>
                   {chapter.tags.slice(0, 3).map((tag) => (
                     <span
                       key={tag}
-                      className="rounded-md bg-[var(--color-canvas)] px-1.5 py-0.5 font-code text-[11px] text-[var(--color-text-muted)]"
+                      className="rounded-md bg-[var(--color-canvas)] px-1.5 py-0.5 font-code text-xs text-[var(--color-text-muted)]"
                     >
                       {tag}
                     </span>
@@ -483,7 +534,7 @@ export function LearnView({ initialChapterId, initialLang, embedded = false }: L
                   href={`/app/workspace?lesson=${encodeURIComponent(chapter.id)}&lang=${encodeURIComponent(lang)}`}
                   className={buttonVariants({ variant: "outline", size: "sm" })}
                 >
-                  <Code2 size={13} aria-hidden="true" /> Try in Workspace
+                  <Code2 size={13} aria-hidden="true" /> Try in workspace
                 </Link>
               </div>
             </div>
@@ -616,7 +667,7 @@ export function LearnView({ initialChapterId, initialLang, embedded = false }: L
 
               {currentFeedback === "wrong" && (
                 <p role="alert" className="skeuo-recess rounded-xl p-3 text-xs text-[var(--color-pink)]">
-                  Not quite — check the syntax pattern above or click Show hint and try again.
+                  Not quite. Check the syntax pattern above or click Show hint and try again.
                 </p>
               )}
 

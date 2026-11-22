@@ -363,3 +363,73 @@ test("/app views use skeleton loading instead of the Exeku BrandLoader splash", 
     assert.doesNotMatch(src, /BrandLoader/, `${rel} should not use BrandLoader`);
   }
 });
+
+test("learn repository validates chapterId, merges partial DB chapters safely over built-in lessons, and tracks progress", async () => {
+  const curriculum = await import("../lib/learn/curriculum.ts");
+  const workspaceDefaults = await import("../lib/workspace-defaults.ts");
+  const tables = {
+    learn_chapters: [
+      {
+        id: "printing-arrays",
+        order_index: 6,
+        number: "06",
+        title: "Custom DB Printing an Array",
+        short_title: "Printing Arrays",
+        category: "Data Structures",
+        difficulty: "intermediate",
+        tags: ["arrays"],
+        summary: "Updated DB summary",
+        // Partial lessons object missing java/cpp/c — must fall back cleanly to built-in lessons for missing languages
+        lessons: {
+          python: curriculum.findLearnChapterById("printing-arrays").lessons.python,
+        },
+      },
+    ],
+    learn_progress: [],
+  };
+
+  const learnRepo = loadTs("lib/learn/repository.ts", {
+    "server-only": {},
+    "@/lib/accounts/rules": accountRules,
+    "@/lib/db/client": { db: fakeDb(tables) },
+    "@/lib/learn/curriculum": curriculum,
+    "@/lib/workspace-defaults": workspaceDefaults,
+  });
+
+  const viewer = { id: "student-1", name: "Grace", role: "student" };
+
+  // Malformed chapterId with colon or uppercase is rejected (400).
+  const badId = await learnRepo.recordLearnCompletion(viewer, {
+    chapterId: "printing:arrays",
+    language: "python",
+  });
+  assert.equal(badId.ok, false);
+  assert.equal(badId.status, 400);
+
+  // Unknown chapterId not in built-in or DB is rejected (404).
+  const unknownId = await learnRepo.recordLearnCompletion(viewer, {
+    chapterId: "non-existent-topic",
+    language: "python",
+  });
+  assert.equal(unknownId.ok, false);
+  assert.equal(unknownId.status, 404);
+
+  // Valid completion succeeds and records progress.
+  const ok = await learnRepo.recordLearnCompletion(viewer, {
+    chapterId: "printing-arrays",
+    language: "python",
+  });
+  assert.equal(ok.ok, true);
+  assert.equal(ok.key, "python:printing-arrays");
+
+  const payload = await learnRepo.listLearnForViewer(viewer);
+  assert.equal(payload.chapters.length, 8);
+  const merged = payload.chapters.find((c) => c.id === "printing-arrays");
+  assert.equal(merged.title, "Custom DB Printing an Array");
+  assert.ok(merged.lessons.python.headline.length > 0);
+  assert.ok(merged.lessons.java.headline.length > 0);
+  assert.ok(merged.lessons.cpp.headline.length > 0);
+  assert.ok(merged.lessons.c.headline.length > 0);
+  assert.deepEqual(Array.from(payload.completedKeys), ["python:printing-arrays"]);
+});
+

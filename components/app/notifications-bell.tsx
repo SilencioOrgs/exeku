@@ -55,6 +55,7 @@ export function NotificationsBell({ onRoleLoaded }: { onRoleLoaded?: (role: User
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   const load = useCallback(async () => {
     const res = await fetchNotifications();
@@ -79,18 +80,23 @@ export function NotificationsBell({ onRoleLoaded }: { onRoleLoaded?: (role: User
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
     };
-    const onClickOutside = (e: MouseEvent) => {
+    const onOutside = (e: Event) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
       }
     };
     window.addEventListener("keydown", onKey);
-    document.addEventListener("mousedown", onClickOutside);
+    document.addEventListener("pointerdown", onOutside);
+    document.addEventListener("focusin", onOutside);
     return () => {
       window.removeEventListener("keydown", onKey);
-      document.removeEventListener("mousedown", onClickOutside);
+      document.removeEventListener("pointerdown", onOutside);
+      document.removeEventListener("focusin", onOutside);
     };
   }, [open]);
 
@@ -108,8 +114,11 @@ export function NotificationsBell({ onRoleLoaded }: { onRoleLoaded?: (role: User
     try {
       const res = await markAllNotificationsRead();
       if (res.ok) {
-        setItems((prev) => prev.map((n) => (n.synthetic ? n : { ...n, read: true })));
-        setUnreadCount((prev) => items.filter((n) => n.synthetic && !n.read).length || Math.min(0, prev));
+        setItems((prev) => {
+          const next = prev.map((n) => (n.synthetic ? n : { ...n, read: true }));
+          setUnreadCount(next.filter((n) => !n.read).length);
+          return next;
+        });
       }
     } finally {
       setMarkingAll(false);
@@ -121,11 +130,13 @@ export function NotificationsBell({ onRoleLoaded }: { onRoleLoaded?: (role: User
   return (
     <div ref={containerRef} className="relative">
       <Button
+        ref={triggerRef}
         type="button"
         variant="ghost"
         size="icon"
         aria-label={unreadCount > 0 ? `Notifications (${unreadCount} unread)` : "Notifications"}
         aria-expanded={open}
+        aria-haspopup="dialog"
         onClick={() => {
           const next = !open;
           setOpen(next);
@@ -135,7 +146,7 @@ export function NotificationsBell({ onRoleLoaded }: { onRoleLoaded?: (role: User
       >
         <Bell size={17} aria-hidden="true" />
         {unreadCount > 0 && (
-          <span className="font-code absolute -top-0.5 -right-0.5 grid min-w-[18px] place-items-center rounded-full bg-[var(--color-primary)] px-1 text-[10px] font-semibold leading-[18px] text-[var(--primary-foreground)]">
+          <span className="font-code absolute -top-0.5 -right-0.5 grid min-w-[18px] place-items-center rounded-full bg-[var(--color-primary)] px-1 text-xs font-semibold leading-[18px] text-[var(--primary-foreground)]">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
@@ -151,7 +162,7 @@ export function NotificationsBell({ onRoleLoaded }: { onRoleLoaded?: (role: User
             <div className="flex items-center gap-2">
               <h2 className="text-sm font-semibold">Notifications</h2>
               {unreadCount > 0 && (
-                <span className="rounded-md bg-[var(--color-surface)] px-1.5 py-0.5 font-code text-[11px] text-[var(--color-primary-text)]">
+                <span className="rounded-md bg-[var(--color-surface)] px-1.5 py-0.5 font-code text-xs text-[var(--color-primary-text)]">
                   {unreadCount} new
                 </span>
               )}
@@ -210,12 +221,12 @@ export function NotificationsBell({ onRoleLoaded }: { onRoleLoaded?: (role: User
                         )}
                       </div>
                       {item.body && (
-                        <p className="line-clamp-2 text-[11px] text-[var(--color-text-muted)]">{item.body}</p>
+                        <p className="line-clamp-2 text-xs text-[var(--color-text-muted)]">{item.body}</p>
                       )}
                       <div className="flex flex-wrap items-center gap-2 pt-0.5">
                         {due && (
                           <span
-                            className={`rounded px-1.5 py-0.5 font-code text-[10px] ${
+                            className={`rounded px-1.5 py-0.5 font-code text-xs ${
                               due.urgent
                                 ? "bg-[var(--color-hard-bg)] text-[var(--color-pink)]"
                                 : "bg-[var(--color-surface)] text-[var(--color-primary-text)]"
@@ -224,7 +235,7 @@ export function NotificationsBell({ onRoleLoaded }: { onRoleLoaded?: (role: User
                             {due.label}
                           </span>
                         )}
-                        <span className="font-code text-[10px] text-[var(--color-text-muted)]">
+                        <span className="font-code text-xs text-[var(--color-text-muted)]">
                           {new Date(item.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
                         </span>
                       </div>

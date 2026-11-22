@@ -1,6 +1,6 @@
 import "server-only";
 import { db, fetchAllPages, must } from "@/lib/db/client";
-import { getAllProblems, getProblemById, summarizeProblems, toVisibleProblem, type ProblemFilter } from "@/lib/problems/catalog";
+import { getAllProblems, getProblemById, matchesProblemFilter, summarizeProblems, toVisibleProblem, type ProblemFilter } from "@/lib/problems/catalog";
 import { ALL_SUPPORTED_LANGUAGES, getStarterCode } from "@/lib/workspace-defaults";
 import type { ProblemDifficulty, ProgrammingProblem, ProblemSummary, TestCase, VisibleProblem } from "@/types/problem";
 import type { PreferredLanguage } from "@/types/profile";
@@ -40,6 +40,8 @@ export const toProblem = (r: ProblemRow): ProgrammingProblem => ({
 export interface ProblemLookupOptions {
   /** Admins can view and test problems scheduled for upcoming or private live tournaments. */
   includeLocked?: boolean;
+  /** Include custom teacher-created class problems (cls-*) when resolving class assignments. */
+  includeClassProblems?: boolean;
   /** Signed-in viewer ID, used to unlock live tournament problems only for registered participants. */
   userId?: string;
 }
@@ -136,20 +138,18 @@ async function fetchDbProblemSummaries(): Promise<ProblemSummary[]> {
         .range(from, to),
     );
     // In tests or unmigrated DBs, a fake table without sample_count falls through below.
-    if (viewRows.length === 0 || typeof viewRows[0]?.total_tests_count === "number") {
-      if (viewRows.length > 0) {
-        return viewRows.map((r) => ({
-          id: r.id,
-          slug: r.id,
-          title: r.title,
-          difficulty: r.difficulty,
-          category: r.category,
-          tags: r.tags,
-          supportedLanguages: r.supported_languages,
-          sampleCount: r.sample_count,
-          totalTestsCount: r.total_tests_count,
-        }));
-      }
+    if (viewRows.length > 0 && typeof viewRows[0]?.total_tests_count === "number") {
+      return viewRows.map((r) => ({
+        id: r.id,
+        slug: r.id,
+        title: r.title,
+        difficulty: r.difficulty,
+        category: r.category,
+        tags: r.tags,
+        supportedLanguages: r.supported_languages,
+        sampleCount: r.sample_count,
+        totalTestsCount: r.total_tests_count,
+      }));
     }
   } catch {
     /* Fall back to problems table if problem_summaries view is not migrated yet. */
@@ -176,20 +176,6 @@ async function fetchDbProblemSummaries(): Promise<ProblemSummary[]> {
   }));
 }
 
-function matchesSummaryFilter(summary: ProblemSummary, filter?: ProblemFilter): boolean {
-  if (!filter) return true;
-  if (filter.difficulty && filter.difficulty !== "all" && summary.difficulty !== filter.difficulty) return false;
-  if (filter.language && !summary.supportedLanguages.includes(filter.language as never)) return false;
-  if (filter.search) {
-    const q = filter.search.toLowerCase();
-    const inTitle = summary.title.toLowerCase().includes(q);
-    const inCategory = summary.category.toLowerCase().includes(q);
-    const inTags = summary.tags.some((t) => t.toLowerCase().includes(q));
-    if (!inTitle && !inCategory && !inTags) return false;
-  }
-  return true;
-}
-
 export async function listProblemSummaries(filter?: ProblemFilter, options?: ProblemLookupOptions): Promise<ProblemSummary[]> {
   const [dbSummaries, locked] = await Promise.all([
     fetchDbProblemSummaries(),
@@ -202,7 +188,11 @@ export async function listProblemSummaries(filter?: ProblemFilter, options?: Pro
   );
   const seen = new Set(builtInSummaries.map((p) => p.id));
   const extra = dbSummaries.filter(
-    (summary) => !seen.has(summary.id) && !locked.has(summary.id) && matchesSummaryFilter(summary, filter),
+    (summary) =>
+      !seen.has(summary.id) &&
+      !locked.has(summary.id) &&
+      (options?.includeClassProblems || !summary.id.startsWith("cls-")) &&
+      matchesProblemFilter(summary, filter),
   );
   return [...builtInSummaries, ...extra];
 }

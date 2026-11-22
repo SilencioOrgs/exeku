@@ -58,7 +58,11 @@ export function OrgView({ orgId }: { orgId: string }) {
       const result = await orgAction(orgId, body);
       if (result.ok) {
         if (okMessage) setNotice(okMessage);
-        setVersion((v) => v + 1);
+        const refreshed = await fetchOrg(orgId);
+        if (refreshed.ok) {
+          setDetail(refreshed.data);
+          setLoadError(undefined);
+        }
       } else {
         setActionError(result.error ?? "That didn't work. Try again.");
       }
@@ -118,21 +122,21 @@ export function OrgView({ orgId }: { orgId: string }) {
 
         <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
           <div className="skeuo-well rounded-xl border px-3.5 py-2.5">
-            <p className="text-[11px] text-[var(--color-text-muted)]">Members</p>
+            <p className="text-xs text-[var(--color-text-muted)]">Members</p>
             <p className="font-code mt-0.5 text-lg font-semibold">{members.length}</p>
           </div>
           <div className="skeuo-well rounded-xl border px-3.5 py-2.5">
-            <p className="text-[11px] text-[var(--color-text-muted)]">Events</p>
+            <p className="text-xs text-[var(--color-text-muted)]">Events</p>
             <p className="font-code mt-0.5 text-lg font-semibold">{events.length}</p>
           </div>
           <div className="skeuo-well rounded-xl border px-3.5 py-2.5">
-            <p className="flex items-center gap-1 text-[11px] text-[var(--color-text-muted)]">
+            <p className="flex items-center gap-1 text-xs text-[var(--color-text-muted)]">
               <Crown size={11} className="text-[var(--color-primary-text)]" aria-hidden="true" /> President
             </p>
             <p className="mt-0.5 truncate text-sm font-semibold">{org.presidentName ?? "Unassigned"}</p>
           </div>
           <div className="skeuo-well rounded-xl border px-3.5 py-2.5">
-            <p className="flex items-center gap-1 text-[11px] text-[var(--color-text-muted)]">
+            <p className="flex items-center gap-1 text-xs text-[var(--color-text-muted)]">
               <GraduationCap size={11} className="text-[var(--color-mint)]" aria-hidden="true" /> Adviser
             </p>
             <p className="mt-0.5 truncate text-sm font-semibold">{org.adviserName ?? "Unassigned"}</p>
@@ -270,7 +274,7 @@ export function OrgView({ orgId }: { orgId: string }) {
                     <div className="flex min-w-0 items-center gap-2">
                       <span className="truncate text-sm font-medium">{m.name}</span>
                       <span
-                        className={`inline-flex items-center gap-1 rounded px-2 py-0.5 font-code text-[11px] ${
+                        className={`inline-flex items-center gap-1 rounded px-2 py-0.5 font-code text-xs ${
                           m.role === "president"
                             ? "bg-[var(--color-medium-bg)] text-[var(--color-primary-text)]"
                             : m.role === "officer"
@@ -342,7 +346,7 @@ export function OrgView({ orgId }: { orgId: string }) {
                       <p className="text-xs text-[var(--color-text-muted)]">{eventAccessLabel(e)}</p>
                     </Link>
                     {e.featured ? (
-                      <span className="inline-flex items-center gap-1 rounded-md bg-[var(--color-medium-bg)] px-2 py-0.5 font-code text-[11px] text-[var(--color-primary-text)]">
+                      <span className="inline-flex items-center gap-1 rounded-md bg-[var(--color-medium-bg)] px-2 py-0.5 font-code text-xs text-[var(--color-primary-text)]">
                         <Sparkles size={11} aria-hidden="true" /> Featured
                       </span>
                     ) : canPublish ? (

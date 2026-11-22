@@ -98,6 +98,7 @@ export function OrgsDirectory({ initialOrgs }: { initialOrgs: OrgSummary[] }) {
         <Search size={15} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[var(--color-text-muted)]" aria-hidden="true" />
         <Input
           type="search"
+          aria-label="Search organizations"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search organization, school, campus, or program…"

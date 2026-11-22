@@ -49,7 +49,7 @@ function IdFace({ fullName, school, campus, pending, avatarId, borderId, serial,
             </div>
             <p className="mt-2.5 text-base leading-tight font-semibold break-words text-[var(--id-ink)]">{fullName}</p>
             {roleDetail && (
-              <p className="mt-0.5 text-[11px] font-medium leading-snug break-words text-[var(--id-ink)]">{roleDetail}</p>
+              <p className="mt-0.5 text-xs font-medium leading-snug break-words text-[var(--id-ink)]">{roleDetail}</p>
             )}
             <p className="mt-1.5 text-xs leading-snug break-words text-[var(--id-ink-muted)]">
               {school || (isTeacher ? "Verified faculty" : "Your school")}{campus ? <><br />{campus}</> : null}
@@ -99,7 +99,7 @@ function IdStage({ draggable, onClick, children }: { draggable?: boolean; onClic
 
   return (
     <div className={draggable ? "id-stage id-stage-drag" : "id-stage"} onClick={onClick} onPointerMove={onPointerMove} onPointerDown={onPointerDown}
-      onPointerUp={endDrag} onPointerCancel={endDrag} onPointerLeave={(event) => { if (!dragStart.current) rest(event.currentTarget); }}>
+      onPointerUp={endDrag} onPointerCancel={endDrag} onLostPointerCapture={endDrag} onPointerLeave={(event) => { if (!dragStart.current) rest(event.currentTarget); }}>
       {children}
     </div>
   );

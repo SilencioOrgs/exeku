@@ -19,11 +19,6 @@ export function getProblemById(id: string): ProgrammingProblem | null {
   return PROBLEM_CATALOG.find((p) => p.id === id || p.slug === id) || null;
 }
 
-export function getVisibleProblem(id: string): VisibleProblem | null {
-  const full = getProblemById(id);
-  return full ? toVisibleProblem(full) : null;
-}
-
 /** Drops hidden tests. Everything sent to a browser goes through here. */
 export function toVisibleProblem(full: ProgrammingProblem): VisibleProblem {
   return {
@@ -59,35 +54,35 @@ export interface ProblemFilter {
   search?: string;
 }
 
-export function getProblemSummaries(filter?: ProblemFilter): ProblemSummary[] {
-  return summarizeProblems(PROBLEM_CATALOG, filter);
+export function matchesProblemFilter(
+  p: Pick<ProblemSummary, "title" | "difficulty" | "category" | "tags" | "supportedLanguages">,
+  filter?: ProblemFilter,
+): boolean {
+  if (!filter) return true;
+  if (filter.difficulty && filter.difficulty !== "all" && p.difficulty !== filter.difficulty) return false;
+  if (filter.language && !p.supportedLanguages.includes(filter.language as never)) return false;
+  if (filter.search) {
+    const q = filter.search.toLowerCase();
+    const matchTitle = p.title.toLowerCase().includes(q);
+    const matchCategory = p.category.toLowerCase().includes(q);
+    const matchTags = p.tags.some((t) => t.toLowerCase().includes(q));
+    if (!matchTitle && !matchCategory && !matchTags) return false;
+  }
+  return true;
 }
 
 export function summarizeProblems(problems: ProgrammingProblem[], filter?: ProblemFilter): ProblemSummary[] {
-  return problems.filter((p) => {
-    if (filter?.difficulty && filter.difficulty !== "all") {
-      if (p.difficulty !== filter.difficulty) return false;
-    }
-    if (filter?.language) {
-      if (!p.supportedLanguages.includes(filter.language as never)) return false;
-    }
-    if (filter?.search) {
-      const q = filter.search.toLowerCase();
-      const matchTitle = p.title.toLowerCase().includes(q);
-      const matchCategory = p.category.toLowerCase().includes(q);
-      const matchTags = p.tags.some((t) => t.toLowerCase().includes(q));
-      if (!matchTitle && !matchCategory && !matchTags) return false;
-    }
-    return true;
-  }).map((p) => ({
-    id: p.id,
-    slug: p.slug,
-    title: p.title,
-    difficulty: p.difficulty,
-    category: p.category,
-    tags: p.tags,
-    supportedLanguages: p.supportedLanguages,
-    sampleCount: p.sampleTestCases.length,
-    totalTestsCount: p.testCases.length,
-  }));
+  return problems
+    .filter((p) => matchesProblemFilter(p, filter))
+    .map((p) => ({
+      id: p.id,
+      slug: p.slug,
+      title: p.title,
+      difficulty: p.difficulty,
+      category: p.category,
+      tags: p.tags,
+      supportedLanguages: p.supportedLanguages,
+      sampleCount: p.sampleTestCases.length,
+      totalTestsCount: p.testCases.length,
+    }));
 }

@@ -66,14 +66,18 @@ async function clearFeatured(orgId: string) {
   must(await db().from("events").update({ featured: false }).eq("org_id", orgId).eq("featured", true));
 }
 
+const IN_CHUNK_SIZE = 100;
+
 async function fetchProfileNames(ids: string[]): Promise<Map<string, string>> {
   const unique = [...new Set(ids.filter(Boolean))];
   const map = new Map<string, string>();
-  if (unique.length === 0) return map;
-  const rows = must(
-    await db().from("profiles").select("user_id,display_name").in("user_id", unique.slice(0, 100)),
-  ) as { user_id: string; display_name: string }[];
-  for (const r of rows) map.set(r.user_id, r.display_name);
+  for (let i = 0; i < unique.length; i += IN_CHUNK_SIZE) {
+    const chunk = unique.slice(i, i + IN_CHUNK_SIZE);
+    const rows = must(
+      await db().from("profiles").select("user_id,display_name").in("user_id", chunk),
+    ) as { user_id: string; display_name: string }[];
+    for (const r of rows) map.set(r.user_id, r.display_name);
+  }
   return map;
 }
 
@@ -98,21 +102,31 @@ export async function listOrgs(campusId?: string, viewerId?: string): Promise<Or
   if (rows.length === 0) return [];
   const orgIds = rows.map((r) => r.id);
 
-  const [presidents, viewerMemberships, viewerApps] = await Promise.all([
-    fetchAllPages<{ org_id: string; user_id: string }>((from, to) =>
-      db().from("org_members").select("org_id,user_id").eq("role", "president").in("org_id", orgIds.slice(0, 100)).order("org_id").range(from, to),
-    ),
-    viewerId
-      ? fetchAllPages<{ org_id: string; role: OrgRole }>((from, to) =>
-          db().from("org_members").select("org_id,role").eq("user_id", viewerId).in("org_id", orgIds.slice(0, 100)).order("org_id").range(from, to),
-        )
-      : Promise.resolve([] as { org_id: string; role: OrgRole }[]),
-    viewerId
-      ? fetchAllPages<{ org_id: string; status: "pending" | "rejected" }>((from, to) =>
-          db().from("org_applications").select("org_id,status").eq("user_id", viewerId).in("org_id", orgIds.slice(0, 100)).order("org_id").range(from, to),
-        )
-      : Promise.resolve([] as { org_id: string; status: "pending" | "rejected" }[]),
-  ]);
+  const presidents: { org_id: string; user_id: string }[] = [];
+  const viewerMemberships: { org_id: string; role: OrgRole }[] = [];
+  const viewerApps: { org_id: string; status: "pending" | "rejected" }[] = [];
+
+  for (let i = 0; i < orgIds.length; i += IN_CHUNK_SIZE) {
+    const chunk = orgIds.slice(i, i + IN_CHUNK_SIZE);
+    const [pBatch, mBatch, aBatch] = await Promise.all([
+      fetchAllPages<{ org_id: string; user_id: string }>((from, to) =>
+        db().from("org_members").select("org_id,user_id").eq("role", "president").in("org_id", chunk).order("org_id").range(from, to),
+      ),
+      viewerId
+        ? fetchAllPages<{ org_id: string; role: OrgRole }>((from, to) =>
+            db().from("org_members").select("org_id,role").eq("user_id", viewerId).in("org_id", chunk).order("org_id").range(from, to),
+          )
+        : Promise.resolve([] as { org_id: string; role: OrgRole }[]),
+      viewerId
+        ? fetchAllPages<{ org_id: string; status: "pending" | "rejected" }>((from, to) =>
+            db().from("org_applications").select("org_id,status").eq("user_id", viewerId).in("org_id", chunk).order("org_id").range(from, to),
+          )
+        : Promise.resolve([] as { org_id: string; status: "pending" | "rejected" }[]),
+    ]);
+    presidents.push(...pBatch);
+    viewerMemberships.push(...mBatch);
+    viewerApps.push(...aBatch);
+  }
 
   const presByOrg = new Map(presidents.map((p) => [p.org_id, p.user_id]));
   const roleByOrg = new Map(viewerMemberships.map((m) => [m.org_id, m.role]));
@@ -212,7 +226,7 @@ export async function performOrgAction(orgId: string, viewer: Viewer, input: unk
       if (input.accept) {
         // Member first and upsert, so a failure between the two steps can simply be accepted again.
         must(await db().from("org_members").upsert({ org_id: orgId, user_id: application.user_id, role: "member" }, { onConflict: "org_id,user_id", ignoreDuplicates: true }));
-        must(await db().from("org_applications").delete().eq("id", application.id));
+        must(await db().from("org_applications").delete().eq("id", application.id).eq("status", "pending"));
         await notifyUsers([application.user_id], {
           kind: "org_status",
           title: `Accepted into ${org.name}`,
@@ -220,7 +234,7 @@ export async function performOrgAction(orgId: string, viewer: Viewer, input: unk
           href: `/app/orgs/${orgId}`,
         });
       } else {
-        must(await db().from("org_applications").update({ status: "rejected" }).eq("id", application.id));
+        must(await db().from("org_applications").update({ status: "rejected" }).eq("id", application.id).eq("status", "pending"));
         await notifyUsers([application.user_id], {
           kind: "org_status",
           title: `Application update: ${org.name}`,

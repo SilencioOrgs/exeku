@@ -162,12 +162,17 @@ export function ClassDetailView({ classId }: { classId: string }) {
   const handleAddProblem = async (event: FormEvent) => {
     event.preventDefault();
     if (!selectedProblemId) return;
+    const parsedDue = assignDueAt && !Number.isNaN(Date.parse(assignDueAt)) ? new Date(assignDueAt).toISOString() : undefined;
+    if (assignDueAt && !parsedDue) {
+      setError("Enter a valid deadline date and time.");
+      return;
+    }
     const res = await act(
       "addProblem",
       {
         action: "addProblem",
         problemId: selectedProblemId,
-        dueAt: assignDueAt ? new Date(assignDueAt).toISOString() : undefined,
+        dueAt: parsedDue,
       },
       { okMessage: "Assigned problem and notified enrolled students." },
     );
@@ -181,6 +186,11 @@ export function ClassDetailView({ classId }: { classId: string }) {
   const handlePostActivity = async (event: FormEvent) => {
     event.preventDefault();
     setActError(undefined);
+    const parsedDue = actDueAt && !Number.isNaN(Date.parse(actDueAt)) ? new Date(actDueAt).toISOString() : undefined;
+    if (actDueAt && !parsedDue) {
+      setActError("Enter a valid deadline date and time.");
+      return;
+    }
     const res = await act(
       "postActivity",
       {
@@ -188,7 +198,7 @@ export function ClassDetailView({ classId }: { classId: string }) {
         title: actTitle,
         kind: actKind,
         body: actBody,
-        dueAt: actDueAt ? new Date(actDueAt).toISOString() : undefined,
+        dueAt: parsedDue,
       },
       { okMessage: "Posted activity and notified enrolled students." },
     );
@@ -222,9 +232,12 @@ export function ClassDetailView({ classId }: { classId: string }) {
   const viewerSolvedCount = detail.problems.filter((p) => p.solvedByViewer).length;
   const totalPossible = detail.members.length * detail.problems.length;
   const totalClassSolves = detail.problems.reduce((sum, p) => sum + p.solvedByCount, 0);
-  const overallPct = detail.isTeacher
-    ? totalPossible > 0 ? Math.round((totalClassSolves / totalPossible) * 100) : 0
-    : detail.problems.length > 0 ? Math.round((viewerSolvedCount / detail.problems.length) * 100) : 0;
+  const overallPct = Math.min(
+    100,
+    detail.isTeacher
+      ? totalPossible > 0 ? Math.round((totalClassSolves / totalPossible) * 100) : 0
+      : detail.problems.length > 0 ? Math.round((viewerSolvedCount / detail.problems.length) * 100) : 0,
+  );
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-7 p-4 sm:p-6 lg:p-8">
@@ -299,19 +312,19 @@ export function ClassDetailView({ classId }: { classId: string }) {
           {/* Class stats + progress bar */}
           <div className="grid gap-3 border-t border-[var(--color-border)] pt-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="skeuo-well rounded-xl border px-3.5 py-2.5">
-              <p className="text-[11px] text-[var(--color-text-muted)]">Students</p>
+              <p className="text-xs text-[var(--color-text-muted)]">Students</p>
               <p className="font-code mt-0.5 text-lg font-semibold">{detail.members.length}</p>
             </div>
             <div className="skeuo-well rounded-xl border px-3.5 py-2.5">
-              <p className="text-[11px] text-[var(--color-text-muted)]">Problems</p>
+              <p className="text-xs text-[var(--color-text-muted)]">Problems</p>
               <p className="font-code mt-0.5 text-lg font-semibold">{detail.problems.length}</p>
             </div>
             <div className="skeuo-well rounded-xl border px-3.5 py-2.5">
-              <p className="text-[11px] text-[var(--color-text-muted)]">Groups</p>
+              <p className="text-xs text-[var(--color-text-muted)]">Groups</p>
               <p className="font-code mt-0.5 text-lg font-semibold">{detail.groups.length}</p>
             </div>
             <div className="skeuo-well space-y-1.5 rounded-xl border px-3.5 py-2.5">
-              <div className="flex items-center justify-between text-[11px]">
+              <div className="flex items-center justify-between text-xs">
                 <span className="text-[var(--color-text-muted)]">{detail.isTeacher ? "Class solve rate" : "Your progress"}</span>
                 <span className="font-code font-semibold text-[var(--color-primary-text)]">{overallPct}%</span>
               </div>
@@ -381,7 +394,7 @@ export function ClassDetailView({ classId }: { classId: string }) {
                   <div className="min-w-0 flex-1 space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span
-                        className={`rounded px-2 py-0.5 font-code text-[10px] capitalize ${
+                        className={`rounded px-2 py-0.5 font-code text-xs capitalize ${
                           item.kind === "deadline"
                             ? "bg-[var(--color-hard-bg)] text-[var(--color-pink)]"
                             : item.kind === "activity"
@@ -394,7 +407,7 @@ export function ClassDetailView({ classId }: { classId: string }) {
                       <h3 className="text-sm font-semibold text-[var(--color-text-main)]">{item.title}</h3>
                       {due && (
                         <span
-                          className={`inline-flex items-center gap-1 rounded px-2 py-0.5 font-code text-[11px] ${
+                          className={`inline-flex items-center gap-1 rounded px-2 py-0.5 font-code text-xs ${
                             due.urgent
                               ? "bg-[var(--color-hard-bg)] text-[var(--color-pink)]"
                               : "bg-[var(--color-surface)] text-[var(--color-primary-text)]"
@@ -405,7 +418,7 @@ export function ClassDetailView({ classId }: { classId: string }) {
                       )}
                     </div>
                     {item.body && <p className="text-xs text-[var(--color-text-muted)]">{item.body}</p>}
-                    <p className="font-code text-[10px] text-[var(--color-text-muted)]">
+                    <p className="font-code text-xs text-[var(--color-text-muted)]">
                       Posted {new Date(item.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
                     </p>
                   </div>
@@ -486,13 +499,13 @@ export function ClassDetailView({ classId }: { classId: string }) {
                       <span className="font-semibold text-[var(--color-text-main)]">{problem.title}</span>
                       <DifficultyBadge difficulty={problem.difficulty} />
                       {problem.isCustom && (
-                        <span className="rounded-md border border-[var(--color-primary-edge)] bg-[var(--color-surface)] px-1.5 py-0.5 font-code text-[10px] text-[var(--color-primary-text)]">
+                        <span className="rounded-md border border-[var(--color-primary-edge)] bg-[var(--color-surface)] px-1.5 py-0.5 font-code text-xs text-[var(--color-primary-text)]">
                           Custom
                         </span>
                       )}
                       {due && (
                         <span
-                          className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-code text-[11px] ${
+                          className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-code text-xs ${
                             due.urgent
                               ? "bg-[var(--color-hard-bg)] text-[var(--color-pink)]"
                               : "bg-[var(--color-surface)] text-[var(--color-primary-text)]"

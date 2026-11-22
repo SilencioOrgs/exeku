@@ -41,7 +41,8 @@ export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfil
   const [editing, setEditing] = useState(false);
   const [problems, setProblems] = useState<ProblemSummary[] | null>(null);
   const [topic, setTopic] = useState<TopicId>("all");
-  const [learnLang, setLearnLang] = useState<PreferredLanguage>(profile.preferredLanguage);
+  const [selectedLearnLang, setSelectedLearnLang] = useState<PreferredLanguage | null>(null);
+  const learnLang = selectedLearnLang ?? profile.preferredLanguage;
 
   useEffect(() => {
     let active = true;
@@ -62,6 +63,17 @@ export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfil
   const topicProblems = useMemo(() => (problems ?? []).filter((p) => inTopic(p, topic)), [problems, topic]);
   const filename = getFilenameForLanguage(profile.preferredLanguage);
   const code = (activeDraft?.code?.trim() ? activeDraft.code : getStarterCode(profile.preferredLanguage)).split("\n").slice(0, 7).join("\n");
+  const draftPrefix = `${profile.id}_`;
+  const draftSuffix = `_${activeDraft?.language ?? profile.preferredLanguage}`;
+  const draftScope =
+    activeDraft?.id && activeDraft.id.startsWith(draftPrefix) && activeDraft.id.endsWith(draftSuffix)
+      ? activeDraft.id.slice(draftPrefix.length, activeDraft.id.length - draftSuffix.length)
+      : "";
+  const continueHref = draftScope
+    ? draftScope.startsWith("lesson:")
+      ? `/app/workspace?lesson=${encodeURIComponent(draftScope.slice(7))}&lang=${encodeURIComponent(activeDraft?.language ?? profile.preferredLanguage)}`
+      : `/app/workspace?problem=${encodeURIComponent(draftScope)}`
+    : "/app/workspace";
 
   return (
     <div className="modern-overview space-y-6">
@@ -95,7 +107,7 @@ export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfil
             <div>
               <h2 id="learn-basics-heading" className="font-semibold">Learn language basics &amp; syntax</h2>
               <p className="text-xs text-[var(--color-text-muted)]">
-                Interactive tutorials with Try it Yourself examples — from basic printing to arrays, loops, and functions.
+                Interactive tutorials with Try it yourself examples, from basic printing to arrays, loops, and functions.
               </p>
             </div>
           </div>
@@ -108,7 +120,7 @@ export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfil
                 variant="outline"
                 size="sm"
                 aria-pressed={learnLang === l}
-                onClick={() => setLearnLang(l)}
+                onClick={() => setSelectedLearnLang(l)}
               >
                 {LANGUAGE_DISPLAY_NAMES[l]}
               </Button>
@@ -117,7 +129,7 @@ export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfil
               href={`/app/docs?lang=${encodeURIComponent(learnLang)}`}
               className={buttonVariants({ variant: "ghost", size: "sm" })}
             >
-              Language Docs <ArrowRight size={13} aria-hidden="true" />
+              Language docs <ArrowRight size={13} aria-hidden="true" />
             </Link>
           </div>
         </div>
@@ -133,10 +145,10 @@ export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfil
               >
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-code text-[11px] text-[var(--color-primary-text)]">
+                    <span className="font-code text-xs text-[var(--color-primary-text)]">
                       {ch.number} · {LANGUAGE_DISPLAY_NAMES[learnLang]}
                     </span>
-                    <DifficultyBadge difficulty={ch.difficulty} className="px-1.5 py-0 text-[10px]" />
+                    <DifficultyBadge difficulty={ch.difficulty} className="px-1.5 py-0 text-xs" />
                   </div>
                   <p className="text-sm font-semibold text-[var(--color-text-main)]">{ch.shortTitle}</p>
                   <p className="line-clamp-2 text-xs text-[var(--color-text-muted)]">{lesson.headline}</p>
@@ -201,7 +213,7 @@ export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfil
                     <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-[var(--color-text-muted)]">
                       <span>{problem.category} · {problem.totalTestsCount} tests</span>
                       {problem.tags.slice(0, 3).map((tag) => (
-                        <span key={tag} className="rounded bg-[var(--color-elevated)] px-1.5 py-0.5 font-code text-[10px]">
+                        <span key={tag} className="rounded bg-[var(--color-elevated)] px-1.5 py-0.5 font-code text-xs">
                           {tag}
                         </span>
                       ))}
@@ -251,7 +263,7 @@ export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfil
                 <h2 id="continue-heading" className="font-semibold">Continue coding</h2>
                 <p className="truncate text-xs text-[var(--color-text-muted)]">{filename} · {LANGUAGE_DISPLAY_NAMES[profile.preferredLanguage]} · {totalDrafts} {totalDrafts === 1 ? "draft" : "drafts"}</p>
               </div>
-              <Link href="/app/workspace" className={buttonVariants({ variant: "outline", size: "sm" })}>Open</Link>
+              <Link href={continueHref} className={buttonVariants({ variant: "outline", size: "sm" })}>Open</Link>
             </div>
             <pre className="code-editor font-code flex-1 overflow-hidden rounded-lg p-3 text-xs leading-5">{tokenize(code, profile.preferredLanguage)
               .map((t, i) => t.type === "plain" ? t.text : <span key={i} className={`tok-${t.type}`}>{t.text}</span>)}</pre>

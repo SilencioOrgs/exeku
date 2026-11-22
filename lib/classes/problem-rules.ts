@@ -1,14 +1,12 @@
+import { isObject, text } from "@/lib/accounts/rules";
 import type { FieldErrors } from "@/types/account";
 import type { ClassActivityKind } from "@/types/classes";
 import type { ProblemDifficulty, TestCase } from "@/types/problem";
 
-const isObject = (v: unknown): v is Record<string, unknown> =>
-  typeof v === "object" && v !== null && !Array.isArray(v);
-const text = (o: Record<string, unknown>, k: string) =>
-  typeof o[k] === "string" ? o[k].trim() : "";
-
 const DIFFICULTIES = new Set<ProblemDifficulty>(["beginner", "intermediate", "advanced"]);
 const ACTIVITY_KINDS = new Set<ClassActivityKind>(["announcement", "activity", "deadline"]);
+const MAX_TEST_CASE_CHARS = 16_384;
+const MAX_TOTAL_TEST_CHARS = 48_000;
 
 export interface ValidatedClassProblem {
   title: string;
@@ -50,7 +48,7 @@ export function checkClassActivity(
   const title = text(o, "title");
   const body = text(o, "body");
   const rawKind = text(o, "kind") || "announcement";
-  const problemId = text(o, "problemId") || undefined;
+  const problemId = text(o, "problemId").slice(0, 64) || undefined;
   const due = parseOptionalDueAt(o.dueAt);
   const fieldErrors: FieldErrors = {};
 
@@ -144,12 +142,22 @@ export function checkTeacherProblem(
 
   const rawCases = Array.isArray(o.testCases) ? o.testCases : [];
   const testCases: TestCase[] = [];
+  let totalTestChars = 0;
   for (let i = 0; i < rawCases.length && testCases.length < 20; i++) {
     const tc = rawCases[i];
     if (!isObject(tc)) continue;
     const tcInput = typeof tc.input === "string" ? tc.input : "";
     const tcOut = typeof tc.expectedOutput === "string" ? tc.expectedOutput : "";
     if (!tcOut.trim()) continue;
+    if (tcInput.length > MAX_TEST_CASE_CHARS || tcOut.length > MAX_TEST_CASE_CHARS) {
+      fieldErrors.testCases = "Each test case input and output must be 16 KB or smaller.";
+      break;
+    }
+    totalTestChars += tcInput.length + tcOut.length;
+    if (totalTestChars > MAX_TOTAL_TEST_CHARS) {
+      fieldErrors.testCases = "Total test case data must be 48 KB or smaller.";
+      break;
+    }
     const explanation = text(tc, "explanation") || undefined;
     testCases.push({
       id: `tc-${testCases.length + 1}`,
@@ -160,9 +168,9 @@ export function checkTeacherProblem(
     });
   }
 
-  if (testCases.length === 0) {
+  if (!fieldErrors.testCases && testCases.length === 0) {
     fieldErrors.testCases = "Add at least one test case with expected output.";
-  } else if (!testCases.some((t) => !t.isHidden)) {
+  } else if (!fieldErrors.testCases && !testCases.some((t) => !t.isHidden)) {
     fieldErrors.testCases = "Keep at least one sample test case visible to students.";
   }
 
