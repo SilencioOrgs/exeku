@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { BrandLoader } from "@/components/brand-loader";
+import { WorkspaceSkeleton } from "@/components/app/page-skeletons";
 import { WorkspaceView } from "@/components/app/workspace-view";
 
 export const metadata: Metadata = {
@@ -10,9 +10,7 @@ export const metadata: Metadata = {
 
 export default function WorkspacePage() {
   return (
-    <Suspense
-      fallback={<BrandLoader label="Loading workspace…" />}
-    >
+    <Suspense fallback={<WorkspaceSkeleton />}>
       <WorkspaceView />
     </Suspense>
   );

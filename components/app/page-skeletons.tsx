@@ -214,3 +214,80 @@ export function DetailPageSkeleton({ label = "Loading…", maxWidth = "max-w-4xl
     </SkeletonShell>
   );
 }
+
+/** Full-frame shell skeleton rendered while local profile initializes, replacing the old Exeku keycap splash. */
+export function AppShellSkeleton() {
+  return (
+    <div role="status" aria-busy="true" className="flex h-screen w-full flex-col bg-[var(--color-canvas)]">
+      <span className="sr-only">Loading your workspace…</span>
+      <div className="flex h-14 shrink-0 items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4 sm:px-6">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-6 w-24 rounded-md" />
+          <Skeleton className="h-4 w-20" />
+        </div>
+        <div className="flex items-center gap-2">
+          <Skeleton className="size-8 rounded-lg" />
+          <Skeleton className="hidden h-4 w-16 sm:block" />
+        </div>
+      </div>
+      <div className="flex min-h-0 flex-1 overflow-hidden">
+        <div className="hidden w-56 shrink-0 flex-col gap-3 border-r border-[var(--color-border)] bg-[var(--color-surface)] p-3 lg:flex">
+          <div className="flex items-center gap-3 border-b border-[var(--color-border)] pb-3">
+            <Skeleton className="size-9 shrink-0 rounded-lg" />
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <Skeleton className="h-3.5 w-24" />
+              <Skeleton className="h-3 w-16" />
+            </div>
+          </div>
+          {[0, 1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-10 w-full rounded-lg" />
+          ))}
+        </div>
+        <div className="min-w-0 flex-1 overflow-hidden">
+          <PageSkeleton label="Loading workspace…" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Three-pane skeleton for /app/workspace Suspense fallback. */
+export function WorkspaceSkeleton() {
+  return (
+    <div role="status" aria-busy="true" className="flex h-full flex-col gap-3 p-3">
+      <span className="sr-only">Loading coding workspace…</span>
+      <div className="flex items-center justify-between gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2">
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-8 w-40 rounded-lg" />
+          <Skeleton className="h-8 w-24 rounded-lg" />
+        </div>
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-8 w-20 rounded-lg" />
+          <Skeleton className="h-8 w-24 rounded-lg" />
+        </div>
+      </div>
+      <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[1fr_1.35fr]">
+        <div className="skeuo-panel space-y-3 p-5">
+          <Skeleton className="h-6 w-48" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-5/6" />
+          <Skeleton className="h-4 w-4/6" />
+          <Skeleton className="mt-4 h-24 w-full rounded-lg" />
+        </div>
+        <div className="flex flex-col gap-3">
+          <div className="skeuo-panel flex-1 space-y-2.5 p-5">
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-4 w-2/3" />
+            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-4 w-5/6" />
+          </div>
+          <div className="skeuo-panel h-40 space-y-2 p-4">
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-16 w-full rounded-lg" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+

@@ -12,6 +12,10 @@ export interface OrgSummary {
   campusName: string;
   programName: string;
   memberCount: number;
+  presidentName?: string;
+  adviserName?: string;
+  viewerRole?: OrgRole | null;
+  applicationStatus?: ApplicationStatus;
 }
 
 export interface OrgMember {

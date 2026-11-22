@@ -40,7 +40,13 @@ function harness() {
   };
   const shared = { "server-only": {}, "@/lib/db/client": { db: fakeDb(tables), exactCount, fetchAllPages, must }, "@/lib/dates": { todayInManila: () => "2026-11-08" }, "@/lib/orgs/rules": orgRules };
   const competition = load("lib/competition/repository.ts", { ...shared, "@/lib/accounts/school-directory": { schoolDirectory: {} }, "./rank": { rankScores: () => [] }, "@/lib/judge/solves": { firstSolves: async () => [], solvesBetween: async () => [] }, "@/lib/problems/catalog": { getProblemById: (id) => (id === "known" ? { id, title: "Known", testCases: [{ input: "secret" }] } : null) } });
-  const repository = load("lib/orgs/repository.ts", { ...shared, "@/lib/accounts/rules": { isObject, isUuid, text }, "@/lib/competition/repository": competition, "./rules": orgRules });
+  const repository = load("lib/orgs/repository.ts", {
+    ...shared,
+    "@/lib/accounts/rules": { isObject, isUuid, text },
+    "@/lib/competition/repository": competition,
+    "@/lib/notifications/repository": { notifyUsers: async () => {} },
+    "./rules": orgRules,
+  });
   return { tables, repository, competition };
 }
 

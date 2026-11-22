@@ -7,8 +7,9 @@ import { WelcomeDialog } from "./school/welcome-dialog";
 import { AppSidebar } from "./app-sidebar";
 import { AppTopbar } from "./app-topbar";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { BrandLoader } from "@/components/brand-loader";
+import { AppShellSkeleton } from "./page-skeletons";
 import { TournamentLock } from "./events/tournament-lock";
+import type { UserRole } from "@/types/roles";
 
 export interface AppShellProps {
   children: React.ReactNode;
@@ -43,6 +44,7 @@ export function AppShell({ children }: AppShellProps) {
   const [collapsedOverride, setCollapsedOverride] = useState<boolean | null>(null);
   const collapsed = collapsedOverride ?? persistedCollapsed;
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [viewerRole, setViewerRole] = useState<UserRole | undefined>(undefined);
 
   useEffect(() => {
     if (!isLoading && !profile) {
@@ -65,14 +67,13 @@ export function AppShell({ children }: AppShellProps) {
 
   return (
     <div className="app-shell h-screen max-h-screen bg-[var(--color-canvas)] text-[var(--color-text-main)] flex flex-col overflow-hidden relative">
-      {blocked && (
-      <BrandLoader label="Loading your workspace…" height={40} className="min-h-screen" />
-      )}
+      {blocked && <AppShellSkeleton />}
       {!blocked && <TournamentLock />}
       {!blocked && <WelcomeDialog profile={profile} onUpdate={(updates) => updateProfile(profile.id, updates)} />}
       {/* Top Application Bar */}
       {!blocked && <AppTopbar
         profile={profile}
+        onRoleLoaded={setViewerRole}
         onToggleMobileMenu={() => setMobileOpen((o) => !o)}
       />}
 
@@ -81,6 +82,7 @@ export function AppShell({ children }: AppShellProps) {
         {/* Desktop Collapsible Sidebar */}
         {!blocked && <AppSidebar
           profile={profile}
+          role={viewerRole}
           collapsed={collapsed}
           onToggleCollapse={toggleCollapse}
           className="hidden lg:flex h-full shrink-0"
@@ -93,6 +95,7 @@ export function AppShell({ children }: AppShellProps) {
             <SheetDescription className="sr-only">Choose a workspace page. Press Escape to close navigation.</SheetDescription>
               <AppSidebar
                 profile={profile}
+                role={viewerRole}
                 collapsed={false}
                 onToggleCollapse={() => setMobileOpen(false)}
                 onNavigate={() => setMobileOpen(false)}

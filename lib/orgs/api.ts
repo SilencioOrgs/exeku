@@ -3,7 +3,8 @@ import type { EventsFeed } from "@/types/competition";
 import type { OrgDetail, OrgSummary } from "@/types/org";
 import type { ActiveTournament, TournamentView } from "@/types/tournament";
 
-export const fetchOrgs = (campusId: string) => call<{ orgs: OrgSummary[] }>(`/api/orgs?campus=${encodeURIComponent(campusId)}`);
+export const fetchOrgs = (campusId?: string) =>
+  call<{ orgs: OrgSummary[] }>(campusId ? `/api/orgs?campus=${encodeURIComponent(campusId)}` : "/api/orgs");
 export const fetchOrg = (orgId: string) => call<OrgDetail>(`/api/orgs/${encodeURIComponent(orgId)}`);
 export const orgAction = (orgId: string, body: Record<string, unknown>) => call<{ ok: true }>(`/api/orgs/${encodeURIComponent(orgId)}`, body);
 /** Tells the tournament lock to check now instead of waiting for its next poll. */

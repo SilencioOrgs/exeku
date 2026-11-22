@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { DEFAULT_AVATAR_ID, PixelAvatar } from "@/components/retro/pixel-avatar";
 import { useChallengeSession } from "@/hooks/use-challenge-session";
 import type { LocalProfile } from "@/types/profile";
+import type { UserRole } from "@/types/roles";
 
 type NavLink = { label: string; href: string };
 type NavGroup = { id: string; label: string; icon: LucideIcon; href?: string; items?: NavLink[] };
@@ -25,6 +26,7 @@ const isCurrent = (pathname: string, href: string) => href === "/app" ? pathname
 
 export interface AppSidebarProps {
   profile: LocalProfile | null;
+  role?: UserRole;
   collapsed: boolean;
   onToggleCollapse: () => void;
   onNavigate?: () => void;
@@ -33,7 +35,7 @@ export interface AppSidebarProps {
 
 const KEY = "appearance-nav-item flex min-h-10 items-center gap-3 rounded-lg px-3 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ring)]";
 
-export function AppSidebar({ profile, collapsed, onToggleCollapse, onNavigate, className }: AppSidebarProps) {
+export function AppSidebar({ profile, role, collapsed, onToggleCollapse, onNavigate, className }: AppSidebarProps) {
   const pathname = usePathname();
   const { isTimedActive, formattedTime, requestNavigation } = useChallengeSession();
   const nav = NAV;
@@ -49,10 +51,19 @@ export function AppSidebar({ profile, collapsed, onToggleCollapse, onNavigate, c
     </Link>
   );
 
+  const roleSubtitle = role === "teacher" ? "Verified teacher" : role === "admin" ? "Administrator" : null;
+
   return <aside aria-label="Application sidebar" className={cn("app-sidebar flex h-full shrink-0 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)] transition-[width] duration-150", collapsed ? "w-[68px]" : "w-56", className)}>
     <div className={cn("flex min-h-16 items-center gap-3 border-b border-[var(--color-border)] px-3", collapsed && "justify-center")}>
       <PixelAvatar avatarId={profile?.avatarId ?? DEFAULT_AVATAR_ID} borderId={profile?.borderId} size={36} />
-      {!collapsed && <div className="min-w-0"><p className="truncate text-sm font-semibold">{profile?.displayName || "Local profile"}</p><p className="truncate text-xs capitalize text-[var(--color-text-muted)]">{profile?.experienceLevel || "Developer preview"}</p></div>}
+      {!collapsed && <div className="min-w-0">
+        <p className="truncate text-sm font-semibold">{profile?.displayName || "Local profile"}</p>
+        {roleSubtitle ? (
+          <p className="truncate text-xs font-medium text-[var(--color-primary-text)]">{roleSubtitle}</p>
+        ) : (
+          <p className="truncate text-xs capitalize text-[var(--color-text-muted)]">{profile?.experienceLevel || "Student"}</p>
+        )}
+      </div>}
     </div>
     {isTimedActive && (
       <div title={collapsed ? `Challenge ${formattedTime}` : undefined} className={cn("flex items-center gap-2 border-b border-[var(--color-border)] px-3 py-2 text-xs text-[var(--color-text-muted)]", collapsed && "justify-center")}>

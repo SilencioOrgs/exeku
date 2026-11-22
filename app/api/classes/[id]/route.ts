@@ -27,5 +27,5 @@ export const POST = (request: Request, { params }: { params: Params }) =>
     if (!result.ok) {
       return NextResponse.json({ error: result.error, fieldErrors: result.fieldErrors }, { status: result.status });
     }
-    return NextResponse.json({ ok: true, inviteCode: result.inviteCode });
+    return NextResponse.json({ ok: true, inviteCode: result.inviteCode, problemId: result.problemId });
   });
