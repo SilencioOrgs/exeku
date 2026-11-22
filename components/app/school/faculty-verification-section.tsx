@@ -25,8 +25,12 @@ export function FacultyVerificationSection({ profile }: { profile: LocalProfile 
   const [loadError, setLoadError] = useState<string>();
   const [openForm, setOpenForm] = useState(false);
 
+  const clerkGmail =
+    user?.primaryEmailAddress?.emailAddress?.toLowerCase().endsWith("@gmail.com")
+      ? user.primaryEmailAddress.emailAddress
+      : "";
   const [fullName, setFullName] = useState(profile.displayName || "");
-  const [schoolEmail, setSchoolEmail] = useState(profile.account?.email ?? "");
+  const [schoolEmail, setSchoolEmail] = useState(clerkGmail);
   const [schoolName, setSchoolName] = useState(profile.account?.school.name ?? "");
   const [department, setDepartment] = useState(profile.account?.school.program ?? "");
   const [positionTitle, setPositionTitle] = useState("");
@@ -121,12 +125,12 @@ export function FacultyVerificationSection({ profile }: { profile: LocalProfile 
       setPendingEmailId(prepared.emailId);
       setStep("otp");
       setOtpCode("");
-      setOtpNotice(`Verification code sent to ${normalized}. Check your school inbox.`);
+      setOtpNotice(`Verification code sent to ${normalized}. Check your Gmail inbox.`);
     } catch (err) {
       setSubmitError(
         clerkErrorMessage(
           err,
-          "Clerk could not send a verification code to that school email. Make sure the email is valid and not linked to another account.",
+          "Clerk could not send a verification code to that Gmail address. Make sure it is valid and not linked to another account.",
         ),
       );
     } finally {
@@ -218,7 +222,7 @@ export function FacultyVerificationSection({ profile }: { profile: LocalProfile 
             Are you a faculty member of the school?
           </h2>
           <p className="mt-1 max-w-2xl text-sm text-[var(--color-text-muted)]">
-            Verify your school email with a Clerk OTP code to submit your faculty details for admin approval. Approved teachers can create classes, invite codes, and student groups.
+            Verify your Gmail address with a Clerk OTP code to submit your faculty details for admin approval. Approved teachers can create classes, invite codes, and student groups.
           </p>
         </div>
 
@@ -254,7 +258,7 @@ export function FacultyVerificationSection({ profile }: { profile: LocalProfile 
             <span>Pending admin approval</span>
             {req.emailVerified && (
               <span className="inline-flex items-center gap-1 rounded-md bg-[var(--color-easy-bg)] px-2 py-0.5 font-code text-xs text-[var(--color-mint)]">
-                <MailCheck size={12} aria-hidden="true" /> School email verified
+                <MailCheck size={12} aria-hidden="true" /> Gmail verified
               </span>
             )}
           </div>
@@ -297,8 +301,8 @@ export function FacultyVerificationSection({ profile }: { profile: LocalProfile 
                 <TextField
                   id="faculty-email"
                   type="email"
-                  label="School email (Clerk sends OTP here)"
-                  placeholder="faculty@school.edu.ph"
+                  label="Gmail address (Clerk sends OTP here)"
+                  placeholder="yourname@gmail.com"
                   value={schoolEmail}
                   onChange={(e) => setSchoolEmail(e.target.value)}
                   error={fieldErrors.schoolEmail}

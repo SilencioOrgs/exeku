@@ -19,7 +19,6 @@ const text = (source: Record<string, unknown>, key: string) =>
   typeof source[key] === "string" ? source[key].trim() : "";
 
 const EMAIL_RE = /^[a-z0-9._%+-]+@[a-z0-9-]+(\.[a-z0-9-]+)+$/;
-const ACADEMIC_DOMAIN_RE = /^([a-z0-9-]+\.)+(edu(\.[a-z]{2})?|ac\.[a-z]{2})$/;
 
 export const canCreateClasses = (role: UserRole) => role === "teacher" || role === "admin";
 
@@ -40,8 +39,8 @@ export function checkFacultyRequest(input: unknown): Checked<{ request: CheckedF
     errors.fullName = "Enter your complete name (first and last name).";
   }
   const domain = schoolEmail.split("@")[1] ?? "";
-  if (schoolEmail.length > 254 || !EMAIL_RE.test(schoolEmail) || !ACADEMIC_DOMAIN_RE.test(domain)) {
-    errors.schoolEmail = "Enter a valid school email (like name@school.edu.ph).";
+  if (schoolEmail.length > 254 || !EMAIL_RE.test(schoolEmail) || domain !== "gmail.com") {
+    errors.schoolEmail = "Enter a valid Gmail address (like yourname@gmail.com).";
   }
   if (schoolName.length < 3 || schoolName.length > 120) {
     errors.schoolName = "Enter your school's full name (3 to 120 characters).";

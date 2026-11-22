@@ -80,8 +80,8 @@ export async function submitFacultyRequest(
     return {
       ok: false,
       status: 403,
-      error: "Verify your school email with the OTP code sent by Clerk before submitting.",
-      fieldErrors: { schoolEmail: "This school email has not been verified with Clerk yet." },
+      error: "Verify your Gmail address with the OTP code sent by Clerk before submitting.",
+      fieldErrors: { schoolEmail: "This Gmail address has not been verified with Clerk yet." },
     };
   }
 

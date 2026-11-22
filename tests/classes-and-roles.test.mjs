@@ -30,10 +30,10 @@ function loadTs(path, modules) {
   return loaded.exports;
 }
 
-test("checkFacultyRequest validates complete name, academic school email, department, title, and employee ID", () => {
+test("checkFacultyRequest validates complete name, normal Gmail address, department, title, and employee ID", () => {
   const bad = roleRules.checkFacultyRequest({
     fullName: "Juan",
-    schoolEmail: "juan@gmail.com",
+    schoolEmail: "juan@lspu.edu.ph",
     schoolName: "A",
     department: "",
     positionTitle: "",
@@ -47,9 +47,20 @@ test("checkFacultyRequest validates complete name, academic school email, depart
   assert.ok(bad.fieldErrors.positionTitle);
   assert.ok(bad.fieldErrors.employeeId);
 
+  const nonGmail = roleRules.checkFacultyRequest({
+    fullName: "Juan Dela Cruz",
+    schoolEmail: "juan.delacruz@yahoo.com",
+    schoolName: "Laguna State Polytechnic University",
+    department: "College of Computer Studies",
+    positionTitle: "Instructor I",
+    employeeId: "FAC-2026-01",
+  });
+  assert.equal(nonGmail.ok, false);
+  assert.ok(nonGmail.fieldErrors.schoolEmail);
+
   const ok = roleRules.checkFacultyRequest({
     fullName: "Juan Dela Cruz",
-    schoolEmail: "Juan.DelaCruz@lspu.edu.ph",
+    schoolEmail: "Juan.DelaCruz@Gmail.com",
     schoolName: "Laguna State Polytechnic University",
     department: "College of Computer Studies",
     positionTitle: "Instructor I",
@@ -58,11 +69,11 @@ test("checkFacultyRequest validates complete name, academic school email, depart
   });
   assert.equal(ok.ok, true);
   assert.equal(ok.request.fullName, "Juan Dela Cruz");
-  assert.equal(ok.request.schoolEmail, "juan.delacruz@lspu.edu.ph");
+  assert.equal(ok.request.schoolEmail, "juan.delacruz@gmail.com");
   assert.equal(ok.request.employeeId, "FAC-2026-01");
 });
 
-test("submitFacultyRequest enforces Clerk-verified school email and blocks existing teachers or duplicate pending requests", async () => {
+test("submitFacultyRequest enforces Clerk-verified Gmail address and blocks existing teachers or duplicate pending requests", async () => {
   const tables = { faculty_requests: [] };
   const repo = loadTs("lib/roles/repository.ts", {
     "server-only": {},
@@ -72,7 +83,7 @@ test("submitFacultyRequest enforces Clerk-verified school email and blocks exist
 
   const validInput = {
     fullName: "Prof Ada Lovelace",
-    schoolEmail: "ada.lovelace@lspu.edu.ph",
+    schoolEmail: "ada.lovelace@gmail.com",
     schoolName: "LSPU",
     department: "CCS",
     positionTitle: "Instructor",
@@ -82,7 +93,7 @@ test("submitFacultyRequest enforces Clerk-verified school email and blocks exist
   const alreadyTeacher = await repo.submitFacultyRequest(
     { id: "t1", name: "Prof", role: "teacher" },
     validInput,
-    ["ada.lovelace@lspu.edu.ph"],
+    ["ada.lovelace@gmail.com"],
   );
   assert.equal(alreadyTeacher.ok, false);
   assert.equal(alreadyTeacher.status, 409);
@@ -96,22 +107,22 @@ test("submitFacultyRequest enforces Clerk-verified school email and blocks exist
   assert.equal(unverified.ok, false);
   assert.equal(unverified.status, 403);
 
-  // Once Clerk verifies the school email via OTP, submission succeeds.
+  // Once Clerk verifies the Gmail address via OTP, submission succeeds.
   const first = await repo.submitFacultyRequest(
     { id: "s1", name: "Applicant", role: "student" },
     validInput,
-    ["ADA.LOVELACE@LSPU.EDU.PH"],
+    ["ADA.LOVELACE@GMAIL.COM"],
   );
   assert.equal(first.ok, true);
   assert.equal(first.request.status, "pending");
   assert.equal(first.request.emailVerified, true);
   assert.equal(first.request.fullName, "Prof Ada Lovelace");
-  assert.equal(first.request.schoolEmail, "ada.lovelace@lspu.edu.ph");
+  assert.equal(first.request.schoolEmail, "ada.lovelace@gmail.com");
 
   const dup = await repo.submitFacultyRequest(
     { id: "s1", name: "Applicant", role: "student" },
     validInput,
-    ["ada.lovelace@lspu.edu.ph"],
+    ["ada.lovelace@gmail.com"],
   );
   assert.equal(dup.ok, false);
   assert.equal(dup.status, 409);
