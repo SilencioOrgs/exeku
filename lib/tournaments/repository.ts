@@ -191,7 +191,7 @@ export async function getActiveTournament(viewer: Viewer): Promise<ActiveTournam
     const team = must(await db().from("tournament_members").select("user_id").eq("team_id", teamId)) as { user_id: string }[];
     const solved = new Set((await solvesBetween(team.map((m) => m.user_id), event.tournament.startsAt, event.tournament.endsAt)).map((s) => s.problemId));
     const problems = (event.problems ?? []).map((p) => p.id);
-    if (problems.length > 0 && problems.every((problemId) => solved.has(problemId))) continue;
+    if (problems.length === 0 || problems.every((problemId) => solved.has(problemId))) continue;
     const warnings = await exactCount(
       db().from("tournament_violations").select("id", { count: "exact", head: true }).eq("event_id", eventId).eq("user_id", viewer.id),
     );

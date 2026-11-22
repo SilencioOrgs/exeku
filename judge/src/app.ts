@@ -1,6 +1,6 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { timingSafeEqual } from "node:crypto";
-import type { IsolateCli } from "./isolate.ts";
+import type { IsolateCli, SandboxQuota } from "./isolate.ts";
 import type { LanguageSpec } from "./languages.ts";
 import { BoxPool, JobAbortedError, QueueFullError } from "./pool.ts";
 import { runJob } from "./runner.ts";
@@ -8,6 +8,7 @@ import type { Language } from "./types.ts";
 import { validateRunRequest } from "./validate.ts";
 
 export const JUDGE_VERSION = "1.0.0";
+export const MIN_JUDGE_TOKEN_LENGTH = 16;
 const MAX_BODY_BYTES = 10 * 1024 * 1024;
 
 export interface JudgeAppOptions {
@@ -16,6 +17,7 @@ export interface JudgeAppOptions {
   cli: IsolateCli;
   pool: BoxPool;
   workDir: string;
+  quota?: SandboxQuota;
   log?: (message: string) => void;
 }
 
@@ -28,8 +30,10 @@ function send(res: ServerResponse, status: number, body: unknown, close = false)
 }
 
 function authorized(req: IncomingMessage, token: string): boolean {
+  if (token.length < MIN_JUDGE_TOKEN_LENGTH) return false;
   const header = req.headers.authorization ?? "";
-  const given = Buffer.from(header.startsWith("Bearer ") ? header.slice(7) : "");
+  if (!header.startsWith("Bearer ")) return false;
+  const given = Buffer.from(header.slice(7));
   const expected = Buffer.from(token);
   return given.length === expected.length && timingSafeEqual(given, expected);
 }
@@ -67,7 +71,10 @@ function readBody(req: IncomingMessage): Promise<string> {
 }
 
 export function createJudgeServer(options: JudgeAppOptions): Server {
-  const { token, specs, cli, pool, workDir, log = () => {} } = options;
+  const { token, specs, cli, pool, workDir, quota, log = () => {} } = options;
+  if (!token || token.length < MIN_JUDGE_TOKEN_LENGTH) {
+    throw new Error(`Judge token must be at least ${MIN_JUDGE_TOKEN_LENGTH} characters.`);
+  }
 
   return createServer(async (req, res) => {
     try {
@@ -99,7 +106,7 @@ export function createJudgeServer(options: JudgeAppOptions): Server {
       const started = Date.now();
       try {
         const result = await pool.use(
-          (boxId) => runJob(request, boxId, { cli, spec, workDir, signal: controller.signal }),
+          (boxId) => runJob(request, boxId, { cli, spec, workDir, quota, signal: controller.signal }),
           controller.signal,
         );
         log(`${request.language} ${request.stdins.length} input(s) in ${Date.now() - started}ms`);

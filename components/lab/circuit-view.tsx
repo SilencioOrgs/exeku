@@ -10,8 +10,6 @@ type Loaded = { setLed(on: boolean): void };
 
 export interface CircuitViewProps {
   ledOn: boolean;
-  /** Drag to orbit. Off for decorative previews. */
-  interactive?: boolean;
   /** Camera position relative to the circuit. */
   view?: [number, number, number];
   className?: string;
@@ -19,7 +17,7 @@ export interface CircuitViewProps {
 }
 
 /** Realistic 3D Arduino + breadboard blink circuit. three.js loads only when this mounts. */
-export function CircuitView({ ledOn, interactive = true, view = [120, 120, 175], className, label }: CircuitViewProps) {
+export function CircuitView({ ledOn, view = [120, 120, 175], className, label }: CircuitViewProps) {
   const mountRef = useRef<HTMLDivElement>(null);
   const loadedRef = useRef<Loaded | null>(null);
   const ledRef = useRef(ledOn);
@@ -36,23 +34,19 @@ export function CircuitView({ ledOn, interactive = true, view = [120, 120, 175],
     let cleanup = () => {};
     (async () => {
       try {
-        const [{ createStage, mergeStatic }, { buildCircuit }, { applyModelOverrides }] = await Promise.all([
-          import("@/lib/three/stage"), import("@/lib/three/circuit"), import("@/lib/three/overrides"),
+        const [{ createStage, mergeStatic }, { buildCircuit }] = await Promise.all([
+          import("@/lib/three/stage"), import("@/lib/three/circuit"),
         ]);
         if (disposed) return;
-        const stage = createStage(mount, { orbit: interactive, autoRotate: !effectiveReducedMotion });
+        const stage = createStage(mount);
+        cleanup = () => { loadedRef.current = null; stage.dispose(); };
         const circuit = buildCircuit();
-        // Merge inside named sub-parts so CAD overrides can still swap arduino-uno / breadboard cleanly.
-        for (const name of ["arduino-uno", "breadboard"]) {
-          const part = circuit.group.getObjectByName(name);
-          if (part) mergeStatic(part, 8);
-        }
+        mergeStatic(circuit.group, 8);
         stage.scene.add(circuit.group);
         const center = circuit.bounds.getCenter(circuit.bounds.min.clone());
         stage.camera.position.set(center.x + vx, vy, center.z + vz);
         const target = center.clone().setY(8);
-        if (stage.controls) stage.controls.target.copy(target);
-        else if (!effectiveReducedMotion) {
+        if (!effectiveReducedMotion) {
           // Decorative previews drift slowly around the board.
           const radius = Math.hypot(vx, vz), start = Math.atan2(vz, vx);
           stage.onFrame((time) => {
@@ -62,18 +56,18 @@ export function CircuitView({ ledOn, interactive = true, view = [120, 120, 175],
           });
         }
         stage.camera.lookAt(target);
-        void applyModelOverrides(circuit.group, () => disposed, () => stage.invalidateShadows());
 
         loadedRef.current = { setLed: (on) => circuit.setLed(on) };
         circuit.setLed(ledRef.current);
         setReady(true);
-        cleanup = () => { loadedRef.current = null; stage.dispose(); };
       } catch {
+        cleanup();
+        cleanup = () => {};
         if (!disposed) setFailed(true);
       }
     })();
     return () => { disposed = true; cleanup(); };
-  }, [interactive, effectiveReducedMotion, vx, vy, vz, near]);
+  }, [effectiveReducedMotion, vx, vy, vz, near]);
 
   useEffect(() => {
     ledRef.current = ledOn;
@@ -81,7 +75,7 @@ export function CircuitView({ ledOn, interactive = true, view = [120, 120, 175],
   }, [ledOn, ready]);
 
   return (
-    <div ref={mountRef} role="img" aria-label={label} className={cn("relative w-full overflow-hidden", interactive && "touch-none cursor-grab active:cursor-grabbing", className)}>
+    <div ref={mountRef} role="img" aria-label={label} className={cn("relative w-full overflow-hidden", className)}>
       {!ready && (
         <span className="absolute inset-0 grid place-items-center text-sm text-[var(--color-text-muted)]">
           {failed ? "3D preview needs WebGL, which this browser has turned off." : <BrandLoader label="Loading 3D parts…" />}

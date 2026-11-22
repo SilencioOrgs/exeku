@@ -8,12 +8,18 @@ set -euo pipefail
 LISTEN_HOST=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --listen) LISTEN_HOST="$2"; shift 2 ;;
+    --listen)
+      [[ $# -ge 2 ]] || { echo "Missing value for --listen" >&2; exit 2; }
+      LISTEN_HOST="$2"
+      shift 2
+      ;;
     *) echo "Unknown option: $1" >&2; exit 2 ;;
   esac
 done
 
 ISOLATE_REF="${ISOLATE_REF:-v2.7}"
+ISOLATE_TMPFS_SIZE="${ISOLATE_TMPFS_SIZE:-512M}"
+ISOLATE_TMPFS_INODES="${ISOLATE_TMPFS_INODES:-32768}"
 JUDGE_SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 INSTALL_DIR=/opt/exeku-judge
 ENV_FILE=/etc/exeku-judge.env
@@ -64,6 +70,16 @@ add_range /etc/subgid
 chgrp isolate /usr/local/bin/isolate
 chmod 4754 /usr/local/bin/isolate
 
+# Keep sandbox files on a size-capped tmpfs so multi-file writes can never exhaust the host disk.
+mkdir -p /var/local/lib/isolate
+TMPFS_OPTS="rw,nosuid,nodev,size=${ISOLATE_TMPFS_SIZE},nr_inodes=${ISOLATE_TMPFS_INODES}"
+if ! mountpoint -q /var/local/lib/isolate; then
+  mount -t tmpfs -o "$TMPFS_OPTS" tmpfs /var/local/lib/isolate
+fi
+if ! grep -q ' /var/local/lib/isolate ' /etc/fstab 2>/dev/null; then
+  echo "tmpfs /var/local/lib/isolate tmpfs ${TMPFS_OPTS} 0 0" >> /etc/fstab
+fi
+
 systemctl daemon-reload
 systemctl enable isolate.service >/dev/null
 if ! systemctl restart isolate.service; then
@@ -107,7 +123,12 @@ JUDGE_HOST=${LISTEN_HOST:-127.0.0.1}
 JUDGE_PORT=4000
 EOF
 elif [[ -n "$LISTEN_HOST" ]]; then
-  sed -i "s/^JUDGE_HOST=.*/JUDGE_HOST=${LISTEN_HOST}/" "$ENV_FILE"
+  if grep -q '^JUDGE_HOST=' "$ENV_FILE"; then
+    awk -v host="$LISTEN_HOST" 'BEGIN{FS=OFS="="} $1=="JUDGE_HOST"{$0="JUDGE_HOST="host} 1' "$ENV_FILE" > "${ENV_FILE}.tmp"
+    mv "${ENV_FILE}.tmp" "$ENV_FILE"
+  else
+    printf 'JUDGE_HOST=%s\n' "$LISTEN_HOST" >> "$ENV_FILE"
+  fi
 fi
 chown root:exeku-judge "$ENV_FILE"
 chmod 640 "$ENV_FILE"
@@ -120,15 +141,21 @@ sleep 2
 
 step "Smoke test"
 set -a; source "$ENV_FILE"; set +a
-JUDGE_URL="http://127.0.0.1:${JUDGE_PORT}" node --experimental-strip-types --disable-warning=ExperimentalWarning "$INSTALL_DIR/src/check.ts" || {
+CHECK_HOST="${JUDGE_HOST}"
+[[ "$CHECK_HOST" == "0.0.0.0" || "$CHECK_HOST" == "::" ]] && CHECK_HOST="127.0.0.1"
+JUDGE_URL="http://${CHECK_HOST}:${JUDGE_PORT}" node --experimental-strip-types --disable-warning=ExperimentalWarning "$INSTALL_DIR/src/check.ts" || {
   echo "Smoke test failed. Logs: journalctl -u exeku-judge -n 50" >&2
   exit 1
 }
 
 cat <<EOF
 
-Exeku judge is running on ${JUDGE_HOST}:${JUDGE_PORT}.
-Put these in Exeku's .env.local:
-  JUDGE_SERVICE_URL=http://<this machine's address>:${JUDGE_PORT}
-  JUDGE_TOKEN=${JUDGE_TOKEN}
+Exeku judge is running on ${JUDGE_HOST}:${JUDGE_PORT} (sandbox tmpfs capped at ${ISOLATE_TMPFS_SIZE}, ${ISOLATE_TMPFS_INODES} inodes).
+Read the token from ${ENV_FILE} (never printed to logs):
+  sudo grep '^JUDGE_TOKEN=' ${ENV_FILE}
 EOF
+if [[ "$JUDGE_HOST" != "127.0.0.1" && "$JUDGE_HOST" != "::1" && "$JUDGE_HOST" != "localhost" ]]; then
+  cat <<EOF
+WARNING: ${JUDGE_HOST}:${JUDGE_PORT} speaks plain HTTP. Place it behind TLS/HTTPS (e.g. Caddy/nginx) or a private tunnel before using it over a LAN.
+EOF
+fi

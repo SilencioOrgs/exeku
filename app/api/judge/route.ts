@@ -6,7 +6,7 @@ import { defaultJudgingService } from "@/lib/judge/judging-service";
 import { recordSubmission } from "@/lib/judge/record-submission";
 import { findProblem } from "@/lib/problems/store";
 import { MAX_BODY_BYTES, validateExecutionRequest } from "@/lib/execution/validation";
-import { clientFrom, QueueFullError } from "@/lib/execution/queue";
+import { clientFrom, QueueAbortedError, QueueFullError } from "@/lib/execution/queue";
 
 export async function POST(req: Request) {
   try {
@@ -73,12 +73,20 @@ export async function POST(req: Request) {
         sourceCode: validation.request.sourceCode,
         files: validation.request.files,
       },
-      clientFrom(req.headers, userId)
+      clientFrom(req.headers, userId),
+      req.signal
     );
+
+    if (req.signal.aborted) {
+      return NextResponse.json({ error: "Submission request was canceled." }, { status: 499 });
+    }
 
     const milestone = await recordSubmission(problem, execLang, judgingResult.overallVerdict);
     return NextResponse.json(milestone ? { ...judgingResult, milestone } : judgingResult);
   } catch (err: unknown) {
+    if (err instanceof QueueAbortedError || req.signal.aborted) {
+      return NextResponse.json({ error: "Submission request was canceled." }, { status: 499 });
+    }
     if (err instanceof QueueFullError) {
       return NextResponse.json({ error: err.message }, { status: 429 });
     }

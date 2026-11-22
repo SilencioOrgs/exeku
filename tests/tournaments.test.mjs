@@ -119,6 +119,44 @@ test("the lock lifts once the team has solved every problem", async () => {
   assert.equal(await live.repo.getActiveTournament(viewer("a")), null);
 });
 
+test("live tournament with zero resolvable problems does not trap participants in lockdown", async () => {
+  const live = harness(-5, 30);
+  live.tables.events[0].problem_ids = [];
+  assert.equal(await live.repo.getActiveTournament(viewer("a")), null);
+});
+
+test("shared problem stays unlocked for a registered live participant even when reused in another tournament", async () => {
+  const LIVE_A = "11111111-1111-4111-8111-111111111111";
+  const LIVE_B = "22222222-2222-4222-8222-222222222222";
+  const UPCOMING = "33333333-3333-4333-8333-333333333333";
+  const tables = {
+    events: [
+      { id: LIVE_A, problem_ids: ["shared-p", "only-a"], starts_at: iso(-5), ends_at: iso(30) },
+      { id: LIVE_B, problem_ids: ["shared-p", "only-b"], starts_at: iso(-5), ends_at: iso(30) },
+      { id: UPCOMING, problem_ids: ["shared-p", "only-up"], starts_at: iso(10), ends_at: iso(60) },
+    ],
+    tournament_members: [{ event_id: LIVE_A, user_id: "student-a" }],
+    problems: [],
+  };
+  const database = { db: fakeDb(tables), must, fetchAllPages, exactCount };
+  const store = load("lib/problems/store.ts", {
+    "server-only": {},
+    "@/lib/db/client": database,
+    "@/lib/problems/catalog": { getAllProblems: () => [], getProblemById: () => undefined, summarizeProblems: () => [], toVisibleProblem: (p) => p },
+    "@/lib/workspace-defaults": { getStarterCode: () => "" },
+  });
+
+  const lockedForRegistered = await store.lockedProblemIdsFor("student-a");
+  assert.equal(lockedForRegistered.has("shared-p"), false, "live participant must not be locked out of shared problem");
+  assert.equal(lockedForRegistered.has("only-a"), false);
+  assert.equal(lockedForRegistered.has("only-b"), true);
+  assert.equal(lockedForRegistered.has("only-up"), true);
+
+  const lockedForOutsider = await store.lockedProblemIdsFor("stranger");
+  assert.equal(lockedForOutsider.has("shared-p"), true);
+  assert.equal(lockedForOutsider.has("only-a"), true);
+});
+
 test("medals need a finished tournament, a top 3 place and points", async () => {
   const running = harness(-30, 10);
   running.tables.submissions.push({ user_id: "a", problem_id: "p1", points: 100, verdict: "ACCEPTED", created_at: iso(-5) });

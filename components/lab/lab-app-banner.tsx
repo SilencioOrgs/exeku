@@ -78,7 +78,6 @@ export function LabAppShowcase() {
           </div>
           <CircuitView
             ledOn={ledOn}
-            interactive={false}
             view={[95, 105, 145]}
             className="pointer-events-none h-64 sm:h-80"
             label="A 3D Arduino Uno wired to a breadboard with a blinking red LED, from the Exeku Lab app."

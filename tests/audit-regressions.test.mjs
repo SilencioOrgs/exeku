@@ -899,8 +899,30 @@ test("judge runJob reports compile failure for oversized artifacts and stops bat
     assert.equal(runInvocations, 1);
     assert.equal(cappedRes.runs.length, 3);
     assert.equal(cappedRes.runs[0].status, "SUCCESS");
-    assert.equal(cappedRes.runs[1].status, "TIME_LIMIT_EXCEEDED");
-    assert.equal(cappedRes.runs[2].status, "TIME_LIMIT_EXCEEDED");
+    assert.equal(cappedRes.runs[1].status, "INTERNAL_ERROR");
+    assert.equal(cappedRes.runs[2].status, "INTERNAL_ERROR");
+
+    // Oversized stdout past 256 KB is flagged as Output limit exceeded, never silently truncated into a false verdict.
+    const loudCli = {
+      async init() {
+        const { mkdirSync } = await import("node:fs");
+        mkdirSync(box, { recursive: true });
+        return root;
+      },
+      async run(r) {
+        writeFileSync(r.metaPath, "exitcode:0\ntime:0.01\ntime-wall:0.02\n");
+        writeFileSync(join(box, r.stdout), "A".repeat(256 * 1024 + 5));
+        if (r.stderr) writeFileSync(join(box, r.stderr), "");
+      },
+      async cleanup() {},
+    };
+    const loudRes = await runJob(
+      { language: "python", files: [{ name: "main.py", content: "print('A')" }], stdins: [""], timeLimitMs: 1000, memoryLimitKb: 131072 },
+      0,
+      { cli: loudCli, spec: specs.python, workDir }
+    );
+    assert.equal(loudRes.runs[0].status, "RUNTIME_ERROR");
+    assert.match(loudRes.runs[0].message ?? "", /Output limit exceeded/);
   } finally {
     rmSync(root, { recursive: true, force: true });
     rmSync(workDir, { recursive: true, force: true });

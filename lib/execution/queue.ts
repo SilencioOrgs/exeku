@@ -5,6 +5,13 @@ export class QueueFullError extends Error {
   }
 }
 
+export class QueueAbortedError extends Error {
+  constructor(message = "Execution request was canceled.") {
+    super(message);
+    this.name = "QueueAbortedError";
+  }
+}
+
 export interface ExecutionQueueOptions {
   maxConcurrency?: number;
   maxQueueLength?: number;
@@ -43,6 +50,7 @@ interface QueuedTask<T> {
   resolve: (value: T) => void;
   reject: (reason?: unknown) => void;
   client?: QueueClient;
+  cleanupAbort?: () => void;
 }
 
 export class ExecutionQueue {
@@ -64,7 +72,17 @@ export class ExecutionQueue {
     this.maxPerIp = options?.maxPerIp ?? 60;
   }
 
-  async enqueue<T>(task: () => Promise<T>, client?: QueueClient): Promise<T> {
+  private releaseClient(client?: QueueClient): void {
+    if (!client) return;
+    adjust(this.clientCounts, client.key, -1);
+    if (client.ip !== "local") adjust(this.ipCounts, client.ip, -1);
+  }
+
+  async enqueue<T>(task: () => Promise<T>, client?: QueueClient, signal?: AbortSignal): Promise<T> {
+    if (signal?.aborted) {
+      throw new QueueAbortedError();
+    }
+
     if (client) {
       const held = this.clientCounts.get(client.key) ?? 0;
       if (held >= this.maxPerClient) {
@@ -90,7 +108,20 @@ export class ExecutionQueue {
     }
 
     return new Promise<T>((resolve, reject) => {
-      this.queue.push({ fn: task, resolve, reject, client });
+      const entry: QueuedTask<T> = { fn: task, resolve, reject, client };
+      if (signal) {
+        const onAbort = () => {
+          const idx = this.queue.indexOf(entry);
+          if (idx === -1) return;
+          this.queue.splice(idx, 1);
+          entry.cleanupAbort?.();
+          this.releaseClient(client);
+          reject(new QueueAbortedError());
+        };
+        signal.addEventListener("abort", onAbort, { once: true });
+        entry.cleanupAbort = () => signal.removeEventListener("abort", onAbort);
+      }
+      this.queue.push(entry);
       this.processNext();
     });
   }
@@ -102,6 +133,7 @@ export class ExecutionQueue {
 
     const nextTask = this.queue.shift();
     if (!nextTask) return;
+    nextTask.cleanupAbort?.();
 
     this.activeCount++;
 
@@ -115,10 +147,7 @@ export class ExecutionQueue {
       })
       .finally(() => {
         this.activeCount--;
-        if (nextTask.client) {
-          adjust(this.clientCounts, nextTask.client.key, -1);
-          if (nextTask.client.ip !== "local") adjust(this.ipCounts, nextTask.client.ip, -1);
-        }
+        this.releaseClient(nextTask.client);
         this.processNext();
       });
   }

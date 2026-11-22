@@ -1,7 +1,5 @@
-import { call, type ApiResult } from "@/lib/accounts/api";
+import { call } from "@/lib/accounts/api";
 import type { FacultyRequestView, FacultyStatusPayload } from "@/types/roles";
-
-export type ApiReply<T> = ApiResult<T>;
 
 export const fetchFacultyStatus = () => call<FacultyStatusPayload>("/api/account/faculty");
 

@@ -44,9 +44,9 @@ interface TournamentLockRow {
  * - Every live tournament (starts_at <= now < ends_at) where this viewer is not a registered participant.
  */
 export async function lockedProblemIdsFor(userId?: string, now = new Date().toISOString()): Promise<Set<string>> {
-  const rows = must(
-    await db().from("events").select("id,problem_ids,starts_at,ends_at").gt("ends_at", now),
-  ) as TournamentLockRow[];
+  const rows = await fetchAllPages<TournamentLockRow>((from, to) =>
+    db().from("events").select("id,problem_ids,starts_at,ends_at").gt("ends_at", now).order("id").range(from, to),
+  );
   const nowMs = Date.parse(now);
   const locked = new Set<string>();
   const liveEvents: TournamentLockRow[] = [];
@@ -75,16 +75,17 @@ export async function lockedProblemIdsFor(userId?: string, now = new Date().toIS
     for (const m of memberships) registeredEventIds.add(m.event_id);
   }
 
+  const unlocked = new Set<string>();
   for (const row of liveEvents) {
-    if (!registeredEventIds.has(row.id)) {
+    if (registeredEventIds.has(row.id)) {
+      for (const pid of row.problem_ids ?? []) unlocked.add(pid);
+    } else {
       for (const pid of row.problem_ids ?? []) locked.add(pid);
     }
   }
+  for (const pid of unlocked) locked.delete(pid);
   return locked;
 }
-
-/** Kept as alias for upcoming/live lock lookup without a viewer (locks all unended tournaments). */
-export const upcomingLockedProblemIds = (now = new Date().toISOString()) => lockedProblemIdsFor(undefined, now);
 
 /** Full problem including hidden tests. Only the judge may use this; browsers get findVisibleProblem. */
 export async function findProblem(id: string, options?: ProblemLookupOptions): Promise<ProgrammingProblem | null> {

@@ -40,9 +40,20 @@ test("run arguments enforce limits and only allow threads when asked", () => {
   assert.ok(!single.includes("--share-net"), "network stays off");
   assert.deepEqual(single.slice(-3), ["--run", "--", "./main"]);
 
-  const jvm = buildRunArgs({ ...base, dirs: ["/etc/java-17-openjdk"], limits: { timeMs: 2000, wallTimeMs: 6000, memoryKb: 262144, fileSizeKb: 8192, processes: 64 } });
+  const jvm = buildRunArgs({ ...base, dirs: ["/etc/java-17-openjdk"], limits: { timeMs: 2000, wallTimeMs: 6000, memoryKb: 262144, fileSizeKb: 8192, processes: 64, quota: { blocks: 16384, inodes: 512 } } });
   assert.ok(jvm.includes("--processes=64"));
   assert.ok(jvm.includes("--dir=/etc/java-17-openjdk=/etc/java-17-openjdk:maybe"));
+  assert.ok(jvm.includes("--quota=16384,512"));
+});
+
+test("createJudgeServer rejects empty or short tokens", () => {
+  const dummyCli = { init: async () => "", run: async () => {}, cleanup: async () => {} };
+  for (const badToken of ["", "short", "123456789012345"]) {
+    assert.throws(
+      () => createJudgeServer({ token: badToken, specs: {}, cli: dummyCli, pool: new BoxPool(1, 1), workDir: tmpdir() }),
+      /at least 16/,
+    );
+  }
 });
 
 test("JDK config links into /etc are found so the sandbox can bind them", () => {

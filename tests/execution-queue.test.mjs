@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { ExecutionQueue, QueueFullError } from "../lib/execution/queue.ts";
+import { ExecutionQueue, QueueAbortedError, QueueFullError } from "../lib/execution/queue.ts";
 
 test("ExecutionQueue - executes tasks within concurrency limit", async () => {
   const queue = new ExecutionQueue({ maxConcurrency: 2, maxQueueLength: 10 });
@@ -49,4 +49,26 @@ test("ExecutionQueue - rejects when queue is saturated", async () => {
   );
 
   await Promise.all([p1, p2, p3]);
+});
+
+test("ExecutionQueue - aborting a queued task cancels it and frees the student slot", async () => {
+  const queue = new ExecutionQueue({ maxConcurrency: 1, maxQueueLength: 5, maxPerClient: 2 });
+  const client = { key: "student-1", ip: "local" };
+  let releaseFirst;
+  const p1 = queue.enqueue(() => new Promise((r) => { releaseFirst = r; }), client);
+
+  const controller = new AbortController();
+  let ranCanceled = false;
+  const p2 = queue.enqueue(async () => { ranCanceled = true; return "never"; }, client, controller.signal);
+
+  controller.abort();
+  await assert.rejects(p2, QueueAbortedError);
+  assert.equal(queue.getStats().waitingCount, 0);
+
+  // Student should now be able to enqueue another task without hitting maxPerClient=2.
+  const p3 = queue.enqueue(async () => "ok", client);
+  releaseFirst("first");
+  assert.equal(await p1, "first");
+  assert.equal(await p3, "ok");
+  assert.equal(ranCanceled, false);
 });

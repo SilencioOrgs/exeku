@@ -7,7 +7,7 @@ import {
 import { getProblemById } from "@/lib/problems/catalog";
 import { compareOutputs } from "@/lib/judge/output-normalizer";
 import { createExecutionAdapter } from "@/lib/execution/engine";
-import { ExecutionQueue, globalExecutionQueue, type QueueClient } from "@/lib/execution/queue";
+import { ExecutionQueue, globalExecutionQueue, QueueAbortedError, type QueueClient } from "@/lib/execution/queue";
 import type { ProgrammingProblem } from "@/types/problem";
 
 export type OverallVerdict =
@@ -97,8 +97,8 @@ export class JudgingService {
   /**
    * Executes code with optional standard input through the execution queue.
    */
-  async runCode(request: ExecutionRequest, client?: QueueClient): Promise<ExecutionResult> {
-    return this.queue.enqueue(() => this.adapter.execute(request), client);
+  async runCode(request: ExecutionRequest, client?: QueueClient, signal?: AbortSignal): Promise<ExecutionResult> {
+    return this.queue.enqueue(() => this.adapter.execute(request, signal), client, signal);
   }
 
   /**
@@ -112,8 +112,10 @@ export class JudgingService {
       sourceCode: string;
       files?: { name: string; content: string }[];
     },
-    client?: QueueClient
+    client?: QueueClient,
+    signal?: AbortSignal
   ): Promise<JudgingResult> {
+    if (signal?.aborted) throw new QueueAbortedError();
     const problem = typeof problemRef === "string" ? getProblemById(problemRef) : problemRef;
     const problemId = typeof problemRef === "string" ? problemRef : problemRef.id;
     if (!problem) {
@@ -166,8 +168,9 @@ export class JudgingService {
       batch = await this.queue.enqueue(async () => {
         const collected: ExecutionResult[] = [];
         for (let offset = 0; offset < inputs.length; offset += MAX_BATCH_INPUTS) {
+          if (signal?.aborted) throw new QueueAbortedError();
           const chunk = inputs.slice(offset, offset + MAX_BATCH_INPUTS);
-          const results = await this.adapter.executeBatch!(baseRequest, chunk);
+          const results = await this.adapter.executeBatch!(baseRequest, chunk, signal);
           collected.push(...results);
           const first = results[0];
           if (
@@ -180,13 +183,14 @@ export class JudgingService {
           }
         }
         return collected;
-      }, client);
+      }, client, signal);
     }
 
     for (const [index, testCase] of problem.testCases.entries()) {
+      if (signal?.aborted) throw new QueueAbortedError();
       const execResult = batch
         ? batch[index]
-        : await this.queue.enqueue(() => this.adapter.execute({ ...baseRequest, stdin: testCase.input }), client);
+        : await this.queue.enqueue(() => this.adapter.execute({ ...baseRequest, stdin: testCase.input }, signal), client, signal);
       if (!execResult) {
         return {
           problemId,

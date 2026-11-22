@@ -10,12 +10,10 @@ export interface AppearanceContextValue {
   preferenceOwner: string | null;
   effectiveColorMode: "dark" | "light";
   effectiveReducedMotion: boolean;
-  systemColorMode: 'light' | 'dark';
   systemReducedMotion: boolean;
   persistenceStatus: PersistenceStatus;
   persistenceMessage: string | null;
   updatePreferences: (updates: Partial<AppearancePreferences>) => Promise<boolean>;
-  resetPreferences: () => Promise<boolean>;
 }
 
 const AppearanceContext = createContext<AppearanceContextValue | null>(null);
@@ -33,18 +31,13 @@ export function applyPreferencesToDom(prefs: AppearancePreferences, effectiveCol
   root.dataset.reducedMotion = String(prefs.reducedMotion === "system" ? systemReducedMotion : prefs.reducedMotion);
   // Sync Tailwind .dark class for Base UI primitives
   root.classList.toggle("dark", effectiveColorMode === "dark");
-  // Set CSS variables for scaling and brightness
-  const brightness = prefs.contrastMode === "high" ? 100 : prefs.brightness;
   root.style.setProperty("--ui-font-scale", String(prefs.uiFontScale) + "%");
-  root.style.setProperty("--app-brightness", String(brightness) + "%");
-  root.style.setProperty("--brightness-factor", String(brightness / 100));
 }
 
 export function AppearanceProvider({ children }: { children: React.ReactNode }) {
   // Initial markup always matches SSR; the root boot snapshot handles first-paint styling.
   const [preferences, setPreferences] = useState<AppearancePreferences>({ ...DEFAULT_APPEARANCE_PREFERENCES });
   const [preferenceOwner, setPreferenceOwner] = useState<string | null>(null);
-  const [systemDark, setSystemDark] = useState(true);
   const [systemReducedMotion, setSystemReducedMotion] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [persistenceStatus, setPersistenceStatus] = useState<PersistenceStatus>("loading");
@@ -57,13 +50,9 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     let disposed = false;
-    const darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const handleSchemeChange = () => setSystemDark(darkQuery.matches);
     const handleMotionChange = () => setSystemReducedMotion(motionQuery.matches);
-    handleSchemeChange();
     handleMotionChange();
-    darkQuery.addEventListener("change", handleSchemeChange);
     motionQuery.addEventListener("change", handleMotionChange);
 
     const load = async () => {
@@ -99,14 +88,13 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
     window.addEventListener("exeku:profile-changed", profileChanged);
     return () => {
       disposed = true;
-      darkQuery.removeEventListener("change", handleSchemeChange);
       motionQuery.removeEventListener("change", handleMotionChange);
       window.removeEventListener("storage", storageChanged);
       window.removeEventListener("exeku:profile-changed", profileChanged);
     };
   }, []);
 
-  const effectiveColorMode = appearanceRepository.resolveEffectiveColorMode(preferences.colorMode, systemDark);
+  const effectiveColorMode = appearanceRepository.resolveEffectiveColorMode(preferences.colorMode, true);
   useEffect(() => {
     if (!hydrated) return;
     applyPreferencesToDom(preferences, effectiveColorMode, systemReducedMotion);
@@ -151,14 +139,13 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
     return write;
   }, []);
 
-  const resetPreferences = useCallback(() => updatePreferences(DEFAULT_APPEARANCE_PREFERENCES), [updatePreferences]);
   const effectiveReducedMotion = preferences.reducedMotion === "system" ? systemReducedMotion : preferences.reducedMotion;
   const persistenceMessage = persistenceStatus === "error"
     ? "Changes were not applied. Local storage failed; your draft is available to retry."
     : persistenceStatus === "session" ? "Changes cannot be applied because persistent browser storage is unavailable."
     : persistenceStatus === "saving" ? "Saving appearance…"
     : persistenceStatus === "loading" ? "Loading appearance…" : "Appearance saved locally.";
-  const contextValue = useMemo<AppearanceContextValue>(() => ({ preferences, preferenceOwner, effectiveColorMode, effectiveReducedMotion, systemColorMode: systemDark ? "dark" : "light", systemReducedMotion, persistenceStatus, persistenceMessage, updatePreferences, resetPreferences }), [preferences, preferenceOwner, effectiveColorMode, effectiveReducedMotion, systemDark, systemReducedMotion, persistenceStatus, persistenceMessage, updatePreferences, resetPreferences]);
+  const contextValue = useMemo<AppearanceContextValue>(() => ({ preferences, preferenceOwner, effectiveColorMode, effectiveReducedMotion, systemReducedMotion, persistenceStatus, persistenceMessage, updatePreferences }), [preferences, preferenceOwner, effectiveColorMode, effectiveReducedMotion, systemReducedMotion, persistenceStatus, persistenceMessage, updatePreferences]);
   return <AppearanceContext.Provider value={contextValue}>{children}</AppearanceContext.Provider>;
 }
 

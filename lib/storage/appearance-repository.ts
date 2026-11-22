@@ -7,7 +7,6 @@ import {
 
 export const APPEARANCE_STORAGE_KEY = "exeku_appearance_settings";
 export const APPEARANCE_SNAPSHOT_KEY = "exeku_appearance_snapshot";
-export const APPEARANCE_CHANGE_EVENT = "exeku:appearance-changed";
 export type PersistenceStatus = "loading" | "saved" | "session" | "saving" | "error";
 
 export interface IKeyValueStorage {
@@ -55,13 +54,6 @@ export class AppearanceRepository {
     }
   }
 
-  private notifyChange(): void {
-    if (typeof window !== "undefined") {
-      try { window.dispatchEvent(new CustomEvent(APPEARANCE_CHANGE_EVENT)); }
-      catch { /* Ignore in non-DOM test environments */ }
-    }
-  }
-
   /**
    * Retrieves current appearance preferences (from storage or memory fallback).
    */
@@ -86,7 +78,6 @@ export class AppearanceRepository {
         this.persistenceStatus = "error";
       }
     }
-    this.notifyChange();
     return { ...this.memoryCache };
   }
 
@@ -99,7 +90,6 @@ export class AppearanceRepository {
       this.memoryCache = next;
       this.unsaved = false;
       this.persistenceStatus = "saved";
-      this.notifyChange();
       return true;
     } catch { this.persistenceStatus = "error"; return false; }
   }

@@ -1,7 +1,7 @@
 import { constants as fsConstants } from "node:fs";
 import { lstat, open, readdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { classifyRun, parseMeta, type IsolateCli } from "./isolate.ts";
+import { classifyRun, parseMeta, type IsolateCli, type SandboxQuota } from "./isolate.ts";
 import type { LanguageSpec } from "./languages.ts";
 import { JobAbortedError } from "./pool.ts";
 import type { CompileResult, Language, RunRequest, RunResponse, RunStatus, TestRun } from "./types.ts";
@@ -14,7 +14,7 @@ export const MAX_BATCH_WALL_MS = 90_000;
 const SAFE_READ_FLAGS = fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW ?? 0) | (fsConstants.O_NONBLOCK ?? 0);
 
 const COMPILE_LIMITS = { timeMs: 20_000, wallTimeMs: 40_000, memoryKb: 768 * 1024, fileSizeKb: 16 * 1024, processes: 64 };
-const RUN_FILE_SIZE_KB = 2 * 1024;
+const RUN_FILE_SIZE_KB = 512;
 
 // Names the worker writes into the box. "~" is never allowed in a submitted file name, so these cannot collide.
 const STDIN = "~stdin";
@@ -32,20 +32,22 @@ export interface RunnerDeps {
   workDir: string;
   signal?: AbortSignal;
   maxBatchWallMs?: number;
+  quota?: SandboxQuota;
 }
 
 /** Reads at most maxBytes from a regular file without following symlinks or blocking on FIFOs. */
-async function readRegularFile(path: string, maxBytes: number): Promise<Buffer | null> {
+async function readRegularFile(path: string, maxBytes: number): Promise<{ data: Buffer; truncated: boolean } | null> {
   let handle;
   try {
     handle = await open(path, SAFE_READ_FLAGS);
     const info = await handle.stat();
     if (!info.isFile()) return null;
+    const truncated = info.size > maxBytes;
     const toRead = Math.min(maxBytes, info.size);
-    if (toRead <= 0) return Buffer.alloc(0);
+    if (toRead <= 0) return { data: Buffer.alloc(0), truncated: false };
     const buffer = Buffer.alloc(toRead);
     const { bytesRead } = await handle.read(buffer, 0, toRead, 0);
-    return buffer.subarray(0, bytesRead);
+    return { data: buffer.subarray(0, bytesRead), truncated };
   } catch {
     return null;
   } finally {
@@ -53,9 +55,13 @@ async function readRegularFile(path: string, maxBytes: number): Promise<Buffer |
   }
 }
 
+async function readCappedChecked(path: string, maxBytes: number): Promise<{ text: string; truncated: boolean }> {
+  const res = await readRegularFile(path, maxBytes);
+  return res ? { text: res.data.toString("utf8"), truncated: res.truncated } : { text: "", truncated: false };
+}
+
 async function readCapped(path: string, maxBytes: number): Promise<string> {
-  const data = await readRegularFile(path, maxBytes);
-  return data ? data.toString("utf8") : "";
+  return (await readCappedChecked(path, maxBytes)).text;
 }
 
 async function withBox<T>(cli: IsolateCli, boxId: number, fn: (boxDir: string) => Promise<T>): Promise<T> {
@@ -83,14 +89,14 @@ export async function collectArtifacts(boxDir: string): Promise<Map<string, Buff
     if (!info.isFile()) continue;
     total += info.size;
     if (total > MAX_ARTIFACT_BYTES) throw new ArtifactTooLargeError("Compiled output is too large.");
-    const data = await readRegularFile(path, info.size);
-    if (data) artifacts.set(name, data);
+    const res = await readRegularFile(path, info.size);
+    if (res) artifacts.set(name, res.data);
   }
   return artifacts;
 }
 
 export async function runJob(request: RunRequest, boxId: number, deps: RunnerDeps): Promise<RunResponse> {
-  const { cli, spec, workDir, signal, maxBatchWallMs = MAX_BATCH_WALL_MS } = deps;
+  const { cli, spec, workDir, signal, maxBatchWallMs, quota } = deps;
   const metaPath = join(workDir, `meta-${boxId}.txt`);
   let compile: CompileResult | null = null;
   let artifacts = new Map<string, Buffer>(request.files.map((file) => [file.name, Buffer.from(file.content, "utf8")]));
@@ -102,7 +108,11 @@ export async function runJob(request: RunRequest, boxId: number, deps: RunnerDep
     const compiled = await withBox(cli, boxId, async (boxDir) => {
       for (const [name, data] of artifacts) await writeFile(join(boxDir, name), data);
       await rm(metaPath, { force: true });
-      await cli.run({ boxId, metaPath, limits: COMPILE_LIMITS, argv: compileArgv, dirs: spec.dirs, stdout: COMPILE_OUT, stderrToStdout: true });
+      await cli.run(
+        { boxId, metaPath, limits: quota ? { ...COMPILE_LIMITS, quota } : COMPILE_LIMITS, argv: compileArgv, dirs: spec.dirs, stdout: COMPILE_OUT, stderrToStdout: true },
+        signal,
+      );
+      if (signal?.aborted) throw new JobAbortedError("Client disconnected.");
       const outcome = classifyRun(parseMeta(await readCapped(metaPath, 16 * 1024)));
       const output = await readCapped(join(boxDir, COMPILE_OUT), MAX_COMPILE_OUTPUT_BYTES);
       const result: CompileResult = {
@@ -133,24 +143,27 @@ export async function runJob(request: RunRequest, boxId: number, deps: RunnerDep
     memoryKb: request.memoryLimitKb + spec.memoryOverheadKb,
     fileSizeKb: RUN_FILE_SIZE_KB,
     processes: spec.processes,
+    ...(quota ? { quota } : {}),
   };
   const runArgv = spec.run(request.memoryLimitKb);
-  const batchDeadline = Date.now() + maxBatchWallMs;
+  const batchBudgetMs = maxBatchWallMs ?? Math.max(MAX_BATCH_WALL_MS, request.stdins.length * (limits.wallTimeMs + 1000));
+  const batchDeadline = Date.now() + batchBudgetMs;
 
   // A fresh box per test: no files or cached memory carry over from the previous input.
   for (const stdin of request.stdins) {
     if (signal?.aborted) throw new JobAbortedError("Client disconnected.");
     if (runs.length > 0 && Date.now() >= batchDeadline) {
+      // Never fabricate TIME_LIMIT_EXCEEDED for tests that never ran; report a judge-side error instead.
       runs.push({
-        status: "TIME_LIMIT_EXCEEDED",
+        status: "INTERNAL_ERROR",
         exitCode: null,
         signal: null,
         stdout: "",
         stderr: "",
-        timeMs: request.timeLimitMs,
+        timeMs: 0,
         wallTimeMs: 0,
         memoryKb: 0,
-        message: "Batch wall-time limit exceeded across test cases.",
+        message: "Batch wall-time limit exceeded before this test ran.",
       });
       continue;
     }
@@ -159,13 +172,22 @@ export async function runJob(request: RunRequest, boxId: number, deps: RunnerDep
         for (const [name, data] of artifacts) await writeFile(join(boxDir, name), data, { mode: 0o755 });
         await writeFile(join(boxDir, STDIN), stdin);
         await rm(metaPath, { force: true });
-        await cli.run({ boxId, metaPath, limits, argv: runArgv, dirs: spec.dirs, stdin: STDIN, stdout: STDOUT, stderr: STDERR });
+        await cli.run({ boxId, metaPath, limits, argv: runArgv, dirs: spec.dirs, stdin: STDIN, stdout: STDOUT, stderr: STDERR }, signal);
+        if (signal?.aborted) throw new JobAbortedError("Client disconnected.");
         const outcome = classifyRun(parseMeta(await readCapped(metaPath, 16 * 1024)));
         const stderr = await readCapped(join(boxDir, STDERR), MAX_STDERR_BYTES);
+        const stdoutRes = await readCappedChecked(join(boxDir, STDOUT), MAX_STDOUT_BYTES);
+        let status = finalStatus(request.language, outcome.status, stderr);
+        let message = outcome.message;
+        if (stdoutRes.truncated && status === "SUCCESS") {
+          status = "RUNTIME_ERROR";
+          message = "Output limit exceeded.";
+        }
         return {
           ...outcome,
-          status: finalStatus(request.language, outcome.status, stderr),
-          stdout: await readCapped(join(boxDir, STDOUT), MAX_STDOUT_BYTES),
+          status,
+          message,
+          stdout: stdoutRes.text,
           stderr,
         };
       })

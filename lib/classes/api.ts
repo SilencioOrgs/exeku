@@ -1,7 +1,5 @@
-import { call, type ApiResult } from "@/lib/accounts/api";
+import { call } from "@/lib/accounts/api";
 import type { ClassDetailPayload, ClassListPayload } from "@/types/classes";
-
-export type ApiReply<T> = ApiResult<T>;
 
 export const fetchClasses = () => call<ClassListPayload>("/api/classes");
 

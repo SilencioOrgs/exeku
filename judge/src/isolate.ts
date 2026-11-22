@@ -3,6 +3,11 @@ import type { RunStatus } from "./types.ts";
 
 /** Wraps the isolate CLI (https://github.com/ioi/isolate, v2, cgroup v2). Arguments are passed as argv, never through a shell. */
 
+export interface SandboxQuota {
+  blocks: number;
+  inodes: number;
+}
+
 export interface SandboxLimits {
   timeMs: number;
   wallTimeMs: number;
@@ -10,6 +15,8 @@ export interface SandboxLimits {
   /** Largest file the program may write, in KB. Caps output size. */
   fileSizeKb: number;
   processes: number;
+  /** Optional per-box filesystem quota (requires usrquota/grpquota on the box filesystem). */
+  quota?: SandboxQuota;
 }
 
 export interface SandboxRun {
@@ -44,6 +51,7 @@ export function buildRunArgs(run: SandboxRun): string[] {
     "--env=HOME=/box",
     "--env=LANG=C.UTF-8",
   ];
+  if (limits.quota) args.push(`--quota=${limits.quota.blocks},${limits.quota.inodes}`);
   if (limits.processes > 1) args.push(`--processes=${limits.processes}`);
   for (const dir of run.dirs ?? []) args.push(`--dir=${dir}=${dir}:maybe`);
   if (run.stdin) args.push(`--stdin=${run.stdin}`);
@@ -97,15 +105,23 @@ export function classifyRun(meta: Record<string, string>): RunOutcome {
 
 export interface IsolateCli {
   init(boxId: number): Promise<string>;
-  run(run: SandboxRun): Promise<void>;
+  run(run: SandboxRun, signal?: AbortSignal): Promise<void>;
   cleanup(boxId: number): Promise<void>;
 }
 
-function exec(bin: string, args: string[], timeoutMs: number): Promise<{ code: number; stdout: string; stderr: string }> {
+function exec(bin: string, args: string[], timeoutMs: number, signal?: AbortSignal): Promise<{ code: number; stdout: string; stderr: string; aborted: boolean }> {
   return new Promise((resolve) => {
-    execFile(bin, args, { timeout: timeoutMs, maxBuffer: 1024 * 1024 }, (error, stdout, stderr) => {
+    if (signal?.aborted) {
+      resolve({ code: -1, stdout: "", stderr: "", aborted: true });
+      return;
+    }
+    execFile(bin, args, { timeout: timeoutMs, maxBuffer: 1024 * 1024, signal }, (error, stdout, stderr) => {
+      if (signal?.aborted) {
+        resolve({ code: -1, stdout: "", stderr: "", aborted: true });
+        return;
+      }
       const code = error ? (typeof error.code === "number" ? error.code : -1) : 0;
-      resolve({ code, stdout: String(stdout), stderr: String(stderr) });
+      resolve({ code, stdout: String(stdout), stderr: String(stderr), aborted: false });
     });
   });
 }
@@ -121,9 +137,10 @@ export function createIsolateCli(bin = "isolate"): IsolateCli {
       if (res.code !== 0) throw new Error(`isolate --init failed: ${res.stderr.trim() || res.code}`);
       return res.stdout.trim();
     },
-    async run(run) {
+    async run(run, signal) {
       // Exit 0 or 1 means the program ran (the meta file says how); 2 means isolate itself failed.
-      const res = await exec(bin, buildRunArgs(run), run.limits.wallTimeMs + 10_000);
+      const res = await exec(bin, buildRunArgs(run), run.limits.wallTimeMs + 10_000, signal);
+      if (res.aborted) return;
       if (res.code !== 0 && res.code !== 1) throw new Error(`isolate --run failed: ${res.stderr.trim() || res.code}`);
     },
     async cleanup(boxId) {

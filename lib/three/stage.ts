@@ -8,7 +8,6 @@
  */
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { disposeTree } from "./circuit";
 
@@ -16,7 +15,6 @@ export interface Stage {
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
   renderer: THREE.WebGLRenderer;
-  controls: OrbitControls | null;
   /** Key light; move it and its target to keep shadows near the subject in big scenes. */
   key: THREE.DirectionalLight;
   /** Re-render shadows on the next frame (after showing/hiding casters). */
@@ -27,8 +25,6 @@ export interface Stage {
 }
 
 interface StageOptions {
-  orbit?: boolean;
-  autoRotate?: boolean;
   fov?: number;
   shadowExtent?: number;
   /** Upper bound for devicePixelRatio; resolution can drop below it on slow devices. */
@@ -37,7 +33,7 @@ interface StageOptions {
 
 const MIN_PIXEL_RATIO = 0.75;
 
-export function createStage(mount: HTMLElement, { orbit = false, autoRotate = false, fov = 32, shadowExtent = 160, maxPixelRatio = 1.5 }: StageOptions = {}): Stage {
+export function createStage(mount: HTMLElement, { fov = 32, shadowExtent = 160, maxPixelRatio = 1.5 }: StageOptions = {}): Stage {
   const maxRatio = Math.min(window.devicePixelRatio, maxPixelRatio);
   const renderer = new THREE.WebGLRenderer({ antialias: window.devicePixelRatio < 2, alpha: true, powerPreference: "high-performance" });
   let pixelRatio = maxRatio;
@@ -87,18 +83,6 @@ export function createStage(mount: HTMLElement, { orbit = false, autoRotate = fa
   ground.position.y = -4.2;
   ground.receiveShadow = true;
   scene.add(ground);
-
-  let controls: OrbitControls | null = null;
-  if (orbit) {
-    controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.maxPolarAngle = Math.PI / 2.08;
-    controls.minDistance = 90;
-    controls.maxDistance = 520;
-    controls.enablePan = false;
-    controls.autoRotate = autoRotate;
-    controls.autoRotateSpeed = 0.6;
-  }
 
   const callbacks: Array<(time: number, delta: number) => void> = [];
   const timer = new THREE.Timer();
@@ -151,7 +135,6 @@ export function createStage(mount: HTMLElement, { orbit = false, autoRotate = fa
     // Cap large gaps (tab switches) but keep real time on slow devices so camera moves still finish on time.
     const delta = Math.min(Math.max(0, timer.getDelta()), 0.25);
     for (const callback of callbacks) callback(timer.getElapsed(), delta);
-    controls?.update();
     if (key.position.distanceToSquared(lastKey) > 1) { lastKey.copy(key.position); renderer.shadowMap.needsUpdate = true; }
     renderer.render(scene, camera);
   };
@@ -180,7 +163,6 @@ export function createStage(mount: HTMLElement, { orbit = false, autoRotate = fa
     scene,
     camera,
     renderer,
-    controls,
     key,
     invalidateShadows() { renderer.shadowMap.needsUpdate = true; },
     onFrame(callback) { callbacks.push(callback); },
@@ -192,7 +174,6 @@ export function createStage(mount: HTMLElement, { orbit = false, autoRotate = fa
       timer.dispose();
       resize.disconnect();
       io.disconnect();
-      controls?.dispose();
       disposeTree(scene);
       scene.environment = null;
       envTarget.dispose();

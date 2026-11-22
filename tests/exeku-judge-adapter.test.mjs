@@ -102,3 +102,24 @@ test("judging uses one batch call and reports memory limit without leaking hidde
     assert.equal(last.stderr, undefined);
   }
 });
+
+test("external AbortSignal aborts in-flight judge fetch and throws QueueAbortedError", async () => {
+  const { QueueAbortedError } = await import("../lib/execution/queue.ts");
+  let fetchSignalAborted = false;
+  const adapter = new ExekuJudgeAdapter({
+    baseUrl: "http://judge.test",
+    token: "secret",
+    fetchImpl: (_url, init) =>
+      new Promise((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => {
+          fetchSignalAborted = true;
+          reject(new DOMException("Aborted", "AbortError"));
+        });
+      }),
+  });
+  const controller = new AbortController();
+  const pending = adapter.execute(request, controller.signal);
+  controller.abort();
+  await assert.rejects(pending, QueueAbortedError);
+  assert.equal(fetchSignalAborted, true);
+});

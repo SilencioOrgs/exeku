@@ -10,14 +10,6 @@ export async function solvesBetween(userIds: string[], startsAt: string, endsAt:
   return rows.map((r) => ({ userId: r.user_id, problemId: r.problem_id, points: r.points, at: r.created_at }));
 }
 
-/** When each accepted answer happened, for the activity chart. */
-export async function acceptedTimes(userId: string) {
-  const rows = await fetchAllPages<{ created_at: string }>((from, to) =>
-    db().from("submissions").select("created_at").eq("user_id", userId).eq("verdict", "ACCEPTED").order("created_at").order("id").range(from, to),
-  );
-  return rows.map((r) => r.created_at);
-}
-
 /** Each problem once, at the moment it was first accepted. */
 export async function firstSolves(userId: string) {
   const rows = await fetchAllPages<{ problem_id: string; created_at: string }>((from, to) =>

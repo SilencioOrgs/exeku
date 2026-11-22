@@ -7,7 +7,7 @@ import {
   type ExecutionLanguage,
   SUPPORTED_EXECUTION_LANGUAGES,
 } from "@/types/execution";
-import { QueueFullError } from "@/lib/execution/queue";
+import { QueueAbortedError, QueueFullError } from "@/lib/execution/queue";
 
 /** Talks to the Exeku judge worker in `judge/` (isolate sandboxes). See judge/README.md. */
 
@@ -20,6 +20,11 @@ const MAIN_FILE: Record<ExecutionLanguage, string> = {
 
 const DEFAULT_TIME_LIMIT_MS = 3000;
 const DEFAULT_MEMORY_LIMIT_KB = 128000;
+const warnedPlaintextUrls = new Set<string>();
+
+function isLoopbackHost(hostname: string): boolean {
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1" || hostname === "[::1]";
+}
 
 export interface ExekuJudgeAdapterOptions {
   baseUrl?: string;
@@ -53,6 +58,17 @@ export class ExekuJudgeAdapter implements IExecutionAdapter {
     this.baseUrl = (options?.baseUrl || process.env.JUDGE_SERVICE_URL || "http://localhost:4000").replace(/\/$/, "");
     this.token = options?.token ?? process.env.JUDGE_TOKEN ?? "";
     this.fetchImpl = options?.fetchImpl ?? fetch;
+    if (!options?.fetchImpl && !warnedPlaintextUrls.has(this.baseUrl)) {
+      try {
+        const parsed = new URL(this.baseUrl);
+        if (parsed.protocol === "http:" && !isLoopbackHost(parsed.hostname)) {
+          warnedPlaintextUrls.add(this.baseUrl);
+          console.warn(`[exeku-judge] JUDGE_SERVICE_URL (${this.baseUrl}) uses plain HTTP over a non-loopback host; use HTTPS/TLS so JUDGE_TOKEN is never sent in plaintext.`);
+        }
+      } catch {
+        /* Invalid URL will fail clearly on request. */
+      }
+    }
   }
 
   buildPayload(request: ExecutionRequest, stdins: string[]) {
@@ -107,17 +123,24 @@ export class ExekuJudgeAdapter implements IExecutionAdapter {
     return { status, exitCode: null, stdout: "", stderr: message, durationMs: 0, error: error ?? message };
   }
 
-  async execute(request: ExecutionRequest): Promise<ExecutionResult> {
-    const [result] = await this.executeBatch(request, [request.stdin ?? ""]);
+  async execute(request: ExecutionRequest, signal?: AbortSignal): Promise<ExecutionResult> {
+    const [result] = await this.executeBatch(request, [request.stdin ?? ""], signal);
     return result;
   }
 
-  async executeBatch(request: ExecutionRequest, stdins: string[]): Promise<ExecutionResult[]> {
+  async executeBatch(request: ExecutionRequest, stdins: string[], signal?: AbortSignal): Promise<ExecutionResult[]> {
+    if (signal?.aborted) throw new QueueAbortedError();
     const timeLimit = request.timeLimitMs || DEFAULT_TIME_LIMIT_MS;
     // Compile time plus every run at its wall-clock cap, plus time waiting in the worker's queue.
     const controller = new AbortController();
+    let timedOut = false;
     const perRunWallMs = Math.max(timeLimit * 3, timeLimit + 3000) + 1000;
-    const timer = setTimeout(() => controller.abort(), 60_000 + stdins.length * perRunWallMs);
+    const timer = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, 60_000 + stdins.length * perRunWallMs);
+    const onExternalAbort = () => controller.abort();
+    signal?.addEventListener("abort", onExternalAbort, { once: true });
     const fail = (status: ExecutionStatus, message: string, error?: string) => stdins.map(() => this.failure(status, message, error));
 
     try {
@@ -139,13 +162,15 @@ export class ExekuJudgeAdapter implements IExecutionAdapter {
       }
       return this.transformResponse((await res.json()) as WorkerResponse, stdins.length);
     } catch (err: unknown) {
-      if (err instanceof QueueFullError) throw err;
+      if (err instanceof QueueFullError || err instanceof QueueAbortedError) throw err;
+      if (signal?.aborted) throw new QueueAbortedError();
       const message = err instanceof Error ? err.message : String(err);
       console.error(`[exeku-judge] request failed (${this.baseUrl}): ${message}`);
-      if (controller.signal.aborted) return fail("INTERNAL_ERROR", "The judge took too long to answer.");
+      if (timedOut && controller.signal.aborted) return fail("INTERNAL_ERROR", "The judge took too long to answer.");
       return fail("SERVICE_UNAVAILABLE", "The Exeku judge sandbox is currently unreachable. Start it (see judge/README.md).");
     } finally {
       clearTimeout(timer);
+      signal?.removeEventListener("abort", onExternalAbort);
     }
   }
 
