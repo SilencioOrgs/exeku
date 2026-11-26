@@ -5,7 +5,9 @@ export type NotificationKind =
   | "class_problem"
   | "class_deadline"
   | "org_status"
-  | "faculty_status";
+  | "faculty_status"
+  | "friend_request"
+  | "friend_accepted";
 
 export interface NotificationItem {
   id: string;

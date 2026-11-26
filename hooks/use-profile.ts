@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { createContext, createElement, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import type { LocalProfile, ProfileInput } from "@/types/profile";
 import { draftRepository } from "@/lib/storage/draft-repository";
 import { profileRepository, ProfileRepositoryError } from "@/lib/storage/profile-repository";
+import { setClientCacheScope } from "@/lib/client/swr-cache";
 
 const PROFILE_CHANGE_EVENT = "exeku:profile-changed";
 /** Hides the local cached profile while signed out of Clerk without deleting saved drafts. */
@@ -29,10 +30,12 @@ export interface UseProfileReturn {
   clearError: () => void;
 }
 
-export function useProfile(): UseProfileReturn {
+const ProfileContext = createContext<UseProfileReturn | null>(null);
+
+function useProfileState(active: boolean): UseProfileReturn {
   const [profile, setProfile] = useState<LocalProfile | null>(null);
   const [signedOut, setSignedOut] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(active);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const mountedRef = useRef(true);
@@ -41,10 +44,12 @@ export function useProfile(): UseProfileReturn {
   const loadProfile = useCallback(async () => {
     const requestId = ++loadRequestRef.current;
     try {
-      const active = await profileRepository.getActiveProfile();
+      const activeProfile = await profileRepository.getActiveProfile();
       if (!mountedRef.current || loadRequestRef.current !== requestId) return;
-      setProfile(active);
-      setSignedOut(readSignedOut());
+      const isSignedOut = readSignedOut();
+      setProfile(activeProfile);
+      setSignedOut(isSignedOut);
+      setClientCacheScope(isSignedOut || !activeProfile ? null : (activeProfile.ownerId ?? activeProfile.id));
       setError(null);
     } catch (err) {
       if (!mountedRef.current || loadRequestRef.current !== requestId) return;
@@ -54,6 +59,7 @@ export function useProfile(): UseProfileReturn {
           : "Failed to load local profile";
       setError(message);
       setProfile(null);
+      setClientCacheScope(null);
     } finally {
       if (mountedRef.current && loadRequestRef.current === requestId) {
         setIsLoading(false);
@@ -62,6 +68,7 @@ export function useProfile(): UseProfileReturn {
   }, []);
 
   useEffect(() => {
+    if (!active) return;
     mountedRef.current = true;
     queueMicrotask(() => {
       if (mountedRef.current) void loadProfile();
@@ -88,7 +95,7 @@ export function useProfile(): UseProfileReturn {
         window.removeEventListener("storage", handleStorage);
       }
     };
-  }, [loadProfile]);
+  }, [active, loadProfile]);
 
   const notifyChange = useCallback(() => {
     if (typeof window !== "undefined") {
@@ -103,6 +110,7 @@ export function useProfile(): UseProfileReturn {
       try {
         const created = await profileRepository.saveProfile(input);
         setProfile(created);
+        setClientCacheScope(created.ownerId ?? created.id);
         notifyChange();
         return created;
       } catch (err) {
@@ -150,6 +158,7 @@ export function useProfile(): UseProfileReturn {
         await draftRepository.deleteProfileDrafts(id);
         await profileRepository.deleteProfile(id);
         setProfile(null);
+        setClientCacheScope(null);
         notifyChange();
       } catch (err) {
         const message =
@@ -174,6 +183,7 @@ export function useProfile(): UseProfileReturn {
       if (nextSignedOut) localStorage.setItem(SIGNED_OUT_KEY, "true");
       else localStorage.removeItem(SIGNED_OUT_KEY);
     } catch { /* Logout still applies to this page when browser storage is denied. */ }
+    if (nextSignedOut) setClientCacheScope(null);
     setSignedOut(nextSignedOut);
     notifyChange();
   }, [notifyChange]);
@@ -194,4 +204,16 @@ export function useProfile(): UseProfileReturn {
     reload: loadProfile,
     clearError,
   };
+}
+
+/** Shares one IndexedDB profile load across the entire app shell so tab switches never re-read IDB or flash skeletons. */
+export function ProfileProvider({ children }: { children: ReactNode }) {
+  const state = useProfileState(true);
+  return createElement(ProfileContext.Provider, { value: state }, children);
+}
+
+export function useProfile(): UseProfileReturn {
+  const shared = useContext(ProfileContext);
+  const standalone = useProfileState(shared === null);
+  return shared ?? standalone;
 }

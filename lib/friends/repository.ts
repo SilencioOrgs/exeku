@@ -3,6 +3,7 @@ import { isObject, text } from "@/lib/accounts/rules";
 import type { Viewer } from "@/lib/auth/viewer";
 import { db, fetchAllPages, must } from "@/lib/db/client";
 import type { AvatarBorderId } from "@/lib/avatar-borders";
+import { notifyUsers } from "@/lib/notifications/repository";
 import type { SocialLinks } from "@/types/profile";
 import type { FriendsFeed, FriendStatus, Person, PublicProfile } from "@/types/friends";
 
@@ -30,13 +31,17 @@ async function edgesOf(id: string) {
 
 async function fetchPublicProfiles(ids: string[]): Promise<ProfileRow[]> {
   const unique = [...new Set(ids)];
-  const rows: ProfileRow[] = [];
-  for (let i = 0; i < unique.length; i += IN_CHUNK_SIZE) {
-    const chunk = unique.slice(i, i + IN_CHUNK_SIZE);
-    const batch = must(await db().from("profiles").select(PUBLIC_COLUMNS).in("user_id", chunk)) as ProfileRow[];
-    rows.push(...batch);
-  }
-  return rows;
+  if (unique.length === 0) return [];
+  const batches = await Promise.all(
+    Array.from({ length: Math.ceil(unique.length / IN_CHUNK_SIZE) }, (_, idx) =>
+      db()
+        .from("profiles")
+        .select(PUBLIC_COLUMNS)
+        .in("user_id", unique.slice(idx * IN_CHUNK_SIZE, (idx + 1) * IN_CHUNK_SIZE))
+        .then((r) => must(r) as ProfileRow[]),
+    ),
+  );
+  return batches.flat();
 }
 
 /** Counts, for everyone else, how many of the viewer's friends are also their friend. */
@@ -46,16 +51,21 @@ async function countMutuals(viewerId: string, friendIds: string[]) {
   const friends = new Set(friendIds);
   const bump = (id: string) => { if (id !== viewerId) counts.set(id, (counts.get(id) ?? 0) + 1); };
 
-  for (let i = 0; i < friendIds.length; i += IN_CHUNK_SIZE) {
-    const chunk = friendIds.slice(i, i + IN_CHUNK_SIZE);
-    const [asked, received] = await Promise.all([
-      fetchAllPages<Edge>((from, to) =>
-        db().from("friendships").select("requester,addressee,status").eq("status", "accepted").in("requester", chunk).order("requester").order("addressee").range(from, to),
-      ),
-      fetchAllPages<Edge>((from, to) =>
-        db().from("friendships").select("requester,addressee,status").eq("status", "accepted").in("addressee", chunk).order("addressee").order("requester").range(from, to),
-      ),
-    ]);
+  const chunkBatches = await Promise.all(
+    Array.from({ length: Math.ceil(friendIds.length / IN_CHUNK_SIZE) }, (_, idx) => {
+      const chunk = friendIds.slice(idx * IN_CHUNK_SIZE, (idx + 1) * IN_CHUNK_SIZE);
+      return Promise.all([
+        fetchAllPages<Edge>((from, to) =>
+          db().from("friendships").select("requester,addressee,status").eq("status", "accepted").in("requester", chunk).order("requester").order("addressee").range(from, to),
+        ),
+        fetchAllPages<Edge>((from, to) =>
+          db().from("friendships").select("requester,addressee,status").eq("status", "accepted").in("addressee", chunk).order("addressee").order("requester").range(from, to),
+        ),
+      ]);
+    }),
+  );
+
+  for (const [asked, received] of chunkBatches) {
     for (const edge of asked) bump(edge.addressee);
     // A row between two of the viewer's friends was already counted once above, for the addressee.
     for (const edge of received) bump(edge.requester);
@@ -124,16 +134,25 @@ export async function getPublicProfile(viewer: Viewer, userId: string): Promise<
 
 export async function getFriendsFeed(viewer: Viewer, rawSearch: string): Promise<FriendsFeed> {
   const search = rawSearch.trim().slice(0, 40);
-  const related = await relationships(viewer);
-  const { statusOf, mutuals } = related;
 
-  let foundIds: string[] = [];
-  if (search.length >= 2) {
-    const pattern = `%${search.replace(/[\\%_]/g, "\\$&")}%`;
-    foundIds = (must(await db().from("profiles").select("user_id").ilike("display_name", pattern).limit(MAX_LISTED)) as { user_id: string }[]).map((r) => r.user_id);
-  } else if (viewer.campusId) {
-    foundIds = (must(await db().from("profiles").select("user_id").eq("campus_id", viewer.campusId).limit(MAX_LISTED)) as { user_id: string }[]).map((r) => r.user_id);
-  }
+  const foundPromise: PromiseLike<string[]> = search.length >= 2
+    ? db()
+        .from("profiles")
+        .select("user_id")
+        .ilike("display_name", `%${search.replace(/[\\%_]/g, "\\$&")}%`)
+        .limit(MAX_LISTED)
+        .then((r) => (must(r) as { user_id: string }[]).map((row) => row.user_id))
+    : viewer.campusId
+      ? db()
+          .from("profiles")
+          .select("user_id")
+          .eq("campus_id", viewer.campusId)
+          .limit(MAX_LISTED)
+          .then((r) => (must(r) as { user_id: string }[]).map((row) => row.user_id))
+      : Promise.resolve([]);
+
+  const [related, foundIds] = await Promise.all([relationships(viewer), foundPromise]);
+  const { statusOf, mutuals } = related;
 
   // Cap mutual-only suggestions to top MAX_LISTED before querying profiles to prevent HTTP 414 on large graphs.
   const topMutualIds = search.length >= 2
@@ -167,6 +186,7 @@ export async function performFriendAction(viewer: Viewer, input: unknown): Promi
   const userId = text(input, "userId");
   if (!userId || userId === viewer.id) return failed(400, "Choose another student.");
   const edge = (await edgesOf(viewer.id)).find((e) => e.requester === userId || e.addressee === userId);
+  const actorName = viewer.name || "A student";
 
   switch (input.action) {
     case "request": {
@@ -175,6 +195,12 @@ export async function performFriendAction(viewer: Viewer, input: unknown): Promi
       if (edge) {
         // They already asked, so asking back is the same as accepting.
         must(await db().from("friendships").update({ status: "accepted" }).eq("requester", userId).eq("addressee", viewer.id));
+        await notifyUsers([userId], {
+          kind: "friend_accepted",
+          title: `${actorName} accepted your friend request`,
+          body: "You are now friends on Exeku.",
+          href: `/app/friends/${encodeURIComponent(viewer.id)}`,
+        });
         return { ok: true };
       }
       const target = must(await db().from("profiles").select("user_id").eq("user_id", userId).maybeSingle());
@@ -182,11 +208,23 @@ export async function performFriendAction(viewer: Viewer, input: unknown): Promi
       const { error } = await db().from("friendships").insert({ requester: viewer.id, addressee: userId });
       if (error?.code === UNIQUE_VIOLATION) return failed(409, "Your request is already sent.");
       if (error) throw new Error(`Database error: ${error.message}`);
+      await notifyUsers([userId], {
+        kind: "friend_request",
+        title: `${actorName} sent you a friend request`,
+        body: "Open Friends to accept or decline.",
+        href: "/app/friends",
+      });
       return { ok: true };
     }
     case "accept": {
       if (!edge || edge.status !== "pending" || edge.addressee !== viewer.id) return failed(404, "That request is no longer waiting.");
       must(await db().from("friendships").update({ status: "accepted" }).eq("requester", userId).eq("addressee", viewer.id));
+      await notifyUsers([userId], {
+        kind: "friend_accepted",
+        title: `${actorName} accepted your friend request`,
+        body: "You are now friends on Exeku.",
+        href: `/app/friends/${encodeURIComponent(viewer.id)}`,
+      });
       return { ok: true };
     }
     case "remove": {

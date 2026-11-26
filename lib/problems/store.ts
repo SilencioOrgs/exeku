@@ -1,4 +1,5 @@
 import "server-only";
+import { getOrLoadPublic, invalidatePublicCache } from "@/lib/cache/public-cache";
 import { db, fetchAllPages, must } from "@/lib/db/client";
 import { getAllProblems, getProblemById, matchesProblemFilter, summarizeProblems, toVisibleProblem, type ProblemFilter } from "@/lib/problems/catalog";
 import { ALL_SUPPORTED_LANGUAGES, getStarterCode } from "@/lib/workspace-defaults";
@@ -30,6 +31,11 @@ type ProblemSummaryFallbackRow = Pick<
 >;
 
 const IN_CHUNK_SIZE = 100;
+const PUBLIC_SUMMARIES_TTL_MS = 30_000;
+
+export function invalidateProblemCatalogCache(): void {
+  invalidatePublicCache("problems:");
+}
 
 export const toProblem = (r: ProblemRow): ProgrammingProblem => ({
   id: r.id, slug: r.id, title: r.title, description: r.description, difficulty: r.difficulty, category: r.category, tags: r.tags,
@@ -83,15 +89,18 @@ export async function lockedProblemIdsFor(userId?: string, now = new Date().toIS
   const registeredEventIds = new Set<string>();
   if (userId) {
     const liveIds = liveEvents.map((e) => e.id);
-    for (let i = 0; i < liveIds.length; i += IN_CHUNK_SIZE) {
-      const memberships = must(
-        await db()
+    const batches = await Promise.all(
+      Array.from({ length: Math.ceil(liveIds.length / IN_CHUNK_SIZE) }, (_, idx) =>
+        db()
           .from("tournament_members")
           .select("event_id")
           .eq("user_id", userId)
-          .in("event_id", liveIds.slice(i, i + IN_CHUNK_SIZE)),
-      ) as { event_id: string }[];
-      for (const m of memberships) registeredEventIds.add(m.event_id);
+          .in("event_id", liveIds.slice(idx * IN_CHUNK_SIZE, (idx + 1) * IN_CHUNK_SIZE))
+          .then((r) => must(r) as { event_id: string }[]),
+      ),
+    );
+    for (const batch of batches) {
+      for (const m of batch) registeredEventIds.add(m.event_id);
     }
   }
 
@@ -132,12 +141,17 @@ async function canAccessClassProblem(
 
 /** Full problem including hidden tests. Only the judge may use this; browsers get findVisibleProblem. */
 export async function findProblem(id: string, options?: ProblemLookupOptions): Promise<ProgrammingProblem | null> {
-  if (!options?.includeLocked && (await lockedProblemIdsFor(options?.userId)).has(id)) return null;
   if (isClassProblemId(id) && !options?.includeLocked && !options?.userId) return null;
   const builtIn = getProblemById(id);
-  if (builtIn) return builtIn;
-  const row = must(await db().from("problems").select("*").eq("id", id).maybeSingle()) as ProblemRow | null;
-  if (!row) return null;
+  if (builtIn) {
+    if (!options?.includeLocked && (await lockedProblemIdsFor(options?.userId)).has(id)) return null;
+    return builtIn;
+  }
+  const [locked, row] = await Promise.all([
+    options?.includeLocked ? Promise.resolve(new Set<string>()) : lockedProblemIdsFor(options?.userId),
+    db().from("problems").select("*").eq("id", id).maybeSingle().then((r) => must(r) as ProblemRow | null),
+  ]);
+  if (locked.has(id) || !row) return null;
   if (isClassProblemId(id) && !options?.includeLocked) {
     if (!(await canAccessClassProblem(id, options?.userId, row.created_by))) return null;
   }
@@ -151,18 +165,137 @@ export async function findVisibleProblem(id: string, options?: ProblemLookupOpti
 
 /** Lightweight existence check that avoids loading hidden test cases JSONB. */
 export async function problemExists(id: string, options?: ProblemLookupOptions): Promise<boolean> {
-  if (!options?.includeLocked && (await lockedProblemIdsFor(options?.userId)).has(id)) return false;
   if (isClassProblemId(id) && !options?.includeLocked && !options?.userId) return false;
-  if (getProblemById(id)) return true;
-  const row = must(await db().from("problems").select("id,created_by").eq("id", id).maybeSingle()) as { id: string; created_by?: string | null } | null;
-  if (!row) return false;
+  if (getProblemById(id)) {
+    if (!options?.includeLocked && (await lockedProblemIdsFor(options?.userId)).has(id)) return false;
+    return true;
+  }
+  const [locked, row] = await Promise.all([
+    options?.includeLocked ? Promise.resolve(new Set<string>()) : lockedProblemIdsFor(options?.userId),
+    db().from("problems").select("id,created_by").eq("id", id).maybeSingle().then((r) => must(r) as { id: string; created_by?: string | null } | null),
+  ]);
+  if (locked.has(id) || !row) return false;
   if (isClassProblemId(id) && !options?.includeLocked) {
     return canAccessClassProblem(id, options?.userId, row.created_by);
   }
   return true;
 }
 
-async function fetchDbProblemSummaries(): Promise<ProblemSummary[]> {
+/**
+ * Targeted title lookup for a small set of problem IDs (notifications, class validation)
+ * without scanning the entire problem_summaries view or test_cases JSONB.
+ */
+export async function findProblemTitlesByIds(ids: string[]): Promise<Map<string, string>> {
+  const unique = [...new Set(ids.filter(Boolean))];
+  const titles = new Map<string, string>();
+  const missing: string[] = [];
+
+  for (const id of unique) {
+    const builtIn = getProblemById(id);
+    if (builtIn) titles.set(id, builtIn.title);
+    else missing.push(id);
+  }
+
+  if (missing.length === 0) return titles;
+
+  const batches = await Promise.all(
+    Array.from({ length: Math.ceil(missing.length / IN_CHUNK_SIZE) }, (_, idx) =>
+      db()
+        .from("problems")
+        .select("id,title")
+        .in("id", missing.slice(idx * IN_CHUNK_SIZE, (idx + 1) * IN_CHUNK_SIZE))
+        .then((r) => must(r) as { id: string; title: string }[]),
+    ),
+  );
+  for (const batch of batches) {
+    for (const row of batch) titles.set(row.id, row.title);
+  }
+  return titles;
+}
+
+function mapViewSummary(r: ProblemSummaryViewRow): ProblemSummary {
+  return {
+    id: r.id,
+    slug: r.id,
+    title: r.title,
+    difficulty: r.difficulty,
+    category: r.category,
+    tags: r.tags,
+    supportedLanguages: r.supported_languages,
+    sampleCount: r.sample_count,
+    totalTestsCount: r.total_tests_count,
+  };
+}
+
+function mapFallbackSummary(r: ProblemSummaryFallbackRow): ProblemSummary {
+  return {
+    id: r.id,
+    slug: r.id,
+    title: r.title,
+    difficulty: r.difficulty,
+    category: r.category,
+    tags: r.tags,
+    supportedLanguages: r.supported_languages,
+    sampleCount: (r.test_cases ?? []).filter((t) => !t.isHidden).length,
+    totalTestsCount: (r.test_cases ?? []).length,
+  };
+}
+
+/** Targeted summary lookup for known IDs (e.g., student view of a class's assigned problems). */
+export async function findProblemSummariesByIds(ids: string[]): Promise<ProblemSummary[]> {
+  const unique = [...new Set(ids.filter(Boolean))];
+  if (unique.length === 0) return [];
+
+  const summaries: ProblemSummary[] = [];
+  const missing: string[] = [];
+  for (const id of unique) {
+    const builtIn = getProblemById(id);
+    if (builtIn) summaries.push(...summarizeProblems([builtIn]));
+    else missing.push(id);
+  }
+  if (missing.length === 0) return summaries;
+
+  const chunks = Array.from({ length: Math.ceil(missing.length / IN_CHUNK_SIZE) }, (_, idx) =>
+    missing.slice(idx * IN_CHUNK_SIZE, (idx + 1) * IN_CHUNK_SIZE),
+  );
+
+  let usedView = false;
+  try {
+    const viewBatches = await Promise.all(
+      chunks.map((chunk) =>
+        db()
+          .from("problem_summaries")
+          .select("id,title,difficulty,category,tags,supported_languages,sample_count,total_tests_count")
+          .in("id", chunk)
+          .then((r) => must(r) as ProblemSummaryViewRow[]),
+      ),
+    );
+    const viewRows = viewBatches.flat();
+    if (viewRows.length > 0 && typeof viewRows[0]?.total_tests_count === "number") {
+      usedView = true;
+      for (const row of viewRows) summaries.push(mapViewSummary(row));
+    }
+  } catch {
+    /* Fall back to problems table if problem_summaries view is not migrated yet. */
+  }
+
+  if (!usedView) {
+    const fallbackBatches = await Promise.all(
+      chunks.map((chunk) =>
+        db()
+          .from("problems")
+          .select("id,title,difficulty,category,tags,supported_languages,test_cases")
+          .in("id", chunk)
+          .then((r) => must(r) as ProblemSummaryFallbackRow[]),
+      ),
+    );
+    for (const row of fallbackBatches.flat()) summaries.push(mapFallbackSummary(row));
+  }
+
+  return summaries;
+}
+
+async function loadRawDbProblemSummaries(): Promise<ProblemSummary[]> {
   try {
     const viewRows = await fetchAllPages<ProblemSummaryViewRow>((from, to) =>
       db()
@@ -174,17 +307,7 @@ async function fetchDbProblemSummaries(): Promise<ProblemSummary[]> {
     );
     // In tests or unmigrated DBs, a fake table without sample_count falls through below.
     if (viewRows.length > 0 && typeof viewRows[0]?.total_tests_count === "number") {
-      return viewRows.map((r) => ({
-        id: r.id,
-        slug: r.id,
-        title: r.title,
-        difficulty: r.difficulty,
-        category: r.category,
-        tags: r.tags,
-        supportedLanguages: r.supported_languages,
-        sampleCount: r.sample_count,
-        totalTestsCount: r.total_tests_count,
-      }));
+      return viewRows.map(mapViewSummary);
     }
   } catch {
     /* Fall back to problems table if problem_summaries view is not migrated yet. */
@@ -198,17 +321,11 @@ async function fetchDbProblemSummaries(): Promise<ProblemSummary[]> {
       .order("id")
       .range(from, to),
   );
-  return rows.map((r) => ({
-    id: r.id,
-    slug: r.id,
-    title: r.title,
-    difficulty: r.difficulty,
-    category: r.category,
-    tags: r.tags,
-    supportedLanguages: r.supported_languages,
-    sampleCount: (r.test_cases ?? []).filter((t) => !t.isHidden).length,
-    totalTestsCount: (r.test_cases ?? []).length,
-  }));
+  return rows.map(mapFallbackSummary);
+}
+
+async function fetchDbProblemSummaries(): Promise<ProblemSummary[]> {
+  return getOrLoadPublic("problems:summaries", PUBLIC_SUMMARIES_TTL_MS, loadRawDbProblemSummaries);
 }
 
 export async function listProblemSummaries(filter?: ProblemFilter, options?: ProblemLookupOptions): Promise<ProblemSummary[]> {

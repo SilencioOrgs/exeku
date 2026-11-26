@@ -31,7 +31,7 @@ import {
   type LearnChapter,
   type LearnChapterId,
 } from "@/lib/learn/curriculum";
-import { tokenize } from "@/lib/syntax";
+import { HighlightedBlock } from "./highlighted-block";
 import { ALL_SUPPORTED_LANGUAGES, getFilenameForLanguage, LANGUAGE_DISPLAY_NAMES } from "@/lib/workspace-defaults";
 import type { ExecutionResult } from "@/types/execution";
 import type { ProblemDifficulty } from "@/types/problem";
@@ -60,15 +60,7 @@ function writeCompleted(keys: string[]) {
   }
 }
 
-export function HighlightedBlock({ code, language }: { code: string; language: PreferredLanguage }) {
-  return (
-    <pre className="code-editor font-code overflow-x-auto rounded-xl border border-[var(--color-border)] p-3.5 text-xs leading-6">
-      {tokenize(code, language).map((t, i) =>
-        t.type === "plain" ? t.text : <span key={i} className={`tok-${t.type}`}>{t.text}</span>,
-      )}
-    </pre>
-  );
-}
+export { HighlightedBlock };
 
 export interface LearnViewProps {
   initialChapterId?: string | null;

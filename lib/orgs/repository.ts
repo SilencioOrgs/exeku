@@ -152,8 +152,7 @@ export async function getOrgDetail(orgId: string, viewer: Viewer): Promise<OrgDe
   const org = await findOrg(orgId);
   if (!org) return null;
 
-  const [viewerMember, viewerApp, members, events, scope, adviserNames] = await Promise.all([
-    db().from("org_members").select("role").eq("org_id", orgId).eq("user_id", viewer.id).maybeSingle().then((r) => must(r) as { role: OrgRole } | null),
+  const [viewerApp, members, events, scope, adviserNames] = await Promise.all([
     db().from("org_applications").select("status").eq("org_id", orgId).eq("user_id", viewer.id).maybeSingle().then((r) => must(r) as { status: "pending" | "rejected" } | null),
     fetchAllPages<MemberRow>((from, to) =>
       db().from("org_members").select("user_id,role,profiles(display_name)").eq("org_id", orgId).order("user_id").range(from, to),
@@ -165,25 +164,29 @@ export async function getOrgDetail(orgId: string, viewer: Viewer): Promise<OrgDe
     org.adviser_id ? fetchProfileNames([org.adviser_id]) : Promise.resolve(new Map<string, string>()),
   ]);
 
-  const viewerRole = viewerMember?.role ?? null;
+  const viewerRole = members.find((m) => m.user_id === viewer.id)?.role ?? null;
   const isAdviser = Boolean(org.adviser_id && org.adviser_id === viewer.id);
-  const pendingApplications = can(viewerRole, "reviewApplications", isAdviser)
-    ? await fetchAllPages<ApplicationRow>((from, to) =>
-        db()
-          .from("org_applications")
-          .select("id,user_id,program,status,profiles(display_name)")
-          .eq("org_id", orgId)
-          .eq("status", "pending")
-          .order("id")
-          .range(from, to),
-      )
-    : [];
-
-  const president = members.find((m) => m.role === "president");
   const effectiveScope = isAdviser && !scope.orgIds.includes(orgId)
     ? { ...scope, orgIds: [...scope.orgIds, orgId] }
     : scope;
-  const visibleEvents = (await toEvents(events)).filter((e) => canViewEvent(e, effectiveScope));
+
+  const [pendingApplications, resolvedEvents] = await Promise.all([
+    can(viewerRole, "reviewApplications", isAdviser)
+      ? fetchAllPages<ApplicationRow>((from, to) =>
+          db()
+            .from("org_applications")
+            .select("id,user_id,program,status,profiles(display_name)")
+            .eq("org_id", orgId)
+            .eq("status", "pending")
+            .order("id")
+            .range(from, to),
+        )
+      : Promise.resolve([] as ApplicationRow[]),
+    toEvents(events),
+  ]);
+
+  const president = members.find((m) => m.role === "president");
+  const visibleEvents = resolvedEvents.filter((e) => canViewEvent(e, effectiveScope));
   return {
     org: toSummary(org, {
       presidentName: president?.profiles.display_name,

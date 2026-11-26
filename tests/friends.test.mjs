@@ -21,7 +21,12 @@ const accepted = (requester, addressee) => ({ requester, addressee, status: "acc
 
 function harness(friendships = []) {
   const tables = { profiles: [person("me", "sc"), person("mate", "sc"), person("far", "other"), person("pal", "other")], friendships, leaderboard: [{ user_id: "far", solved: 3, points: 500 }] };
-  const repo = load("lib/friends/repository.ts", { "server-only": {}, "@/lib/db/client": { db: fakeDb(tables), must, fetchAllPages, exactCount }, "@/lib/accounts/rules": { isObject, text } });
+  const repo = load("lib/friends/repository.ts", {
+    "server-only": {},
+    "@/lib/db/client": { db: fakeDb(tables), must, fetchAllPages, exactCount },
+    "@/lib/accounts/rules": { isObject, text },
+    "@/lib/notifications/repository": { notifyUsers: async () => {} },
+  });
   return { tables, repo, me: { id: "me", name: "me", campusId: "sc" } };
 }
 

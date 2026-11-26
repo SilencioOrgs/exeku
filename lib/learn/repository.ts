@@ -1,6 +1,7 @@
 import "server-only";
 import { isObject, text } from "@/lib/accounts/rules";
 import type { Viewer } from "@/lib/auth/viewer";
+import { getOrLoadPublic } from "@/lib/cache/public-cache";
 import { db, isMissingRelationError } from "@/lib/db/client";
 import { LEARN_CHAPTERS, type LearnChapter, type LearnChapterId } from "@/lib/learn/curriculum";
 import { ALL_SUPPORTED_LANGUAGES } from "@/lib/workspace-defaults";
@@ -28,6 +29,7 @@ interface LearnProgressRow {
 const VALID_DIFFICULTIES = new Set<ProblemDifficulty>(["beginner", "intermediate", "advanced"]);
 const CHAPTER_ID_RE = /^[a-z0-9-]+$/;
 const BUILT_IN_BY_ID = new Map(LEARN_CHAPTERS.map((c) => [c.id as string, c]));
+const LEARN_CHAPTERS_TTL_MS = 300_000;
 
 function isValidLesson(value: unknown): boolean {
   if (!isObject(value)) return false;
@@ -76,13 +78,7 @@ function rowToChapter(row: LearnChapterRow): LearnChapter | null {
   };
 }
 
-export async function listLearnForViewer(viewer: Viewer): Promise<{
-  chapters: LearnChapter[];
-  completedKeys: string[];
-}> {
-  let chapters: LearnChapter[] = LEARN_CHAPTERS;
-  let completedKeys: string[] = [];
-
+async function loadPublicLearnChapters(): Promise<LearnChapter[]> {
   try {
     const { data: chapterRows, error: chapterError } = await db()
       .from("learn_chapters")
@@ -93,7 +89,9 @@ export async function listLearnForViewer(viewer: Viewer): Promise<{
       if (!isMissingRelationError(chapterError, ["learn_chapters"])) {
         console.error("[learn] failed to load learn_chapters:", chapterError.message);
       }
-    } else if (Array.isArray(chapterRows) && chapterRows.length > 0) {
+      return LEARN_CHAPTERS;
+    }
+    if (Array.isArray(chapterRows) && chapterRows.length > 0) {
       const dbById = new Map<string, LearnChapter>();
       for (const raw of chapterRows as LearnChapterRow[]) {
         const parsed = rowToChapter(raw);
@@ -103,38 +101,53 @@ export async function listLearnForViewer(viewer: Viewer): Promise<{
       for (const [id, ch] of dbById.entries()) {
         if (!merged.some((m) => m.id === id)) merged.push(ch);
       }
-      chapters = merged;
+      return merged;
     }
   } catch (err) {
     console.error("[learn] unexpected error loading learn_chapters:", err instanceof Error ? err.message : "unknown error");
   }
+  return LEARN_CHAPTERS;
+}
 
-  const validChapterIds = new Set(chapters.map((c) => c.id as string));
-
+async function loadUserLearnProgress(userId: string): Promise<LearnProgressRow[]> {
   try {
     const { data: progressRows, error: progressError } = await db()
       .from("learn_progress")
       .select("chapter_id,language")
-      .eq("user_id", viewer.id);
+      .eq("user_id", userId);
 
     if (progressError) {
       if (!isMissingRelationError(progressError, ["learn_progress"])) {
         console.error("[learn] failed to load learn_progress:", progressError.message);
       }
-    } else if (Array.isArray(progressRows)) {
-      completedKeys = (progressRows as LearnProgressRow[])
-        .filter((r) => r.chapter_id && validChapterIds.has(r.chapter_id) && ALL_SUPPORTED_LANGUAGES.includes(r.language))
-        .map((r) => `${r.language}:${r.chapter_id}`);
+      return [];
     }
+    return Array.isArray(progressRows) ? (progressRows as LearnProgressRow[]) : [];
   } catch (err) {
     console.error("[learn] unexpected error loading learn_progress:", err instanceof Error ? err.message : "unknown error");
+    return [];
   }
+}
+
+export async function listLearnForViewer(viewer: Pick<Viewer, "id">): Promise<{
+  chapters: LearnChapter[];
+  completedKeys: string[];
+}> {
+  const [chapters, progressRows] = await Promise.all([
+    getOrLoadPublic("learn:chapters", LEARN_CHAPTERS_TTL_MS, loadPublicLearnChapters),
+    loadUserLearnProgress(viewer.id),
+  ]);
+
+  const validChapterIds = new Set(chapters.map((c) => c.id as string));
+  const completedKeys = progressRows
+    .filter((r) => r.chapter_id && validChapterIds.has(r.chapter_id) && ALL_SUPPORTED_LANGUAGES.includes(r.language))
+    .map((r) => `${r.language}:${r.chapter_id}`);
 
   return { chapters, completedKeys };
 }
 
 export async function recordLearnCompletion(
-  viewer: Viewer,
+  viewer: Pick<Viewer, "id">,
   body: unknown,
 ): Promise<{ ok: true; key: string } | { ok: false; status: number; error: string }> {
   if (!isObject(body)) return { ok: false, status: 400, error: "Invalid request body." };

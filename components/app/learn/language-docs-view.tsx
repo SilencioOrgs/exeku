@@ -15,7 +15,7 @@ import {
   Search,
   Terminal,
 } from "lucide-react";
-import { HighlightedBlock } from "@/components/app/learn/learn-view";
+import { HighlightedBlock } from "@/components/app/learn/highlighted-block";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useProfile } from "@/hooks/use-profile";
 import {

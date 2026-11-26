@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Flame } from "lucide-react";
-import { fetchProgress } from "@/lib/accounts/api";
+import { fetchProgress, peekApiCache } from "@/lib/accounts/api";
+import { subscribeClientCache } from "@/lib/client/swr-cache";
 import type { Medal } from "@/types/tournament";
 import {
   CODING_ACTIVITY_EVENT,
@@ -30,14 +31,27 @@ function Stat({ label, value, lit }: { label: string; value: number; lit?: boole
 export function CodingActivity({ profileId }: { profileId: string }) {
   const [today] = useState(() => new Date());
   const [days, setDays] = useState<string[] | null>(null);
-  const [solvedAt, setSolvedAt] = useState<string[]>([]);
-  const [medals, setMedals] = useState<Medal[]>([]);
+  const [solvedAt, setSolvedAt] = useState<string[]>(
+    () => peekApiCache<{ solved: number; solvedAt: string[]; medals: Medal[] }>("/api/account/profile")?.solvedAt ?? [],
+  );
+  const [medals, setMedals] = useState<Medal[]>(
+    () => peekApiCache<{ solved: number; solvedAt: string[]; medals: Medal[] }>("/api/account/profile")?.medals ?? [],
+  );
   const scroller = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let live = true;
-    void fetchProgress().then((result) => { if (live && result.ok) { setSolvedAt(result.data.solvedAt); setMedals(result.data.medals); } });
-    return () => { live = false; };
+    const load = () => void fetchProgress().then((result) => {
+      if (live && result.ok) {
+        setSolvedAt(result.data.solvedAt);
+        setMedals(result.data.medals);
+      }
+    });
+    load();
+    const unsubscribe = subscribeClientCache((prefixes) => {
+      if (prefixes.some((p) => p === "*" || p.startsWith("/api/account/profile"))) load();
+    });
+    return () => { live = false; unsubscribe(); };
   }, [profileId]);
 
   useEffect(() => {

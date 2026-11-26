@@ -7,7 +7,8 @@ import { FriendsContentSkeleton } from "@/components/app/page-skeletons";
 import { PixelAvatar } from "@/components/retro/pixel-avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useProfile } from "@/hooks/use-profile";
-import { syncProfile } from "@/lib/accounts/api";
+import { peekApiCache, syncProfile } from "@/lib/accounts/api";
+import { subscribeClientCache } from "@/lib/client/swr-cache";
 import { fetchFriends, friendAction } from "@/lib/friends/api";
 import type { FriendsFeed, Person } from "@/types/friends";
 import { ConfirmDialog } from "@/components/app/workspace/submission-modals";
@@ -133,9 +134,44 @@ function Section({
   );
 }
 
+function applyOptimisticFriendAction(feed: FriendsFeed, action: FriendAction, id: string): FriendsFeed {
+  const target =
+    feed.requests.find((p) => p.id === id) ??
+    feed.friends.find((p) => p.id === id) ??
+    feed.people.find((p) => p.id === id);
+  if (!target) return feed;
+
+  if (action === "accept") {
+    const updated: Person = { ...target, status: "friends" };
+    return {
+      ...feed,
+      requests: feed.requests.filter((p) => p.id !== id),
+      friends: feed.friends.some((p) => p.id === id) ? feed.friends : [updated, ...feed.friends],
+      people: feed.people.map((p) => (p.id === id ? updated : p)),
+    };
+  }
+  if (action === "request") {
+    const updated: Person = { ...target, status: target.status === "incoming" ? "friends" : "outgoing" };
+    return {
+      ...feed,
+      requests: feed.requests.filter((p) => p.id !== id),
+      friends: updated.status === "friends" ? [updated, ...feed.friends] : feed.friends,
+      people: feed.people.map((p) => (p.id === id ? updated : p)),
+    };
+  }
+  // remove / decline / cancel
+  const updated: Person = { ...target, status: "none" };
+  return {
+    ...feed,
+    requests: feed.requests.filter((p) => p.id !== id),
+    friends: feed.friends.filter((p) => p.id !== id),
+    people: feed.people.map((p) => (p.id === id ? updated : p)),
+  };
+}
+
 export function FriendsView() {
   const { profile } = useProfile();
-  const [feed, setFeed] = useState<FriendsFeed | null>(null);
+  const [feed, setFeed] = useState<FriendsFeed | null>(() => peekApiCache<FriendsFeed>("/api/friends") ?? null);
   const [draft, setDraft] = useState("");
   const [search, setSearch] = useState("");
   const [error, setError] = useState<string>();
@@ -158,24 +194,31 @@ export function FriendsView() {
 
   useEffect(() => {
     let live = true;
-    void fetchFriends(search).then((result) => {
+    const load = () => void fetchFriends(search).then((result) => {
       if (!live) return;
       if (result.ok) { setFeed(result.data); setError(undefined); }
       else setError(result.error ?? "We couldn't load your friends.");
     });
-    return () => { live = false; };
+    load();
+    const unsubscribe = subscribeClientCache((prefixes) => {
+      if (prefixes.some((p) => p === "*" || p.startsWith("/api/friends"))) load();
+    });
+    return () => { live = false; unsubscribe(); };
   }, [search, version]);
 
   const act = async (action: FriendAction, id: string) => {
     if (busy) return false;
+    const prevFeed = feed;
     setBusy({ action, id });
     setError(undefined);
+    if (prevFeed) setFeed(applyOptimisticFriendAction(prevFeed, action, id));
     try {
       const result = await friendAction(action, id);
       if (result.ok) {
         setVersion((v) => v + 1);
         return true;
       }
+      if (prevFeed) setFeed(prevFeed);
       setError(result.error ?? "That didn't work. Try again.");
       return false;
     } finally {

@@ -11,6 +11,7 @@ import { DifficultyBadge } from "./difficulty-badge";
 import { EventBanner } from "./competition/event-banner";
 import { TopicFilter } from "./topic-filter";
 import { useChallengeSession } from "@/hooks/use-challenge-session";
+import { call, peekApiCache } from "@/lib/accounts/api";
 import { LabAppStrip } from "@/components/lab/lab-app-banner";
 import { LEARN_CHAPTERS } from "@/lib/learn/curriculum";
 import { inTopic, type TopicId } from "@/lib/problems/topics";
@@ -39,17 +40,20 @@ export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfil
   const router = useRouter();
   const challenge = useChallengeSession();
   const [editing, setEditing] = useState(false);
-  const [problems, setProblems] = useState<ProblemSummary[] | null>(null);
+  const [problems, setProblems] = useState<ProblemSummary[] | null>(
+    () => peekApiCache<{ problems?: ProblemSummary[] }>("/api/problems")?.problems ?? null,
+  );
   const [topic, setTopic] = useState<TopicId>("all");
   const [selectedLearnLang, setSelectedLearnLang] = useState<PreferredLanguage | null>(null);
   const learnLang = selectedLearnLang ?? profile.preferredLanguage;
 
   useEffect(() => {
     let active = true;
-    fetch("/api/problems")
-      .then((response) => { if (!response.ok) throw new Error("Problem catalog unavailable"); return response.json(); })
-      .then((data: { problems?: ProblemSummary[] }) => { if (active) setProblems(data.problems ?? []); })
-      .catch(() => { if (active) setProblems([]); });
+    void call<{ problems?: ProblemSummary[] }>("/api/problems").then((res) => {
+      if (!active) return;
+      if (res.ok) setProblems(res.data.problems ?? []);
+      else setProblems((prev) => prev ?? []);
+    });
     return () => { active = false; };
   }, []);
 

@@ -12,7 +12,17 @@ function load(path, modules) {
   const source = readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
   const output = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText;
   const loaded = { exports: {} };
-  vm.runInNewContext(output, { module: loaded, exports: loaded.exports, crypto, Date, require: (name) => { if (name in modules) return modules[name]; throw Error(`unexpected import: ${name}`); } });
+  vm.runInNewContext(output, {
+    module: loaded,
+    exports: loaded.exports,
+    crypto,
+    Date,
+    require: (name) => {
+      if (name in modules) return modules[name];
+      if (name === "@/lib/cache/public-cache") return { getOrLoadPublic: (_k, _t, fn) => fn(), invalidatePublicCache: () => {} };
+      throw Error(`unexpected import: ${name}`);
+    },
+  });
   return loaded.exports;
 }
 

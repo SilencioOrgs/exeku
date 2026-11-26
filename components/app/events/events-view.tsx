@@ -6,7 +6,9 @@ import Link from "next/link";
 import { CalendarPlus, Check } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useProfile } from "@/hooks/use-profile";
+import { peekApiCache } from "@/lib/accounts/api";
 import { bannerSrc } from "@/lib/banners";
+import { subscribeClientCache } from "@/lib/client/swr-cache";
 import { fetchEvents, orgAction } from "@/lib/orgs/api";
 import { eventAccessLabel } from "@/lib/orgs/rules";
 import type { CompetitionEvent, EventAccess, EventsFeed } from "@/types/competition";
@@ -88,22 +90,25 @@ function EventList({ title, events, empty, solved }: { title: string; events: Co
 
 export function EventsView() {
   const { profile } = useProfile();
-  const [feed, setFeed] = useState<EventsFeed | null>(null);
+  const [feed, setFeed] = useState<EventsFeed | null>(() => peekApiCache<EventsFeed>("/api/events") ?? null);
   const [error, setError] = useState<string>();
   const [filter, setFilter] = useState<EventAccess | "all">("all");
   const [posting, setPosting] = useState(false);
   const [version, setVersion] = useState(0);
-  const campusId = profile?.account?.school.campusId;
 
   useEffect(() => {
     let live = true;
-    void fetchEvents().then((result) => {
+    const load = () => void fetchEvents().then((result) => {
       if (!live) return;
       if (result.ok) { setFeed(result.data); setError(undefined); }
       else setError(result.error ?? "We couldn't load events.");
     });
-    return () => { live = false; };
-  }, [campusId, version]);
+    load();
+    const unsubscribe = subscribeClientCache((prefixes) => {
+      if (prefixes.some((p) => p === "*" || p.startsWith("/api/events"))) load();
+    });
+    return () => { live = false; unsubscribe(); };
+  }, [version]);
 
   const ready = Boolean(feed && profile);
   const shown = feed ? feed.events.filter((e) => filter === "all" || e.access === filter) : [];

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -26,7 +26,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { peekApiCache } from "@/lib/accounts/api";
 import { createTeacherClass, fetchClasses, joinClassWithCode } from "@/lib/classes/api";
+import { subscribeClientCache } from "@/lib/client/swr-cache";
 import type { FieldErrors } from "@/types/account";
 import type { ClassListPayload, ClassSummary } from "@/types/classes";
 
@@ -162,7 +164,7 @@ function ClassCard({ cls }: { cls: ClassSummary }) {
 
 export function ClassesView() {
   const router = useRouter();
-  const [data, setData] = useState<ClassListPayload | null>(null);
+  const [data, setData] = useState<ClassListPayload | null>(() => peekApiCache<ClassListPayload>("/api/classes") ?? null);
   const [error, setError] = useState<string>();
 
   const [joinOpen, setJoinOpen] = useState(false);
@@ -178,25 +180,24 @@ export function ClassesView() {
   const [createError, setCreateError] = useState<string>();
   const [creating, setCreating] = useState(false);
 
-  const load = useCallback(async () => {
-    const res = await fetchClasses();
-    if (res.ok) {
-      setData(res.data);
-      setError(undefined);
-    } else {
-      setError(res.error ?? "Could not load classes.");
-    }
-  }, []);
-
   useEffect(() => {
     let live = true;
-    void fetchClasses().then((res) => {
+    const load = () => void fetchClasses().then((res) => {
       if (!live) return;
-      if (res.ok) setData(res.data);
-      else setError(res.error ?? "Could not load classes.");
+      if (res.ok) {
+        setData(res.data);
+        setError(undefined);
+      } else {
+        setError(res.error ?? "Could not load classes.");
+      }
+    });
+    load();
+    const unsubscribe = subscribeClientCache((prefixes) => {
+      if (prefixes.some((p) => p === "*" || p.startsWith("/api/classes"))) load();
     });
     return () => {
       live = false;
+      unsubscribe();
     };
   }, []);
 
@@ -236,7 +237,6 @@ export function ClassesView() {
       setSection("");
       setDescription("");
       setCreateOpen(false);
-      await load();
       router.push(`/app/classes/${res.data.id}`);
     } finally {
       setCreating(false);

@@ -25,10 +25,13 @@ const statusAt = (now: number, startsAt: string, endsAt: string): TournamentStat
 /** Hidden tournaments answer exactly like missing ones. */
 async function loadVisible(viewer: Viewer, id: string) {
   if (!isUuid(id)) return null;
-  const row = must(await db().from("events").select(EVENT_COLUMNS).eq("id", id).maybeSingle()) as unknown as EventRow | null;
+  const [row, scope] = await Promise.all([
+    db().from("events").select(EVENT_COLUMNS).eq("id", id).maybeSingle().then((r) => must(r) as unknown as EventRow | null),
+    viewerScope(viewer),
+  ]);
   if (!row?.starts_at || !row.ends_at) return null;
   const [event] = await toEvents([row]);
-  if (!canViewEvent(event, await viewerScope(viewer))) return null;
+  if (!canViewEvent(event, scope)) return null;
   return { row, event, startsAt: row.starts_at, endsAt: row.ends_at, teamSize: row.team_size ?? 1 };
 }
 
@@ -44,8 +47,21 @@ async function loadRoster(eventId: string) {
   return { teams, members };
 }
 
-function groupMembersByTeam(members: MemberRow[]): Map<string, MemberRow[]> {
-  const byTeam = new Map<string, MemberRow[]>();
+/** Lightweight roster without profiles join (used by getMedals). */
+async function loadRosterIds(eventId: string) {
+  const [teams, members] = await Promise.all([
+    fetchAllPages<TeamRow>((from, to) =>
+      db().from("tournament_teams").select("id,name").eq("event_id", eventId).order("id").range(from, to),
+    ),
+    fetchAllPages<{ team_id: string; user_id: string }>((from, to) =>
+      db().from("tournament_members").select("team_id,user_id").eq("event_id", eventId).order("team_id").order("user_id").range(from, to),
+    ),
+  ]);
+  return { teams, members };
+}
+
+function groupMembersByTeam<T extends { team_id: string }>(members: T[]): Map<string, T[]> {
+  const byTeam = new Map<string, T[]>();
   for (const member of members) {
     const list = byTeam.get(member.team_id);
     if (list) list.push(member);
@@ -54,7 +70,7 @@ function groupMembersByTeam(members: MemberRow[]): Map<string, MemberRow[]> {
   return byTeam;
 }
 
-const entries = (teams: TeamRow[], byTeam: Map<string, MemberRow[]>): TeamEntry[] =>
+const entries = <T extends { team_id: string; user_id: string }>(teams: TeamRow[], byTeam: Map<string, T[]>): TeamEntry[] =>
   teams.map((t) => ({ id: t.id, memberIds: (byTeam.get(t.id) ?? []).map((m) => m.user_id) }));
 
 const IN_CHUNK_SIZE = 100;
@@ -63,14 +79,27 @@ const ENDED_RANK_CACHE_LIMIT = 200;
 // shortcut: process-local LRU cache; move to a persisted tournament_results table when running many multi-instance servers.
 const endedRankCache = new Map<string, ReturnType<typeof rankTeams>>();
 
+function storeEndedRank(cacheKey: string, ranked: ReturnType<typeof rankTeams>) {
+  if (endedRankCache.size >= ENDED_RANK_CACHE_LIMIT) {
+    const oldest = endedRankCache.keys().next().value;
+    if (oldest) endedRankCache.delete(oldest);
+  }
+  endedRankCache.set(cacheKey, ranked);
+}
+
 async function fetchEventsByIds(ids: string[]): Promise<EventRow[]> {
   const unique = [...new Set(ids.filter(Boolean))];
-  const out: EventRow[] = [];
-  for (let i = 0; i < unique.length; i += IN_CHUNK_SIZE) {
-    const chunk = unique.slice(i, i + IN_CHUNK_SIZE);
-    out.push(...(must(await db().from("events").select(EVENT_COLUMNS).in("id", chunk)) as unknown as EventRow[]));
-  }
-  return out;
+  if (unique.length === 0) return [];
+  const batches = await Promise.all(
+    Array.from({ length: Math.ceil(unique.length / IN_CHUNK_SIZE) }, (_, idx) =>
+      db()
+        .from("events")
+        .select(EVENT_COLUMNS)
+        .in("id", unique.slice(idx * IN_CHUNK_SIZE, (idx + 1) * IN_CHUNK_SIZE))
+        .then((r) => must(r) as unknown as EventRow[]),
+    ),
+  );
+  return batches.flat();
 }
 
 export async function getTournament(viewer: Viewer, id: string): Promise<TournamentView | null> {
@@ -79,7 +108,12 @@ export async function getTournament(viewer: Viewer, id: string): Promise<Tournam
   const { event, startsAt, endsAt, teamSize } = found;
   const now = Date.now();
   const status = statusAt(now, startsAt, endsAt);
-  const { teams, members } = await loadRoster(id);
+  const [{ teams, members }, violations] = await Promise.all([
+    loadRoster(id),
+    fetchAllPages<{ user_id: string }>((from, to) =>
+      db().from("tournament_violations").select("user_id").eq("event_id", id).order("id").range(from, to),
+    ),
+  ]);
   const membersByTeam = groupMembersByTeam(members);
   const teamByUser = new Map(members.map((m) => [m.user_id, m.team_id]));
   const problemIds = (event.problems ?? []).map((p) => p.id);
@@ -87,15 +121,28 @@ export async function getTournament(viewer: Viewer, id: string): Promise<Tournam
   const open = status !== "registration" && myTeamId !== null;
   const teamMembers = new Set((myTeamId ? membersByTeam.get(myTeamId) ?? [] : []).map((m) => m.user_id));
 
+  const endedCacheKey = `${id}:${endsAt}`;
+  const endedCacheable = status === "ended" && now - Date.parse(endsAt) > 5 * 60_000;
+  const cachedStandings = endedCacheable ? endedRankCache.get(endedCacheKey) : undefined;
+
   // While live, only fetch the viewer's own team solves (standings stay hidden until ended).
+  // When ended standings are already cached, only fetch the viewer's own team solves if they participated.
   const solveUserIds =
-    status === "ended" ? members.map((m) => m.user_id) : status === "live" && open ? [...teamMembers] : [];
+    status === "ended"
+      ? (cachedStandings ? (open ? [...teamMembers] : []) : members.map((m) => m.user_id))
+      : status === "live" && open
+        ? [...teamMembers]
+        : [];
   const solves = solveUserIds.length > 0 ? await solvesBetween(solveUserIds, startsAt, endsAt) : [];
-  const standings = status === "ended" ? rankTeams(entries(teams, membersByTeam), solves, problemIds) : [];
+  const standings =
+    status === "ended"
+      ? (cachedStandings ?? (() => {
+          const computed = rankTeams(entries(teams, membersByTeam), solves, problemIds);
+          if (endedCacheable) storeEndedRank(endedCacheKey, computed);
+          return computed;
+        })())
+      : [];
   const standingByTeam = new Map(standings.map((s) => [s.teamId, s]));
-  const violations = await fetchAllPages<{ user_id: string }>((from, to) =>
-    db().from("tournament_violations").select("user_id").eq("event_id", id).order("id").range(from, to),
-  );
   const warningsByTeam = new Map<string, number>();
   for (const v of violations) {
     const teamId = teamByUser.get(v.user_id);
@@ -140,16 +187,23 @@ export async function performTournamentAction(viewer: Viewer, id: string, input:
   if (!found) return failed(404, "That tournament wasn't found.");
   if (!isObject(input)) return failed(400, "Invalid request.");
   const status = statusAt(Date.now(), found.startsAt, found.endsAt);
-  const { teams, members } = await loadRoster(id);
-  const mine = members.find((m) => m.user_id === viewer.id);
 
+  // Fast path: violation heartbeats only need a single membership check, not the full roster + profiles.
   if (input.action === "violation") {
     const kind = text(input, "kind");
     if (!VIOLATION_KINDS.includes(kind)) return failed(400, "Unknown violation.");
-    if (status === "live" && mine) must(await db().from("tournament_violations").insert({ event_id: id, user_id: viewer.id, kind }));
+    if (status === "live") {
+      const mine = must(
+        await db().from("tournament_members").select("user_id").eq("event_id", id).eq("user_id", viewer.id).maybeSingle(),
+      ) as { user_id: string } | null;
+      if (mine) must(await db().from("tournament_violations").insert({ event_id: id, user_id: viewer.id, kind }));
+    }
     return { ok: true };
   }
+
   if (status !== "registration") return failed(409, "Registration has closed.");
+  const { teams, members } = await loadRoster(id);
+  const mine = members.find((m) => m.user_id === viewer.id);
 
   switch (input.action) {
     case "joinSolo": {
@@ -215,39 +269,68 @@ export async function performTournamentAction(viewer: Viewer, id: string, input:
   }
 }
 
-/** The tournament this student must be locked into right now, if any. A team that has solved everything is free to go. */
-export async function getActiveTournament(viewer: Viewer): Promise<ActiveTournament | null> {
+export interface TournamentScheduleState {
+  active: ActiveTournament | null;
+  /** Earliest start timestamp of an upcoming registered tournament, if any. */
+  nextStartsAt: string | null;
+  /** End timestamp of the currently active lockdown tournament, if any. */
+  activeEndsAt: string | null;
+}
+
+/** Returns the active lockdown tournament plus exact upcoming/ending timestamps for boundary scheduling. */
+export async function getTournamentScheduleState(viewer: Pick<Viewer, "id">): Promise<TournamentScheduleState> {
   const joined = must(await db().from("tournament_members").select("event_id,team_id").eq("user_id", viewer.id)) as { event_id: string; team_id: string }[];
-  if (joined.length === 0) return null;
+  if (joined.length === 0) return { active: null, nextStartsAt: null, activeEndsAt: null };
   const now = Date.now();
   const nowIso = new Date(now).toISOString();
   const joinedEventIds = [...new Set(joined.map((j) => j.event_id))];
-  const rows: EventRow[] = [];
-  for (let i = 0; i < joinedEventIds.length; i += IN_CHUNK_SIZE) {
-    const chunk = joinedEventIds.slice(i, i + IN_CHUNK_SIZE);
-    rows.push(
-      ...(must(
-        await db().from("events").select(EVENT_COLUMNS).in("id", chunk).lte("starts_at", nowIso).gt("ends_at", nowIso),
-      ) as unknown as EventRow[]),
-    );
-  }
+  const batches = await Promise.all(
+    Array.from({ length: Math.ceil(joinedEventIds.length / IN_CHUNK_SIZE) }, (_, idx) =>
+      db()
+        .from("events")
+        .select(EVENT_COLUMNS)
+        .in("id", joinedEventIds.slice(idx * IN_CHUNK_SIZE, (idx + 1) * IN_CHUNK_SIZE))
+        .gt("ends_at", nowIso)
+        .then((r) => must(r) as unknown as EventRow[]),
+    ),
+  );
+  const rows = batches.flat();
+  const upcomingStarts = rows
+    .filter((row) => row.starts_at && row.ends_at && statusAt(now, row.starts_at, row.ends_at) === "registration")
+    .map((row) => row.starts_at!)
+    .sort((a, b) => Date.parse(a) - Date.parse(b));
+  const nextStartsAt = upcomingStarts[0] ?? null;
+
   const liveRows = rows.filter((row) => row.starts_at && row.ends_at && statusAt(now, row.starts_at, row.ends_at) === "live");
-  if (liveRows.length === 0) return null;
+  if (liveRows.length === 0) return { active: null, nextStartsAt, activeEndsAt: null };
+
   // Resolve through toEvents so problems deleted after scheduling drop out instead of trapping the team in lockdown.
   const liveById = new Map((await toEvents(liveRows)).map((event) => [event.id, event]));
   for (const { event_id: eventId, team_id: teamId } of joined) {
     const event = liveById.get(eventId);
     if (!event?.tournament) continue;
     const team = must(await db().from("tournament_members").select("user_id").eq("team_id", teamId)) as { user_id: string }[];
-    const solved = new Set((await solvesBetween(team.map((m) => m.user_id), event.tournament.startsAt, event.tournament.endsAt)).map((s) => s.problemId));
+    const [solves, warnings] = await Promise.all([
+      solvesBetween(team.map((m) => m.user_id), event.tournament.startsAt, event.tournament.endsAt),
+      exactCount(
+        db().from("tournament_violations").select("id", { count: "exact", head: true }).eq("event_id", eventId).eq("user_id", viewer.id),
+      ),
+    ]);
+    const solved = new Set(solves.map((s) => s.problemId));
     const problems = (event.problems ?? []).map((p) => p.id);
     if (problems.length === 0 || problems.every((problemId) => solved.has(problemId))) continue;
-    const warnings = await exactCount(
-      db().from("tournament_violations").select("id", { count: "exact", head: true }).eq("event_id", eventId).eq("user_id", viewer.id),
-    );
-    return { id: event.id, title: event.title, warnings };
+    return {
+      active: { id: event.id, title: event.title, warnings },
+      nextStartsAt,
+      activeEndsAt: event.tournament.endsAt,
+    };
   }
-  return null;
+  return { active: null, nextStartsAt, activeEndsAt: null };
+}
+
+/** The tournament this student must be locked into right now, if any. A team that has solved everything is free to go. */
+export async function getActiveTournament(viewer: Pick<Viewer, "id">): Promise<ActiveTournament | null> {
+  return (await getTournamentScheduleState(viewer)).active;
 }
 
 /** Top 3 finishes in tournaments that have ended. A team with no points earns nothing. */
@@ -269,17 +352,11 @@ export async function getMedals(userId: string): Promise<Medal[]> {
       const cacheKey = `${eventId}:${event.tournament.endsAt}`;
       let ranked = cacheable ? endedRankCache.get(cacheKey) : undefined;
       if (!ranked) {
-        const { teams, members } = await loadRoster(eventId);
+        const { teams, members } = await loadRosterIds(eventId);
         const solves = await solvesBetween(members.map((m) => m.user_id), event.tournament.startsAt, event.tournament.endsAt);
         const problemIds = (event.problems ?? []).map((p) => p.id);
         ranked = rankTeams(entries(teams, groupMembersByTeam(members)), solves, problemIds);
-        if (cacheable) {
-          if (endedRankCache.size >= ENDED_RANK_CACHE_LIMIT) {
-            const oldest = endedRankCache.keys().next().value;
-            if (oldest) endedRankCache.delete(oldest);
-          }
-          endedRankCache.set(cacheKey, ranked);
-        }
+        if (cacheable) storeEndedRank(cacheKey, ranked);
       }
       const mine = ranked.find((s) => s.teamId === teamId);
       if (mine && mine.rank <= 3 && mine.points > 0) {

@@ -25,6 +25,8 @@ import { ConfirmDialog } from "@/components/app/workspace/submission-modals";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useProfile } from "@/hooks/use-profile";
+import { peekApiCache } from "@/lib/accounts/api";
+import { subscribeClientCache } from "@/lib/client/swr-cache";
 import { fetchOrg, orgAction } from "@/lib/orgs/api";
 import { can, eventAccessLabel } from "@/lib/orgs/rules";
 import type { OrgDetail } from "@/types/org";
@@ -34,7 +36,7 @@ const ROLE_LABELS = { president: "President", officer: "Officer", member: "Membe
 
 export function OrgView({ orgId }: { orgId: string }) {
   const { profile } = useProfile();
-  const [detail, setDetail] = useState<OrgDetail | null>(null);
+  const [detail, setDetail] = useState<OrgDetail | null>(() => peekApiCache<OrgDetail>(`/api/orgs/${encodeURIComponent(orgId)}`) ?? null);
   const [loadError, setLoadError] = useState<string>();
   const [actionError, setActionError] = useState<string>();
   const [notice, setNotice] = useState<string>();
@@ -43,17 +45,20 @@ export function OrgView({ orgId }: { orgId: string }) {
   const [postOpen, setPostOpen] = useState(false);
   const [pendingDecline, setPendingDecline] = useState<{ id: string; name: string } | null>(null);
   const [version, setVersion] = useState(0);
-  const campusId = profile?.account?.school.campusId;
 
   useEffect(() => {
     let live = true;
-    void fetchOrg(orgId).then((result) => {
+    const load = () => void fetchOrg(orgId).then((result) => {
       if (!live) return;
       if (result.ok) { setDetail(result.data); setLoadError(undefined); }
       else setLoadError(result.error ?? "We couldn't load this organization.");
     });
-    return () => { live = false; };
-  }, [orgId, campusId, version]);
+    load();
+    const unsubscribe = subscribeClientCache((prefixes) => {
+      if (prefixes.some((p) => p === "*" || p.startsWith("/api/orgs") || p.startsWith("/api/events"))) load();
+    });
+    return () => { live = false; unsubscribe(); };
+  }, [orgId, version]);
 
   const act = useCallback(async (key: string, body: Record<string, unknown>, okMessage?: string) => {
     setBusyKey(key);

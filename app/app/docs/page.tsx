@@ -4,7 +4,7 @@ import { PageSkeleton } from "@/components/app/page-skeletons";
 import { ALL_SUPPORTED_LANGUAGES } from "@/lib/workspace-defaults";
 import type { PreferredLanguage } from "@/types/profile";
 
-export default async function DocsPage({
+async function DocsContent({
   searchParams,
 }: {
   searchParams: Promise<{ topic?: string; lang?: string }>;
@@ -15,9 +15,17 @@ export default async function DocsPage({
       ? (params.lang as PreferredLanguage)
       : null;
 
+  return <LanguageDocsView initialTopicId={params.topic ?? null} initialLang={initialLang} />;
+}
+
+export default function DocsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ topic?: string; lang?: string }>;
+}) {
   return (
     <Suspense fallback={<PageSkeleton />}>
-      <LanguageDocsView initialTopicId={params.topic ?? null} initialLang={initialLang} />
+      <DocsContent searchParams={searchParams} />
     </Suspense>
   );
 }

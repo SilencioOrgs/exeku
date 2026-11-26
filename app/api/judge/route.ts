@@ -82,7 +82,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Submission request was canceled." }, { status: 499 });
     }
 
-    const milestone = await recordSubmission(problem, execLang, judgingResult.overallVerdict, submittedAt);
+    const milestone = await recordSubmission(problem, execLang, judgingResult.overallVerdict, submittedAt, userId);
     return NextResponse.json(milestone ? { ...judgingResult, milestone } : judgingResult);
   } catch (err: unknown) {
     if (err instanceof QueueAbortedError || req.signal.aborted) {

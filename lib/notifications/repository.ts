@@ -2,7 +2,7 @@ import "server-only";
 import { isObject, isUuid, text } from "@/lib/accounts/rules";
 import type { Viewer } from "@/lib/auth/viewer";
 import { db, fetchAllPages, isMissingRelationError, must } from "@/lib/db/client";
-import { listProblemSummaries } from "@/lib/problems/store";
+import { findProblemTitlesByIds, lockedProblemIdsFor } from "@/lib/problems/store";
 import type { NotificationItem, NotificationKind, NotificationsPayload } from "@/types/notifications";
 
 interface NotificationRow {
@@ -84,29 +84,37 @@ async function fetchStoredNotifications(userId: string): Promise<NotificationIte
  * Synthesizes upcoming/recently-overdue deadline alerts from enrolled class_problems
  * that the student has not solved yet, so deadlines stay visible even across migrations.
  */
-async function synthesizeDeadlineAlerts(viewer: Viewer, nowMs: number): Promise<NotificationItem[]> {
+async function synthesizeDeadlineAlerts(viewer: Pick<Viewer, "id">, nowMs: number): Promise<NotificationItem[]> {
   const memberships = await fetchAllPages<{ class_id: string }>((from, to) =>
     db().from("class_members").select("class_id").eq("user_id", viewer.id).order("class_id").range(from, to),
   );
   const classIds = memberships.map((m) => m.class_id);
   if (classIds.length === 0) return [];
 
-  const classRows: { id: string; name: string }[] = [];
-  const problemRows: { class_id: string; problem_id: string; assigned_at: string; due_at: string | null }[] = [];
-  for (let i = 0; i < classIds.length; i += IN_CHUNK_SIZE) {
-    const chunk = classIds.slice(i, i + IN_CHUNK_SIZE);
-    const [cBatch, pBatch] = await Promise.all([
-      db().from("classes").select("id,name").in("id", chunk).then((r) => must(r) as { id: string; name: string }[]),
-      db()
-        .from("class_problems")
-        .select("class_id,problem_id,assigned_at,due_at")
-        .in("class_id", chunk)
-        .not("due_at", "is", null)
-        .then((r) => must(r) as { class_id: string; problem_id: string; assigned_at: string; due_at: string | null }[]),
-    ]);
-    classRows.push(...cBatch);
-    problemRows.push(...pBatch);
-  }
+  const minDueIso = new Date(nowMs - DEADLINE_OVERDUE_WINDOW_MS).toISOString();
+  const maxDueIso = new Date(nowMs + DEADLINE_LOOKAHEAD_MS).toISOString();
+
+  const chunks = Array.from({ length: Math.ceil(classIds.length / IN_CHUNK_SIZE) }, (_, idx) =>
+    classIds.slice(idx * IN_CHUNK_SIZE, (idx + 1) * IN_CHUNK_SIZE),
+  );
+  const pairs = await Promise.all(
+    chunks.map((chunk) =>
+      Promise.all([
+        db().from("classes").select("id,name").in("id", chunk).then((r) => must(r) as { id: string; name: string }[]),
+        db()
+          .from("class_problems")
+          .select("class_id,problem_id,assigned_at,due_at")
+          .in("class_id", chunk)
+          .not("due_at", "is", null)
+          .gte("due_at", minDueIso)
+          .lte("due_at", maxDueIso)
+          .then((r) => must(r) as { class_id: string; problem_id: string; assigned_at: string; due_at: string | null }[]),
+      ]),
+    ),
+  );
+
+  const classRows = pairs.flatMap(([c]) => c);
+  const problemRows = pairs.flatMap(([, p]) => p);
 
   const urgent = problemRows.filter((row) => {
     if (!row.due_at) return false;
@@ -117,27 +125,31 @@ async function synthesizeDeadlineAlerts(viewer: Viewer, nowMs: number): Promise<
   if (urgent.length === 0) return [];
 
   const urgentProblemIds = [...new Set(urgent.map((u) => u.problem_id))];
-  const solvedRows: { problem_id: string }[] = [];
-  for (let i = 0; i < urgentProblemIds.length; i += IN_CHUNK_SIZE) {
-    const chunk = urgentProblemIds.slice(i, i + IN_CHUNK_SIZE);
-    const batch = must(
-      await db()
-        .from("submissions")
-        .select("problem_id")
-        .eq("user_id", viewer.id)
-        .eq("verdict", "ACCEPTED")
-        .in("problem_id", chunk),
-    ) as { problem_id: string }[];
-    solvedRows.push(...batch);
-  }
-  const catalog = await listProblemSummaries(undefined, { includeLocked: false, includeClassProblems: true });
+  const problemChunks = Array.from({ length: Math.ceil(urgentProblemIds.length / IN_CHUNK_SIZE) }, (_, idx) =>
+    urgentProblemIds.slice(idx * IN_CHUNK_SIZE, (idx + 1) * IN_CHUNK_SIZE),
+  );
 
-  const solvedSet = new Set(solvedRows.map((s) => s.problem_id));
+  const [solvedBatches, problemTitleById, lockedIds] = await Promise.all([
+    Promise.all(
+      problemChunks.map((chunk) =>
+        db()
+          .from("submissions")
+          .select("problem_id")
+          .eq("user_id", viewer.id)
+          .eq("verdict", "ACCEPTED")
+          .in("problem_id", chunk)
+          .then((r) => must(r) as { problem_id: string }[]),
+      ),
+    ),
+    findProblemTitlesByIds(urgentProblemIds),
+    lockedProblemIdsFor(viewer.id, new Date(nowMs).toISOString()),
+  ]);
+
+  const solvedSet = new Set(solvedBatches.flat().map((s) => s.problem_id));
   const classNameById = new Map(classRows.map((c) => [c.id, c.name]));
-  const problemTitleById = new Map(catalog.map((p) => [p.id, p.title]));
 
   return urgent
-    .filter((row) => !solvedSet.has(row.problem_id) && problemTitleById.has(row.problem_id))
+    .filter((row) => !solvedSet.has(row.problem_id) && !lockedIds.has(row.problem_id) && problemTitleById.has(row.problem_id))
     .map((row) => {
       const dueMs = Date.parse(row.due_at!);
       const overdue = dueMs < nowMs;
@@ -181,7 +193,7 @@ export async function listNotificationsForViewer(viewer: Viewer, nowMs = Date.no
 }
 
 export async function handleNotificationAction(
-  viewer: Viewer,
+  viewer: Pick<Viewer, "id">,
   body: unknown,
 ): Promise<{ ok: true } | { ok: false; status: number; error: string }> {
   if (!isObject(body)) return { ok: false, status: 400, error: "Invalid request." };

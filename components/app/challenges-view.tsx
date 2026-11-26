@@ -7,6 +7,8 @@ import { AlarmClock, BookOpen, FileText, GraduationCap, Search } from "lucide-re
 import { Select } from "@/components/ui/select";
 import { useChallengeSession } from "@/hooks/use-challenge-session";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { call, peekApiCache } from "@/lib/accounts/api";
+import { subscribeClientCache } from "@/lib/client/swr-cache";
 import { inTopic, SORT_OPTIONS, sortProblems, type SortId, type TopicId } from "@/lib/problems/topics";
 import { ALL_SUPPORTED_LANGUAGES, LANGUAGE_DISPLAY_NAMES } from "@/lib/workspace-defaults";
 import type { PreferredLanguage } from "@/types/profile";
@@ -29,7 +31,9 @@ export function ChallengesView() {
   const [topic, setTopic] = useState<TopicId>("all");
   const [sort, setSort] = useState<SortId>("default");
   const [searchQuery, setSearchQuery] = useState("");
-  const [problems, setProblems] = useState<ProblemSummary[] | null>(null);
+  const [problems, setProblems] = useState<ProblemSummary[] | null>(
+    () => peekApiCache<{ problems?: ProblemSummary[] }>("/api/problems")?.problems ?? null,
+  );
 
   const startTimed = (problem: ProblemSummary) => {
     const targetHref = `/app/workspace?problem=${encodeURIComponent(problem.id)}`;
@@ -42,32 +46,36 @@ export function ChallengesView() {
 
   // Always load public, redacted metadata through the API. Never ship server test cases.
   useEffect(() => {
-    const controller = new AbortController();
-    const delay = searchQuery.trim() ? 250 : 0;
-    const timer = setTimeout(() => {
-      const query = new URLSearchParams();
-      if (difficulty !== "all") query.set("difficulty", difficulty);
-      if (language !== "all") query.set("language", language);
-      if (searchQuery.trim()) query.set("search", searchQuery.trim());
-      fetch(`/api/problems?${query.toString()}`, { signal: controller.signal })
-        .then((response) => {
-          if (!response.ok) throw new Error("Unable to load problems");
-          return response.json();
-        })
-        .then((data: { problems?: ProblemSummary[] }) => {
-          if (!controller.signal.aborted) setProblems(data.problems ?? []);
-        })
-        .catch(() => {
-          if (!controller.signal.aborted) setProblems([]);
-        });
-    }, delay);
+    let active = true;
+    const load = () => void call<{ problems?: ProblemSummary[] }>("/api/problems").then((res) => {
+      if (!active) return;
+      if (res.ok) setProblems(res.data.problems ?? []);
+      else setProblems((prev) => prev ?? []);
+    });
+    load();
+    const unsubscribe = subscribeClientCache((prefixes) => {
+      if (prefixes.some((p) => p === "*" || p.startsWith("/api/problems"))) load();
+    });
     return () => {
-      clearTimeout(timer);
-      controller.abort();
+      active = false;
+      unsubscribe();
     };
-  }, [difficulty, language, searchQuery]);
+  }, []);
 
-  const visible = useMemo(() => sortProblems((problems ?? []).filter((p) => inTopic(p, topic)), sort), [problems, topic, sort]);
+  const visible = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const filtered = (problems ?? []).filter((p) => {
+      if (difficulty !== "all" && p.difficulty !== difficulty) return false;
+      if (language !== "all" && !p.supportedLanguages.includes(language)) return false;
+      if (!inTopic(p, topic)) return false;
+      if (q) {
+        const hay = `${p.title} ${p.category} ${p.tags.join(" ")}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+    return sortProblems(filtered, sort);
+  }, [problems, difficulty, language, topic, searchQuery, sort]);
   const noFiltersApplied = difficulty === "all" && language === "all" && topic === "all" && !searchQuery.trim();
 
   return (

@@ -5,22 +5,30 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Trophy } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
+import { peekApiCache } from "@/lib/accounts/api";
 import { bannerSrc } from "@/lib/banners";
+import { subscribeClientCache } from "@/lib/client/swr-cache";
 import { fetchEvents } from "@/lib/orgs/api";
 import { eventAccessLabel } from "@/lib/orgs/rules";
-import type { CompetitionEvent } from "@/types/competition";
+import type { CompetitionEvent, EventsFeed } from "@/types/competition";
 import type { LocalProfile } from "@/types/profile";
 
 export function EventBanner({ profile }: { profile: LocalProfile }) {
-  const [event, setEvent] = useState<CompetitionEvent | null>(null);
+  const [event, setEvent] = useState<CompetitionEvent | null>(
+    () => peekApiCache<EventsFeed>("/api/events")?.events.find((e) => e.featured) ?? null,
+  );
   const campusId = profile.account?.school.campusId;
 
   useEffect(() => {
     let live = true;
-    void fetchEvents().then((result) => {
+    const load = () => void fetchEvents().then((result) => {
       if (live && result.ok) setEvent(result.data.events.find((e) => e.featured) ?? null);
     });
-    return () => { live = false; };
+    load();
+    const unsubscribe = subscribeClientCache((prefixes) => {
+      if (prefixes.some((p) => p === "*" || p.startsWith("/api/events"))) load();
+    });
+    return () => { live = false; unsubscribe(); };
   }, [campusId]);
 
   if (!event) return null;

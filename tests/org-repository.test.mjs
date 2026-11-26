@@ -15,7 +15,12 @@ function load(path, modules) {
   const loaded = { exports: {} };
   vm.runInNewContext(output, {
     module: loaded, exports: loaded.exports, crypto, console,
-    require: (name) => { if (name in modules) return modules[name]; throw Error(`unexpected import: ${name}`); },
+    require: (name) => {
+      if (name in modules) return modules[name];
+      if (name === "@/lib/cache/public-cache") return { getOrLoadPublic: (_k, _t, fn) => fn(), invalidatePublicCache: () => {} };
+      if (name === "@/lib/competition/repository") return { invalidateLeaderboardCache: () => {} };
+      throw Error(`unexpected import: ${name}`);
+    },
   });
   return loaded.exports;
 }

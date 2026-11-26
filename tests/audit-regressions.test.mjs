@@ -44,6 +44,8 @@ function loadTs(path, modules, extraGlobals = {}) {
     ...extraGlobals,
     require: (name) => {
       if (name in modules) return modules[name];
+      if (name === "@/lib/cache/public-cache") return { getOrLoadPublic: (_k, _t, fn) => fn(), invalidatePublicCache: () => {} };
+      if (name === "@/lib/competition/repository") return { invalidateLeaderboardCache: () => {} };
       throw Error(`unexpected import: ${name}`);
     },
   });

@@ -24,6 +24,7 @@ function loadTs(path, modules) {
     console,
     require: (name) => {
       if (name in modules) return modules[name];
+      if (name === "@/lib/cache/public-cache") return { getOrLoadPublic: (_k, _t, fn) => fn(), invalidatePublicCache: () => {} };
       throw new Error(`unexpected import: ${name}`);
     },
   });
@@ -196,13 +197,32 @@ test("teacher creates class with invite code, student joins, teacher groups stud
     })),
   ];
 
+  const problemStoreStub = {
+    listProblemSummaries: async (_userId, opts) => {
+      const all = listAllSummaries();
+      return opts?.includeLocked ? all : all.filter((p) => !lockedIds.has(p.id));
+    },
+    findProblemTitlesByIds: async (ids) => {
+      const all = new Map(listAllSummaries().map((p) => [p.id, p.title]));
+      return new Map(ids.filter((id) => all.has(id)).map((id) => [id, all.get(id)]));
+    },
+    findProblemSummariesByIds: async (ids) => {
+      const wanted = new Set(ids);
+      return listAllSummaries().filter((p) => wanted.has(p.id));
+    },
+    lockedProblemIdsFor: async () => new Set(lockedIds),
+    invalidateProblemCatalogCache: () => {},
+    problemExists: async (id, opts) => {
+      if (!opts?.includeLocked && lockedIds.has(id)) return false;
+      return listAllSummaries().some((p) => p.id === id) || lockedIds.has(id);
+    },
+  };
+
   const notifRepo = loadTs("lib/notifications/repository.ts", {
     "server-only": {},
     "@/lib/accounts/rules": accountRules,
     "@/lib/db/client": { db: fakeDb(tables), exactCount, fetchAllPages, isMissingRelationError, must },
-    "@/lib/problems/store": {
-      listProblemSummaries: async () => listAllSummaries(),
-    },
+    "@/lib/problems/store": problemStoreStub,
   });
 
   const repo = loadTs("lib/classes/repository.ts", {
@@ -211,16 +231,7 @@ test("teacher creates class with invite code, student joins, teacher groups stud
     "@/lib/db/client": { db: fakeDb(tables), exactCount, fetchAllPages, isMissingRelationError, must },
     "@/lib/notifications/repository": notifRepo,
     "@/lib/workspace-defaults": workspaceDefaults,
-    "@/lib/problems/store": {
-      listProblemSummaries: async (_userId, opts) => {
-        const all = listAllSummaries();
-        return opts?.includeLocked ? all : all.filter((p) => !lockedIds.has(p.id));
-      },
-      problemExists: async (id, opts) => {
-        if (!opts?.includeLocked && lockedIds.has(id)) return false;
-        return listAllSummaries().some((p) => p.id === id) || lockedIds.has(id);
-      },
-    },
+    "@/lib/problems/store": problemStoreStub,
     "@/lib/roles/rules": roleRules,
     "./problem-rules": problemRules,
     "./rules": classRules,

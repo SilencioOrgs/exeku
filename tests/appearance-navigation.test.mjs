@@ -19,8 +19,10 @@ function shellHarness(storage, profileState = { profile: { id: 'profile' }, isLo
     require: name => {
       if (name === 'react') return react;
       if (name === 'react/jsx-runtime') return { jsx: (type, props) => ({ type, props }), jsxs: (type, props) => ({ type, props }) };
+      if (name === 'next/dynamic') return () => 'WelcomeDialog';
       if (name === 'next/navigation') return { useRouter: () => ({ replace: path => redirects.push(path) }) };
-      if (name === '@/hooks/use-profile') return { useProfile: () => profileState };
+      if (name === '@/hooks/use-profile') return { useProfile: () => profileState, ProfileProvider: ({ children }) => children };
+      if (name === '@/hooks/use-pulse') return { usePulse: () => null, PulseProvider: ({ children }) => children };
       if (name === './page-skeletons') return { AppShellSkeleton: 'AppShellSkeleton' };
       if (name === './events/tournament-lock') return { TournamentLock: 'TournamentLock' };
       if (name === './app-sidebar') return { AppSidebar: 'AppSidebar' };
@@ -30,7 +32,16 @@ function shellHarness(storage, profileState = { profile: { id: 'profile' }, isLo
       throw Error(name);
     },
   });
-  const render = () => { index = 0; return compiledModule.exports.AppShell({ children: 'Content' }); };
+  const expand = node => {
+    if (!node || typeof node !== 'object') return node;
+    if (typeof node.type === 'function') return expand(node.type(node.props ?? {}));
+    if (node.props && 'children' in node.props) {
+      const ch = node.props.children;
+      return { ...node, props: { ...node.props, children: Array.isArray(ch) ? ch.map(expand) : expand(ch) } };
+    }
+    return node;
+  };
+  const render = () => { index = 0; return expand(compiledModule.exports.AppShell({ children: 'Content' })); };
   render.redirects = redirects;
   return render;
 }

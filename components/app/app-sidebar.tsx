@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { BookOpen, ChevronDown, ChevronLeft, ChevronRight, Code2, LayoutDashboard, Timer, Trophy, UserRound, Users, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -23,6 +23,7 @@ const NAV: NavGroup[] = [
   { id: "account", label: "Account", icon: UserRound, items: [{ label: "Profile", href: "/app/profile" }, { label: "Settings", href: "/app/settings" }] },
 ];
 
+const prefetchedHrefs = new Set<string>();
 const isCurrent = (pathname: string, href: string) => href === "/app" ? pathname === "/app" : pathname === href || pathname.startsWith(href + "/");
 
 export interface AppSidebarProps {
@@ -38,6 +39,7 @@ const KEY = "appearance-nav-item flex min-h-10 items-center gap-3 rounded-lg px-
 
 export function AppSidebar({ profile, role, collapsed, onToggleCollapse, onNavigate, className }: AppSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const { isTimedActive, formattedTime, requestNavigation } = useChallengeSession();
   const nav = NAV;
   const currentGroup = nav.find((g) => g.items?.some((i) => isCurrent(pathname, i.href)))?.id ?? null;
@@ -45,8 +47,16 @@ export function AppSidebar({ profile, role, collapsed, onToggleCollapse, onNavig
   const [toggled, setToggled] = useState<{ path: string; id: string | null } | null>(null);
   const openId = toggled?.path === pathname ? toggled.id : currentGroup;
 
+  const warmRoute = (href: string) => {
+    if (prefetchedHrefs.has(href) || isCurrent(pathname, href)) return;
+    prefetchedHrefs.add(href);
+    router.prefetch(href);
+  };
+
   const navLink = (href: string, className: string, children: ReactNode, current: boolean, title?: string, activeGroup?: boolean) => (
     <Link href={href} prefetch={false} title={title} aria-label={title} aria-current={current ? "page" : undefined} data-active={activeGroup || undefined} className={className}
+      onMouseEnter={() => warmRoute(href)}
+      onFocus={() => warmRoute(href)}
       onClick={(event) => { if (!requestNavigation(href)) event.preventDefault(); else onNavigate?.(); }}>
       {children}
     </Link>

@@ -36,9 +36,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Select } from "@/components/ui/select";
+import { peekApiCache } from "@/lib/accounts/api";
 import { fetchClassDetail, postClassAction } from "@/lib/classes/api";
+import { subscribeClientCache } from "@/lib/client/swr-cache";
 import type { ClassActivityKind, ClassDetailPayload } from "@/types/classes";
 import { CreateProblemDialog } from "./create-problem-dialog";
+
+const LIVE_CLASS_POLL_MS = 20_000;
 
 function formatDueBadge(dueAt: string): { label: string; urgent: boolean } {
   const ms = Date.parse(dueAt);
@@ -58,10 +62,13 @@ function formatDueBadge(dueAt: string): { label: string; urgent: boolean } {
 
 export function ClassDetailView({ classId }: { classId: string }) {
   const router = useRouter();
-  const [detail, setDetail] = useState<ClassDetailPayload | null>(null);
+  const [detail, setDetail] = useState<ClassDetailPayload | null>(
+    () => peekApiCache<ClassDetailPayload>(`/api/classes/${encodeURIComponent(classId)}`) ?? null,
+  );
   const [error, setError] = useState<string>();
   const [notice, setNotice] = useState<string>();
   const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [assigningIds, setAssigningIds] = useState<Set<string>>(() => new Set());
   const [copied, setCopied] = useState(false);
 
   // Modals
@@ -108,13 +115,29 @@ export function ClassDetailView({ classId }: { classId: string }) {
 
   useEffect(() => {
     let live = true;
-    void fetchClassDetail(classId).then((res) => {
+    const refresh = () => void fetchClassDetail(classId).then((res) => {
       if (!live) return;
-      if (res.ok) setDetail(res.data);
-      else setError(res.error ?? "Could not load class.");
+      if (res.ok) {
+        setDetail(res.data);
+        setError(undefined);
+      } else {
+        setError(res.error ?? "Could not load class.");
+      }
+    });
+    refresh();
+    const timer = window.setInterval(() => {
+      if (!document.hidden) refresh();
+    }, LIVE_CLASS_POLL_MS);
+    const onVisible = () => { if (!document.hidden) refresh(); };
+    document.addEventListener("visibilitychange", onVisible);
+    const unsubscribe = subscribeClientCache((prefixes) => {
+      if (prefixes.some((p) => p === "*" || p.startsWith("/api/classes"))) refresh();
     });
     return () => {
       live = false;
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+      unsubscribe();
     };
   }, [classId]);
 
@@ -133,6 +156,45 @@ export function ClassDetailView({ classId }: { classId: string }) {
       return res;
     } finally {
       setBusyKey(null);
+    }
+  };
+
+  /** Optimistic per-student group assignment so teachers can organize rosters rapidly without freezing the page. */
+  const handleAssignGroup = async (userId: string, nextGroupId: string | null) => {
+    const snapshot = detail;
+    setError(undefined);
+    setAssigningIds((prev) => new Set(prev).add(userId));
+    if (snapshot) {
+      const nextGroupName = nextGroupId ? snapshot.groups.find((g) => g.id === nextGroupId)?.name : undefined;
+      const nextMembers = snapshot.members.map((m) =>
+        m.userId === userId ? { ...m, groupId: nextGroupId, groupName: nextGroupName } : m,
+      );
+      const countByGroup = new Map<string, number>();
+      for (const m of nextMembers) {
+        if (m.groupId) countByGroup.set(m.groupId, (countByGroup.get(m.groupId) ?? 0) + 1);
+      }
+      setDetail({
+        ...snapshot,
+        members: nextMembers,
+        groups: snapshot.groups.map((g) => ({ ...g, memberCount: countByGroup.get(g.id) ?? 0 })),
+      });
+    }
+    try {
+      const res = await postClassAction(classId, {
+        action: "assignMemberGroup",
+        userId,
+        groupId: nextGroupId,
+      });
+      if (!res.ok) {
+        if (snapshot) setDetail(snapshot);
+        setError(res.error ?? "Could not update group.");
+      }
+    } finally {
+      setAssigningIds((prev) => {
+        const next = new Set(prev);
+        next.delete(userId);
+        return next;
+      });
     }
   };
 
@@ -689,14 +751,8 @@ export function ClassDetailView({ classId }: { classId: string }) {
                           <Select
                             aria-label={`Assign group for ${member.name}`}
                             value={member.groupId ?? ""}
-                            disabled={anyBusy}
-                            onChange={(next) =>
-                              void act(`assign:${member.userId}`, {
-                                action: "assignMemberGroup",
-                                userId: member.userId,
-                                groupId: next || null,
-                              })
-                            }
+                            disabled={anyBusy || assigningIds.has(member.userId)}
+                            onChange={(next) => void handleAssignGroup(member.userId, next || null)}
                           >
                             <option value="">No group</option>
                             {detail.groups.map((g) => (

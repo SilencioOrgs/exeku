@@ -1,5 +1,6 @@
 import "server-only";
 import { getViewer } from "@/lib/auth/viewer";
+import { invalidateLeaderboardCache } from "@/lib/competition/repository";
 import { db, must } from "@/lib/db/client";
 import { firstSolves } from "@/lib/judge/solves";
 import type { ProblemDifficulty } from "@/types/problem";
@@ -14,18 +15,19 @@ export async function recordSubmission(
   language: string,
   verdict: string,
   submittedAt?: string,
+  knownUserId?: string,
 ): Promise<SolveMilestone | null> {
   if (NOT_A_RESULT.includes(verdict)) return null;
   try {
-    const viewer = await getViewer();
-    if (!viewer) return null;
+    const userId = knownUserId ?? (await getViewer())?.id;
+    if (!userId) return null;
     const accepted = verdict === "ACCEPTED";
     const isClassProblem = problem.id.startsWith("cls-");
     const points = accepted && !isClassProblem ? POINTS[problem.difficulty] : 0;
     const submissionId = crypto.randomUUID();
     const row = {
       id: submissionId,
-      user_id: viewer.id,
+      user_id: userId,
       problem_id: problem.id,
       language,
       verdict,
@@ -34,12 +36,22 @@ export async function recordSubmission(
     };
     must(await db().from("submissions").insert(row));
     if (!accepted) return null;
-    const earliest = must(
-      await db().from("submissions").select("id").eq("user_id", viewer.id).eq("problem_id", problem.id).eq("verdict", "ACCEPTED").order("created_at").order("id").limit(1),
-    ) as { id: string }[];
+    if (!isClassProblem) invalidateLeaderboardCache();
+    const [earliest, allFirstSolves] = await Promise.all([
+      db()
+        .from("submissions")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("problem_id", problem.id)
+        .eq("verdict", "ACCEPTED")
+        .order("created_at")
+        .order("id")
+        .limit(1)
+        .then((r) => must(r) as { id: string }[]),
+      firstSolves(userId),
+    ]);
     const firstSolve = earliest[0]?.id === submissionId;
-    const solved = (await firstSolves(viewer.id)).length;
-    return { firstSolve, points: firstSolve ? points : 0, solved };
+    return { firstSolve, points: firstSolve ? points : 0, solved: allFirstSolves.length };
   } catch (error) {
     console.error("Could not save submission:", error instanceof Error ? error.message : "unknown error");
     return null;

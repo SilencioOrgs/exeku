@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import {
   Bell,
   Building2,
@@ -12,10 +11,14 @@ import {
   GraduationCap,
   Loader2,
   Megaphone,
+  UserCheck,
+  UserPlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useChallengeSession } from "@/hooks/use-challenge-session";
+import { usePulse } from "@/hooks/use-pulse";
+import { subscribeClientCache } from "@/lib/client/swr-cache";
 import {
   fetchNotifications,
   markAllNotificationsRead,
@@ -45,12 +48,14 @@ function NotificationIcon({ kind }: { kind: NotificationKind }) {
   if (kind === "class_problem") return <Code2 size={15} className="text-[var(--color-primary-text)]" aria-hidden="true" />;
   if (kind === "org_status") return <Building2 size={15} className="text-[var(--color-mint)]" aria-hidden="true" />;
   if (kind === "faculty_status") return <GraduationCap size={15} className="text-[var(--color-mint)]" aria-hidden="true" />;
+  if (kind === "friend_request") return <UserPlus size={15} className="text-[var(--color-primary-text)]" aria-hidden="true" />;
+  if (kind === "friend_accepted") return <UserCheck size={15} className="text-[var(--color-mint)]" aria-hidden="true" />;
   return <Megaphone size={15} className="text-[var(--color-primary-text)]" aria-hidden="true" />;
 }
 
 export function NotificationsBell({ onRoleLoaded }: { onRoleLoaded?: (role: UserRole) => void }) {
-  const pathname = usePathname();
   const { requestNavigation } = useChallengeSession();
+  const pulseCtx = usePulse();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [markingAll, setMarkingAll] = useState(false);
@@ -69,15 +74,20 @@ export function NotificationsBell({ onRoleLoaded }: { onRoleLoaded?: (role: User
     }
   }, [onRoleLoaded]);
 
+  // Initial load once on mount + reactively refresh when /api/pulse or another tab invalidates notifications.
+  // Never refetches on every sidebar pathname change.
   useEffect(() => {
     const timer = setTimeout(() => void load(), 0);
-    const onFocus = () => void load();
-    window.addEventListener("focus", onFocus);
+    const unsubscribe = subscribeClientCache((prefixes) => {
+      if (prefixes.some((p) => p === "*" || p.startsWith("/api/notifications"))) {
+        void load();
+      }
+    });
     return () => {
       clearTimeout(timer);
-      window.removeEventListener("focus", onFocus);
+      unsubscribe();
     };
-  }, [load, pathname]);
+  }, [load]);
 
   useEffect(() => {
     if (!open) return;
@@ -105,27 +115,47 @@ export function NotificationsBell({ onRoleLoaded }: { onRoleLoaded?: (role: User
   const handleItemClick = (item: NotificationItem) => {
     setOpen(false);
     if (!item.read && !item.synthetic) {
+      const prevItems = items;
+      const prevUnread = unreadCount;
       setItems((prev) => prev.map((n) => (n.id === item.id ? { ...n, read: true } : n)));
       setUnreadCount((c) => Math.max(0, c - 1));
-      void markNotificationRead(item.id);
+      void markNotificationRead(item.id).then((res) => {
+        if (!res.ok) {
+          setItems(prevItems);
+          setUnreadCount(prevUnread);
+        } else {
+          void pulseCtx?.refresh(true);
+        }
+      });
     }
   };
 
   const handleMarkAll = async () => {
+    const prevItems = items;
+    const prevUnread = unreadCount;
+    const nextItems = prevItems.map((n) => (n.synthetic ? n : { ...n, read: true }));
     setMarkingAll(true);
+    setItems(nextItems);
+    setUnreadCount(nextItems.filter((n) => !n.read).length);
     try {
       const res = await markAllNotificationsRead();
-      if (res.ok) {
-        setItems((prev) => {
-          const next = prev.map((n) => (n.synthetic ? n : { ...n, read: true }));
-          setUnreadCount(next.filter((n) => !n.read).length);
-          return next;
-        });
+      if (!res.ok) {
+        setItems(prevItems);
+        setUnreadCount(prevUnread);
+      } else {
+        void pulseCtx?.refresh(true);
       }
     } finally {
       setMarkingAll(false);
     }
   };
+
+  // Combine synthetic unread deadlines already loaded with live stored unread count from /api/pulse.
+  const syntheticUnread = items.filter((n) => n.synthetic && !n.read).length;
+  const displayedUnread =
+    pulseCtx?.pulse !== null && pulseCtx?.pulse !== undefined
+      ? Math.max(unreadCount, pulseCtx.pulse.notificationsUnread + syntheticUnread)
+      : unreadCount;
 
   const hasStoredUnread = items.some((n) => !n.read && !n.synthetic);
 
@@ -136,7 +166,7 @@ export function NotificationsBell({ onRoleLoaded }: { onRoleLoaded?: (role: User
         type="button"
         variant="ghost"
         size="icon"
-        aria-label={unreadCount > 0 ? `Notifications (${unreadCount} unread)` : "Notifications"}
+        aria-label={displayedUnread > 0 ? `Notifications (${displayedUnread} unread)` : "Notifications"}
         aria-expanded={open}
         aria-haspopup="dialog"
         onClick={() => {
@@ -147,9 +177,9 @@ export function NotificationsBell({ onRoleLoaded }: { onRoleLoaded?: (role: User
         className="relative"
       >
         <Bell size={17} aria-hidden="true" />
-        {unreadCount > 0 && (
+        {displayedUnread > 0 && (
           <span className="font-code absolute -top-0.5 -right-0.5 grid min-w-[18px] place-items-center rounded-full bg-[var(--color-primary)] px-1 text-xs font-semibold leading-[18px] text-[var(--primary-foreground)]">
-            {unreadCount > 9 ? "9+" : unreadCount}
+            {displayedUnread > 9 ? "9+" : displayedUnread}
           </span>
         )}
       </Button>
@@ -163,9 +193,9 @@ export function NotificationsBell({ onRoleLoaded }: { onRoleLoaded?: (role: User
           <div className="flex items-center justify-between gap-2 border-b border-[var(--color-border)] px-4 py-3">
             <div className="flex items-center gap-2">
               <h2 className="text-sm font-semibold">Notifications</h2>
-              {unreadCount > 0 && (
+              {displayedUnread > 0 && (
                 <span className="rounded-md bg-[var(--color-surface)] px-1.5 py-0.5 font-code text-xs text-[var(--color-primary-text)]">
-                  {unreadCount} new
+                  {displayedUnread} new
                 </span>
               )}
             </div>

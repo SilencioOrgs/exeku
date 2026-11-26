@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Maximize, TriangleAlert } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { usePulse } from "@/hooks/use-pulse";
 import { fetchActiveTournament, TOURNAMENT_REFRESH_EVENT, tournamentAction } from "@/lib/orgs/api";
 import type { ActiveTournament } from "@/types/tournament";
 
@@ -21,40 +22,33 @@ const keyboardLock = () => (navigator as Navigator & { keyboard?: { lock?: () =>
  */
 export function TournamentLock() {
   const pathname = usePathname();
-  const [active, setActive] = useState<ActiveTournament | null>(null);
+  const pulseCtx = usePulse();
+  const hasSharedPulse = pulseCtx !== null;
+  const [standaloneActive, setStandaloneActive] = useState<ActiveTournament | null>(null);
   const [fullscreen, setFullscreen] = useState(false);
-  const [warnings, setWarnings] = useState(0);
+  const [localExtraWarnings, setLocalExtraWarnings] = useState<{ id: string; count: number } | null>(null);
   const [notice, setNotice] = useState<string>();
   const [enterError, setEnterError] = useState<string>();
   const wasActive = useRef(false);
   const wasFullscreen = useRef(false);
   const lastReport = useRef(0);
   const overlay = useRef<HTMLDivElement>(null);
-  const activeId = active?.id;
 
+  const active: ActiveTournament | null = hasSharedPulse
+    ? (pulseCtx.pulse?.activeTournament ?? null)
+    : standaloneActive;
+  const activeId = active?.id;
+  const warnings = active
+    ? Math.max(active.warnings, localExtraWarnings?.id === active.id ? localExtraWarnings.count : 0)
+    : 0;
+
+  // Fallback polling only when mounted outside PulseProvider.
   useEffect(() => {
+    if (hasSharedPulse) return;
     let live = true;
-    let lastActiveId: string | null = null;
     const load = () => void fetchActiveTournament().then((result) => {
       if (!live || !result.ok) return;
-      const next = result.data.active;
-      setActive(next);
-      if (!next) {
-        setWarnings(0);
-        lastActiveId = null;
-      } else if (next.id !== lastActiveId) {
-        setWarnings(next.warnings);
-        lastActiveId = next.id;
-      } else {
-        setWarnings((count) => Math.max(count, next.warnings));
-      }
-      // The tournament ended or the team finished, so hand the screen back without counting it as leaving.
-      if (wasActive.current && !next) {
-        wasFullscreen.current = false;
-        keyboardLock()?.unlock?.();
-        if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
-      }
-      wasActive.current = Boolean(next);
+      setStandaloneActive(result.data.active);
     });
     const poll = () => { if (!document.hidden) load(); };
     const onVisible = () => { if (!document.hidden) load(); };
@@ -68,7 +62,17 @@ export function TournamentLock() {
       window.removeEventListener(TOURNAMENT_REFRESH_EVENT, load);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, []);
+  }, [hasSharedPulse]);
+
+  // Hand the screen back cleanly when the tournament ends or the team finishes all problems.
+  useEffect(() => {
+    if (wasActive.current && !activeId) {
+      wasFullscreen.current = false;
+      keyboardLock()?.unlock?.();
+      if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+    }
+    wasActive.current = Boolean(activeId);
+  }, [activeId]);
 
   useEffect(() => {
     if (!activeId) return;
@@ -77,7 +81,14 @@ export function TournamentLock() {
       const now = Date.now();
       if (now - lastReport.current < REPORT_GAP_MS) return;
       lastReport.current = now;
-      setWarnings((count) => count + 1);
+      if (pulseCtx) {
+        pulseCtx.noteTournamentWarning();
+      } else {
+        setLocalExtraWarnings((prev) => ({
+          id: activeId,
+          count: (prev?.id === activeId ? prev.count : (active?.warnings ?? 0)) + 1,
+        }));
+      }
       setNotice(message);
       void tournamentAction(activeId, { action: "violation", kind });
     };
@@ -104,7 +115,7 @@ export function TournamentLock() {
       window.removeEventListener("blur", onBlur);
       BLOCKED_EVENTS.forEach((name) => document.removeEventListener(name, block, true));
     };
-  }, [activeId]);
+  }, [activeId, active?.warnings, pulseCtx]);
 
   useEffect(() => {
     if (!notice) return;

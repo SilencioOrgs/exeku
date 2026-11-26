@@ -31,6 +31,8 @@ import {
 import { findLearnChapterById } from "@/lib/learn/curriculum";
 import { isRealVerdict } from "@/lib/verdicts";
 import { ALL_SUPPORTED_LANGUAGES } from "@/lib/workspace-defaults";
+import { call, peekApiCache } from "@/lib/accounts/api";
+import { invalidateClientCache } from "@/lib/client/swr-cache";
 import { fetchEvents, TOURNAMENT_REFRESH_EVENT } from "@/lib/orgs/api";
 import { cn } from "@/lib/utils";
 import type { ProblemSummary, VisibleProblem } from "@/types/problem";
@@ -178,24 +180,44 @@ export function WorkspaceView() {
 
   useEffect(() => {
     let current = true;
-    fetch("/api/health")
-      .then((res) => res.ok ? res.json() : null)
-      .then((data) => { if (current && data?.sandbox) setSandboxHealth(data.sandbox); })
-      .catch(() => { if (current) setSandboxHealth({ isAvailable: false, engine: "Exeku judge (unreachable)", supportedLanguages: [] }); });
-    fetch("/api/problems")
-      .then((res) => { if (!res.ok) throw new Error("Catalog unavailable"); return res.json(); })
-      .then((data: { problems?: ProblemSummary[] }) => { if (current) setProblemIds((data.problems ?? []).map((entry) => entry.id)); })
-      .catch(() => { if (current) setProblemIds([]); });
-    return () => { current = false; };
+    const checkHealth = () =>
+      fetch("/api/health")
+        .then((res) => res.ok ? res.json() : null)
+        .then((data) => { if (current && data?.sandbox) setSandboxHealth(data.sandbox); })
+        .catch(() => { if (current) setSandboxHealth({ isAvailable: false, engine: "Exeku judge (unreachable)", supportedLanguages: [] }); });
+    void checkHealth();
+    const cachedProblems = peekApiCache<{ problems?: ProblemSummary[] }>("/api/problems");
+    if (cachedProblems?.problems) {
+      queueMicrotask(() => { if (current) setProblemIds(cachedProblems.problems!.map((entry) => entry.id)); });
+    }
+    void call<{ problems?: ProblemSummary[] }>("/api/problems").then((res) => {
+      if (!current) return;
+      if (res.ok) setProblemIds((res.data.problems ?? []).map((entry) => entry.id));
+      else if (!cachedProblems) setProblemIds([]);
+    });
+    const onFocus = () => {
+      if (!document.hidden) void checkHealth();
+    };
+    window.addEventListener("focus", onFocus);
+    return () => {
+      current = false;
+      window.removeEventListener("focus", onFocus);
+    };
   }, []);
 
   useEffect(() => {
     let current = true;
     if (!problemIdParam) { queueMicrotask(() => { if (current) setProblem(null); }); return () => { current = false; }; }
-    fetch(`/api/problems/${encodeURIComponent(problemIdParam)}`)
-      .then((res) => res.ok ? res.json() as Promise<VisibleProblem> : null)
-      .then((data) => { if (current) setProblem(data); })
-      .catch(() => { if (current) setProblem(null); });
+    const path = `/api/problems/${encodeURIComponent(problemIdParam)}`;
+    const cached = peekApiCache<VisibleProblem>(path);
+    if (cached) {
+      queueMicrotask(() => { if (current) setProblem(cached); });
+    }
+    void call<VisibleProblem>(path).then((res) => {
+      if (!current) return;
+      if (res.ok) setProblem(res.data);
+      else if (!cached) setProblem(null);
+    });
     return () => { current = false; };
   }, [problemIdParam]);
 
@@ -377,8 +399,11 @@ export function WorkspaceView() {
     showResults("results");
     const result = await judge.submit(problem.id, source());
     if (!result) return;
-    if (result.overallVerdict === "ACCEPTED") window.dispatchEvent(new Event(TOURNAMENT_REFRESH_EVENT));
-    if (result.overallVerdict === "ACCEPTED") setEventRun((run) => run && run.problemIds.includes(problem.id) && !run.solved.includes(problem.id) ? { ...run, solved: [...run.solved, problem.id] } : run);
+    if (result.overallVerdict === "ACCEPTED") {
+      window.dispatchEvent(new Event(TOURNAMENT_REFRESH_EVENT));
+      invalidateClientCache(["/api/events", "/api/classes", "/api/account/profile", "/api/notifications"]);
+      setEventRun((run) => run && run.problemIds.includes(problem.id) && !run.solved.includes(problem.id) ? { ...run, solved: [...run.solved, problem.id] } : run);
+    }
     // Only real verdicts for the active challenge's problem count; sandbox errors or other problems never credit it.
     if (challenge.isTimedActive && challenge.session?.problemId === problem.id && isRealVerdict(result.overallVerdict)) {
       challenge.recordSubmissionAttempt(result.overallVerdict);

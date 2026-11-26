@@ -3,7 +3,14 @@ import { isObject, isUuid, text } from "@/lib/accounts/rules";
 import type { Viewer } from "@/lib/auth/viewer";
 import { db, fetchAllPages, isMissingRelationError, must } from "@/lib/db/client";
 import { notifyUsers } from "@/lib/notifications/repository";
-import { listProblemSummaries, problemExists } from "@/lib/problems/store";
+import {
+  findProblemSummariesByIds,
+  findProblemTitlesByIds,
+  invalidateProblemCatalogCache,
+  listProblemSummaries,
+  lockedProblemIdsFor,
+  problemExists,
+} from "@/lib/problems/store";
 import { canCreateClasses } from "@/lib/roles/rules";
 import { ALL_SUPPORTED_LANGUAGES } from "@/lib/workspace-defaults";
 import type { FieldErrors } from "@/types/account";
@@ -205,7 +212,7 @@ export async function listClassesForViewer(viewer: Viewer): Promise<ClassListPay
     };
   }
 
-  const [allMembers, allGroups, rawProblems, teacherProfiles, unlockedSummaries] = await Promise.all([
+  const [allMembers, allGroups, rawProblems, teacherProfiles] = await Promise.all([
     fetchChunked(allClassIds, (chunk) =>
       fetchAllPages<{ class_id: string }>((from, to) =>
         db().from("class_members").select("class_id").in("class_id", chunk).order("class_id").order("user_id").range(from, to),
@@ -222,11 +229,13 @@ export async function listClassesForViewer(viewer: Viewer): Promise<ClassListPay
       ),
     ),
     loadProfiles(allClasses.map((c) => c.teacher_id)),
-    listProblemSummaries(undefined, { includeLocked: false, includeClassProblems: true }),
   ]);
 
-  const validProblemIds = new Set(unlockedSummaries.map((p) => p.id));
-  const allProblems = rawProblems.filter((p) => validProblemIds.has(p.problem_id));
+  const rawAssignedIds = [...new Set(rawProblems.map((p) => p.problem_id))];
+  const [validTitles, lockedIds] = rawAssignedIds.length > 0
+    ? await Promise.all([findProblemTitlesByIds(rawAssignedIds), lockedProblemIdsFor(viewer.id)])
+    : [new Map<string, string>(), new Set<string>()];
+  const allProblems = rawProblems.filter((p) => validTitles.has(p.problem_id) && !lockedIds.has(p.problem_id));
 
   // Compute viewer's accepted solves across enrolled class problems for card progress bars.
   const enrolledProblemIds = [
@@ -398,8 +407,13 @@ export async function getClassDetail(viewer: Viewer, classId: string): Promise<C
 
   const [profiles, catalogSummaries] = await Promise.all([
     loadProfiles([cls.teacher_id, ...members.map((m) => m.user_id)]),
-    // Classes only expose unlocked practice problems (never upcoming or private live tournament problems).
-    listProblemSummaries(undefined, { includeLocked: false, includeClassProblems: true }),
+    // Teachers need the full catalog picker; students only need summaries for assigned problems.
+    isTeacher
+      ? listProblemSummaries(undefined, { includeLocked: false, includeClassProblems: true, userId: viewer.id })
+      : Promise.all([
+          findProblemSummariesByIds(assigned.map((p) => p.problem_id)),
+          lockedProblemIdsFor(viewer.id),
+        ]).then(([summaries, locked]) => summaries.filter((p) => !locked.has(p.id))),
   ]);
 
   const groupNameById = new Map(groups.map((g) => [g.id, g.name]));
@@ -588,11 +602,11 @@ export async function performClassAction(
     if (error?.code === "23505") return { ok: true };
     if (error) throw new Error(`Database error: ${error.message}`);
 
-    const [members, summaries] = await Promise.all([
+    const [members, titles] = await Promise.all([
       listClassMemberIds(classId),
-      listProblemSummaries(undefined, { includeLocked: false }),
+      findProblemTitlesByIds([problemId]),
     ]);
-    const problemTitle = summaries.find((p) => p.id === problemId)?.title ?? problemId;
+    const problemTitle = titles.get(problemId) ?? problemId;
     await recordClassActivitySafe({
       class_id: classId,
       teacher_id: viewer.id,
@@ -637,6 +651,7 @@ export async function performClassAction(
       created_by: viewer.id,
     });
     if (insertErr) throw new Error(`Database error: ${insertErr.message}`);
+    invalidateProblemCatalogCache();
 
     const { error: assignErr } = await db()
       .from("class_problems")
@@ -732,6 +747,7 @@ export async function performClassAction(
       ) as { class_id: string }[];
       if (stillUsed.length === 0) {
         await db().from("problems").delete().eq("id", problemId).eq("created_by", viewer.id);
+        invalidateProblemCatalogCache();
       }
     }
     return { ok: true };
@@ -754,14 +770,17 @@ export async function performClassAction(
     );
     must(await db().from("classes").delete().eq("id", classId));
     const customIds = [...new Set(assignedCustom.map((r) => r.problem_id).filter((id) => id.startsWith("cls-")))];
+    let deletedCustom = false;
     for (const pid of customIds) {
       const stillUsed = must(
         await db().from("class_problems").select("class_id").eq("problem_id", pid).limit(1),
       ) as { class_id: string }[];
       if (stillUsed.length === 0) {
         await db().from("problems").delete().eq("id", pid).eq("created_by", viewer.id);
+        deletedCustom = true;
       }
     }
+    if (deletedCustom) invalidateProblemCatalogCache();
     return { ok: true };
   }
 
