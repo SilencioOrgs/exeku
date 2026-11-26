@@ -25,5 +25,5 @@ export const POST = (request: Request, { params }: Context) =>
     if (!body.ok) return NextResponse.json({ error: body.error }, { status: body.status });
     const result = await performOrgAction(id, viewer, body.value);
     if (!result.ok) return NextResponse.json({ error: result.error, fieldErrors: result.fieldErrors }, { status: result.status });
-    return NextResponse.json({ ok: true });
+    return NextResponse.json(result.eventId ? { ok: true, eventId: result.eventId } : { ok: true });
   });

@@ -32,8 +32,18 @@ function EventCard({ event, solved }: { event: CompetitionEvent; solved: string[
           <EventDate value={event.startsOn} />
         </div>
         <p className="text-sm text-[var(--color-text-muted)]">{event.summary}</p>
-        <p className="text-xs text-[var(--color-primary-text)]">{eventAccessLabel(event)}<span className="text-[var(--color-text-muted)]"> · Hosted by {event.orgName}</span></p>
-        {event.tournament && <Link href={`/app/events/${encodeURIComponent(event.id)}`} className={buttonVariants({ variant: "outline" })}>Open tournament</Link>}
+        <p className="text-xs text-[var(--color-primary-text)]">
+          {eventAccessLabel(event)}
+          {event.tournament && (
+            <span> · {event.tournament.teamSize === 1 ? "Solo competition" : `Team competition (up to ${event.tournament.teamSize})`}</span>
+          )}
+          <span className="text-[var(--color-text-muted)]"> · Hosted by {event.orgName}</span>
+        </p>
+        {event.tournament && (
+          <Link href={`/app/events/${encodeURIComponent(event.id)}`} className={buttonVariants({ variant: "outline" })}>
+            {event.tournament.teamSize === 1 ? "Open solo competition" : "Open team competition"}
+          </Link>
+        )}
         {!event.tournament && event.problems && event.problems.length > 0 && (
           <div className="space-y-2 pt-1">
             <p className="text-xs text-[var(--color-text-muted)]">{event.problems.filter((p) => solved.includes(p.id)).length} of {event.problems.length} problems solved</p>
@@ -115,6 +125,7 @@ export function EventsView() {
       {posting && feed && (
         <EventForm orgs={feed.postableOrgs} today={feed.today}
           onPost={(orgId, body) => orgAction(orgId, body)}
+          onCancel={() => setPosting(false)}
           onDone={() => { setPosting(false); setVersion((v) => v + 1); }} />
       )}
 

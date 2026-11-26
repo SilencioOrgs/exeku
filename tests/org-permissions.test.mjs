@@ -5,11 +5,14 @@ import { AVATAR_BORDERS, borderSrc } from "../lib/avatar-borders.ts";
 import { BANNERS, bannerSrc } from "../lib/banners.ts";
 import { can, canViewEvent, checkEvent, eventAccessLabel } from "../lib/orgs/rules.ts";
 
-test("only the president manages officers, officers publish and review, members do neither", () => {
+test("only the president manages officers, officers and advisers publish and review, members do neither", () => {
   for (const permission of ["reviewApplications", "publish", "manageOfficers"]) assert.equal(can("president", permission), true);
   assert.equal(can("officer", "publish"), true);
   assert.equal(can("officer", "reviewApplications"), true);
   assert.equal(can("officer", "manageOfficers"), false);
+  assert.equal(can(null, "publish", true), true);
+  assert.equal(can(null, "reviewApplications", true), true);
+  assert.equal(can(null, "manageOfficers", true), false);
   for (const role of ["member", null]) {
     for (const permission of ["reviewApplications", "publish", "manageOfficers"]) assert.equal(can(role, permission), false);
   }
@@ -47,6 +50,33 @@ test("impossible calendar dates are refused, real leap days are not", () => {
   assert.match(checkEvent({ ...event, startsOn: "2027-02-31" }, today).fieldErrors.startsOn, /Choose the event date/);
   assert.match(checkEvent({ ...event, startsOn: "2027-13-01" }, today).fieldErrors.startsOn, /Choose the event date/);
   assert.equal(checkEvent({ ...event, startsOn: "2028-02-29" }, today).ok, true);
+});
+
+test("timed competitions validate solo/team mode, schedule window, and selected problems", () => {
+  const now = Date.parse("2026-11-08T10:00:00Z");
+  const base = {
+    isCompetition: true,
+    title: "Algorithm Sprint",
+    summary: "Solve 3 problems in 1 hour.",
+    access: "org-only",
+    banner: "podium",
+    startsAt: "2026-11-08T11:00:00Z",
+    endsAt: "2026-11-08T12:00:00Z",
+    problemIds: ["hello-world"],
+  };
+  const solo = checkEvent({ ...base, mode: "solo" }, "2026-11-08", now);
+  assert.equal(solo.ok, true);
+  assert.equal(solo.tournament.teamSize, 1);
+
+  const team = checkEvent({ ...base, mode: "team", teamSize: 4 }, "2026-11-08", now);
+  assert.equal(team.ok, true);
+  assert.equal(team.tournament.teamSize, 4);
+
+  const badTeam = checkEvent({ ...base, mode: "team", teamSize: 1, problemIds: [], endsAt: "2026-11-08T11:01:00Z" }, "2026-11-08", now);
+  assert.equal(badTeam.ok, false);
+  assert.ok(badTeam.fieldErrors.teamSize);
+  assert.ok(badTeam.fieldErrors.problemIds);
+  assert.ok(badTeam.fieldErrors.endsAt);
 });
 
 test("banner art resolves to a shipped file and never echoes an unknown value into the path", () => {

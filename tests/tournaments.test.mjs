@@ -168,3 +168,28 @@ test("medals need a finished tournament, a top 3 place and points", async () => 
   assert.equal(medals.length, 1);
   assert.equal(medals[0].place, 1);
 });
+
+test("joinSolo registers one-click solo participants and rejects team tournaments", async () => {
+  // Team tournament (team_size=2) refuses joinSolo.
+  const teamTourney = harness(5, 30);
+  const bad = await teamTourney.repo.performTournamentAction(viewer("b"), ID, { action: "joinSolo" });
+  assert.equal(bad.ok, false);
+  assert.equal(bad.status, 400);
+
+  // Solo tournament (team_size=1) allows joinSolo and blocks double registration.
+  const solo = harness(5, 30);
+  solo.tables.events[0].team_size = 1;
+  solo.tables.tournament_teams.length = 0;
+  solo.tables.tournament_members.length = 0;
+
+  const first = await solo.repo.performTournamentAction({ id: "u1", name: "Juan", campusId: "sc" }, ID, { action: "joinSolo" });
+  assert.equal(first.ok, true);
+  assert.equal(solo.tables.tournament_teams.length, 1);
+  assert.equal(solo.tables.tournament_teams[0].name, "Juan");
+  assert.equal(solo.tables.tournament_members.length, 1);
+
+  const dup = await solo.repo.performTournamentAction({ id: "u1", name: "Juan", campusId: "sc" }, ID, { action: "joinSolo" });
+  assert.equal(dup.ok, false);
+  assert.equal(dup.status, 409);
+});
+

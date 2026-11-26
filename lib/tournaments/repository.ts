@@ -152,6 +152,25 @@ export async function performTournamentAction(viewer: Viewer, id: string, input:
   if (status !== "registration") return failed(409, "Registration has closed.");
 
   switch (input.action) {
+    case "joinSolo": {
+      if (found.teamSize !== 1) return failed(400, "This is a team competition. Create or join a team.");
+      if (mine) return failed(409, "You're already registered.");
+      const teamId = crypto.randomUUID();
+      const base = viewer.name.trim().slice(0, 32) || "Competitor";
+      let { error } = await db().from("tournament_teams").insert({ id: teamId, event_id: id, name: base });
+      if (error?.code === UNIQUE_VIOLATION) {
+        const disambiguated = `${base} #${teamId.slice(0, 4).toUpperCase()}`;
+        ({ error } = await db().from("tournament_teams").insert({ id: teamId, event_id: id, name: disambiguated }));
+      }
+      if (error) throw new Error(`Database error: ${error.message}`);
+      const { error: memberError } = await db().from("tournament_members").insert({ event_id: id, team_id: teamId, user_id: viewer.id });
+      if (memberError) {
+        await db().from("tournament_teams").delete().eq("id", teamId);
+        if (memberError.code === UNIQUE_VIOLATION) return failed(409, "You're already registered.");
+        throw new Error(`Database error: ${memberError.message}`);
+      }
+      return { ok: true };
+    }
     case "createTeam": {
       if (mine) return failed(409, "You're already on a team.");
       const name = text(input, "name");

@@ -1,7 +1,7 @@
 import "server-only";
 import { isObject, isUuid, text } from "@/lib/accounts/rules";
 import type { Viewer } from "@/lib/auth/viewer";
-import { EVENT_COLUMNS, maskTournamentProblems, toEvents, viewerScope, type EventRow } from "@/lib/competition/repository";
+import { EVENT_COLUMNS, maskTournamentProblems, resolveValidProblemIds, toEvents, viewerScope, type EventRow } from "@/lib/competition/repository";
 import { todayInManila } from "@/lib/dates";
 import { db, fetchAllPages, must } from "@/lib/db/client";
 import { notifyUsers } from "@/lib/notifications/repository";
@@ -9,7 +9,7 @@ import type { FieldErrors } from "@/types/account";
 import type { ApplicationStatus, OrgDetail, OrgPermission, OrgRole, OrgSummary } from "@/types/org";
 import { can, canViewEvent, checkEvent } from "./rules";
 
-export type ActionResult = { ok: true } | { ok: false; status: number; error?: string; fieldErrors?: FieldErrors };
+export type ActionResult = { ok: true; eventId?: string } | { ok: false; status: number; error?: string; fieldErrors?: FieldErrors };
 
 const ORG_COLUMNS = "id,name,school_name,campus_id,campus_name,program_name,adviser_id,org_members(count)";
 const ORG_COLUMNS_FALLBACK = "id,name,school_name,campus_id,campus_name,program_name,org_members(count)";
@@ -166,7 +166,8 @@ export async function getOrgDetail(orgId: string, viewer: Viewer): Promise<OrgDe
   ]);
 
   const viewerRole = viewerMember?.role ?? null;
-  const pendingApplications = can(viewerRole, "reviewApplications")
+  const isAdviser = Boolean(org.adviser_id && org.adviser_id === viewer.id);
+  const pendingApplications = can(viewerRole, "reviewApplications", isAdviser)
     ? await fetchAllPages<ApplicationRow>((from, to) =>
         db()
           .from("org_applications")
@@ -179,7 +180,10 @@ export async function getOrgDetail(orgId: string, viewer: Viewer): Promise<OrgDe
     : [];
 
   const president = members.find((m) => m.role === "president");
-  const visibleEvents = (await toEvents(events)).filter((e) => canViewEvent(e, scope));
+  const effectiveScope = isAdviser && !scope.orgIds.includes(orgId)
+    ? { ...scope, orgIds: [...scope.orgIds, orgId] }
+    : scope;
+  const visibleEvents = (await toEvents(events)).filter((e) => canViewEvent(e, effectiveScope));
   return {
     org: toSummary(org, {
       presidentName: president?.profiles.display_name,
@@ -188,10 +192,12 @@ export async function getOrgDetail(orgId: string, viewer: Viewer): Promise<OrgDe
       applicationStatus: viewerApp?.status ?? "none",
     }),
     viewerRole,
+    isAdviser,
     applicationStatus: viewerApp?.status ?? "none",
     members: members.map((m) => ({ id: m.user_id, name: m.profiles.display_name, role: m.role })),
     applications: pendingApplications.map((a) => ({ id: a.id, name: a.profiles.display_name, program: a.program ?? undefined })),
     events: await maskTournamentProblems(visibleEvents, viewer.id),
+    today: todayInManila(),
   };
 }
 
@@ -202,7 +208,8 @@ export async function performOrgAction(orgId: string, viewer: Viewer, input: unk
   if (!isObject(input)) return failed(400, "Invalid request.");
   const memberRow = must(await db().from("org_members").select("role").eq("org_id", orgId).eq("user_id", viewer.id).maybeSingle()) as { role: OrgRole } | null;
   const actorRole = memberRow?.role ?? null;
-  const denied = (permission: OrgPermission) => !can(actorRole, permission);
+  const isAdviser = Boolean(org.adviser_id && org.adviser_id === viewer.id);
+  const denied = (permission: OrgPermission) => !can(actorRole, permission, isAdviser);
 
   switch (input.action) {
     case "apply": {
@@ -217,7 +224,7 @@ export async function performOrgAction(orgId: string, viewer: Viewer, input: unk
       return { ok: true };
     }
     case "decide": {
-      if (denied("reviewApplications")) return failed(403, "Only officers can review applications.");
+      if (denied("reviewApplications")) return failed(403, "Only officers or advisers can review applications.");
       if (typeof input.accept !== "boolean") return failed(400, "Specify whether to accept or reject.");
       const applicationId = text(input, "applicationId");
       if (!isUuid(applicationId)) return failed(404, "That application is no longer pending.");
@@ -283,18 +290,74 @@ export async function performOrgAction(orgId: string, viewer: Viewer, input: unk
       return { ok: true };
     }
     case "createEvent": {
-      if (denied("publish")) return failed(403, "Only officers can create events.");
+      if (denied("publish")) return failed(403, "Only officers or advisers can create events.");
       const checked = checkEvent(input, todayInManila());
       if (!checked.ok) return { ok: false, status: 422, fieldErrors: checked.fieldErrors };
-      const { title, summary, startsOn, access, banner, featured } = checked;
+      const { title, summary, startsOn, access, banner, featured, tournament } = checked;
+
+      const row: Record<string, unknown> = {
+        org_id: orgId,
+        title,
+        summary,
+        starts_on: startsOn,
+        access,
+        banner,
+        featured,
+      };
+      if (tournament) {
+        const validIds = await resolveValidProblemIds(tournament.problemIds);
+        if (validIds.length !== tournament.problemIds.length) {
+          return {
+            ok: false,
+            status: 422,
+            fieldErrors: { problemIds: "One or more selected problems are no longer available." },
+          };
+        }
+        row.starts_at = tournament.startsAt;
+        row.ends_at = tournament.endsAt;
+        row.team_size = tournament.teamSize;
+        row.problem_ids = validIds;
+      }
+
       if (featured) await clearFeatured(orgId);
-      const { error } = await db().from("events").insert({ org_id: orgId, title, summary, starts_on: startsOn, access, banner, featured });
+      const { data: created, error } = await db().from("events").insert(row).select("id").maybeSingle();
       if (error?.code === UNIQUE_VIOLATION) return failed(409, "Another officer just changed the featured banner. Please try again.");
       if (error) throw new Error(`Database error: ${error.message}`);
-      return { ok: true };
+
+      const eventId = typeof (created as { id?: unknown } | null)?.id === "string" ? (created as { id: string }).id : undefined;
+
+      // Notify every member of the organization (and its adviser), excluding the person who posted it.
+      const orgMembers = await fetchAllPages<{ user_id: string }>((from, to) =>
+        db().from("org_members").select("user_id").eq("org_id", orgId).order("user_id").range(from, to),
+      );
+      const recipients = [
+        ...orgMembers.map((m) => m.user_id),
+        ...(org.adviser_id ? [org.adviser_id] : []),
+      ].filter((id) => id !== viewer.id);
+
+      if (recipients.length > 0) {
+        if (tournament) {
+          const modeLabel = tournament.teamSize === 1 ? "solo" : `team (up to ${tournament.teamSize})`;
+          await notifyUsers(recipients, {
+            kind: "org_status",
+            title: `New ${tournament.teamSize === 1 ? "solo" : "team"} competition: ${title}`,
+            body: `${org.name} posted a ${modeLabel} competition. Register before it starts.`,
+            href: eventId ? `/app/events/${eventId}` : "/app/events",
+          });
+        } else {
+          await notifyUsers(recipients, {
+            kind: "org_status",
+            title: `New event in ${org.name}: ${title}`,
+            body: summary,
+            href: `/app/orgs/${orgId}`,
+          });
+        }
+      }
+
+      return eventId ? { ok: true, eventId } : { ok: true };
     }
     case "feature": {
-      if (denied("publish")) return failed(403, "Only officers can choose the banner.");
+      if (denied("publish")) return failed(403, "Only officers or advisers can choose the banner.");
       const eventId = text(input, "eventId");
       if (!isUuid(eventId)) return failed(404, "That event wasn't found.");
       const event = must(await db().from("events").select("id").eq("org_id", orgId).eq("id", eventId).maybeSingle());

@@ -138,3 +138,102 @@ test("today follows Manila's calendar, not UTC's", (t) => {
   t.mock.timers.enable({ apis: ["Date"], now: Date.parse("2026-11-08T17:00:00Z") });
   assert.equal(todayInManila(), "2026-11-09");
 });
+
+test("org adviser and president can post solo/team competitions and notify all org members", async () => {
+  const notices = [];
+  const tables = {
+    orgs: [{ id: "acoes", ...ORGS.acoes, school_name: "LSPU", program_name: "BSCPE", adviser_id: "adv", org_members: [{ count: 3 }] }],
+    org_members: [member("pres", "president"), member("plain", "member"), member("target", "member")],
+    org_applications: [],
+    submissions: [],
+    problems: [{ id: "created", title: "Created" }],
+    tournament_members: [],
+    events: [],
+  };
+  const shared = { "server-only": {}, "@/lib/db/client": { db: fakeDb(tables), exactCount, fetchAllPages, must }, "@/lib/dates": { todayInManila: () => "2026-11-08" }, "@/lib/orgs/rules": orgRules };
+  const competition = load("lib/competition/repository.ts", {
+    ...shared,
+    "@/lib/accounts/school-directory": { schoolDirectory: {} },
+    "./rank": { rankScores: () => [] },
+    "@/lib/judge/solves": { firstSolves: async () => [], solvesBetween: async () => [] },
+    "@/lib/problems/catalog": { getProblemById: (id) => (id === "known" ? { id, title: "Known" } : null) },
+  });
+  const repository = load("lib/orgs/repository.ts", {
+    ...shared,
+    "@/lib/accounts/rules": { isObject, isUuid, text },
+    "@/lib/competition/repository": competition,
+    "@/lib/notifications/repository": { notifyUsers: async (ids, payload) => { notices.push({ ids, ...payload }); } },
+    "./rules": orgRules,
+  });
+
+  // Adviser sees the org in postableOrgs and gets isAdviser=true on org detail.
+  const advFeed = await competition.getEventsFeed(viewer("adv"));
+  assert.equal(JSON.stringify(advFeed.postableOrgs), JSON.stringify([{ id: "acoes", name: "ACOES" }]));
+  const advDetail = await repository.getOrgDetail("acoes", viewer("adv"));
+  assert.equal(advDetail.isAdviser, true);
+
+  const startsAt = new Date(Date.now() + 30 * 60_000).toISOString();
+  const endsAt = new Date(Date.now() + 90 * 60_000).toISOString();
+
+  // Invalid / unknown problem ID is rejected with 422.
+  const badProb = await repository.performOrgAction("acoes", viewer("adv"), {
+    action: "createEvent",
+    isCompetition: true,
+    mode: "solo",
+    title: "Solo Sprint",
+    summary: "Fast solo contest",
+    startsAt,
+    endsAt,
+    problemIds: ["missing-prob"],
+    access: "org-only",
+    banner: "podium",
+    featured: false,
+  });
+  assert.equal(badProb.ok, false);
+  assert.equal(badProb.status, 422);
+
+  // Adviser posts a Solo competition -> saved with team_size=1 and notifies all 3 org members.
+  const soloRes = await repository.performOrgAction("acoes", viewer("adv"), {
+    action: "createEvent",
+    isCompetition: true,
+    mode: "solo",
+    title: "Solo Sprint",
+    summary: "Fast solo contest",
+    startsAt,
+    endsAt,
+    problemIds: ["known", "created"],
+    access: "org-only",
+    banner: "podium",
+    featured: false,
+  });
+  assert.equal(soloRes.ok, true);
+  assert.equal(tables.events.length, 1);
+  assert.equal(tables.events[0].team_size, 1);
+  assert.equal(JSON.stringify(tables.events[0].problem_ids), JSON.stringify(["known", "created"]));
+  assert.equal(notices.length, 1);
+  assert.equal(JSON.stringify([...notices[0].ids].sort()), JSON.stringify(["plain", "pres", "target"]));
+  assert.match(notices[0].title, /solo competition: Solo Sprint/i);
+  assert.equal(notices[0].href, `/app/events/${soloRes.eventId}`);
+
+  // President posts a Team competition (max 3) -> saved with team_size=3 and notifies other members + adviser.
+  const teamRes = await repository.performOrgAction("acoes", viewer("pres"), {
+    action: "createEvent",
+    isCompetition: true,
+    mode: "team",
+    teamSize: 3,
+    title: "Team Cup",
+    summary: "Build a team of 3",
+    startsAt,
+    endsAt,
+    problemIds: ["known"],
+    access: "org-only",
+    banner: "circuit",
+    featured: false,
+  });
+  assert.equal(teamRes.ok, true);
+  assert.equal(tables.events[1].team_size, 3);
+  assert.equal(notices.length, 2);
+  assert.equal(JSON.stringify([...notices[1].ids].sort()), JSON.stringify(["adv", "plain", "target"]));
+  assert.match(notices[1].title, /team competition: Team Cup/i);
+});
+

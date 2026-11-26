@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   ArrowLeft,
   Calendar,
+  CalendarPlus,
   Check,
   CheckCircle2,
   Clock3,
@@ -14,12 +15,15 @@ import {
   Send,
   Shield,
   Sparkles,
+  Trophy,
   Users,
   X,
 } from "lucide-react";
 import { DetailPageSkeleton } from "@/components/app/page-skeletons";
+import { EventForm } from "@/components/app/events/event-form";
 import { ConfirmDialog } from "@/components/app/workspace/submission-modals";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useProfile } from "@/hooks/use-profile";
 import { fetchOrg, orgAction } from "@/lib/orgs/api";
 import { can, eventAccessLabel } from "@/lib/orgs/rules";
@@ -36,6 +40,7 @@ export function OrgView({ orgId }: { orgId: string }) {
   const [notice, setNotice] = useState<string>();
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [applyOpen, setApplyOpen] = useState(false);
+  const [postOpen, setPostOpen] = useState(false);
   const [pendingDecline, setPendingDecline] = useState<{ id: string; name: string } | null>(null);
   const [version, setVersion] = useState(0);
   const campusId = profile?.account?.school.campusId;
@@ -84,11 +89,12 @@ export function OrgView({ orgId }: { orgId: string }) {
   }
   if (!detail || !profile) return <DetailPageSkeleton label="Loading organization…" maxWidth="max-w-5xl" />;
 
-  const { org, viewerRole, applicationStatus, members, applications, events } = detail;
+  const { org, viewerRole, isAdviser = false, applicationStatus, members, applications, events } = detail;
   const isStudent = profile.userType === "student" || Boolean(profile.account);
-  const canPublish = can(viewerRole, "publish");
-  const canManageOfficers = can(viewerRole, "manageOfficers");
+  const canPublish = can(viewerRole, "publish", isAdviser);
+  const canManageOfficers = can(viewerRole, "manageOfficers", isAdviser);
   const anyBusy = busyKey !== null;
+  const today = detail.today ?? new Date().toISOString().slice(0, 10);
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6 lg:p-8">
@@ -107,13 +113,18 @@ export function OrgView({ orgId }: { orgId: string }) {
                   <CheckCircle2 size={12} aria-hidden="true" /> {ROLE_LABELS[viewerRole]}
                 </span>
               )}
+              {isAdviser && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-[var(--color-medium-bg)] px-2.5 py-0.5 font-code text-xs text-[var(--color-primary-text)]">
+                  <GraduationCap size={12} aria-hidden="true" /> Adviser
+                </span>
+              )}
             </div>
             <p className="text-sm text-[var(--color-text-muted)]">
               {org.schoolName} · {org.campusName} · {org.programName}
             </p>
           </div>
 
-          {!viewerRole && isStudent && applicationStatus === "none" && (
+          {!viewerRole && !isAdviser && isStudent && applicationStatus === "none" && (
             <Button type="button" onClick={() => setApplyOpen(true)}>
               <Send size={14} aria-hidden="true" /> Apply to join
             </Button>
@@ -148,7 +159,7 @@ export function OrgView({ orgId }: { orgId: string }) {
       {notice && <p role="status" className="skeuo-recess rounded-xl p-3.5 text-sm text-[var(--color-mint)]">{notice}</p>}
 
       {/* Membership Action Banner */}
-      {!viewerRole && (
+      {!viewerRole && !isAdviser && (
         <section aria-label="Membership" className="skeuo-panel flex flex-wrap items-center justify-between gap-3 p-5">
           {applicationStatus === "pending" ? (
             <>
@@ -194,7 +205,7 @@ export function OrgView({ orgId }: { orgId: string }) {
         </section>
       )}
 
-      {/* Officer Application Review Queue */}
+      {/* Officer / Adviser Application Review Queue */}
       {canPublish && (
         <section aria-labelledby="applications-heading" className="skeuo-panel space-y-4 p-5 sm:p-6">
           <div className="flex items-center justify-between gap-2">
@@ -319,7 +330,7 @@ export function OrgView({ orgId }: { orgId: string }) {
           )}
         </section>
 
-        {/* Events */}
+        {/* Events & Competitions */}
         <section aria-labelledby="events-heading" className="skeuo-panel space-y-4 p-5 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
@@ -327,9 +338,9 @@ export function OrgView({ orgId }: { orgId: string }) {
               <h2 id="events-heading" className="text-lg font-semibold">Events ({events.length})</h2>
             </div>
             {canPublish && (
-              <Link href="/app/events" className={buttonVariants({ variant: "outline", size: "sm" })}>
-                Post an event
-              </Link>
+              <Button type="button" size="sm" onClick={() => setPostOpen(true)}>
+                <CalendarPlus size={14} aria-hidden="true" /> Post competition
+              </Button>
             )}
           </div>
 
@@ -339,12 +350,31 @@ export function OrgView({ orgId }: { orgId: string }) {
             <ul className="space-y-2.5">
               {events.map((e) => {
                 const featKey = `feature:${e.id}`;
+                const modeBadge = e.tournament
+                  ? e.tournament.teamSize === 1
+                    ? "Solo"
+                    : `Team · up to ${e.tournament.teamSize}`
+                  : null;
                 return (
                   <li key={e.id} className="skeuo-recess flex flex-wrap items-center justify-between gap-2 rounded-xl px-3.5 py-3">
-                    <Link href={`/app/events/${e.id}`} className="min-w-0 flex-1 hover:text-[var(--color-primary-text)]">
-                      <p className="truncate text-sm font-semibold">{e.title}</p>
-                      <p className="text-xs text-[var(--color-text-muted)]">{eventAccessLabel(e)}</p>
-                    </Link>
+                    {e.tournament ? (
+                      <Link href={`/app/events/${encodeURIComponent(e.id)}`} className="min-w-0 flex-1 hover:text-[var(--color-primary-text)]">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="truncate text-sm font-semibold">{e.title}</p>
+                          {modeBadge && (
+                            <span className="inline-flex items-center gap-1 rounded bg-[var(--color-medium-bg)] px-1.5 py-0.5 font-code text-[11px] text-[var(--color-primary-text)]">
+                              <Trophy size={10} aria-hidden="true" /> {modeBadge}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-[var(--color-text-muted)]">{eventAccessLabel(e)}</p>
+                      </Link>
+                    ) : (
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold">{e.title}</p>
+                        <p className="text-xs text-[var(--color-text-muted)]">{eventAccessLabel(e)} · {e.startsOn}</p>
+                      </div>
+                    )}
                     {e.featured ? (
                       <span className="inline-flex items-center gap-1 rounded-md bg-[var(--color-medium-bg)] px-2 py-0.5 font-code text-xs text-[var(--color-primary-text)]">
                         <Sparkles size={11} aria-hidden="true" /> Featured
@@ -384,6 +414,35 @@ export function OrgView({ orgId }: { orgId: string }) {
           setVersion((v) => v + 1);
         }}
       />
+
+      <Dialog open={postOpen} onOpenChange={setPostOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Post in {org.name}</DialogTitle>
+            <DialogDescription>
+              Schedule a solo or team competition, or publish a dated event announcement. All members are notified automatically.
+            </DialogDescription>
+          </DialogHeader>
+          <EventForm
+            orgs={[{ id: org.id, name: org.name }]}
+            today={today}
+            defaultKind="competition"
+            defaultAccess="org-only"
+            inDialog
+            onPost={(targetOrgId, body) => orgAction(targetOrgId, body)}
+            onCancel={() => setPostOpen(false)}
+            onDone={(meta) => {
+              setPostOpen(false);
+              setNotice(
+                meta?.isCompetition
+                  ? `Competition posted in ${org.name} and members were notified.`
+                  : `Event posted in ${org.name} and members were notified.`,
+              );
+              setVersion((v) => v + 1);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
 
       <ConfirmDialog
         open={pendingDecline !== null}

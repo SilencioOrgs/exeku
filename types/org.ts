@@ -34,8 +34,10 @@ export interface OrgApplication {
 export interface OrgDetail {
   org: OrgSummary;
   viewerRole: OrgRole | null;
+  isAdviser?: boolean;
   applicationStatus: ApplicationStatus;
   members: OrgMember[];
   applications: OrgApplication[];
   events: CompetitionEvent[];
+  today?: string;
 }

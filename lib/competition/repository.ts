@@ -28,7 +28,7 @@ const toEvent = (r: EventRow, createdTitles: Map<string, string>): CompetitionEv
   winners: r.winners ?? undefined,
   audience: r.campus_ids?.length || r.org_ids?.length ? { campusIds: r.campus_ids ?? [], orgIds: r.org_ids ?? [] } : undefined,
   audienceLabel: r.audience_label ?? undefined,
-  tournament: r.starts_at && r.ends_at ? { startsAt: r.starts_at, endsAt: r.ends_at } : undefined,
+  tournament: r.starts_at && r.ends_at ? { startsAt: r.starts_at, endsAt: r.ends_at, teamSize: r.team_size ?? 1 } : undefined,
   problems: (r.problem_ids ?? []).flatMap((id) => {
     const title = getProblemById(id)?.title ?? createdTitles.get(id);
     return title ? [{ id, title }] : [];
@@ -47,6 +47,23 @@ export async function toEvents(rows: EventRow[]): Promise<CompetitionEvent[]> {
   }
   const createdTitles = new Map(titles.map((t) => [t.id, t.title]));
   return rows.map((r) => toEvent(r, createdTitles));
+}
+
+/** Returns the subset of problem IDs that exist in the catalog or public problems table. */
+export async function resolveValidProblemIds(ids: string[]): Promise<string[]> {
+  const unique = [...new Set(ids.filter((id) => id && !id.startsWith("cls-")))];
+  const valid = new Set<string>();
+  const toCheck: string[] = [];
+  for (const id of unique) {
+    if (getProblemById(id)) valid.add(id);
+    else toCheck.push(id);
+  }
+  for (let i = 0; i < toCheck.length; i += IN_CHUNK_SIZE) {
+    const chunk = toCheck.slice(i, i + IN_CHUNK_SIZE);
+    const rows = must(await db().from("problems").select("id").in("id", chunk)) as { id: string }[];
+    for (const r of rows) valid.add(r.id);
+  }
+  return unique.filter((id) => valid.has(id));
 }
 
 export async function getCampuses(): Promise<Campus[]> {
@@ -71,18 +88,28 @@ export async function getLeaderboard(campusId?: string): Promise<LeaderboardEntr
 }
 
 type Membership = { org_id: string; role: OrgRole; orgs: { name: string; campus_id: string } };
+type AdvisedOrg = { id: string; name: string; campus_id: string };
 
 async function membershipsOf(viewer: Viewer) {
   return must(await db().from("org_members").select("org_id,role,orgs(name,campus_id)").eq("user_id", viewer.id)) as unknown as Membership[];
 }
 
+async function advisedOrgsOf(viewer: Viewer): Promise<AdvisedOrg[]> {
+  const res = await db().from("orgs").select("id,name,campus_id").eq("adviser_id", viewer.id);
+  if (res.error && /adviser_id/i.test(res.error.message)) return [];
+  return (must(res) as unknown as AdvisedOrg[]) ?? [];
+}
+
 /** Which campuses and orgs count for this viewer when deciding what events they can see. */
-const scopeOf = (viewer: Viewer, memberships: Membership[]) => ({
-  orgIds: memberships.map((m) => m.org_id),
-  campusIds: [...(viewer.campusId ? [viewer.campusId] : []), ...memberships.map((m) => m.orgs.campus_id)],
+const scopeOf = (viewer: Viewer, memberships: Membership[], advised: AdvisedOrg[]) => ({
+  orgIds: [...new Set([...memberships.map((m) => m.org_id), ...advised.map((o) => o.id)])],
+  campusIds: [...new Set([...(viewer.campusId ? [viewer.campusId] : []), ...memberships.map((m) => m.orgs.campus_id), ...advised.map((o) => o.campus_id)])],
 });
 
-export const viewerScope = async (viewer: Viewer) => scopeOf(viewer, await membershipsOf(viewer));
+export const viewerScope = async (viewer: Viewer) => {
+  const [memberships, advised] = await Promise.all([membershipsOf(viewer), advisedOrgsOf(viewer)]);
+  return scopeOf(viewer, memberships, advised);
+};
 
 /** Hides problem lists on tournaments until start time and only exposes them to registered viewers. */
 export async function maskTournamentProblems(
@@ -152,16 +179,23 @@ export async function maskTournamentProblems(
 }
 
 export async function getEventsFeed(viewer: Viewer): Promise<EventsFeed> {
-  const memberships = await membershipsOf(viewer);
-  const scope = scopeOf(viewer, memberships);
+  const [memberships, advised] = await Promise.all([membershipsOf(viewer), advisedOrgsOf(viewer)]);
+  const scope = scopeOf(viewer, memberships, advised);
   const rows = await fetchAllPages<EventRow>((from, to) =>
     db().from("events").select(EVENT_COLUMNS).order("starts_on", { ascending: false }).order("id").range(from, to),
   );
   const visible = (await toEvents(rows)).filter((e) => canViewEvent(e, scope));
   const events = await maskTournamentProblems(visible, viewer.id, true);
+  const postableById = new Map<string, { id: string; name: string }>();
+  for (const m of memberships) {
+    if (can(m.role, "publish")) postableById.set(m.org_id, { id: m.org_id, name: m.orgs.name });
+  }
+  for (const o of advised) {
+    postableById.set(o.id, { id: o.id, name: o.name });
+  }
   return {
     events,
-    postableOrgs: memberships.filter((m) => can(m.role, "publish")).map((m) => ({ id: m.org_id, name: m.orgs.name })),
+    postableOrgs: [...postableById.values()],
     solvedProblemIds: (await firstSolves(viewer.id)).map((s) => s.problemId),
     today: todayInManila(),
   };

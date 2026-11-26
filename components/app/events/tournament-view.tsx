@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { ArrowLeft, Check, Clock, Crown } from "lucide-react";
+import { ArrowLeft, Check, Clock, Crown, User, UserPlus, Users } from "lucide-react";
 import { DetailPageSkeleton } from "@/components/app/page-skeletons";
 import { PixelAvatar } from "@/components/retro/pixel-avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -31,6 +31,7 @@ function TeamCard({
   onJoin: (id: string) => void;
   busyKey: string | null;
 }) {
+  const isSolo = view.teamSize === 1;
   const slots = view.teamSize - team.members.length;
   const onPodium = team.rank !== undefined && team.rank <= 3 && team.points > 0;
   return (
@@ -41,12 +42,17 @@ function TeamCard({
             {onPodium && <Crown size={15} aria-hidden="true" />}{onPodium ? PLACES[team.rank - 1] : `#${team.rank}`}
           </span>
         )}
-        <h3 className="min-w-0 flex-1 truncate font-semibold">{team.name}{team.id === view.myTeamId && <span className="ml-2 text-xs font-normal text-[var(--color-primary-text)]">Your team</span>}</h3>
+        <h3 className="min-w-0 flex-1 truncate font-semibold">
+          {team.name}
+          {team.id === view.myTeamId && (
+            <span className="ml-2 text-xs font-normal text-[var(--color-primary-text)]">{isSolo ? "You" : "Your team"}</span>
+          )}
+        </h3>
         {team.rank !== undefined
           ? <span className="font-code text-sm">{team.points} pts · {team.solved}/{view.problems.length || "–"}</span>
-          : <span className="text-xs text-[var(--color-text-muted)]">{team.members.length}/{view.teamSize} members</span>}
+          : !isSolo && <span className="text-xs text-[var(--color-text-muted)]">{team.members.length}/{view.teamSize} members</span>}
         {team.warnings > 0 && <span className="text-xs text-[var(--color-pink)]">{team.warnings} {team.warnings === 1 ? "warning" : "warnings"}</span>}
-        {view.status === "registration" && !view.myTeamId && slots > 0 && (
+        {!isSolo && view.status === "registration" && !view.myTeamId && slots > 0 && (
           <Button
             size="sm"
             variant="outline"
@@ -162,6 +168,7 @@ export function TournamentPage({ id }: { id: string }) {
     }
   };
   const createTeam = (event: FormEvent) => { event.preventDefault(); void act("createTeam", { action: "createTeam", name: teamName }); };
+  const isSolo = view.teamSize === 1;
   const registration = view.status === "registration";
   const finished = view.status === "live" && view.problems.length > 0 && view.problems.every((p) => view.solvedProblemIds.includes(p.id));
 
@@ -172,7 +179,10 @@ export function TournamentPage({ id }: { id: string }) {
         <div className="min-w-0 flex-1 basis-64 space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{view.title}</h1>
           <p className="text-sm text-[var(--color-text-muted)]">{view.summary}</p>
-          <p className="text-xs text-[var(--color-primary-text)]">{view.accessLabel} · Teams of up to {view.teamSize}</p>
+          <p className="flex flex-wrap items-center gap-1.5 text-xs text-[var(--color-primary-text)]">
+            {isSolo ? <User size={12} aria-hidden="true" /> : <Users size={12} aria-hidden="true" />}
+            <span>{view.accessLabel} · {isSolo ? "Solo competition" : `Teams of up to ${view.teamSize}`}</span>
+          </p>
         </div>
         <div className="skeuo-recess rounded-xl px-4 py-2.5 text-right">
           <p className="flex items-center justify-end gap-1.5 text-xs text-[var(--color-text-muted)]"><Clock size={13} aria-hidden="true" />{registration ? "Starts in" : view.status === "live" ? "Ends in" : "Tournament"}</p>
@@ -184,13 +194,33 @@ export function TournamentPage({ id }: { id: string }) {
 
       {registration && (view.myTeamId ? (
         <section aria-label="Your registration" className="profile-panel flex flex-wrap items-center justify-between gap-3 p-5">
-          <p className="text-sm">You&apos;re registered. Problems unlock when the timer reaches zero.</p>
-          <Button variant="ghost" loading={busyKey === "leave"} loadingText="Leaving…" disabled={busyKey !== null} onClick={() => setConfirmLeave(true)}>Leave team</Button>
+          <p className="text-sm">
+            {isSolo
+              ? "You're registered to compete solo. Problems unlock when the timer reaches zero."
+              : "You're registered. Problems unlock when the timer reaches zero."}
+          </p>
+          <Button variant="ghost" loading={busyKey === "leave"} loadingText="Leaving…" disabled={busyKey !== null} onClick={() => setConfirmLeave(true)}>
+            {isSolo ? "Leave competition" : "Leave team"}
+          </Button>
+        </section>
+      ) : isSolo ? (
+        <section aria-label="Solo registration" className="profile-panel flex flex-wrap items-center justify-between gap-3 p-5">
+          <p className="text-sm">This is a solo competition. Join now and problems will unlock when the timer reaches zero.</p>
+          <Button
+            type="button"
+            className="h-10 px-4"
+            loading={busyKey === "joinSolo"}
+            loadingText="Joining…"
+            disabled={busyKey !== null}
+            onClick={() => void act("joinSolo", { action: "joinSolo" })}
+          >
+            <UserPlus size={15} aria-hidden="true" /> Join solo
+          </Button>
         </section>
       ) : (
         <form onSubmit={createTeam} className="profile-panel flex items-end gap-2 p-5">
-          <div className="min-w-0 flex-1"><TextField id="team-name" label="Register a new team, or join one below" placeholder="Team name" value={teamName} onChange={(e) => setTeamName(e.target.value)} maxLength={40} disabled={busyKey !== null} /></div>
-          <Button type="submit" className="h-10 px-4" loading={busyKey === "createTeam"} loadingText="Registering…" disabled={busyKey !== null}>Register</Button>
+          <div className="min-w-0 flex-1"><TextField id="team-name" label="Create a new team, or join one below" placeholder="Team name" value={teamName} onChange={(e) => setTeamName(e.target.value)} maxLength={40} disabled={busyKey !== null} /></div>
+          <Button type="submit" className="h-10 px-4" loading={busyKey === "createTeam"} loadingText="Creating…" disabled={busyKey !== null}>Create team</Button>
         </form>
       ))}
 
@@ -209,23 +239,39 @@ export function TournamentPage({ id }: { id: string }) {
           </ol>
         </section>
       )}
-      {finished && <p className="profile-panel p-5 text-sm">Your team solved every problem, so you&apos;re free to leave full screen. Standings appear when the timer ends.</p>}
+      {finished && (
+        <p className="profile-panel p-5 text-sm">
+          {isSolo
+            ? "You solved every problem, so you're free to leave full screen. Standings appear when the timer ends."
+            : "Your team solved every problem, so you're free to leave full screen. Standings appear when the timer ends."}
+        </p>
+      )}
       {view.status === "live" && !view.myTeamId && <p className="profile-panel p-5 text-sm text-[var(--color-text-muted)]">Registration has closed. Standings appear when the timer ends.</p>}
 
       <section className="space-y-3">
-        <h2 className="font-semibold">{registration ? "Registered teams" : view.status === "live" ? "Teams" : "Standings"}</h2>
+        <h2 className="font-semibold">
+          {registration ? (isSolo ? "Registered participants" : "Registered teams") : view.status === "live" ? (isSolo ? "Participants" : "Teams") : "Standings"}
+        </h2>
         {view.status === "live" && <p className="text-xs text-[var(--color-text-muted)]">Scores are hidden until the tournament ends.</p>}
         {view.teams.length === 0
-          ? <p className="profile-panel p-5 text-sm text-[var(--color-text-muted)]">No teams yet. Be the first to register.</p>
+          ? (
+            <p className="profile-panel p-5 text-sm text-[var(--color-text-muted)]">
+              {isSolo ? "No participants yet. Be the first to join." : "No teams yet. Be the first to register."}
+            </p>
+          )
           : <ul className="space-y-3">{view.teams.map((team) => <TeamCard key={team.id} team={team} view={view} busyKey={busyKey} onJoin={(teamId) => void act(`join:${teamId}`, { action: "joinTeam", teamId })} />)}</ul>}
       </section>
 
       <ConfirmDialog
         open={confirmLeave}
         onOpenChange={setConfirmLeave}
-        title="Leave your team?"
-        description="Your spot will open for other students until registration closes."
-        confirmLabel="Leave team"
+        title={isSolo ? "Leave this competition?" : "Leave your team?"}
+        description={
+          isSolo
+            ? "You can rejoin anytime before registration closes."
+            : "Your spot will open for other students until registration closes."
+        }
+        confirmLabel={isSolo ? "Leave competition" : "Leave team"}
         loadingLabel="Leaving…"
         loading={busyKey === "leave"}
         destructive

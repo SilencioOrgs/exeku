@@ -24,7 +24,7 @@ export interface CompetitionEvent {
   /** Only id and title, never test cases. */
   problems?: { id: string; title: string }[];
   /** Set for timed tournaments, which open on their own page. */
-  tournament?: { startsAt: string; endsAt: string };
+  tournament?: { startsAt: string; endsAt: string; teamSize: number };
   /** A tournament's own solved list, since only answers during its window count. */
   solvedProblemIds?: string[];
   /** Set when a competition targets chosen campuses and organizations. */
