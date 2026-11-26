@@ -14,7 +14,7 @@ export interface SocialLinks {
   website?: string;
 }
 
-export type UserType = "student" | "explorer";
+export type UserType = "student" | "faculty" | "explorer";
 
 export interface LocalProfile {
   id: string;

@@ -1,4 +1,5 @@
 import type { FieldErrors, NewSchoolRequest, SchoolOption, StudentAccount } from "@/types/account";
+import { computeAgeFromBirthday, MAX_ACCOUNT_AGE, MIN_ACCOUNT_AGE } from "./birthday";
 
 export interface SchoolRecord extends SchoolOption {
   locationId: string;
@@ -51,9 +52,26 @@ export async function checkSchoolAccount(input: unknown, lookup: SchoolLookup): 
   if (!isObject(input)) return { ok: false, fieldErrors: { email: "Enter your school email address." } };
   const errors: FieldErrors = {};
 
-  const ageText = text(input, "age");
-  const age = /^\d{1,3}$/.test(ageText) ? Number(ageText) : Number.NaN;
-  if (!(age >= 13 && age <= 100)) errors.age = "Enter an age from 13 to 100.";
+  const birthdayText = text(input, "birthday");
+  const hasBirthdayInput = "birthday" in input;
+  let age = Number.NaN;
+  let birthday: string | undefined;
+
+  if (hasBirthdayInput) {
+    const computed = computeAgeFromBirthday(birthdayText);
+    if (computed === null) {
+      errors.birthday = "Enter your birthday.";
+    } else if (computed < MIN_ACCOUNT_AGE || computed > MAX_ACCOUNT_AGE) {
+      errors.birthday = `You must be between ${MIN_ACCOUNT_AGE} and ${MAX_ACCOUNT_AGE} years old.`;
+    } else {
+      age = computed;
+      birthday = birthdayText;
+    }
+  } else {
+    const ageText = text(input, "age");
+    age = /^\d{1,3}$/.test(ageText) ? Number(ageText) : Number.NaN;
+    if (!(age >= MIN_ACCOUNT_AGE && age <= MAX_ACCOUNT_AGE)) errors.age = "Enter an age from 13 to 100.";
+  }
 
   const email = text(input, "email").toLowerCase();
   const validEmail = email.length <= 254 && EMAIL.test(email);
@@ -92,5 +110,5 @@ export async function checkSchoolAccount(input: unknown, lookup: SchoolLookup): 
   }
 
   if (Object.keys(errors).length > 0 || !school) return { ok: false, fieldErrors: errors };
-  return { ok: true, account: { email, age, school } };
+  return { ok: true, account: { email, age, ...(birthday ? { birthday } : {}), school } };
 }

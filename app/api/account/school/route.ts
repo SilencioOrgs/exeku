@@ -15,7 +15,7 @@ export const POST = (request: Request) =>
     if (!body.ok) return NextResponse.json({ error: body.error }, { status: body.status });
     const checked = await checkSchoolAccount(body.value, schoolDirectory);
     if (!checked.ok) return NextResponse.json({ fieldErrors: checked.fieldErrors }, { status: 422 });
-    const { email, age, school } = checked.account;
+    const { email, age, birthday, school } = checked.account;
     if (viewer.campusId && (school.campusId ?? undefined) !== viewer.campusId) {
       return NextResponse.json({ error: "Your campus is already set. Contact an admin to change it." }, { status: 409 });
     }
@@ -55,16 +55,26 @@ export const POST = (request: Request) =>
     }
 
     const nextCampus = school.campusId ?? null;
-    let query = db()
-      .from("profiles")
-      .update({ school_email: email, age, school, campus_id: nextCampus })
-      .eq("user_id", viewer.id);
-    if (nextCampus) {
-      query = query.or(`campus_id.is.null,campus_id.eq.${nextCampus}`);
-    } else {
-      query = query.is("campus_id", null);
+    const runUpdate = (includeBirthday: boolean) => {
+      const values = includeBirthday && birthday
+        ? { school_email: email, age, birthday, school, campus_id: nextCampus }
+        : { school_email: email, age, school, campus_id: nextCampus };
+      let query = db()
+        .from("profiles")
+        .update(values)
+        .eq("user_id", viewer.id);
+      if (nextCampus) {
+        query = query.or(`campus_id.is.null,campus_id.eq.${nextCampus}`);
+      } else {
+        query = query.is("campus_id", null);
+      }
+      return query.select("user_id").maybeSingle();
+    };
+
+    let { data: updated, error } = await runUpdate(Boolean(birthday));
+    if (error && birthday && (error.code === "42703" || error.code === "PGRST204" || /birthday/i.test(error.message))) {
+      ({ data: updated, error } = await runUpdate(false));
     }
-    const { data: updated, error } = await query.select("user_id").maybeSingle();
     if (error?.code === "23505") {
       return NextResponse.json(
         { error: "This school email is already linked to another Exeku account.", fieldErrors: { email: "This school email is already linked to another account." } },

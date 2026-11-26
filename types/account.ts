@@ -46,12 +46,14 @@ export interface AccountSchool {
 export interface StudentAccount {
   email: string;
   age: number;
+  birthday?: string;
   school: AccountSchool;
   verified?: boolean;
 }
 
 export interface SchoolAccountRequest {
-  age: string;
+  birthday?: string;
+  age?: string;
   email: string;
   school: SchoolSelection;
 }

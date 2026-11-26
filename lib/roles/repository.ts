@@ -71,6 +71,20 @@ export async function submitFacultyRequest(
   if (viewer.role === "teacher" || viewer.role === "admin") {
     return { ok: false, status: 409, error: "Your account already has faculty permissions." };
   }
+  const studentProfile = must(
+    await db()
+      .from("profiles")
+      .select("school_email,school")
+      .eq("user_id", viewer.id)
+      .maybeSingle(),
+  ) as { school_email: string | null; school: unknown } | null;
+  if (studentProfile?.school_email && studentProfile?.school) {
+    return {
+      ok: false,
+      status: 409,
+      error: "Accounts already verified as students cannot submit a faculty verification request.",
+    };
+  }
   const checked = checkFacultyRequest(input);
   if (!checked.ok) return { ok: false, status: 422, fieldErrors: checked.fieldErrors };
 

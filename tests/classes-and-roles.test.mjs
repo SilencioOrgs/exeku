@@ -127,6 +127,16 @@ test("submitFacultyRequest enforces Clerk-verified Gmail address and blocks exis
   );
   assert.equal(dup.ok, false);
   assert.equal(dup.status, 409);
+
+  // Accounts already verified as students cannot submit a faculty verification request.
+  tables.profiles = [{ user_id: "verified-student", school_email: "juan@lspu.edu.ph", school: { id: "lspu", name: "LSPU" } }];
+  const blockedStudent = await repo.submitFacultyRequest(
+    { id: "verified-student", name: "Juan", role: "student" },
+    validInput,
+    ["ada.lovelace@gmail.com"],
+  );
+  assert.equal(blockedStudent.ok, false);
+  assert.equal(blockedStudent.status, 409);
 });
 
 test("POST /api/account/faculty passes only Clerk-verified email addresses to submitFacultyRequest", async () => {

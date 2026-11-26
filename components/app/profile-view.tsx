@@ -102,6 +102,8 @@ export function ProfileView() {
   const role = facultyStatus?.role ?? "student";
   const isTeacher = role === "teacher";
   const isAdmin = role === "admin";
+  const isVerifiedStudent = Boolean(profile.account?.verified);
+  const isPendingFaculty = facultyStatus?.request?.status === "pending";
   const logOut = async () => {
     await clerk.signOut();
     signOut();
@@ -185,13 +187,13 @@ export function ProfileView() {
           <SocialLink icon={<Globe size={18} aria-hidden="true" />} label="Portfolio" text={website ? hostOf(website) : undefined} href={website ?? ""} />
         </div>
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
-          <Readout label="Account role" value={isTeacher ? "Teacher" : isAdmin ? "Admin" : "Student"} />
+          <Readout label="Account role" value={isTeacher ? "Teacher" : isAdmin ? "Admin" : isPendingFaculty ? "Faculty (pending)" : "Student"} />
           <Readout label="Language" value={LANGUAGE_DISPLAY_NAMES[profile.preferredLanguage]} />
           <Readout label="Saved drafts" value={draftCount === null ? "Unavailable" : draftCount} />
         </div>
       </SchoolEmailSection>
 
-      {!isTeacher && !isAdmin && (
+      {!isTeacher && !isAdmin && !isVerifiedStudent && (
         <FacultyVerificationSection profile={profile} onStatusChange={setFacultyStatus} />
       )}
 

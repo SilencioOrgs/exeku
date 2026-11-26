@@ -61,13 +61,30 @@ test("an account with no saved school keeps the welcome choice", () => {
   assert.equal(updates.userType, undefined);
 });
 
-function loadRoute(row, viewer) {
+function loadRoute(row, viewer, options = {}) {
   const source = readFileSync(new URL("../app/api/account/me/route.ts", import.meta.url), "utf8");
   const output = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
   const loaded = { exports: {} };
   const asked = [];
   const db = () => ({
-    from: () => ({ select: () => ({ eq: (column, value) => { asked.push([column, value]); return { maybeSingle: async () => ({ data: row, error: null }) }; } }) }),
+    from: (table) => ({
+      select: (cols) => ({
+        eq: (column, value) => {
+          asked.push([table, column, value]);
+          return {
+            maybeSingle: async () => {
+              if (table === "profiles" && options.missingBirthdayColumn && /birthday/.test(cols)) {
+                return { data: null, error: { code: "42703", message: "column profiles.birthday does not exist" } };
+              }
+              if (table === "faculty_requests") {
+                return { data: options.facultyRequest ?? null, error: null };
+              }
+              return { data: row, error: null };
+            },
+          };
+        },
+      }),
+    }),
   });
   vm.runInNewContext(output, {
     module: loaded,
@@ -82,20 +99,41 @@ function loadRoute(row, viewer) {
   return { GET: loaded.exports.GET, asked };
 }
 
-test("GET /api/account/me returns only the signed-in account's saved school and is never cached", async () => {
-  const row = { display_name: "Ada L", avatar_id: "pixel-cat", border_id: "gold", bio: "Hello", social_links: { github: "ada" }, school_email: "ada@lspu.edu.ph", age: 20, school };
+test("GET /api/account/me returns only the signed-in account's saved school, birthday, and faculty role, and is never cached", async () => {
+  const row = { display_name: "Ada L", avatar_id: "pixel-cat", border_id: "gold", bio: "Hello", social_links: { github: "ada" }, school_email: "ada@lspu.edu.ph", age: 20, birthday: "2006-05-10", school };
   const { GET, asked } = loadRoute(row, { id: "u1", name: "Ada", role: "student" });
   const res = await GET();
   assert.equal(res.status, 200);
   assert.equal(res.headers.get("Cache-Control"), "private, no-store");
-  assert.deepEqual(asked, [["user_id", "u1"]], "identity comes from the session");
+  assert.deepEqual(asked, [["profiles", "user_id", "u1"], ["faculty_requests", "user_id", "u1"]], "identity comes from the session");
   const body = await res.json();
   assert.equal(body.userId, "u1");
-  assert.deepEqual(body.account, { email: "ada@lspu.edu.ph", age: 20, school, verified: true });
+  assert.equal(body.userType, "student");
+  assert.deepEqual(body.account, { email: "ada@lspu.edu.ph", age: 20, birthday: "2006-05-10", school, verified: true });
 
   const signedOut = loadRoute(row, null);
   assert.equal((await signedOut.GET()).status, 401);
 
-  const noSchool = loadRoute({ ...row, school: null, school_email: null, age: null }, { id: "u1", name: "Ada", role: "student" });
+  const noSchool = loadRoute({ ...row, school: null, school_email: null, age: null, birthday: null }, { id: "u1", name: "Ada", role: "student" });
   assert.equal((await (await noSchool.GET()).json()).account, null);
+
+  // Pending faculty accounts restore userType="faculty" so they skip WelcomeDialog on a new laptop too.
+  const pendingFaculty = loadRoute(
+    { ...row, school: null, school_email: null, age: null, birthday: null },
+    { id: "u1", name: "Ada", role: "student" },
+    { facultyRequest: { status: "pending" } },
+  );
+  const facultyBody = await (await pendingFaculty.GET()).json();
+  assert.equal(facultyBody.userType, "faculty");
+  assert.equal(restoreUpdates(fresh, facultyBody)?.userType, "faculty");
+
+  // Missing birthday column degrades gracefully before SQL migration runs.
+  const preMigration = loadRoute(
+    { ...row, birthday: undefined },
+    { id: "u1", name: "Ada", role: "student" },
+    { missingBirthdayColumn: true },
+  );
+  const preBody = await (await preMigration.GET()).json();
+  assert.equal(preBody.account?.age, 20);
+  assert.equal(preBody.account?.birthday, undefined);
 });

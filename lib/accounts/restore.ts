@@ -1,11 +1,12 @@
 import type { StudentAccount } from "@/types/account";
-import type { LocalProfile, ProfileInput, SocialLinks } from "@/types/profile";
+import type { LocalProfile, ProfileInput, SocialLinks, UserType } from "@/types/profile";
 import type { AvatarBorderId } from "@/lib/avatar-borders";
 
 /** What the server keeps for the signed-in account. Only ever returned to that account (GET /api/account/me). */
 export interface AccountSnapshot {
   userId: string;
   account: StudentAccount | null;
+  userType?: UserType;
   displayName: string;
   avatarId: string;
   borderId: string;
@@ -30,9 +31,17 @@ export function restoreUpdates(local: LocalProfile, server: AccountSnapshot): Pa
   if (!local.ownerId || local.ownerId !== server.userId) return null;
   const updates: Partial<ProfileInput> = {};
   const account = server.account;
-  if (account && (local.account?.email !== account.email || local.account?.school.campusId !== account.school.campusId || !local.account?.verified)) {
+  if (
+    account &&
+    (local.account?.email !== account.email ||
+      local.account?.school.campusId !== account.school.campusId ||
+      local.account?.birthday !== account.birthday ||
+      !local.account?.verified)
+  ) {
     updates.account = account;
-    updates.userType = "student";
+    updates.userType = server.userType ?? "student";
+  } else if (server.userType && local.userType !== server.userType) {
+    updates.userType = server.userType;
   }
   if (server.displayName && server.displayName !== local.displayName) updates.displayName = server.displayName;
   if (server.avatarId && server.avatarId !== local.avatarId) updates.avatarId = server.avatarId;

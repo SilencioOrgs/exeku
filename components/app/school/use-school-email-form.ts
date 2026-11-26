@@ -15,7 +15,7 @@ import type { SchoolForm } from "./school-email-form";
 
 const formFrom = (saved?: StudentAccount): SchoolForm => ({
   email: saved?.email ?? "",
-  age: saved ? String(saved.age) : "",
+  birthday: saved?.birthday ?? "",
   locationId: "",
   schoolId: saved?.school.id ?? "",
   schoolLabel: saved?.school.id ? saved.school.shortName : "",
@@ -46,7 +46,10 @@ export function useSchoolEmailForm(saved: StudentAccount | undefined, onSave: (a
     setErrors((current) => {
       const next = { ...current };
       // Error keys drop the Id suffix: schoolId edits clear errors.school.
-      for (const key of Object.keys(patch)) delete next[key.replace(/Id$/, "")];
+      for (const key of Object.keys(patch)) {
+        delete next[key.replace(/Id$/, "")];
+        if (key === "birthday") delete next.age;
+      }
       return next;
     });
   }, []);
@@ -71,7 +74,7 @@ export function useSchoolEmailForm(saved: StudentAccount | undefined, onSave: (a
 
   const requestPayload = () => ({
     email: form.email,
-    age: form.age,
+    birthday: form.birthday,
     school: newSchool
       ? { kind: "new" as const, ...newSchool }
       : { kind: "listed" as const, schoolId: form.schoolId, campusId: form.campusId, programId: form.programId },

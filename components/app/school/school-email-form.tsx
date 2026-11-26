@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { KeyRound, MailCheck, RefreshCw, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { fetchLocations, fetchSchools } from "@/lib/accounts/api";
+import { birthdayBounds, computeAgeFromBirthday } from "@/lib/accounts/birthday";
 import type { FieldErrors, NewSchoolRequest, SchoolLocation, SchoolOption } from "@/types/account";
 import { AddSchoolPanel } from "./add-school-panel";
 import { SelectField, TextField } from "./field";
 
 export interface SchoolForm {
-  age: string;
+  birthday: string;
   email: string;
   locationId: string;
   schoolId: string;
@@ -89,6 +90,12 @@ export function SchoolEmailForm({
   const selectedSchool = schools?.find((s) => s.id === form.schoolId);
   const campuses = selectedSchool?.campuses ?? [];
   const programs = selectedSchool?.programs ?? [];
+  const bounds = useMemo(() => birthdayBounds(), []);
+  const computedAge = form.birthday ? computeAgeFromBirthday(form.birthday) : null;
+  const birthdayHint =
+    computedAge !== null && computedAge >= 13 && computedAge <= 100
+      ? `Age: ${computedAge} years old`
+      : "Used to calculate your age (13–100).";
 
   const pickSchool = (schoolId: string) => {
     const school = schools?.find((s) => s.id === schoolId);
@@ -143,10 +150,21 @@ export function SchoolEmailForm({
 
   return (
     <form id="school-form" onSubmit={onSubmit} noValidate className="mt-4 space-y-4">
-      <div className="grid gap-4 sm:grid-cols-[1fr_5.5rem]">
+      <div className="grid gap-4 sm:grid-cols-[1fr_11.5rem]">
         <TextField id="email" label="School email" type="email" autoComplete="email" placeholder="you@school.edu.ph" hint="Use the email your school gave you."
           autoCapitalize="none" spellCheck={false} autoFocus value={form.email} error={errors.email} onChange={(e) => onChange({ email: e.target.value })} />
-        <TextField id="age" label="Age" inputMode="numeric" maxLength={3} autoComplete="off" value={form.age} error={errors.age} onChange={(e) => onChange({ age: e.target.value })} />
+        <TextField
+          id="birthday"
+          label="Birthday"
+          type="date"
+          autoComplete="bday"
+          min={bounds.min}
+          max={bounds.max}
+          hint={birthdayHint}
+          value={form.birthday}
+          error={errors.birthday ?? errors.age}
+          onChange={(e) => onChange({ birthday: e.target.value })}
+        />
       </div>
 
       {adding ? (

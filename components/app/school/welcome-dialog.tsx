@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Compass, GraduationCap } from "lucide-react";
+import { BriefcaseBusiness, Clock3, Compass, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { fetchOrgs, orgAction } from "@/lib/orgs/api";
 import type { OrgSummary } from "@/types/org";
 import type { LocalProfile, ProfileInput } from "@/types/profile";
 import { RegisterOrgNote } from "../orgs/register-org-note";
+import { FacultyVerificationForm } from "./faculty-verification-form";
 import { SchoolEmailForm } from "./school-email-form";
 import { useSchoolEmailForm } from "./use-school-email-form";
 
@@ -59,6 +60,8 @@ function OrgStep({ profile, onDone }: { profile: LocalProfile; onDone: () => voi
 const TITLES = {
   choose: ["Welcome to Exeku", "How will you use Exeku?"],
   school: ["Add your school", "Tell us where you study."],
+  faculty: ["Verify as faculty", "Submit your faculty details and verify your Gmail for admin approval."],
+  facultyDone: ["Faculty verification submitted", "An administrator will review your request and unlock teacher tools."],
   orgs: ["Join your organization", "Officers confirm who belongs. You can skip this for now."],
 } as const;
 
@@ -82,21 +85,25 @@ export function WelcomeDialog({ profile, onUpdate }: { profile: LocalProfile; on
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="skeuo-panel max-h-[90svh] overflow-y-auto p-5 sm:max-w-xl sm:p-6" showCloseButton={false}>
+      <DialogContent className="skeuo-panel max-h-[90svh] overflow-y-auto p-5 sm:max-w-2xl sm:p-6" showCloseButton={false}>
         <div className="space-y-1">
           <DialogTitle className="text-xl font-semibold tracking-tight">{TITLES[step][0]}</DialogTitle>
           <DialogDescription>{TITLES[step][1]}</DialogDescription>
         </div>
         {step === "choose" && (
           <div className="space-y-3">
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-3">
               <Button variant="outline" className="h-auto flex-col items-start gap-1 p-4 text-left whitespace-normal" onClick={() => setStep("school")}>
-                <span className="flex items-center gap-2 font-semibold"><GraduationCap size={16} />I&apos;m a student</span>
+                <span className="flex items-center gap-2 font-semibold"><GraduationCap size={16} aria-hidden="true" />I&apos;m a student</span>
                 <span className="text-xs font-normal text-[var(--color-text-muted)]">Add your school, join organizations and compete.</span>
               </Button>
+              <Button variant="outline" className="h-auto flex-col items-start gap-1 p-4 text-left whitespace-normal" onClick={() => setStep("faculty")}>
+                <span className="flex items-center gap-2 font-semibold"><BriefcaseBusiness size={16} aria-hidden="true" />I&apos;m faculty</span>
+                <span className="text-xs font-normal text-[var(--color-text-muted)]">Verify as an instructor to create classes and advise organizations.</span>
+              </Button>
               <Button variant="outline" className="h-auto flex-col items-start gap-1 p-4 text-left whitespace-normal" onClick={() => void explore()}>
-                <span className="flex items-center gap-2 font-semibold"><Compass size={16} />Just exploring</span>
-                <span className="text-xs font-normal text-[var(--color-text-muted)]">Practice problems. You can add your school later.</span>
+                <span className="flex items-center gap-2 font-semibold"><Compass size={16} aria-hidden="true" />Just exploring</span>
+                <span className="text-xs font-normal text-[var(--color-text-muted)]">Practice problems. You can verify your role later.</span>
               </Button>
             </div>
             {error && <p role="alert" className="text-xs text-[var(--color-pink)]">{error}</p>}
@@ -124,6 +131,33 @@ export function WelcomeDialog({ profile, onUpdate }: { profile: LocalProfile; on
               onCancel={() => { school.reset(); setStep("choose"); }}
             />
           </>
+        )}
+        {step === "faculty" && (
+          <FacultyVerificationForm
+            defaultFullName={profile.displayName || ""}
+            cancelLabel="Back"
+            onSubmitted={async () => {
+              await onUpdate({ userType: "faculty" }).catch(() => undefined);
+              setStep("facultyDone");
+            }}
+            onCancel={() => setStep("choose")}
+          />
+        )}
+        {step === "facultyDone" && (
+          <div className="space-y-4">
+            <div className="skeuo-recess flex items-start gap-3 rounded-xl p-4 text-sm">
+              <Clock3 size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--color-primary-text)]" />
+              <div className="space-y-1">
+                <p className="font-medium text-[var(--color-text-main)]">Pending admin approval</p>
+                <p className="text-xs text-[var(--color-text-muted)]">
+                  You can check your verification status anytime on your Profile page. Once approved, Classes and Adviser tools unlock automatically.
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <Button size="lg" className="px-5" onClick={() => setOpen(false)}>Continue to Exeku</Button>
+            </div>
+          </div>
         )}
         {step === "orgs" && <OrgStep profile={profile} onDone={() => setOpen(false)} />}
       </DialogContent>

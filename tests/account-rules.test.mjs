@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { checkNewSchool, checkSchoolAccount } from "../lib/accounts/rules.ts";
+import { birthdayBounds, computeAgeFromBirthday } from "../lib/accounts/birthday.ts";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (name) => fs.readFileSync(path.join(root, name), "utf8");
@@ -25,6 +26,37 @@ test("school account normalizes a valid student", async () => {
   assert.equal(result.account.age, 20);
   assert.equal(result.account.school.campus, "Main");
   assert.equal(result.account.school.program, "BS");
+});
+
+test("school account computes exact age from birthday and rejects impossible or out-of-range dates", async () => {
+  const refDate = new Date(2026, 10, 26); // Nov 26, 2026
+  assert.equal(computeAgeFromBirthday("2006-11-26", refDate), 20);
+  assert.equal(computeAgeFromBirthday("2006-11-27", refDate), 19);
+  assert.equal(computeAgeFromBirthday("2005-02-30", refDate), null);
+  assert.equal(computeAgeFromBirthday("not-a-date", refDate), null);
+  assert.deepEqual(birthdayBounds(refDate), { min: "1926-11-26", max: "2013-11-26" });
+
+  const withBirthday = await checkSchoolAccount(
+    { birthday: "2005-05-15", email: "Maria@TU.edu.ph", school: valid.school },
+    lookup,
+  );
+  assert.equal(withBirthday.ok, true);
+  assert.equal(withBirthday.account.birthday, "2005-05-15");
+  assert.equal(withBirthday.account.age, computeAgeFromBirthday("2005-05-15"));
+
+  const tooYoung = await checkSchoolAccount(
+    { birthday: "2020-01-01", email: "Maria@TU.edu.ph", school: valid.school },
+    lookup,
+  );
+  assert.equal(tooYoung.ok, false);
+  assert.match(tooYoung.fieldErrors.birthday, /13/);
+
+  const badDate = await checkSchoolAccount(
+    { birthday: "2005-02-30", email: "Maria@TU.edu.ph", school: valid.school },
+    lookup,
+  );
+  assert.equal(badDate.ok, false);
+  assert.ok(badDate.fieldErrors.birthday);
 });
 
 test("school account rejects emails outside the selected school, look-alike domains included", async () => {
