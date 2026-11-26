@@ -1,6 +1,14 @@
+import type { WorkspaceFile } from "@/types/draft";
 import type { ExecutionLanguage } from "@/types/execution";
 
 export type ProblemDifficulty = "beginner" | "intermediate" | "advanced";
+
+export interface SavedSolution {
+  language: ExecutionLanguage;
+  sourceCode: string | null;
+  files?: WorkspaceFile[];
+  solvedAt: string;
+}
 
 export interface TestCase {
   id: string;
@@ -59,6 +67,8 @@ export interface VisibleProblem {
   timeLimitMs: number;
   memoryLimitKb: number;
   starterCodes: Record<ExecutionLanguage, string>;
+  solved?: boolean;
+  savedSolution?: SavedSolution | null;
 }
 
 export interface ProblemSummary {
@@ -71,4 +81,5 @@ export interface ProblemSummary {
   supportedLanguages: ExecutionLanguage[];
   sampleCount: number;
   totalTestsCount: number;
+  solved?: boolean;
 }

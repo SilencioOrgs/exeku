@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { withApiErrors } from "@/lib/api/route-handler";
 import { isAdmin } from "@/lib/auth/admin-check";
+import { latestAcceptedSolution } from "@/lib/judge/solves";
 import { findVisibleProblem } from "@/lib/problems/store";
 
 export const GET = (_req: Request, { params }: { params: Promise<{ id: string }> }) =>
@@ -11,11 +12,17 @@ export const GET = (_req: Request, { params }: { params: Promise<{ id: string }>
 
     const { id } = await params;
     const includeLocked = await isAdmin(userId);
-    const problem = await findVisibleProblem(id, { includeLocked, userId });
+    const [problem, savedSolution] = await Promise.all([
+      findVisibleProblem(id, { includeLocked, userId }),
+      latestAcceptedSolution(userId, id),
+    ]);
 
     if (!problem) {
       return NextResponse.json({ error: "Problem not found" }, { status: 404 });
     }
 
-    return NextResponse.json(problem);
+    return NextResponse.json(
+      { ...problem, solved: Boolean(savedSolution), savedSolution },
+      { headers: { "Cache-Control": "private, no-store" } },
+    );
   });

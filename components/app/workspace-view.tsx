@@ -8,7 +8,7 @@ import { useChallengeSession } from "@/hooks/use-challenge-session";
 import { useWorkspaceFiles } from "@/hooks/use-workspace-files";
 import { useJudge } from "@/hooks/use-judge";
 import { useDemoMode } from "@/hooks/use-demo-mode";
-import { FileCode2, List, Terminal, type LucideIcon } from "lucide-react";
+import { AlertTriangle, FileCode2, List, Terminal, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { CodeEditor } from "./code-editor";
@@ -30,7 +30,7 @@ import {
 } from "@/lib/execution/stdin-interactive";
 import { findLearnChapterById } from "@/lib/learn/curriculum";
 import { isRealVerdict } from "@/lib/verdicts";
-import { ALL_SUPPORTED_LANGUAGES } from "@/lib/workspace-defaults";
+import { ALL_SUPPORTED_LANGUAGES, getFilenameForLanguage } from "@/lib/workspace-defaults";
 import { call, peekApiCache } from "@/lib/accounts/api";
 import { invalidateClientCache } from "@/lib/client/swr-cache";
 import { fetchEvents, TOURNAMENT_REFRESH_EVENT } from "@/lib/orgs/api";
@@ -397,11 +397,27 @@ export function WorkspaceView() {
     setConfirmSubmitOpen(false);
     setStdinState({ phase: "idle" });
     showResults("results");
-    const result = await judge.submit(problem.id, source());
+    const submitted = source();
+    const result = await judge.submit(problem.id, submitted);
     if (!result) return;
     if (result.overallVerdict === "ACCEPTED") {
+      const savedAt = new Date().toISOString();
+      setProblem((current) =>
+        current && current.id === problem.id
+          ? {
+              ...current,
+              solved: true,
+              savedSolution: {
+                language: submitted.language,
+                sourceCode: submitted.sourceCode,
+                files: submitted.files.map((file) => ({ ...file })),
+                solvedAt: savedAt,
+              },
+            }
+          : current,
+      );
       window.dispatchEvent(new Event(TOURNAMENT_REFRESH_EVENT));
-      invalidateClientCache(["/api/events", "/api/classes", "/api/account/profile", "/api/notifications"]);
+      invalidateClientCache(["/api/events", "/api/classes", "/api/account/profile", "/api/notifications", "/api/problems"]);
       setEventRun((run) => run && run.problemIds.includes(problem.id) && !run.solved.includes(problem.id) ? { ...run, solved: [...run.solved, problem.id] } : run);
     }
     // Only real verdicts for the active challenge's problem count; sandbox errors or other problems never credit it.
@@ -502,6 +518,27 @@ export function WorkspaceView() {
   const prevProblemHref = prevProblemId ? `/app/workspace?problem=${encodeURIComponent(prevProblemId)}${eventQuery}` : null;
   const nextProblemHref = nextProblemId ? `/app/workspace?problem=${encodeURIComponent(nextProblemId)}${eventQuery}` : null;
 
+  const savedSolution = problem?.savedSolution ?? null;
+  const isShowingSavedSolution = useMemo(() => {
+    if (!savedSolution || savedSolution.sourceCode === null) return false;
+    if (files.activeLang !== savedSolution.language) return false;
+    const expected = savedSolution.files?.length
+      ? savedSolution.files
+      : [{ name: getFilenameForLanguage(savedSolution.language), content: savedSolution.sourceCode }];
+    if (files.files.length !== expected.length) return false;
+    return expected.every((entry) => files.files.some((file) => file.name === entry.name && file.content === entry.content));
+  }, [savedSolution, files.activeLang, files.files]);
+
+  const handleLoadSavedSolution = () => {
+    if (!savedSolution || savedSolution.sourceCode === null) return;
+    judge.cancelRun();
+    setStdinState({ phase: "idle" });
+    const nextFiles = savedSolution.files?.length
+      ? savedSolution.files
+      : [{ name: getFilenameForLanguage(savedSolution.language), content: savedSolution.sourceCode }];
+    void files.loadFiles(savedSolution.language, nextFiles);
+  };
+
   const problemPane = (onSample: (input: string) => void) => (
     <ProblemPane
       problem={problem}
@@ -513,6 +550,8 @@ export function WorkspaceView() {
         void files.switchLanguage(files.activeLang, code);
         if (stdin !== undefined) setCustomStdin(stdin);
       }}
+      onLoadSavedSolution={savedSolution && savedSolution.sourceCode !== null ? handleLoadSavedSolution : undefined}
+      isShowingSavedSolution={isShowingSavedSolution}
       onUseCustomStdin={onSample}
     />
   );
@@ -726,11 +765,22 @@ export function WorkspaceView() {
         <ConfirmDialog
           open={confirmSubmitOpen}
           onOpenChange={setConfirmSubmitOpen}
-          title="Submit your solution?"
+          title={problem.solved ? "Submit a new solution?" : "Submit your solution?"}
           description={<>Your code runs against {problem.visibleTestCases.length} visible and all hidden tests for {problem.title}.</>}
-          confirmLabel="Submit"
+          confirmLabel={problem.solved ? "Submit & replace" : "Submit"}
           onConfirm={() => void handleConfirmSubmission()}
         >
+          {problem.solved && (
+            <div
+              role="note"
+              className="flex items-start gap-2 rounded-lg border border-[color-mix(in_srgb,var(--color-primary)_40%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] p-3 text-xs text-[var(--color-text-main)]"
+            >
+              <AlertTriangle size={15} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--color-primary-text)]" />
+              <p className="leading-relaxed">
+                You already solved this problem. If this submission is accepted, it will overwrite your previously saved solution in the database.
+              </p>
+            </div>
+          )}
           {challenge.isTimedActive && <p className="font-code text-xs text-[var(--color-text-muted)]">{challenge.formattedTime} left in this challenge.</p>}
         </ConfirmDialog>
       )}

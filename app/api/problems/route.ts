@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { withApiErrors } from "@/lib/api/route-handler";
 import { isAdmin } from "@/lib/auth/admin-check";
+import { solvedProblemIds } from "@/lib/judge/solves";
 import { listProblemSummaries } from "@/lib/problems/store";
 
 export const GET = (req: Request) =>
@@ -15,7 +16,13 @@ export const GET = (req: Request) =>
     const search = searchParams.get("search") || undefined;
     const includeLocked = await isAdmin(userId);
 
-    return NextResponse.json({
-      problems: await listProblemSummaries({ difficulty, language, search }, { includeLocked, userId }),
-    });
+    const [problems, solved] = await Promise.all([
+      listProblemSummaries({ difficulty, language, search }, { includeLocked, userId }),
+      solvedProblemIds(userId),
+    ]);
+
+    return NextResponse.json(
+      { problems: problems.map((problem) => ({ ...problem, solved: solved.has(problem.id) })) },
+      { headers: { "Cache-Control": "private, no-store" } },
+    );
   });

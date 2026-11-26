@@ -26,6 +26,10 @@ export function loadRouteExports(path, userId = "user_route") {
     "@/lib/execution/queue": queue,
     "@/lib/judge/judging-service": judgingService,
     "@/lib/judge/record-submission": { recordSubmission: async () => {} },
+    "@/lib/judge/solves": {
+      solvedProblemIds: async () => new Set(),
+      latestAcceptedSolution: async () => null,
+    },
     "@/lib/problems/catalog": catalog,
     "@/lib/problems/store": {
       findProblem: async (id) => catalog.getProblemById(id),

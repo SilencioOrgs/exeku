@@ -19,6 +19,8 @@ export interface ProblemPaneProps {
   lessonChapter?: LearnChapter | null;
   activeLanguage?: PreferredLanguage;
   onLoadLessonCode?: (code: string, stdin?: string) => void;
+  onLoadSavedSolution?: () => void;
+  isShowingSavedSolution?: boolean;
   onUseCustomStdin: (sampleInput: string) => void;
 }
 
@@ -38,6 +40,8 @@ export function ProblemPane({
   lessonChapter,
   activeLanguage = "python",
   onLoadLessonCode,
+  onLoadSavedSolution,
+  isShowingSavedSolution = false,
   onUseCustomStdin,
 }: ProblemPaneProps) {
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
@@ -158,6 +162,9 @@ export function ProblemPane({
     } catch { /* clipboard blocked; nothing to undo */ }
   };
 
+  const savedSolution = problem.savedSolution;
+  const hasSavedCode = Boolean(savedSolution && savedSolution.sourceCode !== null);
+
   return (
     <div className="problem-pane flex h-full flex-col overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)]">
       <div className="shrink-0 space-y-2 border-b border-[var(--color-border)] p-3">
@@ -195,10 +202,30 @@ export function ProblemPane({
             )}
           </div>
         </div>
-        <p className="flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
+        <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--color-text-muted)]">
           <DifficultyBadge difficulty={problem.difficulty} />
+          {problem.solved && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--color-mint)_35%,transparent)] bg-[color-mix(in_srgb,var(--color-mint)_14%,transparent)] px-2 py-0.5 text-xs font-medium text-[var(--color-mint)]">
+              <CheckCircle2 size={12} aria-hidden="true" />
+              Solved
+            </span>
+          )}
           <span className="font-code">{problem.timeLimitMs} ms · {Math.round(problem.memoryLimitKb / 1000)} MB</span>
-        </p>
+        </div>
+        {hasSavedCode && savedSolution && (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[color-mix(in_srgb,var(--color-mint)_30%,transparent)] bg-[color-mix(in_srgb,var(--color-mint)_8%,transparent)] px-2.5 py-1.5 text-xs">
+            <span className="text-[var(--color-text-main)]">
+              {isShowingSavedSolution
+                ? `Showing your saved ${LANGUAGE_DISPLAY_NAMES[savedSolution.language]} answer`
+                : `Saved ${LANGUAGE_DISPLAY_NAMES[savedSolution.language]} answer in database`}
+            </span>
+            {onLoadSavedSolution && !isShowingSavedSolution && (
+              <Button type="button" variant="outline" size="xs" onClick={onLoadSavedSolution}>
+                <RotateCcw size={12} aria-hidden="true" /> Load saved answer
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3 text-sm text-[var(--color-text-main)]">

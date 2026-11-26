@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlarmClock, BookOpen, FileText, GraduationCap, Search } from "lucide-react";
+import { AlarmClock, BookOpen, CheckCircle2, FileText, GraduationCap, Search } from "lucide-react";
 import { Select } from "@/components/ui/select";
 import { useChallengeSession } from "@/hooks/use-challenge-session";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import { TopicFilter } from "./topic-filter";
 import { ChallengesTableSkeleton } from "./page-skeletons";
 
 const DIFFICULTIES: ProblemDifficulty[] = ["beginner", "intermediate", "advanced"];
+type StatusFilter = "all" | "unsolved" | "solved";
 
 function FilterSelect({ label, value, onChange, children }: { label: string; value: string; onChange: (value: string) => void; children: ReactNode }) {
   return <Select aria-label={label} value={value} onChange={onChange} className="h-9">{children}</Select>;
@@ -28,6 +29,7 @@ export function ChallengesView() {
   const challenge = useChallengeSession();
   const [language, setLanguage] = useState<PreferredLanguage | "all">("all");
   const [difficulty, setDifficulty] = useState<ProblemDifficulty | "all">("all");
+  const [status, setStatus] = useState<StatusFilter>("all");
   const [topic, setTopic] = useState<TopicId>("all");
   const [sort, setSort] = useState<SortId>("default");
   const [searchQuery, setSearchQuery] = useState("");
@@ -62,10 +64,14 @@ export function ChallengesView() {
     };
   }, []);
 
+  const solvedCount = useMemo(() => (problems ?? []).filter((p) => p.solved).length, [problems]);
+
   const visible = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     const filtered = (problems ?? []).filter((p) => {
       if (difficulty !== "all" && p.difficulty !== difficulty) return false;
+      if (status === "solved" && !p.solved) return false;
+      if (status === "unsolved" && p.solved) return false;
       if (language !== "all" && !p.supportedLanguages.includes(language)) return false;
       if (!inTopic(p, topic)) return false;
       if (q) {
@@ -75,14 +81,22 @@ export function ChallengesView() {
       return true;
     });
     return sortProblems(filtered, sort);
-  }, [problems, difficulty, language, topic, searchQuery, sort]);
-  const noFiltersApplied = difficulty === "all" && language === "all" && topic === "all" && !searchQuery.trim();
+  }, [problems, difficulty, status, language, topic, searchQuery, sort]);
+  const noFiltersApplied = difficulty === "all" && status === "all" && language === "all" && topic === "all" && !searchQuery.trim();
 
   return (
     <div className="challenges-view space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Problems</h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-3xl font-semibold tracking-tight">Problems</h1>
+            {problems !== null && problems.length > 0 && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-mint)_35%,transparent)] bg-[color-mix(in_srgb,var(--color-mint)_12%,transparent)] px-2.5 py-0.5 font-code text-xs font-medium text-[var(--color-mint)]">
+                <CheckCircle2 size={13} aria-hidden="true" />
+                {solvedCount}/{problems.length} solved
+              </span>
+            )}
+          </div>
           <p className="mt-1 text-sm text-[var(--color-text-muted)]">
             Solve coding problems from Easy to Hard and submit your own solutions to the sandbox judge.
           </p>
@@ -136,12 +150,17 @@ export function ChallengesView() {
         </div>
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[1fr_auto_auto]">
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[1fr_auto_auto_auto]">
         <div className="relative sm:col-span-2 lg:col-span-1">
           <Search size={15} aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[var(--color-text-muted)]" />
           <input type="search" aria-label="Search problems" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search problems, categories, or labels" className="skeuo-well h-9 w-full rounded-lg border border-input pr-3 pl-9 text-sm" />
         </div>
+        <FilterSelect label="Status" value={status} onChange={(v) => setStatus(v as StatusFilter)}>
+          <option value="all">All status</option>
+          <option value="unsolved">Unsolved</option>
+          <option value="solved">Solved</option>
+        </FilterSelect>
         <FilterSelect label="Language" value={language} onChange={(v) => setLanguage(v as PreferredLanguage | "all")}>
           <option value="all">All languages</option>
           {ALL_SUPPORTED_LANGUAGES.map((lang) => <option key={lang} value={lang}>{LANGUAGE_DISPLAY_NAMES[lang]}</option>)}
@@ -163,7 +182,7 @@ export function ChallengesView() {
               <p className="mx-auto max-w-md text-xs text-[var(--color-text-muted)]">
                 {noFiltersApplied
                   ? "Teachers and tournament organizers publish coding problems here. In the meantime, explore the language reference docs or interactive tutorials."
-                  : "Try another topic, difficulty, language, or search term."}
+                  : "Try another topic, difficulty, status, language, or search term."}
               </p>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-2">
@@ -193,7 +212,17 @@ export function ChallengesView() {
                 <tr key={problem.id} className="border-b border-[var(--color-border-subtle)] last:border-0 even:bg-[var(--color-canvas)] hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,transparent)]">
                   <td className="font-code px-4 py-3 text-[var(--color-text-muted)]">{index + 1}</td>
                   <td className="px-2 py-3">
-                    <Link href={`/app/workspace?problem=${encodeURIComponent(problem.id)}`} className="font-medium hover:text-[var(--color-primary-text)] hover:underline">{problem.title}</Link>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Link href={`/app/workspace?problem=${encodeURIComponent(problem.id)}`} className="font-medium hover:text-[var(--color-primary-text)] hover:underline">
+                        {problem.title}
+                      </Link>
+                      {problem.solved && (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--color-mint)_35%,transparent)] bg-[color-mix(in_srgb,var(--color-mint)_14%,transparent)] px-2 py-0.5 text-xs font-medium text-[var(--color-mint)]">
+                          <CheckCircle2 size={12} aria-hidden="true" />
+                          Solved
+                        </span>
+                      )}
+                    </div>
                     <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-[var(--color-text-muted)]">
                       <span>{problem.category} · {problem.totalTestsCount} tests</span>
                       {problem.tags.slice(0, 4).map((tag) => (
@@ -212,7 +241,12 @@ export function ChallengesView() {
                       <Button type="button" variant="outline" size="sm" onClick={() => startTimed(problem)} title="Start a 15-minute timed challenge" aria-label={`Start a timed challenge on ${problem.title}`}>
                         <AlarmClock size={14} aria-hidden="true" /><span className="hidden sm:inline">Timed</span>
                       </Button>
-                      <Link href={`/app/workspace?problem=${encodeURIComponent(problem.id)}`} className={buttonVariants({ size: "sm" })}>Solve</Link>
+                      <Link
+                        href={`/app/workspace?problem=${encodeURIComponent(problem.id)}`}
+                        className={buttonVariants({ variant: problem.solved ? "outline" : "default", size: "sm" })}
+                      >
+                        {problem.solved ? "Review" : "Solve"}
+                      </Link>
                     </div>
                   </td>
                 </tr>
