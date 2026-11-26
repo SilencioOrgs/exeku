@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
-import { CheckCircle2, CirclePlay, Columns3, Download, FileCode2, RotateCcw, Terminal } from "lucide-react";
+import { CheckCircle2, CirclePlay, Columns3, Download, FileCode2, Loader2, RotateCcw, Terminal } from "lucide-react";
 import { FileTabs } from "./file-tabs";
 import { ALL_SUPPORTED_LANGUAGES, LANGUAGE_DISPLAY_NAMES } from "@/lib/workspace-defaults";
 import type { PreferredLanguage } from "@/types/profile";
@@ -103,8 +103,10 @@ export function WorkspaceToolbar(props: WorkspaceToolbarProps) {
         onClick={props.onRun}
         title={props.blockedReason ?? "Run (Ctrl/Cmd+Enter)"}
         aria-label="Run code"
+        aria-busy={props.isRunning || undefined}
       >
-        <CirclePlay size={14} aria-hidden="true" /><span className="hidden @[500px]:inline">{props.isRunning ? "Running…" : "Run"}</span>
+        {props.isRunning ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <CirclePlay size={14} aria-hidden="true" />}
+        <span className="hidden @[500px]:inline">{props.isRunning ? "Running…" : "Run"}</span>
       </Button>
       <Button
         type="button"
@@ -114,8 +116,10 @@ export function WorkspaceToolbar(props: WorkspaceToolbarProps) {
         onClick={props.onSubmit}
         title={props.blockedReason ?? "Submit (Ctrl/Cmd+Shift+Enter)"}
         aria-label="Submit solution"
+        aria-busy={props.isSubmitting || undefined}
       >
-        <CheckCircle2 size={14} aria-hidden="true" /><span className="hidden @[500px]:inline">{props.isSubmitting ? "Judging…" : "Submit"}</span>
+        {props.isSubmitting ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <CheckCircle2 size={14} aria-hidden="true" />}
+        <span className="hidden @[500px]:inline">{props.isSubmitting ? "Judging…" : "Submit"}</span>
       </Button>
     </div>
   );

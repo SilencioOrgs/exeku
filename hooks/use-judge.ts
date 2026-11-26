@@ -44,7 +44,8 @@ export function useJudge() {
     return { started: ++generation.current, controller };
   };
 
-  const run = async (source: Source & { stdin: string; timeLimitMs: number }) => {
+  /** Resolves to null if the student left this problem or superseded the request before output arrived. */
+  const run = async (source: Source & { stdin: string; timeLimitMs: number }): Promise<ExecutionResult | null> => {
     const { started, controller } = nextController();
     setIsRunning(true);
     setIsSubmitting(false);
@@ -52,12 +53,13 @@ export function useJudge() {
     try {
       result = await postJson<ExecutionResult>("/api/execute", source, fetch, controller.signal);
     } catch (err) {
-      if (started !== generation.current) return;
+      if (started !== generation.current) return null;
       result = { status: "INTERNAL_ERROR", exitCode: null, stdout: "", stderr: err instanceof Error ? err.message : String(err), durationMs: 0 };
     }
-    if (started !== generation.current) return;
+    if (started !== generation.current) return null;
     setExecutionResult(result);
     setIsRunning(false);
+    return result;
   };
 
   /** Resolves to null if the student left this problem or superseded the request before the verdict arrived. */
@@ -88,6 +90,13 @@ export function useJudge() {
     setIsResultDemo(result !== null);
   };
 
+  const cancelRun = () => {
+    generation.current += 1;
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setIsRunning(false);
+  };
+
   const reset = () => {
     generation.current += 1;
     abortRef.current?.abort();
@@ -99,5 +108,5 @@ export function useJudge() {
     setIsResultDemo(false);
   };
 
-  return { isRunning, isSubmitting, executionResult, judgingResult, isResultDemo, run, submit, showDemoResult, reset, clearRun: () => setExecutionResult(null) };
+  return { isRunning, isSubmitting, executionResult, judgingResult, isResultDemo, run, submit, showDemoResult, cancelRun, reset, clearRun: () => setExecutionResult(null) };
 }

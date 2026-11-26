@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { CodeEditor } from "./code-editor";
 import { ProblemPane } from "./workspace/problem-pane";
-import { ResultsPane, type ResultsTab } from "./workspace/results-pane";
+import { ResultsPane, type ConsoleStdinState, type QuickSample, type ResultsTab } from "./workspace/results-pane";
 import { DemoControls } from "./workspace/demo-controls";
 import { WorkspaceToolbar, type WorkspaceLayout } from "./workspace/workspace-toolbar";
 import { SandboxOfflineNotice, ChallengeBar, CodeSafetyNotice } from "./workspace/workspace-notices";
@@ -21,6 +21,13 @@ import { ConfirmDialog, SubmissionResultDialog, TimeExpiredDialog } from "./work
 import { VerdictBadge } from "./workspace/verdict-badge";
 import { getSimulatedAcceptedResult, getSimulatedWrongAnswerResult } from "@/lib/demo/demo-simulation";
 import { checkWorkspaceSafety } from "@/lib/execution/code-safety";
+import {
+  appendInteractiveInput,
+  detectStdinUsage,
+  extractStdoutDelta,
+  isAwaitingStdin,
+  MAX_INTERACTIVE_STEPS,
+} from "@/lib/execution/stdin-interactive";
 import { findLearnChapterById } from "@/lib/learn/curriculum";
 import { isRealVerdict } from "@/lib/verdicts";
 import { ALL_SUPPORTED_LANGUAGES } from "@/lib/workspace-defaults";
@@ -75,6 +82,8 @@ export function WorkspaceView() {
   const demo = useDemoMode(searchParams.get("demo"));
 
   const [customStdin, setCustomStdin] = useState("");
+  const [stdinState, setStdinState] = useState<ConsoleStdinState>({ phase: "idle" });
+  const [lastAdHocStdin, setLastAdHocStdin] = useState("");
   const [activeResultsTab, setActiveResultsTab] = useState<ResultsTab>("console");
   const [mobileActivePane, setMobileActivePane] = useState<MobileActivePane>("code");
 
@@ -107,6 +116,8 @@ export function WorkspaceView() {
       setResultOpen(false);
       setConfirmSubmitOpen(false);
       setCustomStdin("");
+      setStdinState({ phase: "idle" });
+      setLastAdHocStdin("");
       setActiveResultsTab("console");
       judgeResetRef.current();
     });
@@ -201,11 +212,158 @@ export function WorkspaceView() {
   const safetyBlockedReason = safetyCheck.safe ? undefined : safetyCheck.message;
 
   const source = () => ({ language: files.activeLang, sourceCode: files.mainCode, files: files.files });
+  const runTimeLimitMs = problem?.timeLimitMs ?? 3000;
+
+  const quickSamples = useMemo<QuickSample[]>(() => {
+    if (problem?.sampleTestCases.length) {
+      return problem.sampleTestCases.map((sample, idx) => ({
+        label: `Sample ${idx + 1}`,
+        input: sample.input,
+      }));
+    }
+    const lessonSample = lessonChapter?.lessons[files.activeLang]?.exampleStdin;
+    if (lessonSample) {
+      return [{ label: "Lesson sample", input: lessonSample }];
+    }
+    return [];
+  }, [problem, lessonChapter, files.activeLang]);
+
+  const runWithStdin = async (stdin: string, kind: "direct" | "prompt") => {
+    const lang = files.activeLang;
+    const result = await judge.run({ ...source(), stdin, timeLimitMs: runTimeLimitMs });
+    if (!result) return;
+    if (isAwaitingStdin(lang, result)) {
+      const normalized = stdin.length > 0 ? (stdin.endsWith("\n") ? stdin : `${stdin}\n`) : "";
+      setStdinState({
+        phase: "interactive",
+        entries: [],
+        pendingPrompt: result.stdout,
+        rawStdout: result.stdout,
+        stdinSoFar: normalized,
+        lineDraft: "",
+        steps: 0,
+        lastResult: result,
+        continuedFromSavedInput: kind === "direct" && stdin.length > 0,
+      });
+      return;
+    }
+    if (kind === "prompt") {
+      setStdinState({
+        phase: "done",
+        kind: "prompt",
+        entries: [],
+        trailingOutput: result.stdout,
+        stdinUsed: stdin,
+        prefixBroken: false,
+      });
+      return;
+    }
+    setStdinState({ phase: "idle" });
+  };
+
+  const handlePromptRun = (stdin: string) => {
+    if (judge.isRunning || judge.isSubmitting || !safetyCheck.safe) return;
+    if (stdin.length > 0) setLastAdHocStdin(stdin);
+    setStdinState({ phase: "idle" });
+    void runWithStdin(stdin, "prompt");
+  };
+
+  const handleInteractiveSubmit = async (entry: string) => {
+    if (stdinState.phase !== "interactive" || judge.isRunning || judge.isSubmitting || !safetyCheck.safe) return;
+    const snapshot = stdinState;
+    const lang = files.activeLang;
+    const { nextStdin, displayInput } = appendInteractiveInput(snapshot.stdinSoFar, entry);
+    const nextEntries = [...snapshot.entries, { prompt: snapshot.pendingPrompt, input: displayInput }];
+    setLastAdHocStdin(nextStdin);
+    setStdinState({
+      ...snapshot,
+      entries: nextEntries,
+      pendingPrompt: "",
+      lineDraft: "",
+      stdinSoFar: nextStdin,
+    });
+    const result = await judge.run({ ...source(), stdin: nextStdin, timeLimitMs: runTimeLimitMs });
+    if (!result) return;
+    const { delta, prefixMatched } = extractStdoutDelta(snapshot.rawStdout, result.stdout);
+    if (isAwaitingStdin(lang, result) && snapshot.steps + 1 < MAX_INTERACTIVE_STEPS) {
+      setStdinState({
+        phase: "interactive",
+        entries: nextEntries,
+        pendingPrompt: delta,
+        rawStdout: result.stdout,
+        stdinSoFar: nextStdin,
+        lineDraft: "",
+        steps: snapshot.steps + 1,
+        lastResult: result,
+        continuedFromSavedInput: snapshot.continuedFromSavedInput,
+      });
+      return;
+    }
+    setStdinState({
+      phase: "done",
+      kind: "interactive",
+      entries: nextEntries,
+      trailingOutput: delta,
+      stdinUsed: nextStdin,
+      prefixBroken: !prefixMatched,
+    });
+  };
+
+  const handleInteractiveEndInput = () => {
+    if (stdinState.phase !== "interactive") return;
+    setStdinState({
+      phase: "done",
+      kind: "interactive",
+      entries: stdinState.entries,
+      trailingOutput: stdinState.pendingPrompt,
+      stdinUsed: stdinState.stdinSoFar,
+      prefixBroken: false,
+    });
+  };
+
+  const handleInteractiveStop = () => {
+    judge.cancelRun();
+    setStdinState({ phase: "idle" });
+  };
+
+  const handleRunWithSample = (sampleInput: string) => {
+    if (judge.isRunning || judge.isSubmitting || !safetyCheck.safe) return;
+    setLastAdHocStdin(sampleInput);
+    setStdinState({ phase: "idle" });
+    void runWithStdin(sampleInput, "prompt");
+  };
+
+  const handleRunNewInput = () => {
+    if (judge.isRunning || judge.isSubmitting || !safetyCheck.safe) return;
+    showResults("console");
+    const mode = detectStdinUsage(files.activeLang, files.files);
+    if (mode === "interactive") {
+      setStdinState({ phase: "idle" });
+      void runWithStdin("", "direct");
+      return;
+    }
+    setStdinState({ phase: "prompt", draft: "" });
+  };
 
   const handleRun = () => {
     if (judge.isRunning || judge.isSubmitting || !safetyCheck.safe) return;
+    if (stdinState.phase === "prompt") {
+      handlePromptRun(stdinState.draft);
+      return;
+    }
     showResults("console");
-    void judge.run({ ...source(), stdin: customStdin, timeLimitMs: problem?.timeLimitMs ?? 3000 });
+    if (customStdin.length > 0) {
+      setStdinState({ phase: "idle" });
+      void runWithStdin(customStdin, "direct");
+      return;
+    }
+    const mode = detectStdinUsage(files.activeLang, files.files);
+    if (mode === "prompt") {
+      setStdinState({ phase: "prompt", draft: "" });
+      return;
+    }
+    setStdinState({ phase: "idle" });
+    void runWithStdin("", "direct");
   };
 
   const handleOpenSubmit = () => {
@@ -215,6 +373,7 @@ export function WorkspaceView() {
   const handleConfirmSubmission = async () => {
     if (!problem || judge.isSubmitting || !safetyCheck.safe) return;
     setConfirmSubmitOpen(false);
+    setStdinState({ phase: "idle" });
     showResults("results");
     const result = await judge.submit(problem.id, source());
     if (!result) return;
@@ -444,7 +603,12 @@ export function WorkspaceView() {
                 onAddFile={files.addFile}
                 onRenameFile={files.renameFile}
                 onCloseFile={files.closeFile}
-                onLanguageChange={(lang) => void files.switchLanguage(lang)}
+                onLanguageChange={(lang) => {
+                  judge.cancelRun();
+                  setStdinState({ phase: "idle" });
+                  setLastAdHocStdin("");
+                  void files.switchLanguage(lang);
+                }}
                 isDemoMode={demo.isDemoMode}
                 onToggleDemo={() => demo.setDemoMode(!demo.isDemoMode)}
                 onReset={() => setResetOpen(true)}
@@ -493,10 +657,29 @@ export function WorkspaceView() {
                 executionResult={judge.executionResult}
                 judgingResult={judge.judgingResult}
                 customStdin={customStdin}
-                onCustomStdinChange={setCustomStdin}
+                onCustomStdinChange={(value) => {
+                  setCustomStdin(value);
+                  if (stdinState.phase === "prompt") setStdinState({ phase: "idle" });
+                }}
                 filename={files.activeFile}
                 isResultDemo={judge.isResultDemo}
                 demoNote={demo.demoNote}
+                stdinState={stdinState}
+                quickSamples={quickSamples}
+                lastAdHocStdin={lastAdHocStdin}
+                onPromptDraftChange={(draft) => setStdinState((cur) => cur.phase === "prompt" ? { ...cur, draft } : cur)}
+                onPromptRun={handlePromptRun}
+                onPromptCancel={() => setStdinState({ phase: "idle" })}
+                onInteractiveLineChange={(lineDraft) => setStdinState((cur) => cur.phase === "interactive" ? { ...cur, lineDraft } : cur)}
+                onInteractiveSubmit={(entry) => void handleInteractiveSubmit(entry)}
+                onInteractiveEndInput={handleInteractiveEndInput}
+                onInteractiveStop={handleInteractiveStop}
+                onRunWithSample={handleRunWithSample}
+                onSaveStdinToTab={(stdin) => {
+                  setCustomStdin(stdin);
+                  showResults("stdin");
+                }}
+                onRunNewInput={handleRunNewInput}
               />
             </div>
           </Panel>
