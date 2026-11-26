@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import ts from "typescript";
 import { NextResponse } from "next/server";
-import { restoreUpdates } from "../lib/accounts/restore.ts";
+import { hasUnsyncedLocalDetails, restoreUpdates } from "../lib/accounts/restore.ts";
 
 const school = { id: "lspu", campusId: "santa-cruz", name: "Laguna State Polytechnic University", shortName: "LSPU", location: "Laguna", campus: "Santa Cruz Campus (Main)", status: "listed" };
 const saved = {
@@ -14,7 +14,7 @@ const saved = {
   avatarId: "pixel-cat",
   borderId: "gold",
   bio: "Hello",
-  socialLinks: { github: "ada", linkedin: null, website: null },
+  socialLinks: { github: "ada", linkedin: null, website: "https://ada.dev/" },
 };
 const fresh = { id: "p1", ownerId: "u1", displayName: "Ada", avatarId: "glitch-bot", experienceLevel: "beginner", preferredLanguage: "python", createdAt: "", updatedAt: "" };
 
@@ -26,10 +26,28 @@ test("a new laptop restores the saved school and profile, so the student is not 
   assert.equal(updates.avatarId, "pixel-cat");
   assert.equal(updates.borderId, "gold");
   assert.equal(updates.bio, "Hello");
-  assert.deepEqual(updates.socialLinks, { github: "ada", linkedin: undefined, website: undefined });
+  assert.deepEqual(updates.socialLinks, { github: "ada", linkedin: undefined, website: "https://ada.dev/" });
 
   const restored = { ...fresh, ...updates };
   assert.equal(restoreUpdates(restored, saved), null, "an up-to-date browser makes no writes");
+  assert.equal(hasUnsyncedLocalDetails(restored, saved), false);
+});
+
+test("empty server links or bio do not wipe a PC's saved links, and are flagged for one-click sync", () => {
+  const pcProfile = {
+    ...fresh,
+    displayName: "Ada L",
+    avatarId: "pixel-cat",
+    borderId: "gold",
+    bio: "Hello",
+    socialLinks: { github: "ada", website: "https://ada.dev/" },
+  };
+  const emptyServer = { ...saved, bio: null, socialLinks: {} };
+  const updates = restoreUpdates(pcProfile, emptyServer);
+  assert.equal(updates?.bio, undefined, "must not erase local bio");
+  assert.equal(updates?.socialLinks, undefined, "must not erase local social links");
+  assert.equal(hasUnsyncedLocalDetails(pcProfile, emptyServer), true);
+  assert.equal(hasUnsyncedLocalDetails({ ...pcProfile, ownerId: "other-user" }, emptyServer), false, "shared PC must not flag another user's links");
 });
 
 test("restore never applies another account's data on a shared computer", () => {

@@ -34,6 +34,7 @@ export function CommandStation() {
   return <ModernOverview profile={profile} activeDraft={activeDraft}
     totalDrafts={totalDrafts} onSaveProfile={async (updates) => {
       const saved = await updateProfile(profile.id, updates);
-      await syncProfile(saved);
+      const synced = await syncProfile(saved);
+      if (!synced.ok) throw new Error(synced.error || "Saved on this browser, but couldn't sync to your account. Try again.");
     }} />;
 }

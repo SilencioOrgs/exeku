@@ -1,14 +1,15 @@
 "use client";
 
 import { Button, buttonVariants } from "@/components/ui/button";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
 import { useProfile } from "@/hooks/use-profile";
 import { draftRepository } from "@/lib/storage/draft-repository";
-import { BadgeCheck, Globe, GraduationCap, LogOut, Pencil, Settings } from "lucide-react";
-import { syncProfile } from "@/lib/accounts/api";
+import { BadgeCheck, CloudUpload, Globe, GraduationCap, LogOut, Pencil, Settings } from "lucide-react";
+import { fetchAccountSnapshot, syncProfile } from "@/lib/accounts/api";
+import { hasUnsyncedLocalDetails, restoreUpdates } from "@/lib/accounts/restore";
 import { fetchFacultyStatus } from "@/lib/roles/api";
 import { useChallengeSession } from "@/hooks/use-challenge-session";
 import { githubUrl, linkedinUrl } from "@/lib/social-links";
@@ -64,19 +65,33 @@ export function ProfileView() {
   const [confirmingLogout, setConfirmingLogout] = useState(false);
   const [draftCount, setDraftCount] = useState<number | null>(null);
   const [facultyStatus, setFacultyStatus] = useState<FacultyStatusPayload | null>(null);
+  const [needsCloudSync, setNeedsCloudSync] = useState(false);
+  const [syncingCloud, setSyncingCloud] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const profileRef = useRef(profile);
+  const profileId = profile?.id;
+
+  useEffect(() => { profileRef.current = profile; });
 
   useEffect(() => {
     let active = true;
-    if (profile) {
-      draftRepository.getAllDraftsForProfile(profile.id)
+    if (profileId) {
+      draftRepository.getAllDraftsForProfile(profileId)
         .then((drafts) => { if (active) setDraftCount(drafts.length); })
         .catch(() => { if (active) setDraftCount(null); });
       void fetchFacultyStatus().then((res) => {
         if (active && res.ok) setFacultyStatus(res.data);
       });
+      void fetchAccountSnapshot().then(async (res) => {
+        const current = profileRef.current;
+        if (!active || !res.ok || !current || current.id !== profileId) return;
+        const updates = restoreUpdates(current, res.data);
+        const merged = updates ? await updateProfile(profileId, updates).catch(() => current) : current;
+        if (active) setNeedsCloudSync(hasUnsyncedLocalDetails(merged, res.data));
+      });
     }
     return () => { active = false; };
-  }, [profile]);
+  }, [profileId, updateProfile]);
 
   if (!profile) return <PageSkeleton label="Loading your profile…" />;
 
@@ -91,6 +106,18 @@ export function ProfileView() {
     await clerk.signOut();
     signOut();
     router.push("/");
+  };
+
+  const handleSyncToAccount = async () => {
+    setSyncingCloud(true);
+    setSyncError(null);
+    const res = await syncProfile(profile);
+    setSyncingCloud(false);
+    if (!res.ok) {
+      setSyncError(res.error || "Could not sync your profile to your account. Try again.");
+      return;
+    }
+    setNeedsCloudSync(false);
   };
 
   return (
@@ -121,6 +148,20 @@ export function ProfileView() {
           </Button>
         </div>
       </header>
+
+      {needsCloudSync && (
+        <div className="skeuo-card flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_40%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] p-3.5 text-sm">
+          <div className="space-y-0.5">
+            <p className="font-medium text-[var(--color-text-main)]">Your bio or links on this browser are not synced to your account yet.</p>
+            <p className="text-xs text-[var(--color-text-muted)]">
+              {syncError ?? "Sync once so they show up on your other devices."}
+            </p>
+          </div>
+          <Button type="button" size="sm" onClick={() => void handleSyncToAccount()} loading={syncingCloud} loadingText="Syncing…">
+            <CloudUpload size={14} aria-hidden="true" /> Sync to account
+          </Button>
+        </div>
+      )}
 
       <SchoolEmailSection
         profile={profile}
@@ -170,7 +211,12 @@ export function ProfileView() {
         profile={profile}
         onSave={async (updates) => {
           const saved = await updateProfile(profile.id, updates);
-          await syncProfile(saved);
+          const synced = await syncProfile(saved);
+          if (!synced.ok) {
+            setNeedsCloudSync(true);
+            throw new Error(synced.error || "Saved on this browser, but couldn't sync to your account. Try again.");
+          }
+          setNeedsCloudSync(false);
         }}
       />
     </div>
