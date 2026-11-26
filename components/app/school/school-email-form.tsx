@@ -132,9 +132,9 @@ export function SchoolEmailForm({
               </Button>
             )}
           </div>
-          <Button type="submit" size="lg" className="px-5" disabled={busy || otpCode.length < 6}>
+          <Button type="submit" size="lg" className="px-5" disabled={otpCode.length < 6} loading={busy} loadingText="Verifying…">
             <KeyRound size={15} aria-hidden="true" />
-            {busy ? "Verifying…" : "Verify & save"}
+            Verify &amp; save
           </Button>
         </div>
       </form>
@@ -205,8 +205,8 @@ export function SchoolEmailForm({
         We&apos;ll send a 6-digit verification code to confirm this email belongs to you. If it&apos;s already verified on your account, it saves right away.
       </p>
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="ghost" size="lg" className="px-4" onClick={onCancel}>Cancel</Button>
-        <Button type="submit" size="lg" className="px-5" disabled={busy}>{busy ? "Checking…" : "Verify & save"}</Button>
+        <Button type="button" variant="ghost" size="lg" className="px-4" onClick={onCancel} disabled={busy}>Cancel</Button>
+        <Button type="submit" size="lg" className="px-5" loading={busy} loadingText="Checking…">Verify &amp; save</Button>
       </div>
     </form>
   );

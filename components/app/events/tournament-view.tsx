@@ -8,6 +8,7 @@ import { PixelAvatar } from "@/components/retro/pixel-avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { fetchTournament, TOURNAMENT_REFRESH_EVENT, tournamentAction } from "@/lib/orgs/api";
 import type { TournamentTeam, TournamentView } from "@/types/tournament";
+import { ConfirmDialog } from "@/components/app/workspace/submission-modals";
 import { TextField } from "../school/field";
 
 const PLACES = ["1st", "2nd", "3rd"];
@@ -19,7 +20,17 @@ function clock(ms: number) {
   return parts.map((n) => String(n).padStart(2, "0")).join(":");
 }
 
-function TeamCard({ team, view, onJoin }: { team: TournamentTeam; view: TournamentView; onJoin: (id: string) => void }) {
+function TeamCard({
+  team,
+  view,
+  onJoin,
+  busyKey,
+}: {
+  team: TournamentTeam;
+  view: TournamentView;
+  onJoin: (id: string) => void;
+  busyKey: string | null;
+}) {
   const slots = view.teamSize - team.members.length;
   const onPodium = team.rank !== undefined && team.rank <= 3 && team.points > 0;
   return (
@@ -35,7 +46,18 @@ function TeamCard({ team, view, onJoin }: { team: TournamentTeam; view: Tourname
           ? <span className="font-code text-sm">{team.points} pts · {team.solved}/{view.problems.length || "–"}</span>
           : <span className="text-xs text-[var(--color-text-muted)]">{team.members.length}/{view.teamSize} members</span>}
         {team.warnings > 0 && <span className="text-xs text-[var(--color-pink)]">{team.warnings} {team.warnings === 1 ? "warning" : "warnings"}</span>}
-        {view.status === "registration" && !view.myTeamId && slots > 0 && <Button size="sm" variant="outline" onClick={() => onJoin(team.id)}>Join {team.name}</Button>}
+        {view.status === "registration" && !view.myTeamId && slots > 0 && (
+          <Button
+            size="sm"
+            variant="outline"
+            loading={busyKey === `join:${team.id}`}
+            loadingText="Joining…"
+            disabled={busyKey !== null}
+            onClick={() => onJoin(team.id)}
+          >
+            Join {team.name}
+          </Button>
+        )}
       </div>
       <ul className="flex flex-wrap gap-x-5 gap-y-3">
         {team.members.map((m) => (
@@ -57,6 +79,8 @@ export function TournamentPage({ id }: { id: string }) {
   const [loadError, setLoadError] = useState<string>();
   const [actionError, setActionError] = useState<string>();
   const [teamName, setTeamName] = useState("");
+  const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [confirmLeave, setConfirmLeave] = useState(false);
   const mounted = useRef(false);
   const loading = useRef(false);
   const loadAgain = useRef(false);
@@ -120,13 +144,24 @@ export function TournamentPage({ id }: { id: string }) {
   if (loadError && !view) return <div className="mx-auto w-full max-w-4xl space-y-4 p-4 sm:p-6 lg:p-8">{back}<p role="alert" className="text-sm text-[var(--color-pink)]">{loadError}</p></div>;
   if (!view || !target) return <DetailPageSkeleton label="Loading tournament…" />;
 
-  const act = async (body: Record<string, unknown>) => {
+  const act = async (key: string, body: Record<string, unknown>) => {
+    if (busyKey) return false;
+    setBusyKey(key);
     setActionError(undefined);
-    const result = await tournamentAction(id, body);
-    if (result.ok) { void load(); setTeamName(""); }
-    else setActionError(result.error ?? "That didn't work. Try again.");
+    try {
+      const result = await tournamentAction(id, body);
+      if (result.ok) {
+        await load();
+        setTeamName("");
+        return true;
+      }
+      setActionError(result.error ?? "That didn't work. Try again.");
+      return false;
+    } finally {
+      setBusyKey(null);
+    }
   };
-  const createTeam = (event: FormEvent) => { event.preventDefault(); void act({ action: "createTeam", name: teamName }); };
+  const createTeam = (event: FormEvent) => { event.preventDefault(); void act("createTeam", { action: "createTeam", name: teamName }); };
   const registration = view.status === "registration";
   const finished = view.status === "live" && view.problems.length > 0 && view.problems.every((p) => view.solvedProblemIds.includes(p.id));
 
@@ -150,12 +185,12 @@ export function TournamentPage({ id }: { id: string }) {
       {registration && (view.myTeamId ? (
         <section aria-label="Your registration" className="profile-panel flex flex-wrap items-center justify-between gap-3 p-5">
           <p className="text-sm">You&apos;re registered. Problems unlock when the timer reaches zero.</p>
-          <Button variant="ghost" onClick={() => void act({ action: "leave" })}>Leave team</Button>
+          <Button variant="ghost" loading={busyKey === "leave"} loadingText="Leaving…" disabled={busyKey !== null} onClick={() => setConfirmLeave(true)}>Leave team</Button>
         </section>
       ) : (
         <form onSubmit={createTeam} className="profile-panel flex items-end gap-2 p-5">
-          <div className="min-w-0 flex-1"><TextField id="team-name" label="Register a new team, or join one below" placeholder="Team name" value={teamName} onChange={(e) => setTeamName(e.target.value)} maxLength={40} /></div>
-          <Button type="submit" className="h-10 px-4">Register</Button>
+          <div className="min-w-0 flex-1"><TextField id="team-name" label="Register a new team, or join one below" placeholder="Team name" value={teamName} onChange={(e) => setTeamName(e.target.value)} maxLength={40} disabled={busyKey !== null} /></div>
+          <Button type="submit" className="h-10 px-4" loading={busyKey === "createTeam"} loadingText="Registering…" disabled={busyKey !== null}>Register</Button>
         </form>
       ))}
 
@@ -182,8 +217,23 @@ export function TournamentPage({ id }: { id: string }) {
         {view.status === "live" && <p className="text-xs text-[var(--color-text-muted)]">Scores are hidden until the tournament ends.</p>}
         {view.teams.length === 0
           ? <p className="profile-panel p-5 text-sm text-[var(--color-text-muted)]">No teams yet. Be the first to register.</p>
-          : <ul className="space-y-3">{view.teams.map((team) => <TeamCard key={team.id} team={team} view={view} onJoin={(teamId) => void act({ action: "joinTeam", teamId })} />)}</ul>}
+          : <ul className="space-y-3">{view.teams.map((team) => <TeamCard key={team.id} team={team} view={view} busyKey={busyKey} onJoin={(teamId) => void act(`join:${teamId}`, { action: "joinTeam", teamId })} />)}</ul>}
       </section>
+
+      <ConfirmDialog
+        open={confirmLeave}
+        onOpenChange={setConfirmLeave}
+        title="Leave your team?"
+        description="Your spot will open for other students until registration closes."
+        confirmLabel="Leave team"
+        loadingLabel="Leaving…"
+        loading={busyKey === "leave"}
+        destructive
+        onConfirm={async () => {
+          await act("leave", { action: "leave" });
+          setConfirmLeave(false);
+        }}
+      />
     </div>
   );
 }

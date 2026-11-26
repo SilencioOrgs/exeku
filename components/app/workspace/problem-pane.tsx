@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, BookOpen, CheckCircle2, Copy, FileCode2, RotateCcw } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { useChallengeSession } from "@/hooks/use-challenge-session";
 import type { LearnChapter } from "@/lib/learn/curriculum";
 import { tokenize } from "@/lib/syntax";
 import { LANGUAGE_DISPLAY_NAMES } from "@/lib/workspace-defaults";
@@ -40,6 +41,7 @@ export function ProblemPane({
   onUseCustomStdin,
 }: ProblemPaneProps) {
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+  const { requestNavigation } = useChallengeSession();
 
   if (!problem && lessonChapter) {
     const lesson = lessonChapter.lessons[activeLanguage];
@@ -138,6 +140,7 @@ export function ProblemPane({
         </div>
         <Link
           href="/app/learn"
+          onClick={(event) => { if (!requestNavigation("/app/learn")) event.preventDefault(); }}
           className="skeuo-well flex items-center gap-2 rounded-xl border px-3 py-2 text-xs text-[var(--color-text-main)] hover:border-[var(--color-primary)]"
         >
           <BookOpen size={14} className="text-[var(--color-primary-text)]" aria-hidden="true" />
@@ -163,6 +166,7 @@ export function ProblemPane({
           <div className="flex shrink-0 items-center gap-1.5">
             <Link
               href="/app/challenges"
+              onClick={(event) => { if (!requestNavigation("/app/challenges")) event.preventDefault(); }}
               className={buttonVariants({ variant: "ghost", size: "xs" })}
             >
               All problems
@@ -170,6 +174,7 @@ export function ProblemPane({
             {prevHref && (
               <Link
                 href={prevHref}
+                onClick={(event) => { if (!requestNavigation(prevHref)) event.preventDefault(); }}
                 aria-label="Previous problem"
                 title="Previous problem"
                 className={buttonVariants({ variant: "outline", size: "xs" })}
@@ -180,6 +185,7 @@ export function ProblemPane({
             {nextHref && (
               <Link
                 href={nextHref}
+                onClick={(event) => { if (!requestNavigation(nextHref)) event.preventDefault(); }}
                 aria-label="Next problem"
                 title="Skip to next problem"
                 className={buttonVariants({ variant: "outline", size: "xs" })}

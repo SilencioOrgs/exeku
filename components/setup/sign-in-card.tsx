@@ -59,8 +59,16 @@ export function SignInCard() {
         <h1 className="mt-6 text-2xl font-semibold tracking-tight">Welcome to Exeku</h1>
         <p className="mt-1 text-sm text-[var(--color-text-muted)]">Sign in to start practicing.</p>
 
-        <Button variant="outline" size="lg" className="mt-6 h-11 w-full gap-2.5 text-sm" disabled={!isLoaded || busy || Boolean(accountId)} onClick={signInWithGoogle}>
-          <GoogleMark /> {accountId ? "Signing you in…" : "Continue with Google"}
+        <Button
+          variant="outline"
+          size="lg"
+          className="mt-6 h-11 w-full gap-2.5 text-sm"
+          disabled={!isLoaded}
+          loading={busy || Boolean(accountId)}
+          loadingText="Signing you in…"
+          onClick={signInWithGoogle}
+        >
+          <GoogleMark /> Continue with Google
         </Button>
 
         {notice && <p role="alert" className="skeuo-recess mt-4 rounded-xl p-3 text-sm">{notice}</p>}

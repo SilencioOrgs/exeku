@@ -57,8 +57,12 @@ export function ModernOverview({ profile, activeDraft, totalDrafts, onSaveProfil
   // Suggest a timed round at the student's level, falling back to the first problem.
   const roundProblem = useMemo(() => (problems ?? []).find((p) => p.difficulty === profile.experienceLevel) ?? problems?.[0], [problems, profile.experienceLevel]);
   const startRound = (problem: ProblemSummary) => {
+    const targetHref = `/app/workspace?problem=${encodeURIComponent(problem.id)}`;
+    if (challenge.isTimedActive && challenge.session?.problemId !== problem.id) {
+      if (!challenge.requestNavigation(targetHref)) return;
+    }
     challenge.startChallenge(problem.id, problem.title);
-    router.push(`/app/workspace?problem=${encodeURIComponent(problem.id)}`);
+    router.push(targetHref);
   };
   const topicProblems = useMemo(() => (problems ?? []).filter((p) => inTopic(p, topic)), [problems, topic]);
   const filename = getFilenameForLanguage(profile.preferredLanguage);

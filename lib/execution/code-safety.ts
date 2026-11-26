@@ -82,6 +82,60 @@ export function stripComments(source: string, language: ExecutionLanguage): stri
       continue;
     }
 
+    // Java 15+ text blocks (""" ... """)
+    if (language === "java" && ch === '"' && source[i + 1] === '"' && source[i + 2] === '"') {
+      out.push('"', '"', '"');
+      i += 3;
+      while (i < len) {
+        if (source[i] === "\\" && i + 1 < len) {
+          out.push(source[i], source[i + 1]);
+          i += 2;
+          continue;
+        }
+        if (source[i] === '"' && source[i + 1] === '"' && source[i + 2] === '"') {
+          out.push('"', '"', '"');
+          i += 3;
+          break;
+        }
+        out.push(source[i]);
+        i += 1;
+      }
+      continue;
+    }
+
+    // C++11+ raw string literals R"delim(...)delim"
+    if (
+      language === "cpp" &&
+      ch === "R" &&
+      next === '"' &&
+      (i === 0 || !/[A-Za-z0-9_]/.test(source[i - 1]))
+    ) {
+      const parenIdx = source.indexOf("(", i + 2);
+      const delim = parenIdx !== -1 ? source.slice(i + 2, parenIdx) : null;
+      if (delim !== null && delim.length <= 16 && !/[\s()\\]/.test(delim)) {
+        const endMarker = `)${delim}"`;
+        const closeIdx = source.indexOf(endMarker, parenIdx + 1);
+        const end = closeIdx !== -1 ? closeIdx + endMarker.length : len;
+        out.push(source.slice(i, end));
+        i = end;
+        continue;
+      }
+    }
+
+    // C++14+ numeric digit separator (e.g. 200'005, 0xFF'FF) is not a char literal.
+    if (
+      language === "cpp" &&
+      ch === "'" &&
+      i > 0 &&
+      i + 1 < len &&
+      /[0-9a-fA-F]/.test(source[i - 1]) &&
+      /[0-9a-fA-F]/.test(source[i + 1])
+    ) {
+      out.push(ch);
+      i += 1;
+      continue;
+    }
+
     // C, C++, Java string or char literals
     if (ch === '"' || ch === "'") {
       const quote = ch;
@@ -146,7 +200,7 @@ const COMMON_RULES: SafetyRule[] = [
     code: "disk_wipe",
     label: "disk or filesystem wiping command",
     reason: "Low-level disk formatting or wiping commands (mkfs, dd, wipefs, shred) are blocked.",
-    pattern: /\b(?:mkfs(?:\.[a-z0-9]+)?|dd\s+if=|wipefs|shred)\b/,
+    pattern: /\b(?:mkfs(?:\.[a-z0-9]+)?|dd\s+if=|wipefs\b|shred\s+(?:-[a-zA-Z]|\/))/,
   },
   {
     code: "fork_bomb",
@@ -186,7 +240,7 @@ const PYTHON_RULES: SafetyRule[] = [
     code: "python_dynamic_exec",
     label: "dynamic code execution",
     reason: "Dynamic execution helpers (eval, exec, compile) are blocked.",
-    pattern: /\b(?:eval|exec|compile)\s*\(/,
+    pattern: /(?<!\bdef\s+)(?<![.\w])(?:eval|exec|compile)\s*\(/,
   },
   {
     code: "python_introspection_escape",
@@ -234,7 +288,7 @@ const C_CPP_RULES: SafetyRule[] = [
     code: "c_cpp_file_remove",
     label: "file deletion via remove()",
     reason: "Deleting files with remove(path) is blocked.",
-    pattern: /\bremove\s*\(\s*["']/,
+    pattern: /(?<![.\w>])\bremove\s*\(\s*["']/,
   },
   {
     code: "c_cpp_unsafe_fopen",

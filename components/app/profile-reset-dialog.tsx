@@ -95,8 +95,8 @@ export function ProfileResetDialog({
           <Button type="button" variant="outline" size="sm" onClick={handleClose} disabled={isDeleting}>
             Cancel
           </Button>
-          <Button type="button" variant="destructive" size="sm" onClick={handleReset} disabled={!isConfirmed || isDeleting}>
-            {isDeleting ? "Deleting…" : "Delete profile"}
+          <Button type="button" variant="destructive" size="sm" onClick={handleReset} disabled={!isConfirmed} loading={isDeleting} loadingText="Deleting…">
+            Delete profile
           </Button>
         </DialogFooter>
       </DialogContent>

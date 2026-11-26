@@ -118,10 +118,18 @@ export function LearnView({ initialChapterId, initialLang, embedded = false }: L
   const [answersByKey, setAnswersByKey] = useState<Record<string, string>>({});
   const [feedbackByKey, setFeedbackByKey] = useState<Record<string, "correct" | "wrong" | null>>({});
   const [showHintByKey, setShowHintByKey] = useState<Record<string, boolean>>({});
-  const [completedKeys, setCompletedKeys] = useState<string[]>(() => readCompleted());
+  const [completedKeys, setCompletedKeys] = useState<string[]>([]);
 
   useEffect(() => {
     const controller = new AbortController();
+    const local = readCompleted();
+    if (local.length > 0) {
+      queueMicrotask(() => {
+        if (!controller.signal.aborted) {
+          setCompletedKeys((prev) => Array.from(new Set([...prev, ...local])));
+        }
+      });
+    }
     fetch("/api/learn", { signal: controller.signal })
       .then((res) => (res.ok ? res.json() : null))
       .then((data: { chapters?: LearnChapter[]; completedKeys?: string[] } | null) => {

@@ -46,8 +46,8 @@ export function AddSchoolPanel({ onAdded, onCancel }: { onAdded: (school: NewSch
       {formError && <p role="alert" className="text-xs text-[var(--color-pink)]">{formError}</p>}
       <p className="text-xs text-[var(--color-text-muted)]">We review new schools before listing them. You can keep signing up in the meantime.</p>
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>
-        <Button type="button" variant="outline" onClick={add} disabled={busy}>{busy ? "Checking…" : "Add school"}</Button>
+        <Button type="button" variant="ghost" onClick={onCancel} disabled={busy}>Cancel</Button>
+        <Button type="button" variant="outline" onClick={add} loading={busy} loadingText="Checking…">Add school</Button>
       </div>
     </fieldset>
   );

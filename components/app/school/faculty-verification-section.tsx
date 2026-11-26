@@ -370,9 +370,9 @@ export function FacultyVerificationSection({
                 error={fieldErrors.note}
               />
               <div className="flex flex-wrap gap-2">
-                <Button type="submit" disabled={busy}>
+                <Button type="submit" loading={busy} loadingText="Sending code…">
                   <KeyRound size={15} aria-hidden="true" />
-                  {busy ? "Sending code…" : "Send OTP verification code"}
+                  Send OTP verification code
                 </Button>
                 <Button type="button" variant="outline" onClick={() => setOpenForm(false)} disabled={busy}>
                   Cancel
@@ -411,8 +411,8 @@ export function FacultyVerificationSection({
               </div>
 
               <div className="flex flex-wrap gap-2">
-                <Button type="submit" disabled={busy || otpCode.length < 6}>
-                  {busy ? "Verifying & sending…" : "Verify OTP & send to admin"}
+                <Button type="submit" disabled={otpCode.length < 6} loading={busy} loadingText="Verifying & sending…">
+                  Verify OTP &amp; send to admin
                 </Button>
                 <Button type="button" variant="outline" onClick={() => void handleResendOtp()} disabled={busy}>
                   <RefreshCw size={14} aria-hidden="true" /> Resend code

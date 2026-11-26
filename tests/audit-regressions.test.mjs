@@ -1238,8 +1238,84 @@ test("isMissingRelationError matches missing-table errors only, never FK/CHECK/p
   assert.equal(isMissingRelationError({ code: "42501", message: 'permission denied for table notifications' }, ["notifications"]), false);
 });
 
+test("checkSameOriginCsrf blocks cross-site and cross-origin mutations while allowing same-origin and GET requests", async () => {
+  const { checkSameOriginCsrf } = await import("../lib/auth/access.ts");
+  assert.equal(checkSameOriginCsrf({ method: "GET", url: "https://exeku.app/api/problems", headers: new Headers({ origin: "https://evil.test", "sec-fetch-site": "cross-site" }) }), null);
+  assert.equal(checkSameOriginCsrf({ method: "POST", url: "https://exeku.app/api/judge", headers: new Headers({ host: "exeku.app", origin: "https://exeku.app", "sec-fetch-site": "same-origin" }) }), null);
+  assert.match(checkSameOriginCsrf({ method: "POST", url: "https://exeku.app/api/judge", headers: new Headers({ host: "exeku.app", origin: "https://evil.test", "sec-fetch-site": "cross-site" }) }) ?? "", /cross-site/i);
+  assert.match(checkSameOriginCsrf({ method: "PATCH", url: "https://exeku.app/api/notifications", headers: new Headers({ host: "exeku.app", origin: "https://evil.test" }) }) ?? "", /cross-origin/i);
+});
 
+test("org decide atomically claims pending application so a second decision returns 404 without conflicting notifications", async () => {
+  const appId = "22222222-2222-4222-8222-222222222222";
+  const tables = {
+    orgs: [{ id: "acoes", name: "ACOES", school_name: "LSPU", campus_id: "sc", campus_name: "Santa Cruz", program_name: "BSCPE", adviser_id: null }],
+    org_members: [{ id: "m1", org_id: "acoes", user_id: "pres", role: "president" }],
+    org_applications: [{ id: appId, org_id: "acoes", user_id: "applicant", program: "BSCPE", status: "pending" }],
+  };
+  const notices = [];
+  const { isObject, isUuid, text } = await import("../lib/accounts/rules.ts");
+  const orgRules = await import("../lib/orgs/rules.ts");
+  const repo = loadTs("lib/orgs/repository.ts", {
+    "server-only": {},
+    "@/lib/db/client": { db: fakeDb(tables), exactCount, fetchAllPages, must },
+    "@/lib/dates": { todayInManila: () => "2026-11-25" },
+    "@/lib/accounts/rules": { isObject, isUuid, text },
+    "@/lib/competition/repository": { toEvents: async () => [], clearFeatured: async () => {} },
+    "@/lib/notifications/repository": { notifyUsers: async (ids, payload) => { notices.push({ ids, title: payload.title }); } },
+    "./rules": orgRules,
+  });
 
+  const officer = { id: "pres", name: "President", role: "student" };
+  const [first, second] = await Promise.all([
+    repo.performOrgAction("acoes", officer, { action: "decide", applicationId: appId, accept: true }),
+    repo.performOrgAction("acoes", officer, { action: "decide", applicationId: appId, accept: false }),
+  ]);
 
+  assert.equal(first.ok, true);
+  assert.equal(second.ok, false);
+  assert.equal(second.status, 404);
+  assert.equal(notices.length, 1);
+  assert.match(notices[0].title, /Accepted into ACOES/);
+  assert.equal(tables.org_applications.length, 0);
+  assert.equal(tables.org_members.some((m) => m.user_id === "applicant" && m.role === "member"), true);
+});
 
+test("Button renders animated Loader2 spinner and aria-busy when loading, and friends/tournament flows use ConfirmDialog", () => {
+  const Loader2 = () => null;
+  const ButtonPrimitive = () => null;
+  const jsx = (type, props) => ({ type, props });
+  const mod = loadTs("components/ui/button.tsx", {
+    "react/jsx-runtime": { jsx, jsxs: jsx, Fragment: "Fragment" },
+    "@base-ui/react/button": { Button: ButtonPrimitive },
+    "class-variance-authority": { cva: () => () => "btn" },
+    "lucide-react": { Loader2 },
+    "@/lib/utils": { cn: (...parts) => parts.filter(Boolean).join(" ") },
+  });
 
+  const savingEl = mod.Button({ loading: true, loadingText: "Saving…", children: "Save changes" });
+  assert.equal(savingEl.props.disabled, true);
+  assert.equal(savingEl.props["aria-busy"], true);
+  assert.equal(savingEl.props.children.props.children[0].type, Loader2);
+  assert.match(savingEl.props.children.props.children[0].props.className, /animate-spin/);
+  assert.equal(savingEl.props.children.props.children[1], "Saving…");
+
+  const iconEl = mod.Button({ size: "icon-sm", loading: true, children: "Add" });
+  assert.equal(iconEl.props.disabled, true);
+  assert.equal(iconEl.props.children.type, Loader2);
+
+  const idleEl = mod.Button({ children: "Save changes" });
+  assert.equal(idleEl.props.disabled, false);
+  assert.equal(idleEl.props["aria-busy"], undefined);
+  assert.equal(idleEl.props.children, "Save changes");
+
+  for (const rel of [
+    "../components/app/friends-view.tsx",
+    "../components/app/public-profile-view.tsx",
+    "../components/app/events/tournament-view.tsx",
+  ]) {
+    const src = readFileSync(new URL(rel, import.meta.url), "utf8");
+    assert.match(src, /ConfirmDialog/);
+    assert.match(src, /loading=/);
+  }
+});

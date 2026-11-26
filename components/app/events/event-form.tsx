@@ -80,8 +80,8 @@ export function EventForm({ orgs, today, onPost, onDone }: EventFormProps) {
       </label>
       {formError && <p role="alert" className="text-xs text-[var(--color-pink)]">{formError}</p>}
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="ghost" onClick={onDone}>Cancel</Button>
-        <Button type="submit" disabled={busy}>{busy ? "Posting…" : "Post event"}</Button>
+        <Button type="button" variant="ghost" onClick={onDone} disabled={busy}>Cancel</Button>
+        <Button type="submit" loading={busy} loadingText="Posting…">Post event</Button>
       </div>
     </form>
   );

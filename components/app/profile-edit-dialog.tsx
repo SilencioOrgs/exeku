@@ -232,8 +232,8 @@ function ProfileEditModalContent({
           <Button type="button" variant="ghost" size="sm" onClick={onClose} disabled={isSaving}>
             Cancel
           </Button>
-          <Button type="button" size="sm" onClick={handleSave} disabled={isSaving}>
-            {isSaving ? "Saving…" : "Save changes"}
+          <Button type="button" size="sm" onClick={handleSave} loading={isSaving} loadingText="Saving…">
+            Save changes
           </Button>
         </div>
       </DialogContent>

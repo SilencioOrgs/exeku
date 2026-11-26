@@ -65,9 +65,9 @@ export function AppearanceStudio({ compact = false, onApplied }: { compact?: boo
       </div>
       <div className="flex items-center gap-2">
         <Button type="button" variant="outline" disabled={!isDirty || busy} onClick={() => { discard(); setNotice(""); }}>Discard</Button>
-        <Button type="button" disabled={!isDirty || busy} onClick={async () => {
+        <Button type="button" disabled={!isDirty || busy} loading={isApplying} loadingText="Saving…" onClick={async () => {
           if (await apply()) { setNotice("Appearance saved."); onApplied?.(); }
-        }}>{isApplying ? "Saving…" : "Apply changes"}</Button>
+        }}>Apply changes</Button>
       </div>
     </div>
   </section>;

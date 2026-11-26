@@ -221,21 +221,50 @@ export async function performOrgAction(orgId: string, viewer: Viewer, input: unk
       if (typeof input.accept !== "boolean") return failed(400, "Specify whether to accept or reject.");
       const applicationId = text(input, "applicationId");
       if (!isUuid(applicationId)) return failed(404, "That application is no longer pending.");
-      const application = must(await db().from("org_applications").select("id,user_id").eq("org_id", orgId).eq("id", applicationId).eq("status", "pending").maybeSingle()) as { id: string; user_id: string } | null;
-      if (!application) return failed(404, "That application is no longer pending.");
       if (input.accept) {
-        // Member first and upsert, so a failure between the two steps can simply be accepted again.
-        must(await db().from("org_members").upsert({ org_id: orgId, user_id: application.user_id, role: "member" }, { onConflict: "org_id,user_id", ignoreDuplicates: true }));
-        must(await db().from("org_applications").delete().eq("id", application.id).eq("status", "pending"));
-        await notifyUsers([application.user_id], {
+        // Claim the pending application atomically first so a concurrent reject can never race with acceptance.
+        const claimed = must(
+          await db()
+            .from("org_applications")
+            .delete()
+            .eq("org_id", orgId)
+            .eq("id", applicationId)
+            .eq("status", "pending")
+            .select("id,user_id,program")
+            .maybeSingle(),
+        ) as { id: string; user_id: string; program?: string | null } | null;
+        if (!claimed) return failed(404, "That application is no longer pending.");
+        try {
+          must(await db().from("org_members").upsert({ org_id: orgId, user_id: claimed.user_id, role: "member" }, { onConflict: "org_id,user_id", ignoreDuplicates: true }));
+        } catch (err) {
+          await db().from("org_applications").insert({
+            id: claimed.id,
+            org_id: orgId,
+            user_id: claimed.user_id,
+            program: claimed.program ?? null,
+            status: "pending",
+          });
+          throw err;
+        }
+        await notifyUsers([claimed.user_id], {
           kind: "org_status",
           title: `Accepted into ${org.name}`,
           body: "Your organization membership application has been approved.",
           href: `/app/orgs/${orgId}`,
         });
       } else {
-        must(await db().from("org_applications").update({ status: "rejected" }).eq("id", application.id).eq("status", "pending"));
-        await notifyUsers([application.user_id], {
+        const claimed = must(
+          await db()
+            .from("org_applications")
+            .update({ status: "rejected" })
+            .eq("org_id", orgId)
+            .eq("id", applicationId)
+            .eq("status", "pending")
+            .select("id,user_id")
+            .maybeSingle(),
+        ) as { id: string; user_id: string } | null;
+        if (!claimed) return failed(404, "That application is no longer pending.");
+        await notifyUsers([claimed.user_id], {
           kind: "org_status",
           title: `Application update: ${org.name}`,
           body: "Your membership application was declined by an officer.",

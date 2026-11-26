@@ -163,6 +163,8 @@ test("code safety guard blocks OS deletion, shell execution, and destructive sys
     ["java", 'public class Main { public static void main(String[] a) throws Exception { Runtime.getRuntime().exec("rm -rf /"); } }'],
     ["java", 'import java.nio.file.*; public class Main { void f() throws Exception { Files.delete(Path.of("/")); } }'],
     ["java", 'public class Main { void f() { new ProcessBuilder("sh", "-c", "rm -rf /"); } }'],
+    ["cpp", 'const char* s = R"( " /* )";\nint main(){ system("id"); }\n// */'],
+    ["java", 'public class Main { String s = """\n"" /*\n"""; void f() throws Exception { Runtime.getRuntime().exec("id"); }\n// */ }'],
   ];
 
   for (const [language, sourceCode] of malicious) {
@@ -185,8 +187,8 @@ test("code safety guard blocks OS deletion, shell execution, and destructive sys
 
   // Legitimate competitive programming code and comments must NOT be false-positived.
   const safeSamples = [
-    ["python", '# Do not use os.system("rm -rf /") in solutions\nimport sys, math, collections, heapq\ndata = open(0).read().split()\nprint(sum(map(int, data)))\n'],
-    ["cpp", '// Never call system("rm -rf /")\n#include <iostream>\n#include <vector>\n#include <algorithm>\nint main(){ std::vector<int> v={1,2,3}; v.erase(std::remove(v.begin(), v.end(), 2), v.end()); std::cout << v.size(); }\n'],
+    ["python", '# Do not use os.system("rm -rf /") in solutions\nimport sys, math, collections, heapq, re\npat = re.compile(r"\\d+")\ndef eval(node): return node\ndef shred(s): return s.split()\ndata = open(0).read().split()\nprint(sum(map(int, data)))\n'],
+    ["cpp", '// Never call system("rm -rf /")\n#include <iostream>\n#include <vector>\n#include <algorithm>\nstruct Trie { void remove(const char*) {} };\nint main(){ const int MAXN = 200\'005; // do not call system("rm -rf /")\nint shred = 0; Trie trie; trie.remove("abc"); std::vector<int> v={1,2,3}; v.erase(std::remove(v.begin(), v.end(), 2), v.end()); std::cout << v.size() + shred + MAXN; }\n'],
     ["c", '/* Safe C I/O */\n#include <stdio.h>\nint main(void){ int a,b; if (scanf("%d %d", &a, &b)==2) printf("%d\\n", a+b); return 0; }\n'],
     ["java", '// Safe Java I/O\nimport java.io.BufferedReader;\nimport java.io.InputStreamReader;\npublic class Main { public static void main(String[] a) throws Exception { BufferedReader br = new BufferedReader(new InputStreamReader(System.in)); System.out.println(br.readLine()); } }\n'],
   ];

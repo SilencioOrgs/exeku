@@ -32,8 +32,12 @@ export function ChallengesView() {
   const [problems, setProblems] = useState<ProblemSummary[] | null>(null);
 
   const startTimed = (problem: ProblemSummary) => {
+    const targetHref = `/app/workspace?problem=${encodeURIComponent(problem.id)}`;
+    if (challenge.isTimedActive && challenge.session?.problemId !== problem.id) {
+      if (!challenge.requestNavigation(targetHref)) return;
+    }
     challenge.startChallenge(problem.id, problem.title);
-    router.push(`/app/workspace?problem=${encodeURIComponent(problem.id)}`);
+    router.push(targetHref);
   };
 
   // Always load public, redacted metadata through the API. Never ship server test cases.

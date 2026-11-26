@@ -5,7 +5,7 @@ export function fakeDb(tables) {
     from(name) {
       const rows = tables[name] ?? [];
       const filters = [];
-      let op = "select", payload, conflictCols = null, single = false, limitCount = null, rangeSlice = null, headCount = false;
+      let op = "select", payload, conflictCols = null, ignoreDuplicates = false, single = false, limitCount = null, rangeSlice = null, headCount = false;
       const matching = () => rows.filter((r) => filters.every((keep) => keep(r)));
       const run = () => {
         let inserted = null;
@@ -20,7 +20,7 @@ export function fakeDb(tables) {
             ? rows.find((r) => conflictCols.every((c) => r[c] === payload[c]))
             : null;
           if (existing) {
-            Object.assign(existing, payload);
+            if (!ignoreDuplicates) Object.assign(existing, payload);
             inserted = existing;
           } else {
             inserted = { id: crypto.randomUUID(), created_at: new Date().toISOString(), status: "pending", ...payload };
@@ -32,8 +32,12 @@ export function fakeDb(tables) {
           updated = matching();
           updated.forEach((r) => Object.assign(r, payload));
         }
-        if (op === "delete") matching().forEach((r) => rows.splice(rows.indexOf(r), 1));
-        let found = op === "select" ? matching() : inserted ? [inserted] : updated;
+        let deleted = null;
+        if (op === "delete") {
+          deleted = matching();
+          deleted.forEach((r) => rows.splice(rows.indexOf(r), 1));
+        }
+        let found = op === "select" ? matching() : inserted ? [inserted] : updated ?? deleted;
         if (headCount && op === "select") return { data: null, count: found.length, error: null };
         if (found && rangeSlice) found = found.slice(rangeSlice[0], rangeSlice[1] + 1);
         if (found && limitCount !== null) found = found.slice(0, limitCount);
@@ -69,7 +73,7 @@ export function fakeDb(tables) {
         overlaps: (k, list) => { filters.push((r) => Array.isArray(r[k]) && r[k].some((item) => list.includes(item))); return builder; },
         ilike: (k, pattern) => { const needle = pattern.replaceAll("%", "").toLowerCase(); filters.push((r) => typeof r[k] === "string" && r[k].toLowerCase().includes(needle)); return builder; },
         insert: (v) => { op = "insert"; payload = v; return builder; },
-        upsert: (v, opts) => { op = "upsert"; payload = v; conflictCols = opts?.onConflict ? opts.onConflict.split(",").map((s) => s.trim()) : null; return builder; },
+        upsert: (v, opts) => { op = "upsert"; payload = v; conflictCols = opts?.onConflict ? opts.onConflict.split(",").map((s) => s.trim()) : null; ignoreDuplicates = Boolean(opts?.ignoreDuplicates); return builder; },
         update: (v) => { op = "update"; payload = v; return builder; },
         delete: () => { op = "delete"; return builder; },
         maybeSingle: () => { single = true; return builder; },

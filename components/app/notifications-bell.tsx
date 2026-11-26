@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useChallengeSession } from "@/hooks/use-challenge-session";
 import {
   fetchNotifications,
   markAllNotificationsRead,
@@ -49,6 +50,7 @@ function NotificationIcon({ kind }: { kind: NotificationKind }) {
 
 export function NotificationsBell({ onRoleLoaded }: { onRoleLoaded?: (role: UserRole) => void }) {
   const pathname = usePathname();
+  const { requestNavigation } = useChallengeSession();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [markingAll, setMarkingAll] = useState(false);
@@ -244,7 +246,19 @@ export function NotificationsBell({ onRoleLoaded }: { onRoleLoaded?: (role: User
                 );
 
                 return item.href ? (
-                  <Link key={item.id} href={item.href} onClick={() => handleItemClick(item)} className="block">
+                  <Link
+                    key={item.id}
+                    href={item.href}
+                    onClick={(event) => {
+                      if (item.href && !requestNavigation(item.href)) {
+                        event.preventDefault();
+                        setOpen(false);
+                        return;
+                      }
+                      handleItemClick(item);
+                    }}
+                    className="block"
+                  >
                     {inner}
                   </Link>
                 ) : (

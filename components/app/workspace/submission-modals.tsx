@@ -31,13 +31,15 @@ export interface ConfirmDialogProps {
   onConfirm: () => void;
   cancelLabel?: string;
   destructive?: boolean;
+  loading?: boolean;
+  loadingLabel?: string;
   children?: ReactNode;
 }
 
 /** One confirm dialog for submit, reset, forfeit and finish. */
-export function ConfirmDialog({ open, onOpenChange, title, description, confirmLabel, onConfirm, cancelLabel = "Cancel", destructive = false, children }: ConfirmDialogProps) {
+export function ConfirmDialog({ open, onOpenChange, title, description, confirmLabel, onConfirm, cancelLabel = "Cancel", destructive = false, loading = false, loadingLabel, children }: ConfirmDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(next) => { if (!loading) onOpenChange(next); }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
@@ -45,8 +47,8 @@ export function ConfirmDialog({ open, onOpenChange, title, description, confirmL
         </DialogHeader>
         {children}
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{cancelLabel}</Button>
-          <Button type="button" variant={destructive ? "destructive" : "default"} onClick={onConfirm}>{confirmLabel}</Button>
+          <Button type="button" variant="outline" disabled={loading} onClick={() => onOpenChange(false)}>{cancelLabel}</Button>
+          <Button type="button" variant={destructive ? "destructive" : "default"} loading={loading} loadingText={loadingLabel} onClick={onConfirm}>{confirmLabel}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
