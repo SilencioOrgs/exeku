@@ -87,9 +87,9 @@ export async function call<T>(path: string, body?: unknown, options?: CallOption
 export const fetchProgress = (options?: CallOptions) =>
   call<{ solved: number; solvedAt: string[]; medals: Medal[] }>("/api/account/profile", undefined, options);
 export const fetchAccountSnapshot = () => call<AccountSnapshot>("/api/account/me");
-type PublishedProfile = Pick<LocalProfile, "displayName" | "avatarId" | "borderId" | "bio" | "socialLinks">;
-export const syncProfile = ({ displayName, avatarId, borderId, bio, socialLinks }: PublishedProfile) =>
-  call<{ ok: true }>("/api/account/profile", { displayName, avatarId, borderId, bio, socialLinks });
+type PublishedProfile = Pick<LocalProfile, "displayName" | "avatarId" | "borderId" | "bio" | "socialLinks" | "birthday">;
+export const syncProfile = ({ displayName, avatarId, borderId, bio, socialLinks, birthday }: PublishedProfile) =>
+  call<{ ok: true }>("/api/account/profile", { displayName, avatarId, borderId, bio, socialLinks, birthday });
 export const fetchLocations = () => call<{ locations: SchoolLocation[] }>("/api/schools");
 export const fetchSchools = (location: string) =>
   call<{ schools: SchoolOption[] }>(`/api/schools?location=${encodeURIComponent(location)}`);

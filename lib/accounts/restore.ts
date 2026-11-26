@@ -11,6 +11,7 @@ export interface AccountSnapshot {
   avatarId: string;
   borderId: string;
   bio: string | null;
+  birthday?: string | null;
   socialLinks: { github?: string | null; linkedin?: string | null; website?: string | null } | null;
 }
 
@@ -47,6 +48,8 @@ export function restoreUpdates(local: LocalProfile, server: AccountSnapshot): Pa
   if (server.avatarId && server.avatarId !== local.avatarId) updates.avatarId = server.avatarId;
   if (server.borderId && server.borderId !== (local.borderId ?? "none")) updates.borderId = server.borderId as AvatarBorderId;
   if (server.bio && server.bio !== (local.bio ?? "")) updates.bio = server.bio;
+  const serverBirthday = server.birthday ?? server.account?.birthday ?? null;
+  if (serverBirthday && serverBirthday !== (local.birthday ?? "")) updates.birthday = serverBirthday;
   const serverLinks = links(server.socialLinks);
   if (hasAnyLink(serverLinks) && JSON.stringify(serverLinks) !== JSON.stringify(links(local.socialLinks))) {
     updates.socialLinks = serverLinks;
@@ -54,11 +57,14 @@ export function restoreUpdates(local: LocalProfile, server: AccountSnapshot): Pa
   return Object.keys(updates).length ? updates : null;
 }
 
-/** True when this browser has bio or links for the same signed-in account that are missing on the server. */
+/** True when this browser has bio, birthday, or links for the same signed-in account that are missing on the server. */
 export function hasUnsyncedLocalDetails(local: LocalProfile, server: AccountSnapshot): boolean {
   if (!local.ownerId || local.ownerId !== server.userId) return false;
   const localHasBio = Boolean(local.bio?.trim());
   const serverHasBio = Boolean(server.bio?.trim());
   if (localHasBio && !serverHasBio) return true;
+  const localHasBirthday = Boolean((local.birthday ?? local.account?.birthday)?.trim());
+  const serverHasBirthday = Boolean((server.birthday ?? server.account?.birthday)?.trim());
+  if (localHasBirthday && !serverHasBirthday) return true;
   return hasAnyLink(links(local.socialLinks)) && !hasAnyLink(links(server.socialLinks));
 }

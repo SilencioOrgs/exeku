@@ -22,6 +22,7 @@ export interface LocalProfile {
   ownerId?: string;
   displayName: string;
   bio?: string;
+  birthday?: string;
   avatarId: string;
   experienceLevel: ExperienceLevel;
   preferredLanguage: PreferredLanguage;
@@ -38,6 +39,7 @@ export interface ProfileInput {
   ownerId?: string;
   displayName: string;
   bio?: string;
+  birthday?: string;
   avatarId: string;
   experienceLevel: ExperienceLevel;
   preferredLanguage: PreferredLanguage;

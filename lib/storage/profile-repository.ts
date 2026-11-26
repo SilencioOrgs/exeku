@@ -78,6 +78,7 @@ export class ProfileRepository {
       ownerId: input.ownerId,
       displayName: validation.trimmed!,
       bio: input.bio?.trim() || undefined,
+      birthday: input.birthday?.trim() || undefined,
       avatarId: input.avatarId,
       experienceLevel: input.experienceLevel,
       preferredLanguage: input.preferredLanguage,
@@ -161,6 +162,10 @@ export class ProfileRepository {
             updates.bio !== undefined
               ? updates.bio.trim() || undefined
               : current.bio,
+          birthday:
+            updates.birthday !== undefined
+              ? updates.birthday.trim() || undefined
+              : current.birthday,
           avatarId: updates.avatarId ?? current.avatarId,
           experienceLevel: updates.experienceLevel ?? current.experienceLevel,
           preferredLanguage:

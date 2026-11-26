@@ -137,3 +137,82 @@ test("GET /api/account/me returns only the signed-in account's saved school, bir
   assert.equal(preBody.account?.age, 20);
   assert.equal(preBody.account?.birthday, undefined);
 });
+
+test("POST /api/account/profile validates and saves birthday with age, and degrades gracefully before migration", async () => {
+  const source = readFileSync(new URL("../app/api/account/profile/route.ts", import.meta.url), "utf8");
+  const output = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+  const birthdayMod = await import("../lib/accounts/birthday.ts");
+  const readJson = await import("../lib/accounts/read-json.ts");
+  const rules = await import("../lib/accounts/rules.ts");
+  const borders = await import("../lib/avatar-borders.ts");
+  const avatars = await import("../lib/avatars.ts");
+  const validation = await import("../lib/profile-validation.ts");
+  const socialLinks = await import("../lib/social-links.ts");
+
+  function loadPost(options = {}) {
+    const loaded = { exports: {} };
+    const updates = [];
+    const db = () => ({
+      from: () => ({
+        update: (payload) => ({
+          eq: async (_col, userId) => {
+            if (options.missingBirthdayColumn && "birthday" in payload) {
+              return { data: null, error: { code: "42703", message: "column profiles.birthday does not exist" } };
+            }
+            updates.push({ userId, payload });
+            return { data: null, error: null };
+          },
+        }),
+      }),
+    });
+    vm.runInNewContext(output, {
+      module: loaded,
+      exports: loaded.exports,
+      require: (name) => ({
+        "next/server": { NextResponse },
+        "@/lib/accounts/birthday": birthdayMod,
+        "@/lib/accounts/read-json": readJson,
+        "@/lib/accounts/rules": rules,
+        "@/lib/api/route-handler": { withApiErrors: (_label, fn) => fn() },
+        "@/lib/auth/viewer": { getViewer: async () => ({ id: "u1", name: "Ada", role: "student" }) },
+        "@/lib/avatar-borders": borders,
+        "@/lib/avatars": avatars,
+        "@/lib/db/client": { db, must: (r) => { if (r.error) throw new Error(r.error.message); return r.data; } },
+        "@/lib/judge/solves": { firstSolves: async () => [], solveSummary: async () => ({ solved: 0, solvedAt: [] }) },
+        "@/lib/tournaments/repository": { getMedals: async () => [] },
+        "@/lib/profile-validation": validation,
+        "@/lib/social-links": socialLinks,
+      })[name] ?? (() => { throw Error(`unexpected import: ${name}`); })(),
+    });
+    return { POST: loaded.exports.POST, updates };
+  }
+
+  const { POST, updates } = loadPost();
+  const okRes = await POST(new Request("http://localhost/api/account/profile", {
+    method: "POST",
+    body: JSON.stringify({ displayName: "Ada L", birthday: "2005-05-15", avatarId: "glitch-bot", borderId: "none", bio: "Hi", socialLinks: { github: "ada" } }),
+  }));
+  assert.equal(okRes.status, 200);
+  assert.equal(updates[0].payload.birthday, "2005-05-15");
+  assert.equal(updates[0].payload.age, birthdayMod.computeAgeFromBirthday("2005-05-15"));
+
+  const badRes = await POST(new Request("http://localhost/api/account/profile", {
+    method: "POST",
+    body: JSON.stringify({ displayName: "Ada L", birthday: "2020-01-01" }),
+  }));
+  assert.equal(badRes.status, 422);
+
+  // Pre-migration fallback drops birthday column cleanly while still updating age and profile fields.
+  const pre = loadPost({ missingBirthdayColumn: true });
+  const fallbackRes = await pre.POST(new Request("http://localhost/api/account/profile", {
+    method: "POST",
+    body: JSON.stringify({ displayName: "Ada L", birthday: "2005-05-15" }),
+  }));
+  assert.equal(fallbackRes.status, 200);
+  assert.equal("birthday" in pre.updates[0].payload, false);
+  assert.equal(pre.updates[0].payload.age, birthdayMod.computeAgeFromBirthday("2005-05-15"));
+
+  // Top-level birthday restores onto a fresh device even without a student school account.
+  const restored = restoreUpdates(fresh, { ...saved, account: null, birthday: "2005-05-15" });
+  assert.equal(restored?.birthday, "2005-05-15");
+});

@@ -77,6 +77,7 @@ export const GET = () =>
       avatarId: row?.avatar_id ?? "",
       borderId: row?.border_id ?? "",
       bio: row?.bio ?? null,
+      birthday: row?.birthday ?? null,
       socialLinks: row?.social_links ?? null,
     };
     return NextResponse.json(snapshot, { headers: { "Cache-Control": "private, no-store" } });

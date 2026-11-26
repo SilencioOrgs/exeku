@@ -154,7 +154,7 @@ export function ProfileView() {
       {needsCloudSync && (
         <div className="skeuo-card flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_40%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] p-3.5 text-sm">
           <div className="space-y-0.5">
-            <p className="font-medium text-[var(--color-text-main)]">Your bio or links on this browser are not synced to your account yet.</p>
+            <p className="font-medium text-[var(--color-text-main)]">Your profile details on this browser are not synced to your account yet.</p>
             <p className="text-xs text-[var(--color-text-muted)]">
               {syncError ?? "Sync once so they show up on your other devices."}
             </p>
