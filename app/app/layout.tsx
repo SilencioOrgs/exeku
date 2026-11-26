@@ -9,13 +9,21 @@ export const metadata: Metadata = {
   description: "Competitive programming workspace, sandbox judge, and tournament dashboard.",
 };
 
+const CLERK_APPEARANCE = {
+  options: {
+    logoImageUrl: "/brand/exeku-logo.png",
+    logoLinkUrl: "/",
+    logoPlacement: "inside" as const,
+  },
+};
+
 export default function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider signInUrl="/setup" signUpUrl="/setup">
+    <ClerkProvider signInUrl="/setup" signUpUrl="/setup" appearance={CLERK_APPEARANCE}>
       <ChallengeProvider>
         <AppShell>{children}</AppShell>
         <ChallengeExitGuardModal />
