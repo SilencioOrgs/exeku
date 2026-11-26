@@ -7,7 +7,7 @@ import * as accountRules from "../lib/accounts/rules.ts";
 import * as roleRules from "../lib/roles/rules.ts";
 import * as classRules from "../lib/classes/rules.ts";
 import * as catalog from "./fixtures/sample-problems.ts";
-import { exactCount, fakeDb, fetchAllPages, must } from "./fixtures/fake-db.mjs";
+import { exactCount, fakeDb, fetchAllPages, isMissingRelationError, must } from "./fixtures/fake-db.mjs";
 import { NextResponse } from "next/server";
 import * as readJson from "../lib/accounts/read-json.ts";
 
@@ -199,7 +199,7 @@ test("teacher creates class with invite code, student joins, teacher groups stud
   const notifRepo = loadTs("lib/notifications/repository.ts", {
     "server-only": {},
     "@/lib/accounts/rules": accountRules,
-    "@/lib/db/client": { db: fakeDb(tables), exactCount, fetchAllPages, must },
+    "@/lib/db/client": { db: fakeDb(tables), exactCount, fetchAllPages, isMissingRelationError, must },
     "@/lib/problems/store": {
       listProblemSummaries: async () => listAllSummaries(),
     },
@@ -208,7 +208,7 @@ test("teacher creates class with invite code, student joins, teacher groups stud
   const repo = loadTs("lib/classes/repository.ts", {
     "server-only": {},
     "@/lib/accounts/rules": accountRules,
-    "@/lib/db/client": { db: fakeDb(tables), exactCount, fetchAllPages, must },
+    "@/lib/db/client": { db: fakeDb(tables), exactCount, fetchAllPages, isMissingRelationError, must },
     "@/lib/notifications/repository": notifRepo,
     "@/lib/workspace-defaults": workspaceDefaults,
     "@/lib/problems/store": {
@@ -391,7 +391,7 @@ test("learn repository validates chapterId, merges partial DB chapters safely ov
   const learnRepo = loadTs("lib/learn/repository.ts", {
     "server-only": {},
     "@/lib/accounts/rules": accountRules,
-    "@/lib/db/client": { db: fakeDb(tables) },
+    "@/lib/db/client": { db: fakeDb(tables), isMissingRelationError },
     "@/lib/learn/curriculum": curriculum,
     "@/lib/workspace-defaults": workspaceDefaults,
   });
@@ -431,5 +431,58 @@ test("learn repository validates chapterId, merges partial DB chapters safely ov
   assert.ok(merged.lessons.cpp.headline.length > 0);
   assert.ok(merged.lessons.c.headline.length > 0);
   assert.deepEqual(Array.from(payload.completedKeys), ["python:printing-arrays"]);
+
+  // Real DB FK error mentioning learn_progress must return 500, NOT ok: true.
+  const failingLearnRepo = loadTs("lib/learn/repository.ts", {
+    "server-only": {},
+    "@/lib/accounts/rules": accountRules,
+    "@/lib/db/client": {
+      isMissingRelationError,
+      db: () => ({
+        from: () => ({
+          upsert: async () => ({
+            error: {
+              code: "23503",
+              message: 'insert or update on table "learn_progress" violates foreign key constraint',
+            },
+          }),
+        }),
+      }),
+    },
+    "@/lib/learn/curriculum": curriculum,
+    "@/lib/workspace-defaults": workspaceDefaults,
+  });
+  const fkRes = await failingLearnRepo.recordLearnCompletion(viewer, {
+    chapterId: curriculum.LEARN_CHAPTERS[0].id,
+    language: "python",
+  });
+  assert.equal(fkRes.ok, false);
+  assert.equal(fkRes.status, 500);
+
+  // Genuine missing-table error (42P01) still degrades gracefully.
+  const unmigratedLearnRepo = loadTs("lib/learn/repository.ts", {
+    "server-only": {},
+    "@/lib/accounts/rules": accountRules,
+    "@/lib/db/client": {
+      isMissingRelationError,
+      db: () => ({
+        from: () => ({
+          upsert: async () => ({
+            error: {
+              code: "42P01",
+              message: 'relation "public.learn_progress" does not exist',
+            },
+          }),
+        }),
+      }),
+    },
+    "@/lib/learn/curriculum": curriculum,
+    "@/lib/workspace-defaults": workspaceDefaults,
+  });
+  const missingTableRes = await unmigratedLearnRepo.recordLearnCompletion(viewer, {
+    chapterId: curriculum.LEARN_CHAPTERS[0].id,
+    language: "python",
+  });
+  assert.equal(missingTableRes.ok, true);
 });
 

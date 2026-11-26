@@ -20,7 +20,8 @@ export async function recordSubmission(
     const viewer = await getViewer();
     if (!viewer) return null;
     const accepted = verdict === "ACCEPTED";
-    const points = accepted ? POINTS[problem.difficulty] : 0;
+    const isClassProblem = problem.id.startsWith("cls-");
+    const points = accepted && !isClassProblem ? POINTS[problem.difficulty] : 0;
     const submissionId = crypto.randomUUID();
     const row = {
       id: submissionId,

@@ -18,17 +18,20 @@ export async function solvesBetween(userIds: string[], startsAt: string, endsAt:
   return results;
 }
 
-/** Each problem once, at the moment it was first accepted. */
+/** Each public/catalog problem once, at the moment it was first accepted (excludes private cls-* class problems). */
 export async function firstSolves(userId: string) {
   const rows = await fetchAllPages<{ problem_id: string; created_at: string }>((from, to) =>
     db().from("submissions").select("problem_id,created_at").eq("user_id", userId).eq("verdict", "ACCEPTED").order("created_at").order("id").range(from, to),
   );
   const first = new Map<string, string>();
-  for (const row of rows) if (!first.has(row.problem_id)) first.set(row.problem_id, row.created_at);
+  for (const row of rows) {
+    if (row.problem_id.startsWith("cls-")) continue;
+    if (!first.has(row.problem_id)) first.set(row.problem_id, row.created_at);
+  }
   return [...first].map(([problemId, solvedAt]) => ({ problemId, solvedAt }));
 }
 
-/** Computes distinct solved count and full accepted timestamp list from a single submissions scan. */
+/** Computes distinct solved count (public/catalog problems) and full accepted timestamp list from a single submissions scan. */
 export async function solveSummary(userId: string): Promise<{ solved: number; solvedAt: string[] }> {
   const rows = await fetchAllPages<{ problem_id: string; created_at: string }>((from, to) =>
     db().from("submissions").select("problem_id,created_at").eq("user_id", userId).eq("verdict", "ACCEPTED").order("created_at").order("id").range(from, to),
@@ -36,7 +39,7 @@ export async function solveSummary(userId: string): Promise<{ solved: number; so
   const distinct = new Set<string>();
   const solvedAt: string[] = [];
   for (const row of rows) {
-    distinct.add(row.problem_id);
+    if (!row.problem_id.startsWith("cls-")) distinct.add(row.problem_id);
     solvedAt.push(row.created_at);
   }
   return { solved: distinct.size, solvedAt };

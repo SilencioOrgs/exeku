@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import ts from "typescript";
 
-function harness() {
+function harness(savedDraft = null) {
   const slots = [];
   let index = 0;
   const effects = [];
@@ -40,12 +40,12 @@ function harness() {
     setTimeout: () => 1, clearTimeout: () => {},
     require: (name) => ({
       react,
-      "@/lib/storage/draft-repository": { draftRepository: { getDraft: async () => { loads++; return null; }, saveDraft: async (...args) => { saves.push(args[2]); } } },
+      "@/lib/storage/draft-repository": { draftRepository: { getDraft: async () => { loads++; return savedDraft; }, saveDraft: async (...args) => { saves.push(args[2]); } } },
       "@/lib/storage/coding-activity": { recordCodingDay: () => true },
       "@/lib/workspace-defaults": { getFilenameForLanguage: () => "main.py", getStarterCode: () => "starter" },
     })[name],
   });
-  const render = (profile) => { index = 0; effectIndex = 0; return loaded.exports.useWorkspaceFiles(profile, null, null); };
+  const render = (profile, problem = null, problemId = null) => { index = 0; effectIndex = 0; return loaded.exports.useWorkspaceFiles(profile, problem, problemId); };
   const fire = (type) => [...listeners[type]].forEach((fn) => fn());
   const unmount = () => effects.forEach((effect) => effect.cleanup?.());
   return { render, fire, unmount, saves, document, loads: () => loads };
@@ -100,4 +100,31 @@ test("a new profile object with the same id does not reload the draft over unsav
   h.render({ ...profile, id: "p2" });
   await settle();
   assert.equal(h.loads(), 2);
+});
+
+test("resolving problem metadata never flashes or overwrites a loaded saved draft, but applies starter when no draft exists", async () => {
+  const problemMeta = { id: "two-sum-target", starterCodes: { python: "# problem starter" } };
+
+  // Saved draft exists: resolving problem metadata must keep saved draft and not re-fetch IndexedDB.
+  const withDraft = harness({ code: "print('saved solution')", files: [{ name: "main.py", content: "print('saved solution')" }] });
+  withDraft.render(profile, null, "two-sum-target");
+  await settle();
+  let state = withDraft.render(profile, null, "two-sum-target");
+  assert.equal(state.code, "print('saved solution')");
+  assert.equal(withDraft.loads(), 1);
+
+  withDraft.render(profile, problemMeta, "two-sum-target");
+  await settle();
+  state = withDraft.render(profile, problemMeta, "two-sum-target");
+  assert.equal(state.code, "print('saved solution')");
+  assert.equal(withDraft.loads(), 1);
+
+  // No saved draft: resolving problem metadata updates editor to problem starter.
+  const noDraft = harness(null);
+  noDraft.render(profile, null, "two-sum-target");
+  await settle();
+  noDraft.render(profile, problemMeta, "two-sum-target");
+  await settle();
+  const next = noDraft.render(profile, problemMeta, "two-sum-target");
+  assert.equal(next.code, "# problem starter");
 });

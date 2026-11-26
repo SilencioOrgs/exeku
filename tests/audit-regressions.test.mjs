@@ -1152,6 +1152,92 @@ test("cn resolves conflicting Tailwind utility classes so overrides win", async 
   assert.doesNotMatch(buttonClasses, /\bpx-2\.5\b/);
 });
 
+test("seeded longest-unique-substring lus-4 expects 12 for exekuplatform", () => {
+  const sql = readFileSync(new URL("../supabase/migrations/20261122020000_learn_and_curated_problems.sql", import.meta.url), "utf8");
+  assert.match(sql, /"id":\s*"lus-4",\s*"input":\s*"exekuplatform",\s*"expectedOutput":\s*"12"/);
+});
+
+test("private cls-* class problems enforce class access and award zero global leaderboard points", async () => {
+  const tables = {
+    events: [],
+    tournament_members: [],
+    classes: [{ id: "cls-uuid-1", teacher_id: "teacher-1" }],
+    class_members: [{ class_id: "cls-uuid-1", user_id: "student-1" }],
+    class_problems: [{ class_id: "cls-uuid-1", problem_id: "cls-secret-exam" }],
+    problems: [
+      {
+        id: "cls-secret-exam",
+        title: "Secret Exam",
+        description: "desc",
+        difficulty: "advanced",
+        category: "Class",
+        tags: [],
+        supported_languages: ["python"],
+        input_spec: "in",
+        output_spec: "out",
+        constraints: [],
+        test_cases: [{ id: "t1", input: "1", expectedOutput: "1", isHidden: false }],
+        time_limit_ms: 2000,
+        memory_limit_kb: 128000,
+        created_by: "teacher-1",
+      },
+    ],
+    submissions: [],
+  };
+  const database = { db: fakeDb(tables), exactCount, fetchAllPages, must };
+  const store = loadTs("lib/problems/store.ts", {
+    "server-only": {},
+    "@/lib/db/client": database,
+    "@/lib/problems/catalog": {
+      getAllProblems: () => [],
+      getProblemById: () => null,
+      matchesProblemFilter: () => true,
+      summarizeProblems: () => [],
+      toVisibleProblem: (p) => p,
+    },
+    "@/lib/workspace-defaults": {
+      ALL_SUPPORTED_LANGUAGES: ["python", "java", "cpp", "c"],
+      getStarterCode: () => "",
+    },
+  });
+
+  // Outsider and unauthenticated callers cannot read or probe private cls-* problems.
+  assert.equal(await store.findProblem("cls-secret-exam", { userId: "outsider" }), null);
+  assert.equal(await store.findProblem("cls-secret-exam"), null);
+  assert.equal(await store.problemExists("cls-secret-exam", { userId: "outsider" }), false);
+
+  // Enrolled student, class teacher, and admin (includeLocked) can access it.
+  assert.notEqual(await store.findProblem("cls-secret-exam", { userId: "student-1" }), null);
+  assert.notEqual(await store.findProblem("cls-secret-exam", { userId: "teacher-1" }), null);
+  assert.notEqual(await store.findProblem("cls-secret-exam", { includeLocked: true }), null);
+
+  // Solving a cls-* problem records ACCEPTED with 0 global points and does not increment global firstSolves/solveSummary.
+  const solves = loadTs("lib/judge/solves.ts", { "server-only": {}, "@/lib/db/client": database });
+  const rec = loadTs("lib/judge/record-submission.ts", {
+    "server-only": {},
+    "@/lib/db/client": database,
+    "@/lib/auth/viewer": { getViewer: async () => ({ id: "student-1", name: "Grace", role: "student" }) },
+    "@/lib/judge/solves": solves,
+  });
+
+  const milestone = await rec.recordSubmission({ id: "cls-secret-exam", difficulty: "advanced" }, "python", "ACCEPTED");
+  assert.deepEqual({ ...milestone }, { firstSolve: true, points: 0, solved: 0 });
+  assert.equal(tables.submissions.length, 1);
+  assert.equal(tables.submissions[0].points, 0);
+  assert.equal(tables.submissions[0].verdict, "ACCEPTED");
+  assert.equal((await solves.firstSolves("student-1")).length, 0);
+  assert.equal((await solves.solveSummary("student-1")).solved, 0);
+});
+
+test("isMissingRelationError matches missing-table errors only, never FK/CHECK/permission errors", async () => {
+  const { isMissingRelationError } = await import("./fixtures/fake-db.mjs");
+  assert.equal(isMissingRelationError({ code: "42P01", message: 'relation "public.learn_progress" does not exist' }, ["learn_progress"]), true);
+  assert.equal(isMissingRelationError({ code: "PGRST205", message: "Could not find the table 'public.notifications' in the schema cache" }, ["notifications"]), true);
+  assert.equal(isMissingRelationError({ code: "23503", message: 'insert or update on table "learn_progress" violates foreign key constraint' }, ["learn_progress"]), false);
+  assert.equal(isMissingRelationError({ code: "23514", message: 'new row for relation "class_activities" violates check constraint' }, ["class_activities"]), false);
+  assert.equal(isMissingRelationError({ code: "42501", message: 'permission denied for table notifications' }, ["notifications"]), false);
+});
+
 
 
 

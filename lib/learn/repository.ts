@@ -1,7 +1,7 @@
 import "server-only";
 import { isObject, text } from "@/lib/accounts/rules";
 import type { Viewer } from "@/lib/auth/viewer";
-import { db } from "@/lib/db/client";
+import { db, isMissingRelationError } from "@/lib/db/client";
 import { LEARN_CHAPTERS, type LearnChapter, type LearnChapterId } from "@/lib/learn/curriculum";
 import { ALL_SUPPORTED_LANGUAGES } from "@/lib/workspace-defaults";
 import type { ProblemDifficulty } from "@/types/problem";
@@ -28,10 +28,6 @@ interface LearnProgressRow {
 const VALID_DIFFICULTIES = new Set<ProblemDifficulty>(["beginner", "intermediate", "advanced"]);
 const CHAPTER_ID_RE = /^[a-z0-9-]+$/;
 const BUILT_IN_BY_ID = new Map(LEARN_CHAPTERS.map((c) => [c.id as string, c]));
-
-function isMissingLearnTable(message?: string | null): boolean {
-  return typeof message === "string" && /learn_chapters|learn_progress|does not exist|schema cache/i.test(message);
-}
 
 function isValidLesson(value: unknown): boolean {
   if (!isObject(value)) return false;
@@ -93,7 +89,11 @@ export async function listLearnForViewer(viewer: Viewer): Promise<{
       .select("id,order_index,number,title,short_title,category,difficulty,tags,summary,lessons")
       .order("order_index", { ascending: true });
 
-    if (!chapterError && Array.isArray(chapterRows) && chapterRows.length > 0) {
+    if (chapterError) {
+      if (!isMissingRelationError(chapterError, ["learn_chapters"])) {
+        console.error("[learn] failed to load learn_chapters:", chapterError.message);
+      }
+    } else if (Array.isArray(chapterRows) && chapterRows.length > 0) {
       const dbById = new Map<string, LearnChapter>();
       for (const raw of chapterRows as LearnChapterRow[]) {
         const parsed = rowToChapter(raw);
@@ -105,8 +105,8 @@ export async function listLearnForViewer(viewer: Viewer): Promise<{
       }
       chapters = merged;
     }
-  } catch {
-    /* Table not migrated yet — fall back to built-in LEARN_CHAPTERS. */
+  } catch (err) {
+    console.error("[learn] unexpected error loading learn_chapters:", err instanceof Error ? err.message : "unknown error");
   }
 
   const validChapterIds = new Set(chapters.map((c) => c.id as string));
@@ -117,13 +117,17 @@ export async function listLearnForViewer(viewer: Viewer): Promise<{
       .select("chapter_id,language")
       .eq("user_id", viewer.id);
 
-    if (!progressError && Array.isArray(progressRows)) {
+    if (progressError) {
+      if (!isMissingRelationError(progressError, ["learn_progress"])) {
+        console.error("[learn] failed to load learn_progress:", progressError.message);
+      }
+    } else if (Array.isArray(progressRows)) {
       completedKeys = (progressRows as LearnProgressRow[])
         .filter((r) => r.chapter_id && validChapterIds.has(r.chapter_id) && ALL_SUPPORTED_LANGUAGES.includes(r.language))
         .map((r) => `${r.language}:${r.chapter_id}`);
     }
-  } catch {
-    /* Table not migrated yet — client still caches locally. */
+  } catch (err) {
+    console.error("[learn] unexpected error loading learn_progress:", err instanceof Error ? err.message : "unknown error");
   }
 
   return { chapters, completedKeys };
@@ -144,36 +148,34 @@ export async function recordLearnCompletion(
     return { ok: false, status: 400, error: "Unsupported programming language." };
   }
   if (!BUILT_IN_BY_ID.has(chapterId)) {
-    let existsInDb = false;
-    try {
-      const { data } = await db().from("learn_chapters").select("id").eq("id", chapterId).maybeSingle();
-      existsInDb = Boolean(data);
-    } catch {
-      existsInDb = false;
+    const { data, error } = await db().from("learn_chapters").select("id").eq("id", chapterId).maybeSingle();
+    if (error && !isMissingRelationError(error, ["learn_chapters"])) {
+      console.error("[learn] failed to verify chapter:", error.message);
+      return { ok: false, status: 500, error: "Could not verify chapter." };
     }
-    if (!existsInDb) {
+    if (!data) {
       return { ok: false, status: 404, error: "Chapter not found." };
     }
   }
 
-  try {
-    const { error } = await db()
-      .from("learn_progress")
-      .upsert(
-        {
-          user_id: viewer.id,
-          chapter_id: chapterId,
-          language,
-          completed_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id,chapter_id,language" },
-      );
+  const { error } = await db()
+    .from("learn_progress")
+    .upsert(
+      {
+        user_id: viewer.id,
+        chapter_id: chapterId,
+        language,
+        completed_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,chapter_id,language" },
+    );
 
-    if (error && !isMissingLearnTable(error.message)) {
-      return { ok: false, status: 500, error: "Could not save your lesson progress." };
+  if (error) {
+    if (isMissingRelationError(error, ["learn_progress"])) {
+      return { ok: true, key: `${language}:${chapterId}` };
     }
-  } catch {
-    /* Ignore if learn_progress table is not migrated yet in dev. */
+    console.error("[learn] failed to save lesson progress:", error.message);
+    return { ok: false, status: 500, error: "Could not save your lesson progress." };
   }
 
   return { ok: true, key: `${language}:${chapterId}` };

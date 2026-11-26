@@ -1,7 +1,7 @@
 import "server-only";
 import { isObject, isUuid, text } from "@/lib/accounts/rules";
 import type { Viewer } from "@/lib/auth/viewer";
-import { db, fetchAllPages, must } from "@/lib/db/client";
+import { db, fetchAllPages, isMissingRelationError, must } from "@/lib/db/client";
 import { listProblemSummaries } from "@/lib/problems/store";
 import type { NotificationItem, NotificationKind, NotificationsPayload } from "@/types/notifications";
 
@@ -20,10 +20,6 @@ interface NotificationRow {
 const IN_CHUNK_SIZE = 100;
 const DEADLINE_LOOKAHEAD_MS = 72 * 60 * 60 * 1000;
 const DEADLINE_OVERDUE_WINDOW_MS = 24 * 60 * 60 * 1000;
-
-function isMissingTable(message?: string | null): boolean {
-  return typeof message === "string" && /notifications|class_activities|does not exist|schema cache/i.test(message);
-}
 
 export interface NewNotificationInput {
   kind: NotificationKind;
@@ -51,10 +47,10 @@ export async function notifyUsers(userIds: string[], input: NewNotificationInput
     }));
     const { error } = await db().from("notifications").insert(rows);
     if (error) {
-      if (isMissingTable(error.message)) return;
-      // Non-critical side effect: log but never break the primary teacher/org action.
+      if (isMissingRelationError(error, ["notifications"])) return;
+      // Non-critical side effect: log and continue remaining chunks instead of dropping later recipients.
       console.error("[notifications] failed to insert notifications:", error.message);
-      return;
+      continue;
     }
   }
 }
@@ -68,7 +64,7 @@ async function fetchStoredNotifications(userId: string): Promise<NotificationIte
     .limit(30);
 
   if (error) {
-    if (isMissingTable(error.message)) return [];
+    if (isMissingRelationError(error, ["notifications"])) return [];
     throw new Error(`Database error: ${error.message}`);
   }
 
@@ -201,7 +197,7 @@ export async function handleNotificationAction(
       .eq("id", id)
       .eq("user_id", viewer.id)
       .is("read_at", null);
-    if (error && !isMissingTable(error.message)) throw new Error(`Database error: ${error.message}`);
+    if (error && !isMissingRelationError(error, ["notifications"])) throw new Error(`Database error: ${error.message}`);
     return { ok: true };
   }
 
@@ -211,7 +207,7 @@ export async function handleNotificationAction(
       .update({ read_at: new Date().toISOString() })
       .eq("user_id", viewer.id)
       .is("read_at", null);
-    if (error && !isMissingTable(error.message)) throw new Error(`Database error: ${error.message}`);
+    if (error && !isMissingRelationError(error, ["notifications"])) throw new Error(`Database error: ${error.message}`);
     return { ok: true };
   }
 

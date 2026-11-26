@@ -31,12 +31,15 @@ export function useWorkspaceFiles(
   const pendingSaveRef = useRef<(() => Promise<void>) | null>(null);
   const saveVersionRef = useRef(0);
   const dirtyRef = useRef(false);
+  const hasSavedDraftRef = useRef(false);
+  const loadedScopeRef = useRef<string | null>(null);
   const prevScopeRef = useRef<string | null>(null);
   const pendingOverrideRef = useRef<{ lang: PreferredLanguage; code: string } | null>(null);
 
   const code = files.find((file) => file.name === activeFile)?.content ?? "";
   const mainCode = files.find((file) => file.name === mainFilename)?.content ?? "";
   const starter = starterByLanguage?.[activeLang] || problem?.starterCodes[activeLang] || getStarterCode(activeLang);
+  const starterRef = useRef(starter);
 
   const updateFiles = useCallback((next: WorkspaceFile[]) => { filesRef.current = next; setFiles(next); }, []);
 
@@ -72,24 +75,36 @@ export function useWorkspaceFiles(
     saveTimeoutRef.current = setTimeout(save, 600);
   }, [profileId, saveNow, updateFiles, cancelPendingSave]);
 
-  // Load the profile's existing single-file or multi-file draft, starting clean on problem switch.
+  // Keep starterRef current, and if problem metadata resolves after draft lookup found no saved draft, apply it without disturbing edits.
+  useEffect(() => {
+    starterRef.current = starter;
+    const scopeKey = `${profileId ?? ""}:${problemId ?? ""}:${activeLang}`;
+    if (dirtyRef.current || hasSavedDraftRef.current || loadedScopeRef.current !== scopeKey) return;
+    updateFiles([{ name: mainFilename, content: starter }]);
+  }, [profileId, activeLang, problemId, starter, mainFilename, updateFiles]);
+
+  // Load the profile's existing single-file or multi-file draft, starting clean on problem/language switch.
   useEffect(() => {
     let current = true;
     const scopeKey = `${profileId ?? ""}:${problemId ?? ""}:${activeLang}`;
     if (prevScopeRef.current !== scopeKey) {
       prevScopeRef.current = scopeKey;
       dirtyRef.current = false;
+      hasSavedDraftRef.current = false;
+      loadedScopeRef.current = null;
     }
     const loaded = (draftFiles: WorkspaceFile[]) => {
       if (!current || dirtyRef.current) return;
       const primary = draftFiles.find((file) => file.name === mainFilename);
-      updateFiles([{ name: mainFilename, content: primary?.content ?? starter }, ...draftFiles.filter((file) => file.name !== mainFilename)]);
+      updateFiles([{ name: mainFilename, content: primary?.content ?? starterRef.current }, ...draftFiles.filter((file) => file.name !== mainFilename)]);
       setActiveFile(mainFilename);
       setSaveStatus("SAVED");
     };
     if (pendingOverrideRef.current?.lang === activeLang) {
       const override = pendingOverrideRef.current.code;
       pendingOverrideRef.current = null;
+      hasSavedDraftRef.current = true;
+      loadedScopeRef.current = scopeKey;
       persistFiles([{ name: mainFilename, content: override }]);
       setActiveFile(mainFilename);
       return () => {
@@ -99,21 +114,33 @@ export function useWorkspaceFiles(
       };
     }
     // Always start clean with starter code immediately when switching problems or languages.
-    loaded([{ name: mainFilename, content: starter }]);
+    loaded([{ name: mainFilename, content: starterRef.current }]);
     if (!profileId) {
+      loadedScopeRef.current = scopeKey;
       return () => {
         current = false;
       };
     }
     draftRepository.getDraft(profileId, activeLang, problemId)
-      .then((draft) => loaded(draft?.files?.length ? draft.files : [{ name: mainFilename, content: draft?.code?.trim() ? draft.code : starter }]))
-      .catch(() => loaded([{ name: mainFilename, content: starter }]));
+      .then((draft) => {
+        if (!current) return;
+        const hasDraft = Boolean(draft?.files?.length || draft?.code?.trim());
+        hasSavedDraftRef.current = hasDraft;
+        loadedScopeRef.current = scopeKey;
+        loaded(draft?.files?.length ? draft.files : [{ name: mainFilename, content: draft?.code?.trim() ? draft.code : starterRef.current }]);
+      })
+      .catch(() => {
+        if (!current) return;
+        hasSavedDraftRef.current = false;
+        loadedScopeRef.current = scopeKey;
+        loaded([{ name: mainFilename, content: starterRef.current }]);
+      });
     return () => {
       current = false;
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
       void pendingSaveRef.current?.();
     };
-  }, [profileId, activeLang, mainFilename, starter, problemId, updateFiles, persistFiles]);
+  }, [profileId, activeLang, mainFilename, problemId, updateFiles, persistFiles]);
 
   // Typing waits 600 ms before saving, so leaving the editor or the page must save right away.
   useEffect(() => {

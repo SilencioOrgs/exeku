@@ -1,7 +1,7 @@
 import "server-only";
 import { isObject, isUuid, text } from "@/lib/accounts/rules";
 import type { Viewer } from "@/lib/auth/viewer";
-import { db, fetchAllPages, must } from "@/lib/db/client";
+import { db, fetchAllPages, isMissingRelationError, must } from "@/lib/db/client";
 import { notifyUsers } from "@/lib/notifications/repository";
 import { listProblemSummaries, problemExists } from "@/lib/problems/store";
 import { canCreateClasses } from "@/lib/roles/rules";
@@ -77,10 +77,6 @@ interface ProfileMiniRow {
 
 const IN_CHUNK_SIZE = 100;
 
-function isMissingActivitiesTable(message?: string | null): boolean {
-  return typeof message === "string" && /class_activities|does not exist|schema cache/i.test(message);
-}
-
 async function loadProfiles(userIds: string[]): Promise<Map<string, ProfileMiniRow>> {
   const unique = [...new Set(userIds.filter(Boolean))];
   const map = new Map<string, ProfileMiniRow>();
@@ -131,7 +127,7 @@ async function recordClassActivitySafe(row: {
   due_at: string | null;
 }): Promise<void> {
   const { error } = await db().from("class_activities").insert(row);
-  if (error && !isMissingActivitiesTable(error.message)) {
+  if (error && !isMissingRelationError(error, ["class_activities"])) {
     console.error("[classes] failed to record class activity:", error.message);
   }
 }
@@ -144,7 +140,7 @@ async function fetchClassActivitiesSafe(classId: string): Promise<ClassActivityV
     .order("created_at", { ascending: false })
     .limit(40);
   if (error) {
-    if (isMissingActivitiesTable(error.message)) return [];
+    if (isMissingRelationError(error, ["class_activities"])) return [];
     throw new Error(`Database error: ${error.message}`);
   }
   return ((data ?? []) as ClassActivityRow[]).map((row) => ({
@@ -583,7 +579,7 @@ export async function performClassAction(
     if (!problemId) return { ok: false, status: 400, error: "Choose a problem to assign." };
     const due = parseOptionalDueAt(body.dueAt);
     if (!due.ok) return { ok: false, status: 422, fieldErrors: { dueAt: due.error } };
-    if (!(await problemExists(problemId, { includeLocked: false }))) {
+    if (problemId.startsWith("cls-") || !(await problemExists(problemId, { includeLocked: false, userId: viewer.id }))) {
       return { ok: false, status: 404, error: "Problem not found." };
     }
     const { error } = await db()
@@ -677,8 +673,15 @@ export async function performClassAction(
     const checked = checkClassActivity(body);
     if (!checked.ok) return { ok: false, status: 422, fieldErrors: checked.fieldErrors };
     const act = checked.activity;
-    if (act.problemId && !(await problemExists(act.problemId, { includeLocked: false }))) {
-      return { ok: false, status: 404, error: "Problem not found." };
+    if (act.problemId) {
+      if (act.problemId.startsWith("cls-")) {
+        const assigned = must(
+          await db().from("class_problems").select("problem_id").eq("class_id", classId).eq("problem_id", act.problemId).maybeSingle(),
+        ) as { problem_id: string } | null;
+        if (!assigned) return { ok: false, status: 404, error: "Problem not found." };
+      } else if (!(await problemExists(act.problemId, { includeLocked: false, userId: viewer.id }))) {
+        return { ok: false, status: 404, error: "Problem not found." };
+      }
     }
     const { error } = await db().from("class_activities").insert({
       class_id: classId,
@@ -690,7 +693,7 @@ export async function performClassAction(
       due_at: act.dueAt ?? null,
     });
     if (error) {
-      if (isMissingActivitiesTable(error.message)) {
+      if (isMissingRelationError(error, ["class_activities"])) {
         return {
           ok: false,
           status: 503,
@@ -715,7 +718,7 @@ export async function performClassAction(
     const activityId = text(body, "activityId");
     if (!isUuid(activityId)) return { ok: false, status: 400, error: "Choose a valid activity." };
     const { error } = await db().from("class_activities").delete().eq("id", activityId).eq("class_id", classId);
-    if (error && !isMissingActivitiesTable(error.message)) throw new Error(`Database error: ${error.message}`);
+    if (error && !isMissingRelationError(error, ["class_activities"])) throw new Error(`Database error: ${error.message}`);
     return { ok: true };
   }
 
@@ -724,7 +727,12 @@ export async function performClassAction(
     if (!problemId) return { ok: false, status: 400, error: "Choose a problem." };
     must(await db().from("class_problems").delete().eq("class_id", classId).eq("problem_id", problemId));
     if (problemId.startsWith("cls-")) {
-      await db().from("problems").delete().eq("id", problemId).eq("created_by", viewer.id);
+      const stillUsed = must(
+        await db().from("class_problems").select("class_id").eq("problem_id", problemId).limit(1),
+      ) as { class_id: string }[];
+      if (stillUsed.length === 0) {
+        await db().from("problems").delete().eq("id", problemId).eq("created_by", viewer.id);
+      }
     }
     return { ok: true };
   }
@@ -745,9 +753,14 @@ export async function performClassAction(
       db().from("class_problems").select("problem_id").eq("class_id", classId).order("problem_id").range(from, to),
     );
     must(await db().from("classes").delete().eq("id", classId));
-    const customIds = assignedCustom.map((r) => r.problem_id).filter((id) => id.startsWith("cls-"));
+    const customIds = [...new Set(assignedCustom.map((r) => r.problem_id).filter((id) => id.startsWith("cls-")))];
     for (const pid of customIds) {
-      await db().from("problems").delete().eq("id", pid).eq("created_by", viewer.id);
+      const stillUsed = must(
+        await db().from("class_problems").select("class_id").eq("problem_id", pid).limit(1),
+      ) as { class_id: string }[];
+      if (stillUsed.length === 0) {
+        await db().from("problems").delete().eq("id", pid).eq("created_by", viewer.id);
+      }
     }
     return { ok: true };
   }

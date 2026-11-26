@@ -8,8 +8,10 @@ import type { PreferredLanguage } from "@/types/profile";
 export interface ProblemRow {
   id: string; title: string; description: string; difficulty: ProblemDifficulty; category: string; tags: string[];
   supported_languages: PreferredLanguage[]; input_spec: string; output_spec: string; constraints: string[];
-  test_cases: TestCase[]; time_limit_ms: number; memory_limit_kb: number;
+  test_cases: TestCase[]; time_limit_ms: number; memory_limit_kb: number; created_by?: string | null;
 }
+
+export const isClassProblemId = (id: string): boolean => id.startsWith("cls-");
 
 type ProblemSummaryViewRow = {
   id: string;
@@ -105,13 +107,41 @@ export async function lockedProblemIdsFor(userId?: string, now = new Date().toIS
   return locked;
 }
 
+async function canAccessClassProblem(
+  problemId: string,
+  userId?: string,
+  createdBy?: string | null,
+): Promise<boolean> {
+  if (!userId) return false;
+  if (createdBy && createdBy === userId) return true;
+  const assignments = await fetchAllPages<{ class_id: string }>((from, to) =>
+    db().from("class_problems").select("class_id").eq("problem_id", problemId).order("class_id").range(from, to),
+  );
+  const classIds = [...new Set(assignments.map((row) => row.class_id).filter(Boolean))];
+  if (classIds.length === 0) return false;
+  for (let i = 0; i < classIds.length; i += IN_CHUNK_SIZE) {
+    const chunk = classIds.slice(i, i + IN_CHUNK_SIZE);
+    const [taught, enrolled] = await Promise.all([
+      db().from("classes").select("id").in("id", chunk).eq("teacher_id", userId).limit(1).then((r) => must(r) as { id: string }[]),
+      db().from("class_members").select("class_id").in("class_id", chunk).eq("user_id", userId).limit(1).then((r) => must(r) as { class_id: string }[]),
+    ]);
+    if (taught.length > 0 || enrolled.length > 0) return true;
+  }
+  return false;
+}
+
 /** Full problem including hidden tests. Only the judge may use this; browsers get findVisibleProblem. */
 export async function findProblem(id: string, options?: ProblemLookupOptions): Promise<ProgrammingProblem | null> {
   if (!options?.includeLocked && (await lockedProblemIdsFor(options?.userId)).has(id)) return null;
+  if (isClassProblemId(id) && !options?.includeLocked && !options?.userId) return null;
   const builtIn = getProblemById(id);
   if (builtIn) return builtIn;
   const row = must(await db().from("problems").select("*").eq("id", id).maybeSingle()) as ProblemRow | null;
-  return row ? toProblem(row) : null;
+  if (!row) return null;
+  if (isClassProblemId(id) && !options?.includeLocked) {
+    if (!(await canAccessClassProblem(id, options?.userId, row.created_by))) return null;
+  }
+  return toProblem(row);
 }
 
 export async function findVisibleProblem(id: string, options?: ProblemLookupOptions): Promise<VisibleProblem | null> {
@@ -122,9 +152,14 @@ export async function findVisibleProblem(id: string, options?: ProblemLookupOpti
 /** Lightweight existence check that avoids loading hidden test cases JSONB. */
 export async function problemExists(id: string, options?: ProblemLookupOptions): Promise<boolean> {
   if (!options?.includeLocked && (await lockedProblemIdsFor(options?.userId)).has(id)) return false;
+  if (isClassProblemId(id) && !options?.includeLocked && !options?.userId) return false;
   if (getProblemById(id)) return true;
-  const row = must(await db().from("problems").select("id").eq("id", id).maybeSingle()) as { id: string } | null;
-  return Boolean(row);
+  const row = must(await db().from("problems").select("id,created_by").eq("id", id).maybeSingle()) as { id: string; created_by?: string | null } | null;
+  if (!row) return false;
+  if (isClassProblemId(id) && !options?.includeLocked) {
+    return canAccessClassProblem(id, options?.userId, row.created_by);
+  }
+  return true;
 }
 
 async function fetchDbProblemSummaries(): Promise<ProblemSummary[]> {

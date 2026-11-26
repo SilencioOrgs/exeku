@@ -223,7 +223,7 @@ values
       {"id": "lus-1", "input": "abcabcbb", "expectedOutput": "3", "isHidden": false},
       {"id": "lus-2", "input": "pwwkew", "expectedOutput": "3", "isHidden": false},
       {"id": "lus-3", "input": "bbbbbb", "expectedOutput": "1", "isHidden": true},
-      {"id": "lus-4", "input": "exekuplatform", "expectedOutput": "11", "isHidden": true}
+      {"id": "lus-4", "input": "exekuplatform", "expectedOutput": "12", "isHidden": true}
     ]'::jsonb,
     2000,
     128000

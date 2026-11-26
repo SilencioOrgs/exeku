@@ -101,3 +101,16 @@ export async function exactCount(query) {
   if (res.error) throw new Error(res.error.message);
   return res.count ?? 0;
 }
+
+const MISSING_RELATION_RE = /relation "([^"]+)" does not exist|could not find the table '([^']+)' in the schema cache/i;
+
+export function isMissingRelationError(error, tables) {
+  if (!error) return false;
+  if (error.code === "42P01" || error.code === "PGRST205") return true;
+  if (typeof error.message !== "string") return false;
+  const match = MISSING_RELATION_RE.exec(error.message);
+  if (!match) return false;
+  if (!tables || tables.length === 0) return true;
+  const relation = (match[1] ?? match[2] ?? "").replace(/^public\./, "").toLowerCase();
+  return tables.some((t) => t.toLowerCase() === relation);
+}
