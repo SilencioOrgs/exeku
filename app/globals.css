@@ -29,10 +29,11 @@
 }
 
 /* =========================================================================
-   EXEKU TOKENS: orange on black, dark only. DESIGN.md is the source of truth.
+   EXEKU TOKENS: dark default (orange on black) + crisp daylight light mode.
+   The landing page (/) locks [data-theme-scope="dark"] for its 3D scenes.
    ========================================================================= */
 :root,
-[data-theme-scope] {
+[data-theme-scope="dark"] {
   color-scheme: dark;
   --color-canvas: #0a0a0a;
   --color-surface: #121212;
@@ -74,6 +75,41 @@
   --metal-light: #d8d8d6;
   --metal-dark: #6b6b69;
 }
+
+:root[data-color-mode="light"] {
+  color-scheme: light;
+  --color-canvas: #f4f4f2;
+  --color-surface: #ffffff;
+  --color-elevated: #ecebe7;
+  --color-border: #d6d3cd;
+  --color-border-subtle: #e5e3de;
+  --color-text-main: #18181b;
+  --color-text-muted: #52525b;
+  --color-text-dim: #52525b;
+  --color-primary: #ffa116;
+  --color-primary-hover: #f59200;
+  --color-primary-edge: #c27200;
+  --primary-foreground: #0a0a0a;
+  --color-ring: #c26200;
+  --color-accent: #9a4a00;
+  --color-accent-hover: #7c3b00;
+  --accent-foreground: #ffffff;
+  --color-primary-text: #9a4a00;
+  --color-key-edge: #c7c3bc;
+  --color-easy: #047857;   --color-easy-bg: #d1fae5;
+  --color-medium: #a16207; --color-medium-bg: #fef3c7;
+  --color-hard: #be123c;   --color-hard-bg: #ffe4e6;
+  --color-mint: #166534;
+  --color-pink: #be123c;
+  --color-warning: #854d0e;
+  --color-danger-foreground: #ffffff;
+  --glow-primary: 0 0 0 1px rgb(217 119 6 / 0.35), 0 8px 24px -8px rgb(217 119 6 / 0.35);
+  --shadow-raised: inset 0 1px 0 rgb(255 255 255 / 0.9), 0 1px 2px rgb(15 23 42 / 0.08), 0 12px 28px -20px rgb(15 23 42 / 0.22);
+  --shadow-inset: inset 0 1px 2px rgb(15 23 42 / 0.1);
+  --key-highlight: rgb(255 255 255 / 0.85);
+  --key-shadow: rgb(15 23 42 / 0.14);
+}
+
 :root,
 [data-theme-scope] {
   --color-primary-foreground: var(--primary-foreground);
@@ -81,7 +117,7 @@
 }
 
 /* =========================================================================
-   MATERIALS: soft depth on black. Cards lift, fields sink, orange glows.
+   MATERIALS: soft depth. Cards lift, fields sink, orange glows.
    ========================================================================= */
 [data-slot="card"], .appearance-card, .profile-panel, .coding-activity,
 .problem-pane, .results-pane, .workspace-toolbar, .settings-advanced, .skeuo-card {
@@ -119,7 +155,7 @@
 @media (prefers-reduced-motion: reduce) {
   :is(.skeuo-key, [data-slot="button"], .btn-primary, .btn-outline) { transition: none; }
 }
-/* Tiles: black glass with an orange light from one corner. */
+/* Tiles: subtle orange glow from one corner. */
 .tile-peach, .tile-butter { background-color: var(--color-surface); }
 .tile-peach { background-image: radial-gradient(120% 90% at 0% 0%, rgb(255 161 22 / 0.16), transparent 60%); }
 .tile-butter { background-image: radial-gradient(120% 90% at 0% 100%, rgb(255 161 22 / 0.12), transparent 60%); }
@@ -131,14 +167,24 @@
   background-image: linear-gradient(rgb(255 255 255 / 0.035) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / 0.035) 1px, transparent 1px);
   background-size: 48px 48px;
 }
+:root[data-color-mode="light"] .bg-grid {
+  background-image: linear-gradient(rgb(15 23 42 / 0.045) 1px, transparent 1px), linear-gradient(90deg, rgb(15 23 42 / 0.045) 1px, transparent 1px);
+}
 
-/* Code editor: VS Code Dark+ colors. */
+/* Code editor: VS Code Dark+ by default, VS Code Light+ in light mode. */
 .code-editor {
   --ed-bg: #1e1e1e; --ed-fg: #d4d4d4; --ed-gutter: #858585; --ed-gutter-active: #c6c6c6;
   --ed-line: #2a2d2e; --ed-selection: rgb(38 79 120 / 0.7); --ed-caret: #aeafad;
   --tok-keyword: #569cd6; --tok-control: #c586c0; --tok-string: #ce9178; --tok-number: #b5cea8;
   --tok-comment: #6a9955; --tok-function: #dcdcaa; --tok-type: #4ec9b0; --tok-constant: #569cd6;
   --tok-variable: #9cdcfe; --tok-preproc: #c586c0; --tok-bracket0: #ffd700; --tok-bracket1: #da70d6; --tok-bracket2: #179fff;
+}
+.code-editor[data-theme-scope="light"] {
+  --ed-bg: #ffffff; --ed-fg: #1f2328; --ed-gutter: #6e7781; --ed-gutter-active: #1f2328;
+  --ed-line: #f3f4f6; --ed-selection: rgb(173 214 255 / 0.75); --ed-caret: #1f2328;
+  --tok-keyword: #0000ff; --tok-control: #af00db; --tok-string: #a31515; --tok-number: #098658;
+  --tok-comment: #008000; --tok-function: #795e26; --tok-type: #267f99; --tok-constant: #0070c1;
+  --tok-variable: #001080; --tok-preproc: #af00db; --tok-bracket0: #0431fa; --tok-bracket1: #319331; --tok-bracket2: #7b3814;
 }
 .code-editor { background: var(--ed-bg); color: var(--ed-fg); }
 .code-editor-gutter { background: var(--ed-bg); color: var(--ed-gutter); }
@@ -147,7 +193,7 @@
 .code-editor-input:focus-visible { outline: none; }
 .code-editor-input { color: transparent; -webkit-text-fill-color: transparent; caret-color: var(--ed-caret); }
 .code-editor-input::selection { background: var(--ed-selection); color: transparent; -webkit-text-fill-color: transparent; }
-/* Suggestion list: VS Code Dark+ suggest widget. */
+/* Suggestion list: VS Code suggest widget. */
 .tok-keyword { color: var(--tok-keyword); }
 .tok-control { color: var(--tok-control); }
 .tok-string { color: var(--tok-string); }
@@ -397,7 +443,7 @@ input::placeholder, textarea::placeholder { color: var(--color-text-dim); opacit
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5), 0 2px 0 var(--color-primary-edge), 0 8px 16px -8px var(--key-shadow);
 }
 .skeuo-well {
-  border-color: var(--color-key-edge); color: var(--color-text-main); color-scheme: dark;
+  border-color: var(--color-key-edge); color: var(--color-text-main); color-scheme: inherit;
   background: linear-gradient(180deg, var(--color-key-edge), var(--color-canvas)) var(--color-canvas);
   box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.85), 0 1px 0 rgb(255 255 255 / 0.07);
 }
@@ -408,6 +454,32 @@ select.skeuo-well:disabled { opacity: 0.6; }
 .skeuo-recess {
   border: 1px solid var(--color-key-edge); background: var(--color-canvas);
   box-shadow: inset 0 2px 6px rgb(0 0 0 / 0.7), 0 1px 0 rgb(255 255 255 / 0.06);
+}
+:root[data-color-mode="light"] .skeuo-panel:not([data-theme-scope="dark"] *) {
+  background: linear-gradient(180deg, var(--color-surface), var(--color-canvas) 100%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.95), 0 2px 0 var(--color-key-edge), 0 18px 36px -24px rgb(15 23 42 / 0.25);
+}
+:root[data-color-mode="light"] .skeuo-well:not([data-theme-scope="dark"] *) {
+  border-color: var(--color-border);
+  background: var(--color-surface);
+  box-shadow: inset 0 1px 2px rgb(15 23 42 / 0.09), 0 1px 0 rgb(255 255 255 / 0.9);
+}
+:root[data-color-mode="light"] .skeuo-recess:not([data-theme-scope="dark"] *) {
+  border-color: var(--color-border);
+  background: var(--color-canvas);
+  box-shadow: inset 0 1px 3px rgb(15 23 42 / 0.08), 0 1px 0 rgb(255 255 255 / 0.85);
+}
+:root[data-color-mode="light"] .select-item[data-highlighted],
+:root[data-color-mode="light"] .nav-sub-link[aria-current="page"] {
+  box-shadow: inset 0 1px 2px rgb(15 23 42 / 0.12);
+}
+:root[data-color-mode="light"] .app-sidebar .appearance-nav-item:is([aria-current="page"], [data-active="true"]) {
+  box-shadow: inset 0 1px 3px rgb(15 23 42 / 0.14), 0 1px 0 rgb(255 255 255 / 0.85);
+}
+:root[data-color-mode="light"] {
+  --medal-gold: #b45309;
+  --medal-silver: #475569;
+  --medal-bronze: #9a3412;
 }
 .id-clip {
   position: relative; z-index: 1; width: 2.75rem; height: 1rem; margin-top: -3px; border-radius: 4px;

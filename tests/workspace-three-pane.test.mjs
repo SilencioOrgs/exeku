@@ -42,14 +42,20 @@ test("workspace-three-pane - catalog problems satisfy three-pane data contract",
   });
 });
 
-test("workspace-three-pane - globals.css ships one dark orange-on-black theme, no retired styles or palettes", () => {
+test("workspace-three-pane - globals.css ships dark and light themes with dark-only landing lock and no retired palettes", () => {
   const css = fs.readFileSync(globalsCssPath, "utf8");
   for (const retired of ["pixel-arcade", "studio-crm", "neon-violet", "#00F0FF", "#9E00FF"]) {
     assert.ok(!css.includes(retired), `globals.css still contains retired theme value: ${retired}`);
   }
   assert.match(css, /color-scheme: dark/);
-  assert.doesNotMatch(css, /color-scheme: light/);
+  assert.match(css, /:root\[data-color-mode="light"\][\s\S]*color-scheme: light/);
   assert.doesNotMatch(css, /data-contrast/);
+
+  const landingPage = fs.readFileSync(path.resolve(__dirname, "../app/page.tsx"), "utf8");
+  assert.match(landingPage, /data-theme-scope="dark"/);
+
+  const bootstrap = fs.readFileSync(path.resolve(__dirname, "../lib/appearance-bootstrap.ts"), "utf8");
+  assert.match(bootstrap, /window\.location\?\.pathname === "\/"/);
 });
 
 test("workspace-three-pane - components implement responsive classes without horizontal document scroll", () => {

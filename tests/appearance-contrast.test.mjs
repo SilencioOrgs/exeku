@@ -29,31 +29,67 @@ function rgb(hex) { assert.match(hex, /^#[0-9a-f]{6}$/i); return hex.slice(1).ma
 function luminance(channels) { return channels.map(value => { const channel = value / 255; return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4; }).reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0); }
 function contrast(a, b) { const x = luminance(a), y = luminance(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
 {
-  for (const mode of ['dark']) {
+  for (const mode of ['dark', 'light']) {
     {
-      test('dark only, readable surfaces and controls', () => {
+      test(mode + ' mode, readable surfaces and controls (WCAG AA >= 4.5:1)', () => {
         const get = palette(mode);
         for (const factor of [1]) { // brightness setting was retired
           for (const surface of ['canvas', 'surface', 'elevated']) {
             const background = rgb(get('--color-' + surface)).map(channel => Math.min(255, channel * factor));
             for (const token of ['text-main', 'text-muted', 'text-dim', 'accent', 'mint', 'pink', 'primary-text', 'warning']) {
               const ratio = contrast(rgb(get('--color-' + token)), background);
-              assert.ok(ratio >= 4.5, token + ' on ' + surface + ' at ' + factor + ': ' + ratio.toFixed(2));
+              assert.ok(ratio >= 4.5, mode + ' ' + token + ' on ' + surface + ' at ' + factor + ': ' + ratio.toFixed(2));
             }
           }
         }
         for (const [background, foreground] of [['--color-primary', '--primary-foreground'], ['--color-accent', '--accent-foreground'], ['--color-pink', '--color-danger-foreground']]) {
           const ratio = contrast(rgb(get(background)), rgb(get(foreground)));
-          assert.ok(ratio >= 4.5, background + ' button: ' + ratio.toFixed(2));
+          assert.ok(ratio >= 4.5, mode + ' ' + background + ' button: ' + ratio.toFixed(2));
         }
       });
     }
   }
 }
 
+import vm from 'node:vm';
+import { appearanceBootstrap } from '../lib/appearance-bootstrap.ts';
+
 test('semantic utilities compile without self-referencing utility errors', async () => {
   const { compile } = createRequire(import.meta.url)('tailwindcss');
   const result = await compile(css.replace(/^@import[^\n]+\n/gm, '') + '\n@tailwind utilities;');
   const output = result.build(['text-primary', 'bg-primary', 'border-border', 'ring-ring']);
   for (const selector of ['.text-primary', '.bg-primary', '.border-border', '.ring-ring']) assert.ok(output.includes(selector), selector);
+});
+
+test('appearanceBootstrap locks landing page (/) to dark even when light mode is saved, and applies light mode on /app', () => {
+  function runBoot(pathname, savedMode, systemDark = false) {
+    const classes = new Set(['dark']);
+    const dataset = {};
+    const props = {};
+    const sandbox = {
+      localStorage: {
+        getItem: (key) => (key === 'exeku_appearance_settings' ? JSON.stringify({ colorMode: savedMode }) : null),
+      },
+      window: {
+        location: { pathname },
+        matchMedia: (q) => ({ matches: q.includes('prefers-color-scheme') ? systemDark : false }),
+      },
+      document: {
+        documentElement: {
+          dataset,
+          classList: { toggle: (name, force) => (force ? classes.add(name) : classes.delete(name)) },
+          style: { setProperty: (k, v) => { props[k] = v; } },
+        },
+      },
+    };
+    vm.runInNewContext(appearanceBootstrap, sandbox);
+    return { colorMode: dataset.colorMode, hasDarkClass: classes.has('dark') };
+  }
+
+  assert.deepEqual(runBoot('/', 'light', false), { colorMode: 'dark', hasDarkClass: true });
+  assert.deepEqual(runBoot('/', 'system', false), { colorMode: 'dark', hasDarkClass: true });
+  assert.deepEqual(runBoot('/app', 'light', true), { colorMode: 'light', hasDarkClass: false });
+  assert.deepEqual(runBoot('/app', 'dark', false), { colorMode: 'dark', hasDarkClass: true });
+  assert.deepEqual(runBoot('/app', 'system', false), { colorMode: 'light', hasDarkClass: false });
+  assert.deepEqual(runBoot('/app', 'system', true), { colorMode: 'dark', hasDarkClass: true });
 });

@@ -28,7 +28,8 @@ function languageOf(filename: string) {
 const PAD = 12; // matches py-3 / px-3 on the textarea
 const POPUP_CH = 28;
 /** Inline on purpose: the list has to stay readable over the code even if a stylesheet fails to load. */
-const SUGGEST = { bg: "#0a0a0a", border: "#3c3c3c", text: "#d4d4d4", active: "#04395e", match: "#18a3ff", kind: "#9d9d9d" };
+const SUGGEST_DARK = { bg: "#0a0a0a", border: "#3c3c3c", text: "#d4d4d4", active: "#04395e", match: "#18a3ff", kind: "#9d9d9d" };
+const SUGGEST_LIGHT = { bg: "#ffffff", border: "#d0d7de", text: "#1f2328", active: "#ddf4ff", match: "#0969da", kind: "#57606a" };
 
 interface Suggestions extends CompletionState {
   caret: number;
@@ -180,6 +181,8 @@ export function CodeEditor({ value, onChange, filename }: CodeEditorProps) {
     }
   };
 
+  const suggestPalette = mode === "light" ? SUGGEST_LIGHT : SUGGEST_DARK;
+
   return (
     <div
       data-theme-scope={mode}
@@ -239,7 +242,7 @@ export function CodeEditor({ value, onChange, filename }: CodeEditorProps) {
             aria-label="Suggestions"
             style={{
               position: "absolute", top: suggest.top, left: suggest.left, width: `${POPUP_CH}ch`, zIndex: 10, margin: 0, padding: 4, listStyle: "none",
-              background: SUGGEST.bg, border: `1px solid ${SUGGEST.border}`, borderRadius: 6, boxShadow: "0 6px 18px rgb(0 0 0 / 0.45)", color: SUGGEST.text,
+              background: suggestPalette.bg, border: `1px solid ${suggestPalette.border}`, borderRadius: 6, boxShadow: mode === "light" ? "0 6px 18px rgb(15 23 42 / 0.14)" : "0 6px 18px rgb(0 0 0 / 0.45)", color: suggestPalette.text,
             }}
           >
             {suggest.items.map((item, i) => (
@@ -250,7 +253,7 @@ export function CodeEditor({ value, onChange, filename }: CodeEditorProps) {
                 aria-selected={i === suggest.index}
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "0 8px", borderRadius: 3, cursor: "pointer",
-                  minHeight: Math.max(suggest.rowHeight, 28), background: i === suggest.index ? SUGGEST.active : "transparent",
+                  minHeight: Math.max(suggest.rowHeight, 28), background: i === suggest.index ? suggestPalette.active : "transparent",
                 }}
                 // pointerdown keeps focus in the textarea on mouse and touch; click would blur it first.
                 onPointerDown={(event) => {
@@ -260,10 +263,10 @@ export function CodeEditor({ value, onChange, filename }: CodeEditorProps) {
                 }}
               >
                 <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  <span style={{ color: SUGGEST.match, fontWeight: 600 }}>{item.word.slice(0, suggest.prefix.length)}</span>
+                  <span style={{ color: suggestPalette.match, fontWeight: 600 }}>{item.word.slice(0, suggest.prefix.length)}</span>
                   {item.word.slice(suggest.prefix.length)}
                 </span>
-                <span style={{ color: SUGGEST.kind, flexShrink: 0, fontSize: 12, fontFamily: "var(--font-sans), sans-serif" }}>{item.kind}</span>
+                <span style={{ color: suggestPalette.kind, flexShrink: 0, fontSize: 12, fontFamily: "var(--font-sans), sans-serif" }}>{item.kind}</span>
               </li>
             ))}
           </ul>

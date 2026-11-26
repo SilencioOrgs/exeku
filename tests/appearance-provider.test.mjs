@@ -5,7 +5,8 @@ import vm from 'node:vm';
 import ts from 'typescript';
 import * as appearanceTypes from '../types/appearance.ts';
 
-function providerHarness(profilePromise, { indexedDB = {}, saveAppearance } = {}) {
+function providerHarness(profilePromise, { indexedDB = {}, saveAppearance, pathname = '/app' } = {}) {
+  let currentPath = pathname;
   const slots = [];
   const effects = [];
   let index = 0;
@@ -15,6 +16,7 @@ function providerHarness(profilePromise, { indexedDB = {}, saveAppearance } = {}
   const events = new Map();
   const queries = new Map();
   const react = {
+    Suspense: 'Suspense',
     createContext: () => ({ Provider: 'Provider' }),
     useState: initial => { const slot = index++; if (!(slot in slots)) slots[slot] = initial; return [slots[slot], value => { slots[slot] = value; }]; },
     useRef: initial => { const slot = index++; return slots[slot] ?? (slots[slot] = { current: initial }); },
@@ -27,7 +29,7 @@ function providerHarness(profilePromise, { indexedDB = {}, saveAppearance } = {}
   };
   const repository = {
     getPreferences: () => guest, persistenceStatus: 'saved',
-    resolveEffectiveColorMode: () => 'dark',
+    resolveEffectiveColorMode: (mode, systemDark) => (mode === 'light' ? 'light' : mode === 'dark' ? 'dark' : systemDark ? 'dark' : 'light'),
     savePreferences: next => { guest = next; writes.push(['guest', next]); },
     commitPreferences: next => { guest = next; writes.push(['guest', next]); return true; },
   };
@@ -35,10 +37,12 @@ function providerHarness(profilePromise, { indexedDB = {}, saveAppearance } = {}
   const source = readFileSync(new URL('../hooks/use-appearance.tsx', import.meta.url), 'utf8');
   const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText;
   const compiledModule = { exports: {} };
+  const jsxFn = (type, props) => ({ type, props });
   vm.runInNewContext(compiled, {
     module: compiledModule, exports: compiledModule.exports, document: { documentElement: root },
     window: {
       indexedDB,
+      location: { get pathname() { return currentPath; } },
       matchMedia: query => {
         if (!queries.has(query)) queries.set(query, { matches: false, addEventListener(type, callback) { this.change = callback; }, removeEventListener() {} });
         return queries.get(query);
@@ -47,15 +51,24 @@ function providerHarness(profilePromise, { indexedDB = {}, saveAppearance } = {}
     },
     require: name => {
       if (name === 'react') return react;
-      if (name === 'react/jsx-runtime') return { jsx: (type, props) => ({ type, props }) };
+      if (name === 'next/navigation') return { usePathname: () => currentPath };
+      if (name === 'react/jsx-runtime') return { jsx: jsxFn, jsxs: jsxFn };
       if (name === '@/types/appearance') return appearanceTypes;
       if (name === '@/lib/storage/appearance-repository') return { appearanceRepository: repository, cacheAppearanceSnapshot() {}, APPEARANCE_STORAGE_KEY: 'guest', APPEARANCE_SNAPSHOT_KEY: 'snapshot' };
       if (name === '@/lib/storage/profile-repository') return { profileRepository: { getActiveProfile: async () => { const profile = await (typeof profilePromise === 'function' ? profilePromise() : profilePromise); return profile && storedAppearance ? { ...profile, appearancePreferences: storedAppearance } : profile; }, saveAppearancePreferences: async (id, next) => { writes.push([id, next]); await saveAppearance?.(id, next); storedAppearance = next; } } };
       throw Error(name);
     },
   });
-  function render() { index = 0; const result = compiledModule.exports.AppearanceProvider({ children: null }); effects.splice(0).forEach(callback => callback()); return result.props.value; }
-  return { render, writes, queries, root, events };
+  function render() {
+    index = 0;
+    const result = compiledModule.exports.AppearanceProvider({ children: null });
+    const guardEl = result.props.children?.[0]?.props?.children;
+    if (guardEl && typeof guardEl.type === 'function') guardEl.type(guardEl.props);
+    effects.splice(0).forEach(callback => callback());
+    return result.props.value;
+  }
+  function setPath(next) { currentPath = next; }
+  return { render, setPath, writes, queries, root, events };
 }
 
 test('edits during profile hydration save to profile without losing the edit', async () => {
@@ -74,12 +87,25 @@ test('edits during profile hydration save to profile without losing the edit', a
   assert.equal(context.persistenceStatus, 'saved');
 });
 
-test('system scheme and motion changes update the interface while keeping saved System choices', async () => {
+test('system scheme and motion changes update the interface while landing page stays dark', async () => {
   const harness = providerHarness(Promise.resolve({ id: 'profile', appearancePreferences: { colorMode: 'system', reducedMotion: 'system' } }));
   harness.render();
   await new Promise(setImmediate);
   let context = harness.render();
+  assert.equal(context.effectiveColorMode, 'light');
+  assert.equal(harness.root.dataset.colorMode, 'light');
+
+  // Navigating to landing page (/) locks effectiveColorMode to dark without mutating saved preference.
+  harness.setPath('/');
+  harness.render();
+  context = harness.render();
   assert.equal(context.effectiveColorMode, 'dark');
+  assert.equal(harness.root.dataset.colorMode, 'dark');
+  assert.equal(context.preferences.colorMode, 'system');
+
+  // Returning to /app restores system resolution, and toggling OS dark mode updates to dark.
+  harness.setPath('/app');
+  harness.render();
   for (const query of harness.queries.values()) { query.matches = true; query.change(); }
   context = harness.render();
   assert.equal(context.effectiveColorMode, 'dark');

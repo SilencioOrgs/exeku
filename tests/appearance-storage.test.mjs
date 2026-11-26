@@ -95,12 +95,15 @@ test("AppearanceRepository - in-memory storage fallback works", () => {
   assert.equal(repo.getPreferences().uiStyle, "minimal-saas");
 });
 
-test("AppearanceRepository - Exeku is dark only, whatever was saved", () => {
+test("AppearanceRepository - resolves dark, light, and system color modes", () => {
   const repo = new AppearanceRepository({ storage: null });
 
-  for (const mode of ["dark", "light", "system"]) {
-    for (const systemDark of [true, false]) assert.equal(repo.resolveEffectiveColorMode(mode, systemDark), "dark");
-  }
+  assert.equal(repo.resolveEffectiveColorMode("dark", true), "dark");
+  assert.equal(repo.resolveEffectiveColorMode("dark", false), "dark");
+  assert.equal(repo.resolveEffectiveColorMode("light", true), "light");
+  assert.equal(repo.resolveEffectiveColorMode("light", false), "light");
+  assert.equal(repo.resolveEffectiveColorMode("system", true), "dark");
+  assert.equal(repo.resolveEffectiveColorMode("system", false), "light");
 });
 
 test("failed writes keep latest session preferences and report failure", () => {

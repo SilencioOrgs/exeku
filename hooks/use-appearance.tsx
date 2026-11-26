@@ -1,6 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from "react";
+import React, { Suspense, createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { usePathname } from "next/navigation";
 import { type AppearancePreferences, DEFAULT_APPEARANCE_PREFERENCES, normalizeAppearancePreferences } from "@/types/appearance";
 import { appearanceRepository, cacheAppearanceSnapshot, APPEARANCE_STORAGE_KEY, APPEARANCE_SNAPSHOT_KEY, type PersistenceStatus } from "@/lib/storage/appearance-repository";
 import { profileRepository } from "@/lib/storage/profile-repository";
@@ -34,10 +35,21 @@ export function applyPreferencesToDom(prefs: AppearancePreferences, effectiveCol
   root.style.setProperty("--ui-font-scale", String(prefs.uiFontScale) + "%");
 }
 
+/** Tracks client-side route transitions inside Suspense so Cache Component routes can still prerender. */
+function LandingThemeGuard({ onLandingChange }: { onLandingChange: (isLanding: boolean) => void }) {
+  const pathname = usePathname();
+  useEffect(() => {
+    onLandingChange(pathname === "/");
+  }, [pathname, onLandingChange]);
+  return null;
+}
+
 export function AppearanceProvider({ children }: { children: React.ReactNode }) {
   // Initial markup always matches SSR; the root boot snapshot handles first-paint styling.
   const [preferences, setPreferences] = useState<AppearancePreferences>({ ...DEFAULT_APPEARANCE_PREFERENCES });
   const [preferenceOwner, setPreferenceOwner] = useState<string | null>(null);
+  const [isLanding, setIsLanding] = useState(false);
+  const [systemPrefersDark, setSystemPrefersDark] = useState(true);
   const [systemReducedMotion, setSystemReducedMotion] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [persistenceStatus, setPersistenceStatus] = useState<PersistenceStatus>("loading");
@@ -51,9 +63,13 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     let disposed = false;
     const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const colorQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleMotionChange = () => setSystemReducedMotion(motionQuery.matches);
+    const handleColorChange = () => setSystemPrefersDark(colorQuery.matches);
     handleMotionChange();
+    handleColorChange();
     motionQuery.addEventListener("change", handleMotionChange);
+    colorQuery.addEventListener("change", handleColorChange);
 
     const load = async () => {
       const loadRevision = ++revision.current;
@@ -89,12 +105,14 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
     return () => {
       disposed = true;
       motionQuery.removeEventListener("change", handleMotionChange);
+      colorQuery.removeEventListener("change", handleColorChange);
       window.removeEventListener("storage", storageChanged);
       window.removeEventListener("exeku:profile-changed", profileChanged);
     };
   }, []);
 
-  const effectiveColorMode = appearanceRepository.resolveEffectiveColorMode(preferences.colorMode, true);
+  const resolvedColorMode = appearanceRepository.resolveEffectiveColorMode(preferences.colorMode, systemPrefersDark);
+  const effectiveColorMode: "dark" | "light" = isLanding ? "dark" : resolvedColorMode;
   useEffect(() => {
     if (!hydrated) return;
     applyPreferencesToDom(preferences, effectiveColorMode, systemReducedMotion);
@@ -146,7 +164,14 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
     : persistenceStatus === "saving" ? "Saving appearance…"
     : persistenceStatus === "loading" ? "Loading appearance…" : "Appearance saved locally.";
   const contextValue = useMemo<AppearanceContextValue>(() => ({ preferences, preferenceOwner, effectiveColorMode, effectiveReducedMotion, systemReducedMotion, persistenceStatus, persistenceMessage, updatePreferences }), [preferences, preferenceOwner, effectiveColorMode, effectiveReducedMotion, systemReducedMotion, persistenceStatus, persistenceMessage, updatePreferences]);
-  return <AppearanceContext.Provider value={contextValue}>{children}</AppearanceContext.Provider>;
+  return (
+    <AppearanceContext.Provider value={contextValue}>
+      <Suspense fallback={null}>
+        <LandingThemeGuard onLandingChange={setIsLanding} />
+      </Suspense>
+      {children}
+    </AppearanceContext.Provider>
+  );
 }
 
 export function useAppearance(): AppearanceContextValue {

@@ -31,7 +31,7 @@ test("application icons come straight from lucide-react and pick up the shared i
 
 test("application uses one modern layout while preserving old appearance records", () => {
   assert.match(read("hooks/use-appearance.tsx"), /root.dataset.uiStyle = "minimal-saas"/);
-  assert.doesNotMatch(read("components/app/appearance-studio.tsx"), /ColorModeChoice|Light/);
+  assert.match(read("components/app/appearance-studio.tsx"), /label: "Dark"[\s\S]*label: "Light"[\s\S]*label: "System"/);
   assert.doesNotMatch(read("components/app/appearance-studio.tsx"), /<StyleSelector|<PaletteSelector/);
   assert.doesNotMatch(read("components/app/command-station.tsx"), /pixel-arcade/);
 });

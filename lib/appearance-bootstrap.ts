@@ -20,8 +20,10 @@ function initialize(config: { defaults: typeof DEFAULT_APPEARANCE_PREFERENCES; c
     if (typeof value === "number" && Number.isFinite(value)) prefs[key] = Math.min(max, Math.max(min, value));
   }
   if (typeof raw.reducedMotion === "boolean" || raw.reducedMotion === "system") prefs.reducedMotion = raw.reducedMotion;
-  // Exeku is dark only (orange on black). colorMode stays in storage for older profiles but no longer changes anything.
-  const dark = true;
+  // The landing page (/) hosts dark-only 3D scenes, so it always renders in dark mode.
+  const isLanding = window.location?.pathname === "/";
+  const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const dark = isLanding ? true : prefs.colorMode === "dark" || (prefs.colorMode === "system" && systemDark);
   const reduced = prefs.reducedMotion === "system" ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : prefs.reducedMotion;
   const root = document.documentElement;
   // Legacy theme IDs remain readable in storage, but the interface is now a single neutral design.

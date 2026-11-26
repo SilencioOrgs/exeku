@@ -1,11 +1,24 @@
 "use client";
 
 import { useState } from "react";
+import { Monitor, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAppearance } from "@/hooks/use-appearance";
 import { useAppearanceDraft } from "@/hooks/use-appearance-draft";
-import type { AppearancePreferences, EditorFontFamily, UIFontFamily } from "@/types/appearance";
+import type { AppearancePreferences, ColorMode, EditorFontFamily, EditorTheme, UIFontFamily } from "@/types/appearance";
 import { SelectField } from "./school/field";
+
+const COLOR_MODES: { id: ColorMode; label: string; icon: typeof Moon }[] = [
+  { id: "dark", label: "Dark", icon: Moon },
+  { id: "light", label: "Light", icon: Sun },
+  { id: "system", label: "System", icon: Monitor },
+];
+
+const EDITOR_THEMES: { id: EditorTheme; label: string }[] = [
+  { id: "auto", label: "Match interface" },
+  { id: "dark", label: "VS Code Dark+" },
+  { id: "light", label: "VS Code Light+" },
+];
 
 // System fonts only, so the app still works with no internet. A device without one falls back to a similar font.
 const UI_FONTS: { id: UIFontFamily; label: string }[] = [
@@ -44,9 +57,36 @@ export function AppearanceStudio({ compact = false, onApplied }: { compact?: boo
   const change = (updates: Partial<AppearancePreferences>) => { updateDraft(updates); setNotice(""); };
 
   return <section aria-label="Appearance settings" className={`minimal-appearance-studio w-full space-y-5 ${compact ? "is-compact" : ""}`}>
-    {!compact && <header className="space-y-1"><h2 className="text-xl font-semibold tracking-tight">Appearance</h2><p className="text-sm text-[var(--color-text-muted)]">Exeku is dark: orange on black, with code colored like VS Code Dark+.</p></header>}
+    {!compact && <header className="space-y-1"><h2 className="text-xl font-semibold tracking-tight">Appearance</h2><p className="text-sm text-[var(--color-text-muted)]">Choose dark, light, or system theme for the app. The landing page stays dark for its 3D arena.</p></header>}
     <fieldset disabled={busy} className="min-w-0">
       <div className="grid gap-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <span className="block text-xs text-[var(--color-text-muted)]">Theme</span>
+          <div role="group" aria-label="Theme" className="grid grid-cols-3 gap-2">
+            {COLOR_MODES.map(({ id, label, icon: Icon }) => (
+              <Button
+                key={id}
+                type="button"
+                variant="outline"
+                size="sm"
+                aria-pressed={prefs.colorMode === id}
+                onClick={() => change({ colorMode: id })}
+                className="h-10"
+              >
+                <Icon size={14} aria-hidden="true" />
+                {label}
+              </Button>
+            ))}
+          </div>
+        </div>
+        <SelectField
+          id="editor-theme"
+          label="Code editor theme"
+          value={prefs.editorTheme === "high-contrast" ? "auto" : prefs.editorTheme}
+          onChange={(event) => change({ editorTheme: event.target.value as EditorTheme })}
+        >
+          {EDITOR_THEMES.map((theme) => <option key={theme.id} value={theme.id}>{theme.label}</option>)}
+        </SelectField>
         <SelectField id="ui-font" label="Interface font" value={prefs.uiFontFamily === "pixelify-sans" ? "geist-sans" : prefs.uiFontFamily} onChange={(event) => change({ uiFontFamily: event.target.value as UIFontFamily })}>
           {UI_FONTS.map((font) => <option key={font.id} value={font.id}>{font.label}</option>)}
         </SelectField>
