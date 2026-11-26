@@ -4,12 +4,12 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import ts from 'typescript';
 
-function shellHarness(storage, profileState = { profile: { id: 'profile' }, isLoading: false }) {
+function shellHarness(storage, profileState = { profile: { id: 'profile' }, isLoading: false }, fetchAccountSnapshot = () => new Promise(() => {})) {
   const states = [];
   let index = 0;
   const react = {
     useState: initial => { const slot = index++; if (!(slot in states)) states[slot] = initial; return [states[slot], value => { states[slot] = typeof value === 'function' ? value(states[slot]) : value; }]; },
-    useEffect: callback => callback(), useSyncExternalStore: (subscribe, snapshot) => snapshot(),
+    useEffect: callback => callback(), useRef: current => ({ current }), useSyncExternalStore: (subscribe, snapshot) => snapshot(),
   };
   const compiled = ts.transpileModule(readFileSync(new URL('../components/app/app-shell.tsx', import.meta.url), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText;
   const compiledModule = { exports: {} };
@@ -22,6 +22,8 @@ function shellHarness(storage, profileState = { profile: { id: 'profile' }, isLo
       if (name === 'next/dynamic') return () => 'WelcomeDialog';
       if (name === 'next/navigation') return { useRouter: () => ({ replace: path => redirects.push(path) }) };
       if (name === '@/hooks/use-profile') return { useProfile: () => profileState, ProfileProvider: ({ children }) => children };
+      if (name === '@/lib/accounts/api') return { fetchAccountSnapshot };
+      if (name === '@/lib/accounts/restore') return { restoreUpdates: () => null };
       if (name === '@/hooks/use-pulse') return { usePulse: () => null, PulseProvider: ({ children }) => children };
       if (name === './page-skeletons') return { AppShellSkeleton: 'AppShellSkeleton' };
       if (name === './events/tournament-lock') return { TournamentLock: 'TournamentLock' };
@@ -78,4 +80,14 @@ test('profile guard keeps the child segment represented but hidden during loadin
     assert.equal(main.props.inert, true);
     assert.deepEqual(render.redirects, isLoading ? [] : ['/setup']);
   }
+});
+
+test('welcome dialog waits for the saved account check so returning students on a new laptop are not asked again', async () => {
+  let resolve;
+  const updateProfile = async () => {};
+  const render = shellHarness({ getItem: () => null }, { profile: { id: 'p1', ownerId: 'u1' }, isLoading: false, updateProfile }, () => new Promise(r => { resolve = r; }));
+  assert.equal(find(render(), 'WelcomeDialog'), undefined, 'must not flash before the server copy is checked');
+  resolve({ ok: false });
+  await new Promise(r => setTimeout(r, 0));
+  assert.ok(find(render(), 'WelcomeDialog'), 'new accounts with nothing saved still get the welcome flow');
 });

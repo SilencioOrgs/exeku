@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useSyncExternalStore } from "react";
+import React, { useState, useEffect, useRef, useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { ProfileProvider, useProfile } from "@/hooks/use-profile";
 import { PulseProvider, usePulse } from "@/hooks/use-pulse";
+import { fetchAccountSnapshot } from "@/lib/accounts/api";
+import { restoreUpdates } from "@/lib/accounts/restore";
 import { AppSidebar } from "./app-sidebar";
 import { AppTopbar } from "./app-topbar";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -52,12 +54,30 @@ function AppShellInner({ children }: AppShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [roleOverride, setRoleOverride] = useState<UserRole | undefined>(undefined);
   const [welcomePinned, setWelcomePinned] = useState(false);
+  const [restoredId, setRestoredId] = useState<string | null>(null);
+  const profileRef = useRef(profile);
+  const profileId = profile?.id;
 
   useEffect(() => {
     if (!isLoading && !profile) {
       router.replace("/setup");
     }
   }, [isLoading, profile, router]);
+
+  useEffect(() => { profileRef.current = profile; });
+
+  // A new browser starts with an empty profile: restore the saved school and profile before asking "student or exploring?".
+  useEffect(() => {
+    if (!profileId) return;
+    let live = true;
+    void fetchAccountSnapshot().then(async (result) => {
+      const current = profileRef.current;
+      const updates = result.ok && current?.id === profileId ? restoreUpdates(current, result.data) : null;
+      if (updates) await updateProfile(profileId, updates).catch(() => { /* The welcome flow still works offline. */ });
+      if (live) setRestoredId(profileId);
+    });
+    return () => { live = false; };
+  }, [profileId, updateProfile]);
 
   const toggleCollapse = () => {
     const next = !collapsed;
@@ -84,6 +104,7 @@ function AppShellInner({ children }: AppShellProps) {
         setRoleOverride={setRoleOverride}
         welcomePinned={welcomePinned}
         setWelcomePinned={setWelcomePinned}
+        restored={Boolean(profileId) && restoredId === profileId}
         onToggleCollapse={toggleCollapse}
         onUpdateProfile={updateProfile}
       >
@@ -103,6 +124,7 @@ function AppShellFrame({
   setRoleOverride,
   welcomePinned,
   setWelcomePinned,
+  restored,
   onToggleCollapse,
   onUpdateProfile,
   children,
@@ -116,13 +138,15 @@ function AppShellFrame({
   setRoleOverride: React.Dispatch<React.SetStateAction<UserRole | undefined>>;
   welcomePinned: boolean;
   setWelcomePinned: React.Dispatch<React.SetStateAction<boolean>>;
+  /** The server copy has been checked, so the welcome dialog will not flash for returning students. */
+  restored: boolean;
   onToggleCollapse: () => void;
   onUpdateProfile: ReturnType<typeof useProfile>["updateProfile"];
   children: React.ReactNode;
 }) {
   const pulseCtx = usePulse();
   const viewerRole = pulseCtx?.pulse?.role ?? roleOverride;
-  const shouldMountWelcome = !blocked && profile !== null && ((!profile.userType && !profile.account) || welcomePinned);
+  const shouldMountWelcome = !blocked && profile !== null && ((restored && !profile.userType && !profile.account) || welcomePinned);
 
   return (
     <div className="app-shell h-screen max-h-screen bg-[var(--color-canvas)] text-[var(--color-text-main)] flex flex-col overflow-hidden relative">

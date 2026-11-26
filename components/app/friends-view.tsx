@@ -6,15 +6,12 @@ import { Search, UserPlus } from "lucide-react";
 import { FriendsContentSkeleton } from "@/components/app/page-skeletons";
 import { PixelAvatar } from "@/components/retro/pixel-avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { useProfile } from "@/hooks/use-profile";
-import { peekApiCache, syncProfile } from "@/lib/accounts/api";
+import { peekApiCache } from "@/lib/accounts/api";
 import { subscribeClientCache } from "@/lib/client/swr-cache";
 import { fetchFriends, friendAction } from "@/lib/friends/api";
 import type { FriendsFeed, Person } from "@/types/friends";
 import { ConfirmDialog } from "@/components/app/workspace/submission-modals";
 import { TextField } from "./school/field";
-
-const SYNCED_PROFILE_KEY = "exeku:synced-profile";
 
 export type FriendAction = "request" | "accept" | "remove";
 type FriendAct = (action: FriendAction, id: string) => void;
@@ -170,7 +167,6 @@ function applyOptimisticFriendAction(feed: FriendsFeed, action: FriendAction, id
 }
 
 export function FriendsView() {
-  const { profile } = useProfile();
   const [feed, setFeed] = useState<FriendsFeed | null>(() => peekApiCache<FriendsFeed>("/api/friends") ?? null);
   const [draft, setDraft] = useState("");
   const [search, setSearch] = useState("");
@@ -178,19 +174,6 @@ export function FriendsView() {
   const [version, setVersion] = useState(0);
   const [busy, setBusy] = useState<{ action: FriendAction; id: string } | null>(null);
   const [pendingRemove, setPendingRemove] = useState<Person | null>(null);
-  const published = profile && JSON.stringify({ displayName: profile.displayName, avatarId: profile.avatarId, borderId: profile.borderId, bio: profile.bio, socialLinks: profile.socialLinks });
-
-  // Publish profile changes once per session instead of re-POSTing on every Friends visit.
-  useEffect(() => {
-    if (!published) return;
-    try {
-      if (sessionStorage.getItem(SYNCED_PROFILE_KEY) === published) return;
-    } catch { /* Proceed when storage is unavailable. */ }
-    void syncProfile(JSON.parse(published)).then((res) => {
-      if (!res.ok) return;
-      try { sessionStorage.setItem(SYNCED_PROFILE_KEY, published); } catch { /* Ignore storage errors. */ }
-    });
-  }, [published]);
 
   useEffect(() => {
     let live = true;

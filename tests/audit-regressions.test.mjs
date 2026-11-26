@@ -1032,7 +1032,8 @@ test("sidebar dropdowns toggle locally without forced navigation or eager RSC pr
 
   const friends = readFileSync(new URL("../components/app/friends-view.tsx", import.meta.url), "utf8");
   assert.match(friends, /FriendsContentSkeleton/);
-  assert.match(friends, /SYNCED_PROFILE_KEY/);
+  // Visiting Friends must not push this browser's profile: on a new laptop that overwrote the saved one with defaults.
+  assert.doesNotMatch(friends, /syncProfile/);
 });
 
 test("POST /api/account/school verifies Clerk ownership before checking duplicate school_email (no enumeration oracle)", async () => {

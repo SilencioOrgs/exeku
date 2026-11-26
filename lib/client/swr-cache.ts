@@ -151,6 +151,7 @@ export function isNeverCachedPath(path: string): boolean {
     path.startsWith("/api/tournaments/active") ||
     path.startsWith("/api/pulse") ||
     path.startsWith("/api/health") ||
+    path.startsWith("/api/account/me") ||
     /^\/api\/events\/[^/]+\/tournament(?:\?|$)/.test(path)
   );
 }
